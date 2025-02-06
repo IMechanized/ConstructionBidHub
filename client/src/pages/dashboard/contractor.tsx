@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search } from "lucide-react";
 import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
+import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -80,9 +81,7 @@ export default function ContractorDashboard() {
             </div>
 
             {loadingRfps ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <DashboardSectionSkeleton count={6} />
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredRfps?.map((rfp) => (
@@ -97,8 +96,7 @@ export default function ContractorDashboard() {
                           Budget: ${rfp.budget.toLocaleString()}
                         </span>
                         <span className="text-sm">
-                          Due:{" "}
-                          {new Date(rfp.deadline).toLocaleDateString()}
+                          Due: {new Date(rfp.deadline).toLocaleDateString()}
                         </span>
                       </div>
                       <BidForm rfpId={rfp.id} />
@@ -111,8 +109,14 @@ export default function ContractorDashboard() {
 
           <TabsContent value="bids">
             {loadingBids ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <BidCardSkeleton />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

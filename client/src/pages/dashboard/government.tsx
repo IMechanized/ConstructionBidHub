@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
+import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 
 export default function GovernmentDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -64,9 +65,7 @@ export default function GovernmentDashboard() {
 
             <h2 className="text-xl font-semibold mb-6">My RFPs</h2>
             {loadingRfps ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <DashboardSectionSkeleton count={6} />
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {myRfps?.map((rfp) => (
@@ -84,10 +83,16 @@ export default function GovernmentDashboard() {
                           Due: {new Date(rfp.deadline).toLocaleDateString()}
                         </span>
                       </div>
-                      
+
                       <h4 className="font-medium mb-2">Bids</h4>
                       {loadingBids ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <div className="space-y-2">
+                          {Array.from({ length: 2 }).map((_, i) => (
+                            <div key={i} className="p-2 bg-secondary rounded">
+                              <BidCardSkeleton />
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className="space-y-2">
                           {bids

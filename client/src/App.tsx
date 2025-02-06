@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import LandingPage from "@/pages/landing-page";
 import ContractorDashboard from "@/pages/dashboard/contractor";
 import GovernmentDashboard from "@/pages/dashboard/government";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -12,10 +13,10 @@ import { ProtectedRoute } from "./lib/protected-route";
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard/contractor" component={ContractorDashboard} />
       <ProtectedRoute path="/dashboard/government" component={GovernmentDashboard} />
-      <Route path="/" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );

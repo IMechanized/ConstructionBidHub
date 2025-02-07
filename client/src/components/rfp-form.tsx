@@ -26,11 +26,7 @@ export default function RfpForm() {
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
       // Convert the date string to a timestamp
-      const formattedData = {
-        ...data,
-        deadline: new Date(data.deadline).toISOString(),
-      };
-      const res = await apiRequest("POST", "/api/rfps", formattedData);
+      const res = await apiRequest("POST", "/api/rfps", data);
       return res.json();
     },
     onSuccess: () => {

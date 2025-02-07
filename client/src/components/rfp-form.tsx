@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 
 export default function RfpForm() {
   const { toast } = useToast();
@@ -19,13 +17,17 @@ export default function RfpForm() {
       title: "",
       description: "",
       budget: 0,
-      deadline: new Date(),
+      deadline: new Date().toISOString().split('T')[0], // Set default to today's date
     },
   });
 
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/rfps", data);
+      const formattedData = {
+        ...data,
+        budget: Number(data.budget),
+      };
+      const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
     onSuccess: () => {
@@ -106,12 +108,9 @@ export default function RfpForm() {
             <FormItem>
               <FormLabel>Deadline</FormLabel>
               <FormControl>
-                <DatePicker
-                  selected={field.value}
-                  onChange={(date) => field.onChange(date)} 
-                  showTimeSelect
-                  dateFormat="yyyy-MM-dd HH:mm"
-                  className="border p-2 rounded w-full"
+                <Input 
+                  type="date"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />

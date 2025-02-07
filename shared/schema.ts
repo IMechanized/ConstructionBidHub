@@ -52,10 +52,10 @@ export const insertRfpSchema = createInsertSchema(rfps)
     budget: true,
     deadline: true,
   })
-  .transform((data) => ({
-    ...data,
-    deadline: new Date(data.deadline),
-  }));
+  .extend({
+    deadline: z.string(),
+    budget: z.number().min(0, "Budget must be a positive number"),
+  });
 
 export const insertBidSchema = createInsertSchema(bids).pick({
   amount: true,

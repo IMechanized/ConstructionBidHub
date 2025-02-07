@@ -23,7 +23,12 @@ export default function RfpForm() {
 
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/rfps", data);
+      // Convert the date string to a timestamp
+      const formattedData = {
+        ...data,
+        deadline: new Date(data.deadline).toISOString(),
+      };
+      const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
     onSuccess: () => {
@@ -50,7 +55,7 @@ export default function RfpForm() {
         className="space-y-6 bg-card p-6 rounded-lg border"
       >
         <h2 className="text-lg font-semibold">Create New RFP</h2>
-        
+
         <FormField
           control={form.control}
           name="title"
@@ -104,7 +109,13 @@ export default function RfpForm() {
             <FormItem>
               <FormLabel>Deadline</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input 
+                  type="datetime-local" 
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

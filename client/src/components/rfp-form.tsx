@@ -19,7 +19,7 @@ export default function RfpForm() {
       title: "",
       description: "",
       budget: 0,
-      deadline: "",
+      deadline: new Date(),
     },
   });
 

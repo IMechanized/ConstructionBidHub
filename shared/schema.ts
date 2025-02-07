@@ -45,12 +45,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
 });
 
-export const insertRfpSchema = createInsertSchema(rfps).pick({
-  title: true,
-  description: true,
-  budget: true,
-  deadline: true,
-});
+export const insertRfpSchema = createInsertSchema(rfps)
+  .pick({
+    title: true,
+    description: true,
+    budget: true,
+    deadline: true,
+  })
+  .transform((data) => ({
+    ...data,
+    deadline: new Date(data.deadline),
+  }));
 
 export const insertBidSchema = createInsertSchema(bids).pick({
   amount: true,

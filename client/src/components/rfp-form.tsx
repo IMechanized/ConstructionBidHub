@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function RfpForm() {
   const { toast } = useToast();
@@ -109,12 +111,12 @@ export default function RfpForm() {
             <FormItem>
               <FormLabel>Deadline</FormLabel>
               <FormControl>
-                <Input 
-                  type="datetime-local" 
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                  }}
+                <DatePicker
+                  selected={field.value}
+                  onChange={(date) => field.onChange(date)} // Ensure it's stored as a Date object
+                  showTimeSelect
+                  dateFormat="yyyy-MM-dd HH:mm"
+                  className="border p-2 rounded w-full"
                 />
               </FormControl>
               <FormMessage />

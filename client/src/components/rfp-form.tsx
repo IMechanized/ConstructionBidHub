@@ -25,7 +25,6 @@ export default function RfpForm() {
 
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Convert the date string to a timestamp
       const res = await apiRequest("POST", "/api/rfps", data);
       return res.json();
     },
@@ -109,7 +108,7 @@ export default function RfpForm() {
               <FormControl>
                 <DatePicker
                   selected={field.value}
-                  onChange={(date) => field.onChange(date)} // Ensure it's stored as a Date object
+                  onChange={(date) => field.onChange(date)} 
                   showTimeSelect
                   dateFormat="yyyy-MM-dd HH:mm"
                   className="border p-2 rounded w-full"

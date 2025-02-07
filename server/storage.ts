@@ -8,7 +8,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
+
   getRfps(): Promise<Rfp[]>;
   getRfpById(id: number): Promise<Rfp | undefined>;
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
@@ -58,6 +59,16 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    const existing = await this.getUser(id);
+    if (!existing) {
+      throw new Error("User not found");
+    }
+    const updated = { ...existing, ...updates };
+    this.users.set(id, updated);
+    return updated;
   }
 
   async getRfps(): Promise<Rfp[]> {

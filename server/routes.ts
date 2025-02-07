@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertRfpSchema, insertBidSchema, insertEmployeeSchema } from "@shared/schema";
+import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, contractorOnboardingSchema, governmentOnboardingSchema } from "@shared/schema";
 
 function requireAuth(req: Request) {
   if (!req.isAuthenticated()) {
@@ -12,6 +12,30 @@ function requireAuth(req: Request) {
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+
+  // New onboarding endpoint
+  app.post("/api/user/onboarding", async (req, res) => {
+    requireAuth(req);
+    const user = req.user!;
+
+    try {
+      // Validate the data based on user type
+      if (user.userType === "contractor") {
+        contractorOnboardingSchema.parse(req.body);
+      } else {
+        governmentOnboardingSchema.parse(req.body);
+      }
+
+      const updatedUser = await storage.updateUser(user.id, {
+        ...req.body,
+        onboardingComplete: true,
+      });
+
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid data provided" });
+    }
+  });
 
   // RFP routes
   app.get("/api/rfps", async (req, res) => {

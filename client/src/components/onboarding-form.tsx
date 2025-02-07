@@ -1,0 +1,205 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { contractorOnboardingSchema, governmentOnboardingSchema } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const INDUSTRY_OPTIONS = [
+  "Construction",
+  "Engineering",
+  "Architecture",
+  "Infrastructure",
+  "Other",
+];
+
+const REVENUE_RANGES = [
+  "Less than $1M",
+  "$1M - $5M",
+  "$5M - $10M",
+  "$10M - $50M",
+  "More than $50M",
+];
+
+const JURISDICTION_OPTIONS = [
+  "Federal",
+  "State/Provincial",
+  "Municipal",
+  "Regional",
+  "Other",
+];
+
+export default function OnboardingForm({ userType }: { userType: "contractor" | "government" }) {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const form = useForm({
+    resolver: zodResolver(
+      userType === "contractor" ? contractorOnboardingSchema : governmentOnboardingSchema
+    ),
+    defaultValues:
+      userType === "contractor"
+        ? {
+            industry: "",
+            yearlyRevenue: "",
+          }
+        : {
+            department: "",
+            jurisdiction: "",
+          },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/user/onboarding", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated",
+      });
+      navigate(`/dashboard/${userType}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Card className="w-full max-w-md mx-4">
+        <CardContent className="pt-6">
+          <h2 className="text-2xl font-bold mb-6">Complete Your Profile</h2>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
+              className="space-y-4"
+            >
+              {userType === "contractor" ? (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="industry"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Industry</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your industry" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {INDUSTRY_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="yearlyRevenue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yearly Revenue</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select revenue range" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {REVENUE_RANGES.map((range) => (
+                              <SelectItem key={range} value={range}>
+                                {range}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g. Public Works" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="jurisdiction"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Jurisdiction</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select jurisdiction level" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {JURISDICTION_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full mt-6"
+                disabled={updateProfileMutation.isPending}
+              >
+                Complete Profile
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

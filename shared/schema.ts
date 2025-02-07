@@ -9,6 +9,14 @@ export const users = pgTable("users", {
   companyName: text("company_name").notNull(),
   userType: text("user_type", { enum: ["government", "contractor"] }).notNull(),
   email: text("email").notNull(),
+  // New fields for contractor
+  industry: text("industry"),
+  yearlyRevenue: text("yearly_revenue"),
+  // New fields for government
+  department: text("department"),
+  jurisdiction: text("jurisdiction"),
+  // Track onboarding status
+  onboardingComplete: boolean("onboarding_complete").default(false),
 });
 
 export const rfps = pgTable("rfps", {
@@ -35,6 +43,16 @@ export const employees = pgTable("employees", {
   email: text("email").notNull(),
   role: text("role").notNull(),
   status: text("status", { enum: ["pending", "active"] }).default("pending"),
+});
+
+export const contractorOnboardingSchema = z.object({
+  industry: z.string().min(1, "Industry is required"),
+  yearlyRevenue: z.string().min(1, "Yearly revenue is required"),
+});
+
+export const governmentOnboardingSchema = z.object({
+  department: z.string().min(1, "Department is required"),
+  jurisdiction: z.string().min(1, "Jurisdiction is required"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

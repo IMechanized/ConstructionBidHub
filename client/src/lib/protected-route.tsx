@@ -29,5 +29,14 @@ export function ProtectedRoute({
     );
   }
 
-  return <Component />
+  // Redirect to onboarding if not completed (except for onboarding path)
+  if (!user.onboardingComplete && !path.includes("/onboarding")) {
+    return (
+      <Route path={path}>
+        <Redirect to={`/onboarding/${user.userType}`} />
+      </Route>
+    );
+  }
+
+  return <Component />;
 }

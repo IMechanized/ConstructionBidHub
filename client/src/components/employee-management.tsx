@@ -20,7 +20,7 @@ export default function EmployeeManagement() {
     },
   });
 
-  const { data: employees, isLoading } = useQuery<Employee[]>({
+  const { data: employees, isLoading, error } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
 
@@ -66,6 +66,14 @@ export default function EmployeeManagement() {
     },
   });
 
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-destructive">Error loading employees: {error.message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <Card>
@@ -97,7 +105,7 @@ export default function EmployeeManagement() {
                   <FormItem>
                     <FormLabel>Role</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="e.g. Project Manager" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,6 +129,10 @@ export default function EmployeeManagement() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : employees?.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            No employees found. Invite team members to get started.
+          </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {employees?.map((employee) => (

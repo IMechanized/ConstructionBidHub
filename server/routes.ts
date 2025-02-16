@@ -48,7 +48,7 @@ export function registerRoutes(app: Express): Server {
     if (req.user?.userType !== "government") {
       return res.status(403).send("Only government organizations can create RFPs");
     }
-    
+
     const data = insertRfpSchema.parse(req.body);
     const rfp = await storage.createRfp({
       ...data,
@@ -63,7 +63,7 @@ export function registerRoutes(app: Express): Server {
     if (!rfp || rfp.organizationId !== req.user?.id) {
       return res.status(403).send("Unauthorized");
     }
-    
+
     const updated = await storage.updateRfp(Number(req.params.id), req.body);
     res.json(updated);
   });
@@ -74,7 +74,7 @@ export function registerRoutes(app: Express): Server {
     if (!rfp || rfp.organizationId !== req.user?.id) {
       return res.status(403).send("Unauthorized");
     }
-    
+
     await storage.deleteRfp(Number(req.params.id));
     res.sendStatus(200);
   });
@@ -91,7 +91,7 @@ export function registerRoutes(app: Express): Server {
     if (req.user?.userType !== "contractor") {
       return res.status(403).send("Only contractors can submit bids");
     }
-    
+
     const data = insertBidSchema.parse(req.body);
     const bid = await storage.createBid({
       ...data,
@@ -110,6 +110,7 @@ export function registerRoutes(app: Express): Server {
   // Employee routes
   app.get("/api/employees", async (req, res) => {
     requireAuth(req);
+    // Get employees only for the authenticated user's organization
     const employees = await storage.getEmployees(req.user!.id);
     res.json(employees);
   });
@@ -126,6 +127,11 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/employees/:id", async (req, res) => {
     requireAuth(req);
+    // First verify that the employee belongs to the user's organization
+    const employee = await storage.getEmployee(Number(req.params.id));
+    if (!employee || employee.organizationId !== req.user!.id) {
+      return res.status(403).send("Unauthorized");
+    }
     await storage.deleteEmployee(Number(req.params.id));
     res.sendStatus(200);
   });

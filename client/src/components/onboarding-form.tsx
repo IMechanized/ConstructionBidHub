@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/use-auth";
 
 const INDUSTRY_OPTIONS = [
   "Construction",
@@ -38,6 +40,14 @@ const JURISDICTION_OPTIONS = [
 export default function OnboardingForm({ userType }: { userType: "contractor" | "government" }) {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // If user is already onboarded, redirect to dashboard
+  useEffect(() => {
+    if (user?.onboardingComplete) {
+      navigate(`/dashboard/${userType}`);
+    }
+  }, [user, userType, navigate]);
 
   const form = useForm({
     resolver: zodResolver(
@@ -62,11 +72,22 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
       });
-      navigate(`/dashboard/${userType}`);
+
+      // Force a refetch and wait for it to complete before redirecting
+      queryClient.refetchQueries({ queryKey: ["/api/user"] })
+        .then(() => {
+          navigate(`/dashboard/${userType}`);
+        })
+        .catch((error) => {
+          console.error("Error refetching user data:", error);
+          // Fallback navigation if refetch fails
+          navigate(`/dashboard/${userType}`);
+        });
     },
     onError: (error: Error) => {
       toast({
@@ -76,6 +97,8 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
       });
     },
   });
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

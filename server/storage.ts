@@ -21,9 +21,10 @@ export interface IStorage {
   deleteBid(id: number): Promise<void>;
   
   getEmployees(organizationId: number): Promise<Employee[]>;
+  getEmployee(id: number): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee>;
   deleteEmployee(id: number): Promise<void>;
-  
+
   sessionStore: session.SessionStore;
 }
 
@@ -117,6 +118,9 @@ export class MemStorage implements IStorage {
     return Array.from(this.employees.values()).filter(
       emp => emp.organizationId === organizationId
     );
+  }
+  async getEmployee(id: number): Promise<Employee | undefined> {
+    return this.employees.get(id);
   }
 
   async createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee> {

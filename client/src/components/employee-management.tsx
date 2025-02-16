@@ -9,8 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, X } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function EmployeeManagement() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(insertEmployeeSchema),
@@ -21,7 +23,8 @@ export default function EmployeeManagement() {
   });
 
   const { data: employees, isLoading, error } = useQuery<Employee[]>({
-    queryKey: ["/api/employees"],
+    queryKey: ["/api/employees", user?.id],
+    enabled: !!user?.id, // Only fetch when we have a user ID
   });
 
   const createEmployeeMutation = useMutation({
@@ -30,7 +33,7 @@ export default function EmployeeManagement() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/employees", user?.id] });
       form.reset();
       toast({
         title: "Employee Invited",
@@ -51,7 +54,7 @@ export default function EmployeeManagement() {
       await apiRequest("DELETE", `/api/employees/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/employees", user?.id] });
       toast({
         title: "Employee Removed",
         description: "The employee has been removed from your organization",
@@ -116,6 +119,9 @@ export default function EmployeeManagement() {
                 type="submit" 
                 disabled={createEmployeeMutation.isPending}
               >
+                {createEmployeeMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
                 Send Invitation
               </Button>
             </form>

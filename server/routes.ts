@@ -109,31 +109,51 @@ export function registerRoutes(app: Express): Server {
 
   // Employee routes
   app.get("/api/employees", async (req, res) => {
-    requireAuth(req);
-    // Get employees only for the authenticated user's organization
-    const employees = await storage.getEmployees(req.user!.id);
-    res.json(employees);
+    try {
+      requireAuth(req);
+      // Get employees only for the authenticated user's organization
+      const employees = await storage.getEmployees(req.user!.id);
+      res.json(employees);
+    } catch (error) {
+      res.status(401).json({ message: "Unauthorized access" });
+    }
   });
 
   app.post("/api/employees", async (req, res) => {
-    requireAuth(req);
-    const data = insertEmployeeSchema.parse(req.body);
-    const employee = await storage.createEmployee({
-      ...data,
-      organizationId: req.user!.id,
-    });
-    res.status(201).json(employee);
+    try {
+      requireAuth(req);
+      const data = insertEmployeeSchema.parse(req.body);
+      const employee = await storage.createEmployee({
+        ...data,
+        organizationId: req.user!.id,
+      });
+      res.status(201).json(employee);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
   });
 
   app.delete("/api/employees/:id", async (req, res) => {
-    requireAuth(req);
-    // First verify that the employee belongs to the user's organization
-    const employee = await storage.getEmployee(Number(req.params.id));
-    if (!employee || employee.organizationId !== req.user!.id) {
-      return res.status(403).send("Unauthorized");
+    try {
+      requireAuth(req);
+      // First verify that the employee belongs to the user's organization
+      const employee = await storage.getEmployee(Number(req.params.id));
+      if (!employee || employee.organizationId !== req.user!.id) {
+        return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
+      }
+      await storage.deleteEmployee(Number(req.params.id));
+      res.sendStatus(200);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
     }
-    await storage.deleteEmployee(Number(req.params.id));
-    res.sendStatus(200);
   });
 
   const httpServer = createServer(app);

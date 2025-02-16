@@ -9,13 +9,10 @@ export const users = pgTable("users", {
   companyName: text("company_name").notNull(),
   userType: text("user_type", { enum: ["government", "contractor"] }).notNull(),
   email: text("email").notNull(),
-  // New fields for contractor
   industry: text("industry"),
   yearlyRevenue: text("yearly_revenue"),
-  // New fields for government
   department: text("department"),
   jurisdiction: text("jurisdiction"),
-  // Track onboarding status
   onboardingComplete: boolean("onboarding_complete").default(false),
 });
 
@@ -90,3 +87,6 @@ export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
 export type Bid = typeof bids.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
+export type InsertRfp = z.infer<typeof insertRfpSchema>;
+export type InsertBid = z.infer<typeof insertBidSchema>;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;

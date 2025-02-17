@@ -1,6 +1,7 @@
 import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
+import { Store } from "express-session";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -15,17 +16,17 @@ export interface IStorage {
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
   deleteRfp(id: number): Promise<void>;
-  
+
   getBids(rfpId: number): Promise<Bid[]>;
   createBid(bid: InsertBid & { rfpId: number; contractorId: number }): Promise<Bid>;
   deleteBid(id: number): Promise<void>;
-  
+
   getEmployees(organizationId: number): Promise<Employee[]>;
   getEmployee(id: number): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee>;
   deleteEmployee(id: number): Promise<void>;
 
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 }
 
 export class MemStorage implements IStorage {
@@ -33,7 +34,7 @@ export class MemStorage implements IStorage {
   private rfps: Map<number, Rfp>;
   private bids: Map<number, Bid>;
   private employees: Map<number, Employee>;
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
   private currentId: { [key: string]: number };
 
   constructor() {
@@ -45,6 +46,21 @@ export class MemStorage implements IStorage {
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
   }
 
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentId.users++;
+    const user: User = {
+      id,
+      ...insertUser,
+      industry: null,
+      yearlyRevenue: null,
+      department: null,
+      jurisdiction: null,
+      onboardingComplete: false,
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -53,13 +69,6 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId.users++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User> {

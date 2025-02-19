@@ -55,12 +55,26 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email: string, password: string, done: any) => {
         try {
+          console.log(`[Auth] Login attempt for email: ${email}`);
           const user = await storage.getUserByUsername(email);
-          if (!user || !(await comparePasswords(password, user.password))) {
+
+          if (!user) {
+            console.log(`[Auth] No user found for email: ${email}`);
             return done(null, false, { message: "Invalid email or password" });
           }
+
+          console.log(`[Auth] User found, verifying password`);
+          const isValidPassword = await comparePasswords(password, user.password);
+
+          if (!isValidPassword) {
+            console.log(`[Auth] Invalid password for email: ${email}`);
+            return done(null, false, { message: "Invalid email or password" });
+          }
+
+          console.log(`[Auth] Login successful for email: ${email}`);
           return done(null, user);
         } catch (error) {
+          console.error(`[Auth] Error during authentication:`, error);
           return done(error);
         }
       }
@@ -68,64 +82,97 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => {
+    console.log(`[Auth] Serializing user: ${user.id}`);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`[Auth] Deserializing user: ${id}`);
       const user = await storage.getUser(id);
       if (!user) {
+        console.log(`[Auth] No user found during deserialization for id: ${id}`);
         return done(null, false);
       }
+      console.log(`[Auth] User deserialized successfully: ${id}`);
       done(null, user);
     } catch (error) {
+      console.error(`[Auth] Error during deserialization:`, error);
       done(error);
     }
   });
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      console.log(`[Auth] Registration attempt for email: ${req.body.email}`);
       const existingUser = await storage.getUserByUsername(req.body.email);
       if (existingUser) {
+        console.log(`[Auth] Registration failed - email already exists: ${req.body.email}`);
         return res.status(400).json({ message: "Email already exists" });
       }
 
+      const hashedPassword = await hashPassword(req.body.password);
+      console.log(`[Auth] Password hashed for new registration`);
+
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: hashedPassword,
       });
 
+      console.log(`[Auth] User created successfully, id: ${user.id}`);
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error(`[Auth] Error during login after registration:`, err);
+          return next(err);
+        }
         res.status(201).json(user);
       });
     } catch (error) {
+      console.error(`[Auth] Error during registration:`, error);
       next(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log(`[Auth] Login request received for email: ${req.body.email}`);
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
-      if (err) return next(err);
+      if (err) {
+        console.error(`[Auth] Error during authentication:`, err);
+        return next(err);
+      }
       if (!user) {
+        console.log(`[Auth] Authentication failed: ${info?.message}`);
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error(`[Auth] Error during login:`, err);
+          return next(err);
+        }
+        console.log(`[Auth] Login successful for user: ${user.id}`);
         res.status(200).json(user);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    console.log(`[Auth] Logout request received`);
     req.logout((err) => {
-      if (err) return next(err);
+      if (err) {
+        console.error(`[Auth] Error during logout:`, err);
+        return next(err);
+      }
+      console.log(`[Auth] Logout successful`);
       res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      console.log(`[Auth] Unauthorized access attempt to /api/user`);
+      return res.sendStatus(401);
+    }
+    console.log(`[Auth] User data retrieved for id: ${req.user.id}`);
     res.json(req.user);
   });
 }

@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
 
 const app = express();
 app.use(express.json());
@@ -39,32 +40,58 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  const server = registerRoutes(app);
+const startServer = async (port: number): Promise<void> => {
+  try {
+    log(`Attempting to start server on port ${port}...`);
+    const server = registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      console.error(`[Error] ${status} - ${message}`);
+      res.status(status).json({ message });
+    });
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    log("Setting up environment...");
+    if (app.get("env") === "development") {
+      log("Development mode: Setting up Vite...");
+      await setupVite(app, server);
+    } else {
+      log("Production mode: Setting up static serving...");
+      serveStatic(app);
+    }
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    return new Promise((resolve, reject) => {
+      const HOST = "0.0.0.0";
+
+      server.on('error', (error: any) => {
+        if (error.code === 'EADDRINUSE') {
+          log(`Port ${port} is in use, trying next port...`);
+          server.close();
+          resolve(startServer(port + 1));
+        } else {
+          console.error('Server error:', error);
+          reject(error);
+        }
+      });
+
+      server.listen(port, HOST, () => {
+        log(`Server started successfully on http://${HOST}:${port}`);
+        resolve();
+      });
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    throw error;
   }
+};
 
-  // Use environment port or fallback to 5001 (changed from 5000)
-  const PORT = parseInt(process.env.PORT || '5001', 10);
-  const HOST = "0.0.0.0";
-
-  // Kill any existing process on the port before starting
-  server.listen(PORT, HOST, () => {
-    log(`serving on port ${PORT}`);
-  });
+(async () => {
+  try {
+    const initialPort = parseInt(process.env.PORT || '5000', 10);
+    await startServer(initialPort);
+  } catch (error) {
+    console.error("Critical server error:", error);
+    process.exit(1);
+  }
 })();

@@ -11,14 +11,21 @@ import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  companyName: z.string().min(1, "Organization name is required"),
+  password: z.string().min(1, "Password is required"),
+});
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
   const loginForm = useForm({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      companyName: "",
       password: "",
     },
   });
@@ -52,15 +59,20 @@ export default function AuthPage() {
 
               <TabsContent value="login">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}>
+                  <form 
+                    onSubmit={loginForm.handleSubmit((data) => {
+                      console.log('Submitting login form with data:', data);
+                      loginMutation.mutate(data);
+                    })}
+                  >
                     <FormField
                       control={loginForm.control}
-                      name="email"
+                      name="companyName"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>Organization Name</FormLabel>
                           <FormControl>
-                            <Input type="email" {...field} />
+                            <Input placeholder="Enter your organization name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -73,7 +85,7 @@ export default function AuthPage() {
                         <FormItem className="mb-6">
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" placeholder="Enter your password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -84,7 +96,7 @@ export default function AuthPage() {
                       className="w-full"
                       disabled={loginMutation.isPending}
                     >
-                      Login
+                      {loginMutation.isPending ? "Logging in..." : "Login"}
                     </Button>
                   </form>
                 </Form>

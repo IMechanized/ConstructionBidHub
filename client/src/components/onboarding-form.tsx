@@ -11,13 +11,34 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 
-const INDUSTRY_OPTIONS = [
-  "Construction",
-  "Engineering",
-  "Architecture",
-  "Infrastructure",
+const TRADE_OPTIONS = [
+  "General Contractor",
+  "Electrical",
+  "Plumbing",
+  "HVAC",
+  "Carpentry",
+  "Masonry",
+  "Painting",
+  "Roofing",
+  "Flooring",
+  "Landscaping",
+  "Concrete",
+  "Steel/Metal Work",
+  "Glass/Glazing",
+  "Insulation",
+  "Drywall",
+  "Other",
+];
+
+const MINORITY_GROUPS = [
+  "African American",
+  "Hispanic American",
+  "Asian Pacific American",
+  "Native American",
+  "Subcontinent Asian American",
   "Other",
 ];
 
@@ -42,7 +63,6 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // If user is already onboarded, redirect to dashboard
   useEffect(() => {
     if (user?.onboardingComplete) {
       navigate(`/dashboard/${userType}`);
@@ -56,8 +76,14 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
     defaultValues:
       userType === "contractor"
         ? {
-            industry: "",
+            trade: "",
             yearlyRevenue: "",
+            contact: "",
+            telephone: "",
+            cell: "",
+            email: "",
+            isMinorityOwned: false,
+            minorityGroup: "",
           }
         : {
             department: "",
@@ -72,20 +98,16 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
       });
-
-      // Force a refetch and wait for it to complete before redirecting
       queryClient.refetchQueries({ queryKey: ["/api/user"] })
         .then(() => {
           navigate(`/dashboard/${userType}`);
         })
         .catch((error) => {
           console.error("Error refetching user data:", error);
-          // Fallback navigation if refetch fails
           navigate(`/dashboard/${userType}`);
         });
     },
@@ -114,27 +136,79 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
                 <>
                   <FormField
                     control={form.control}
-                    name="industry"
+                    name="trade"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Industry</FormLabel>
+                        <FormLabel>Trade</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select your industry" />
+                              <SelectValue placeholder="Select your trade" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {INDUSTRY_OPTIONS.map((option) => (
+                            {TRADE_OPTIONS.map((option) => (
                               <SelectItem key={option} value={option}>
                                 {option}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Full Name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="telephone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telephone</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Office Phone" type="tel" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cell"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cell Phone</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Mobile Number" type="tel" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Business Email" type="email" />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -166,6 +240,54 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="isMinorityOwned"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Minority-Owned Business
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch("isMinorityOwned") && (
+                    <FormField
+                      control={form.control}
+                      name="minorityGroup"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minority Group</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select minority group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {MINORITY_GROUPS.map((group) => (
+                                <SelectItem key={group} value={group}>
+                                  {group}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </>
               ) : (
                 <>
@@ -211,7 +333,6 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
                   />
                 </>
               )}
-
               <Button
                 type="submit"
                 className="w-full mt-6"

@@ -8,8 +8,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
   userType: text("user_type", { enum: ["government", "contractor"] }).notNull(),
-  industry: text("industry"),
+  trade: text("trade"),
   yearlyRevenue: text("yearly_revenue"),
+  contact: text("contact"),
+  telephone: text("telephone"),
+  cell: text("cell"),
+  businessEmail: text("business_email"),
+  isMinorityOwned: boolean("is_minority_owned").default(false),
+  minorityGroup: text("minority_group"),
   department: text("department"),
   jurisdiction: text("jurisdiction"),
   onboardingComplete: boolean("onboarding_complete").default(false),
@@ -42,8 +48,14 @@ export const employees = pgTable("employees", {
 });
 
 export const contractorOnboardingSchema = z.object({
-  industry: z.string().min(1, "Industry is required"),
+  trade: z.string().min(1, "Trade is required"),
   yearlyRevenue: z.string().min(1, "Yearly revenue is required"),
+  contact: z.string().min(1, "Contact name is required"),
+  telephone: z.string().min(1, "Telephone number is required"),
+  cell: z.string().min(1, "Cell phone number is required"),
+  email: z.string().email("Invalid email address"),
+  isMinorityOwned: z.boolean(),
+  minorityGroup: z.string().optional(),
 });
 
 export const governmentOnboardingSchema = z.object({

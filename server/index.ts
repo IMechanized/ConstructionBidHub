@@ -1,7 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { log } from "./vite";
+import { log, setupVite, serveStatic } from "./vite";
 import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -55,13 +60,12 @@ const startServer = async (): Promise<void> => {
       res.status(status).json({ message });
     });
 
-    // Serve static files from the client/dist directory
-    app.use(express.static(join(__dirname, "../client/dist")));
-
-    // For any other routes, serve the index.html file
-    app.get("*", (_req, res) => {
-      res.sendFile(join(__dirname, "../client/dist/index.html"));
-    });
+    // Setup static file serving or Vite middleware based on environment
+    if (process.env.NODE_ENV === "production") {
+      serveStatic(app);
+    } else {
+      await setupVite(app, server);
+    }
 
     // Check if port is in use before attempting to listen
     server.on('error', (error: any) => {

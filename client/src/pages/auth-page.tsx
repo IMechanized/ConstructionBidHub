@@ -18,7 +18,7 @@ export default function AuthPage() {
 
   const loginForm = useForm({
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -26,11 +26,10 @@ export default function AuthPage() {
   const registerForm = useForm({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
-      username: "",
-      password: "",
       companyName: "",
-      userType: "contractor",
       email: "",
+      password: "",
+      userType: "contractor" as const,
     },
   });
 
@@ -56,12 +55,12 @@ export default function AuthPage() {
                   <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}>
                     <FormField
                       control={loginForm.control}
-                      name="username"
+                      name="email"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input type="email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -96,25 +95,12 @@ export default function AuthPage() {
                   <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>
                     <FormField
                       control={registerForm.control}
-                      name="username"
+                      name="companyName"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Organization Name</FormLabel>
                           <FormControl>
                             <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -135,12 +121,12 @@ export default function AuthPage() {
                     />
                     <FormField
                       control={registerForm.control}
-                      name="companyName"
+                      name="password"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel>Company Name</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -163,7 +149,7 @@ export default function AuthPage() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="contractor">Contractor</SelectItem>
-                              <SelectItem value="government">Government/Corporation</SelectItem>
+                              <SelectItem value="government">Government Organization</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

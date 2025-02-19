@@ -51,17 +51,20 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+    new LocalStrategy(
+      { usernameField: 'email' },
+      async (email, password, done) => {
+        try {
+          const user = await storage.getUserByUsername(email);
+          if (!user || !(await comparePasswords(password, user.password))) {
+            return done(null, false, { message: "Invalid email or password" });
+          }
+          return done(null, user);
+        } catch (error) {
+          return done(error);
         }
-        return done(null, user);
-      } catch (error) {
-        return done(error);
       }
-    }),
+    )
   );
 
   passport.serializeUser((user, done) => {
@@ -82,9 +85,9 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const existingUser = await storage.getUserByUsername(req.body.email);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ message: "Email already exists" });
       }
 
       const user = await storage.createUser({

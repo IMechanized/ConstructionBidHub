@@ -4,11 +4,10 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
+  email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
   userType: text("user_type", { enum: ["government", "contractor"] }).notNull(),
-  email: text("email").notNull(),
   industry: text("industry"),
   yearlyRevenue: text("yearly_revenue"),
   department: text("department"),
@@ -53,7 +52,6 @@ export const governmentOnboardingSchema = z.object({
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
   password: true,
   companyName: true,
   userType: true,

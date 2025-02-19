@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { createServer } from "http";
+import { log } from "./vite";
+import { join } from "path";
 
 const app = express();
 app.use(express.json());
@@ -40,9 +40,12 @@ app.use((req, res, next) => {
   next();
 });
 
-const startServer = async (port: number): Promise<void> => {
+const startServer = async (): Promise<void> => {
   try {
-    log(`Attempting to start server on port ${port}...`);
+    const PORT = 5000;
+    const HOST = "0.0.0.0";
+
+    log(`Starting server setup...`);
     const server = registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -52,44 +55,38 @@ const startServer = async (port: number): Promise<void> => {
       res.status(status).json({ message });
     });
 
-    log("Setting up environment...");
-    if (app.get("env") === "development") {
-      log("Development mode: Setting up Vite...");
-      await setupVite(app, server);
-    } else {
-      log("Production mode: Setting up static serving...");
-      serveStatic(app);
-    }
+    // Serve static files from the client/dist directory
+    app.use(express.static(join(__dirname, "../client/dist")));
 
-    return new Promise((resolve, reject) => {
-      const HOST = "0.0.0.0";
-
-      server.on('error', (error: any) => {
-        if (error.code === 'EADDRINUSE') {
-          log(`Port ${port} is in use, trying next port...`);
-          server.close();
-          resolve(startServer(port + 1));
-        } else {
-          console.error('Server error:', error);
-          reject(error);
-        }
-      });
-
-      server.listen(port, HOST, () => {
-        log(`Server started successfully on http://${HOST}:${port}`);
-        resolve();
-      });
+    // For any other routes, serve the index.html file
+    app.get("*", (_req, res) => {
+      res.sendFile(join(__dirname, "../client/dist/index.html"));
     });
+
+    // Check if port is in use before attempting to listen
+    server.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Please free up the port and try again.`);
+        process.exit(1);
+      } else {
+        console.error('Server error:', error);
+        process.exit(1);
+      }
+    });
+
+    server.listen(PORT, HOST, () => {
+      log(`Server started successfully on http://${HOST}:${PORT}`);
+    });
+
   } catch (error) {
     console.error("Failed to start server:", error);
-    throw error;
+    process.exit(1);
   }
 };
 
 (async () => {
   try {
-    const initialPort = parseInt(process.env.PORT || '5000', 10);
-    await startServer(initialPort);
+    await startServer();
   } catch (error) {
     console.error("Critical server error:", error);
     process.exit(1);

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { z } from "zod";
 
 const loginSchema = z.object({
-  companyName: z.string().min(1, "Organization name is required"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -25,7 +25,7 @@ export default function AuthPage() {
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      companyName: "",
+      email: "",
       password: "",
     },
   });
@@ -67,12 +67,12 @@ export default function AuthPage() {
                   >
                     <FormField
                       control={loginForm.control}
-                      name="companyName"
+                      name="email"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel>Organization Name</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your organization name" {...field} />
+                            <Input type="email" placeholder="Enter your email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

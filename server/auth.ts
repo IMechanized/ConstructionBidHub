@@ -52,26 +52,26 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(
-      { usernameField: 'companyName' },
-      async (companyName: string, password: string, done: any) => {
+      { usernameField: 'email' },
+      async (email: string, password: string, done: any) => {
         try {
-          console.log(`[Auth] Login attempt with payload:`, { companyName });
-          const user = await storage.getUserByUsername(companyName);
+          console.log(`[Auth] Login attempt with email:`, email);
+          const user = await storage.getUserByUsername(email);
 
           if (!user) {
-            console.log(`[Auth] No user found for company: ${companyName}`);
-            return done(null, false, { message: "Invalid company name or password" });
+            console.log(`[Auth] No user found for email: ${email}`);
+            return done(null, false, { message: "Invalid email or password" });
           }
 
           console.log(`[Auth] User found, verifying password`);
           const isValidPassword = await comparePasswords(password, user.password);
 
           if (!isValidPassword) {
-            console.log(`[Auth] Invalid password for company: ${companyName}`);
-            return done(null, false, { message: "Invalid company name or password" });
+            console.log(`[Auth] Invalid password for email: ${email}`);
+            return done(null, false, { message: "Invalid email or password" });
           }
 
-          console.log(`[Auth] Login successful for company: ${companyName}`);
+          console.log(`[Auth] Login successful for email: ${email}`);
           return done(null, user);
         } catch (error) {
           console.error(`[Auth] Error during authentication:`, error);
@@ -104,11 +104,11 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log(`[Auth] Registration attempt for company: ${req.body.companyName}`);
-      const existingUser = await storage.getUserByUsername(req.body.companyName);
+      console.log(`[Auth] Registration attempt for email: ${req.body.email}`);
+      const existingUser = await storage.getUserByUsername(req.body.email);
       if (existingUser) {
-        console.log(`[Auth] Registration failed - company already exists: ${req.body.companyName}`);
-        return res.status(400).json({ message: "Company name already exists" });
+        console.log(`[Auth] Registration failed - email already exists: ${req.body.email}`);
+        return res.status(400).json({ message: "Email already exists" });
       }
 
       const hashedPassword = await hashPassword(req.body.password);
@@ -136,9 +136,9 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     console.log(`[Auth] Login request received with body:`, req.body);
 
-    if (!req.body.companyName || !req.body.password) {
+    if (!req.body.email || !req.body.password) {
       console.log(`[Auth] Missing credentials in request`);
-      return res.status(400).json({ message: "Company name and password are required" });
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {

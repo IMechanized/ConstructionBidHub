@@ -7,7 +7,7 @@ const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByUsername(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
   deleteUser(id: number): Promise<void>;
@@ -73,9 +73,9 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.email === username,
+      (user) => user.email === email,
     );
   }
 
@@ -159,7 +159,6 @@ export class MemStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<void> {
-    // Use Array.from to avoid iteration issues
     const bidsToDelete = Array.from(this.bids.entries())
       .filter(([_, bid]) => bid.contractorId === id)
       .map(([id]) => id);

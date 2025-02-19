@@ -11,6 +11,7 @@ import { Loader2, Search } from "lucide-react";
 import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import SettingsForm from "@/components/settings-form";
 
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -65,6 +66,7 @@ export default function ContractorDashboard() {
             <TabsTrigger value="rfps">Available RFPs</TabsTrigger>
             <TabsTrigger value="bids">My Bids</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rfps">
@@ -141,6 +143,10 @@ export default function ContractorDashboard() {
 
           <TabsContent value="employees">
             <EmployeeManagement />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsForm />
           </TabsContent>
         </Tabs>
       </main>

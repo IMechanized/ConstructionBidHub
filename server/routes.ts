@@ -156,6 +156,59 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update user settings
+  app.post("/api/user/settings", async (req, res) => {
+    requireAuth(req);
+    const user = req.user!;
+
+    try {
+      const updatedUser = await storage.updateUser(user.id, {
+        ...req.body,
+      });
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update settings" });
+    }
+  });
+
+  // Deactivate user account
+  app.post("/api/user/deactivate", async (req, res) => {
+    requireAuth(req);
+    const user = req.user!;
+
+    try {
+      const updatedUser = await storage.updateUser(user.id, {
+        status: "deactivated",
+      });
+      req.logout((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error logging out" });
+        }
+        res.json(updatedUser);
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to deactivate account" });
+    }
+  });
+
+  // Delete user account
+  app.delete("/api/user", async (req, res) => {
+    requireAuth(req);
+    const user = req.user!;
+
+    try {
+      await storage.deleteUser(user.id);
+      req.logout((err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error logging out" });
+        }
+        res.json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   department: text("department"),
   jurisdiction: text("jurisdiction"),
   onboardingComplete: boolean("onboarding_complete").default(false),
+  status: text("status", { enum: ["active", "deactivated"] }).default("active"),
 });
 
 export const rfps = pgTable("rfps", {

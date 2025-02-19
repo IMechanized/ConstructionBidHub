@@ -59,8 +59,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use environment port or fallback to 5000
-  const PORT = parseInt(process.env.PORT || '5000', 10);
+  // Use environment port or fallback to 5001 (changed from 5000)
+  const PORT = parseInt(process.env.PORT || '5001', 10);
   const HOST = "0.0.0.0";
 
   // Kill any existing process on the port before starting

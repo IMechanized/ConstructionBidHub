@@ -10,6 +10,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
 
   getRfps(): Promise<Rfp[]>;
   getRfpById(id: number): Promise<Rfp | undefined>;
@@ -51,11 +52,18 @@ export class MemStorage implements IStorage {
     const user: User = {
       id,
       ...insertUser,
-      industry: null,
+      trade: null,
       yearlyRevenue: null,
+      contact: null,
+      telephone: null,
+      cell: null,
+      businessEmail: null,
+      isMinorityOwned: false,
+      minorityGroup: null,
       department: null,
       jurisdiction: null,
       onboardingComplete: false,
+      status: "active",
     };
     this.users.set(id, user);
     return user;
@@ -67,7 +75,7 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === username,
     );
   }
 
@@ -91,7 +99,13 @@ export class MemStorage implements IStorage {
 
   async createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp> {
     const id = this.currentId.rfps++;
-    const newRfp: Rfp = { ...rfp, id, status: "open" };
+    const newRfp: Rfp = { 
+      ...rfp, 
+      id, 
+      status: "open",
+      deadline: new Date(rfp.deadline),
+      organizationId: rfp.organizationId 
+    };
     this.rfps.set(id, newRfp);
     return newRfp;
   }
@@ -128,6 +142,7 @@ export class MemStorage implements IStorage {
       emp => emp.organizationId === organizationId
     );
   }
+
   async getEmployee(id: number): Promise<Employee | undefined> {
     return this.employees.get(id);
   }
@@ -141,6 +156,26 @@ export class MemStorage implements IStorage {
 
   async deleteEmployee(id: number): Promise<void> {
     this.employees.delete(id);
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    // Use Array.from to avoid iteration issues
+    const bidsToDelete = Array.from(this.bids.entries())
+      .filter(([_, bid]) => bid.contractorId === id)
+      .map(([id]) => id);
+
+    const employeesToDelete = Array.from(this.employees.entries())
+      .filter(([_, emp]) => emp.organizationId === id)
+      .map(([id]) => id);
+
+    const rfpsToDelete = Array.from(this.rfps.entries())
+      .filter(([_, rfp]) => rfp.organizationId === id)
+      .map(([id]) => id);
+
+    bidsToDelete.forEach(id => this.bids.delete(id));
+    employeesToDelete.forEach(id => this.employees.delete(id));
+    rfpsToDelete.forEach(id => this.rfps.delete(id));
+    this.users.delete(id);
   }
 }
 

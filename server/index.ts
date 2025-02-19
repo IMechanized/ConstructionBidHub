@@ -6,6 +6,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Disable HMR overlay through environment variable
+process.env.VITE_DISABLE_HMR_OVERLAY = "true";
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

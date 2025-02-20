@@ -1,4 +1,6 @@
-import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee } from "@shared/schema";
+import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee, users, rfps, bids, employees } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
@@ -30,152 +32,118 @@ export interface IStorage {
   sessionStore: Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private rfps: Map<number, Rfp>;
-  private bids: Map<number, Bid>;
-  private employees: Map<number, Employee>;
+export class DatabaseStorage implements IStorage {
   sessionStore: Store;
-  private currentId: { [key: string]: number };
 
   constructor() {
-    this.users = new Map();
-    this.rfps = new Map();
-    this.bids = new Map();
-    this.employees = new Map();
-    this.currentId = { users: 1, rfps: 1, bids: 1, employees: 1 };
     this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId.users++;
-    const user: User = {
-      id,
-      ...insertUser,
-      trade: null,
-      yearlyRevenue: null,
-      contact: null,
-      telephone: null,
-      cell: null,
-      businessEmail: null,
-      isMinorityOwned: false,
-      minorityGroup: null,
-      department: null,
-      jurisdiction: null,
-      onboardingComplete: false,
-      status: "active",
-    };
-    this.users.set(id, user);
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUserByUsername(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
-  async getUserByUsername(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User> {
-    const existing = await this.getUser(id);
-    if (!existing) {
-      throw new Error("User not found");
-    }
-    const updated = { ...existing, ...updates };
-    this.users.set(id, updated);
-    return updated;
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    if (!user) throw new Error("User not found");
+    return user;
   }
 
   async getRfps(): Promise<Rfp[]> {
-    return Array.from(this.rfps.values());
+    return db.select().from(rfps);
   }
 
   async getRfpById(id: number): Promise<Rfp | undefined> {
-    return this.rfps.get(id);
+    const [rfp] = await db.select().from(rfps).where(eq(rfps.id, id));
+    return rfp;
   }
 
   async createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp> {
-    const id = this.currentId.rfps++;
-    const newRfp: Rfp = { 
-      ...rfp, 
-      id, 
-      status: "open",
-      deadline: new Date(rfp.deadline),
-      organizationId: rfp.organizationId 
-    };
-    this.rfps.set(id, newRfp);
+    const [newRfp] = await db
+      .insert(rfps)
+      .values({
+        ...rfp,
+        status: "open" as const,
+        deadline: new Date(rfp.deadline)
+      })
+      .returning();
     return newRfp;
   }
 
-  async updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp> {
-    const existing = await this.getRfpById(id);
-    if (!existing) throw new Error("RFP not found");
-    const updated = { ...existing, ...rfp };
-    this.rfps.set(id, updated);
-    return updated;
-  }
-
-  async deleteRfp(id: number): Promise<void> {
-    this.rfps.delete(id);
+  async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {
+    const [rfp] = await db
+      .update(rfps)
+      .set(updates)
+      .where(eq(rfps.id, id))
+      .returning();
+    if (!rfp) throw new Error("RFP not found");
+    return rfp;
   }
 
   async getBids(rfpId: number): Promise<Bid[]> {
-    return Array.from(this.bids.values()).filter(bid => bid.rfpId === rfpId);
+    return db.select().from(bids).where(eq(bids.rfpId, rfpId));
   }
 
   async createBid(bid: InsertBid & { rfpId: number; contractorId: number }): Promise<Bid> {
-    const id = this.currentId.bids++;
-    const newBid: Bid = { ...bid, id };
-    this.bids.set(id, newBid);
+    const [newBid] = await db.insert(bids).values(bid).returning();
     return newBid;
   }
 
-  async deleteBid(id: number): Promise<void> {
-    this.bids.delete(id);
-  }
-
   async getEmployees(organizationId: number): Promise<Employee[]> {
-    return Array.from(this.employees.values()).filter(
-      emp => emp.organizationId === organizationId
-    );
+    return db
+      .select()
+      .from(employees)
+      .where(eq(employees.organizationId, organizationId));
   }
 
   async getEmployee(id: number): Promise<Employee | undefined> {
-    return this.employees.get(id);
+    const [employee] = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.id, id));
+    return employee;
   }
 
-  async createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee> {
-    const id = this.currentId.employees++;
-    const newEmployee: Employee = { ...employee, id, status: "pending" };
-    this.employees.set(id, newEmployee);
+  async createEmployee(
+    employee: InsertEmployee & { organizationId: number }
+  ): Promise<Employee> {
+    const [newEmployee] = await db
+      .insert(employees)
+      .values({ ...employee, status: "pending" })
+      .returning();
     return newEmployee;
   }
 
-  async deleteEmployee(id: number): Promise<void> {
-    this.employees.delete(id);
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
-  async deleteUser(id: number): Promise<void> {
-    const bidsToDelete = Array.from(this.bids.entries())
-      .filter(([_, bid]) => bid.contractorId === id)
-      .map(([id]) => id);
+  async deleteRfp(id: number): Promise<void> {
+    await db.delete(rfps).where(eq(rfps.id, id));
+  }
 
-    const employeesToDelete = Array.from(this.employees.entries())
-      .filter(([_, emp]) => emp.organizationId === id)
-      .map(([id]) => id);
+  async deleteBid(id: number): Promise<void> {
+    await db.delete(bids).where(eq(bids.id, id));
+  }
 
-    const rfpsToDelete = Array.from(this.rfps.entries())
-      .filter(([_, rfp]) => rfp.organizationId === id)
-      .map(([id]) => id);
-
-    bidsToDelete.forEach(id => this.bids.delete(id));
-    employeesToDelete.forEach(id => this.employees.delete(id));
-    rfpsToDelete.forEach(id => this.rfps.delete(id));
-    this.users.delete(id);
+  async deleteEmployee(id: number): Promise<void> {
+    await db.delete(employees).where(eq(employees.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

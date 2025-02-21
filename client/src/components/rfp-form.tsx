@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Loader2 } from "lucide-react";
+import { LoadingOverlay } from "@/components/ui/loader";
 
 export default function RfpForm() {
   const { toast } = useToast();
@@ -17,7 +19,7 @@ export default function RfpForm() {
       title: "",
       description: "",
       budget: 0,
-      deadline: new Date().toISOString().split('T')[0], // Set default to today's date
+      deadline: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -51,8 +53,12 @@ export default function RfpForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data) => createRfpMutation.mutate(data))}
-        className="space-y-6 bg-card p-6 rounded-lg border"
+        className="space-y-6 bg-card p-6 rounded-lg border relative"
       >
+        {createRfpMutation.isPending && (
+          <LoadingOverlay message="Creating RFP..." />
+        )}
+
         <h2 className="text-lg font-semibold">Create New RFP</h2>
 
         <FormField
@@ -123,7 +129,14 @@ export default function RfpForm() {
           className="w-full"
           disabled={createRfpMutation.isPending}
         >
-          Create RFP
+          {createRfpMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            "Create RFP"
+          )}
         </Button>
       </form>
     </Form>

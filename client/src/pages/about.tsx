@@ -2,11 +2,11 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8">About GovBids</h1>
-        
+        <h1 className="text-4xl font-bold mb-8">About FindConstructionBids</h1>
+
         <div className="prose prose-slate max-w-none">
           <p className="lead">
-            GovBids is a comprehensive construction bid management platform that revolutionizes 
+            FindConstructionBids is a comprehensive construction bid management platform that revolutionizes 
             how government organizations and contractors interact through intelligent RFP creation, 
             bidding, and management workflows.
           </p>
@@ -30,7 +30,7 @@ export default function AboutPage() {
 
           <h2>Our Values</h2>
           <p>
-            At GovBids, we believe in transparency, efficiency, and fairness. Our platform 
+            At FindConstructionBids, we believe in transparency, efficiency, and fairness. Our platform 
             is designed to level the playing field for all contractors while helping government 
             organizations make informed decisions about their construction projects.
           </p>

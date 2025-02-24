@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">GovBids</h3>
+            <h3 className="text-xl font-semibold">FindConstructionBids</h3>
             <p className="text-muted-foreground text-sm">
               Streamlining government contracting through intelligent RFP management.
             </p>
@@ -54,7 +54,7 @@ export function Footer() {
             <h4 className="font-medium mb-4">Contact</h4>
             <ul className="space-y-2">
               <li className="text-sm text-muted-foreground">
-                Email: contact@govbids.com
+                Email: contact@findconstructionbids.com
               </li>
               <li className="text-sm text-muted-foreground">
                 Phone: (555) 123-4567
@@ -99,7 +99,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t">
           <p className="text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} GovBids. All rights reserved.
+            © {new Date().getFullYear()} FindConstructionBids. All rights reserved.
           </p>
         </div>
       </div>

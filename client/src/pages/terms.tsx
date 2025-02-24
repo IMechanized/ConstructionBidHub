@@ -3,15 +3,15 @@ export default function TermsPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8">Terms and Conditions</h1>
-        
+
         <div className="prose prose-slate max-w-none">
           <p className="lead">
-            Please read these terms and conditions carefully before using the GovBids platform.
+            Please read these terms and conditions carefully before using the FindConstructionBids platform.
           </p>
 
           <h2>1. Acceptance of Terms</h2>
           <p>
-            By accessing and using the GovBids platform, you acknowledge that you have read, 
+            By accessing and using the FindConstructionBids platform, you acknowledge that you have read, 
             understood, and agree to be bound by these Terms and Conditions.
           </p>
 
@@ -50,7 +50,7 @@ export default function TermsPage() {
 
           <h2>6. Liability</h2>
           <p>
-            GovBids is not liable for any indirect, incidental, special, consequential, 
+            FindConstructionBids is not liable for any indirect, incidental, special, consequential, 
             or punitive damages resulting from your use of the platform.
           </p>
 
@@ -63,7 +63,7 @@ export default function TermsPage() {
           <h2>8. Contact Information</h2>
           <p>
             For questions about these Terms and Conditions, please contact us at:
-            legal@govbids.com
+            legal@findconstructionbids.com
           </p>
         </div>
       </main>

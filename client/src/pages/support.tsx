@@ -7,7 +7,7 @@ export default function SupportPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8">Support Center</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <Card>
             <CardContent className="pt-6">
@@ -18,7 +18,7 @@ export default function SupportPage() {
                   Get help via email within 24 hours
                 </p>
                 <Button variant="outline">
-                  <a href="mailto:support@govbids.com">
+                  <a href="mailto:support@findconstructionbids.com">
                     Contact Support
                   </a>
                 </Button>

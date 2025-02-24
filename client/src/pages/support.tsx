@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MessageSquare } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 
 export default function SupportPage() {
   return (
@@ -8,7 +8,7 @@ export default function SupportPage() {
       <main className="container mx-auto px-6 py-12">
         <h1 className="text-4xl font-bold mb-8">Support Center</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
@@ -38,21 +38,6 @@ export default function SupportPage() {
                   <a href="tel:+15551234567">
                     Call Us
                   </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Live Chat</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Chat with us during business hours
-                </p>
-                <Button variant="outline">
-                  Start Chat
                 </Button>
               </div>
             </CardContent>
@@ -87,6 +72,51 @@ export default function SupportPage() {
                 submitting business documentation, licenses, and insurance 
                 certificates. Government organizations must verify their department 
                 credentials.
+              </p>
+            </div>
+
+            <div>
+              <h3>How do I manage my team members?</h3>
+              <p>
+                Organization administrators can manage team members through the Team 
+                Management section in the dashboard. Here you can invite new members, 
+                set roles and permissions, and manage access levels.
+              </p>
+            </div>
+
+            <div>
+              <h3>Can I update or withdraw my bid?</h3>
+              <p>
+                Yes, you can modify or withdraw your bid before the RFP deadline. 
+                Navigate to your submitted bids in the dashboard, select the bid 
+                you wish to modify, and use the edit or withdraw options.
+              </p>
+            </div>
+
+            <div>
+              <h3>How are minority-owned businesses verified?</h3>
+              <p>
+                Minority-owned businesses can submit their certification documentation 
+                during the onboarding process. Our team verifies these credentials 
+                within 2-3 business days.
+              </p>
+            </div>
+
+            <div>
+              <h3>What happens after I submit a bid?</h3>
+              <p>
+                After submission, your bid is reviewed by the government organization. 
+                You'll receive notifications about bid status changes and can track 
+                progress through your dashboard.
+              </p>
+            </div>
+
+            <div>
+              <h3>How do I track RFP deadlines?</h3>
+              <p>
+                Your dashboard includes a calendar view of all RFP deadlines. You can 
+                also set up email notifications for approaching deadlines in your 
+                notification preferences.
               </p>
             </div>
           </div>

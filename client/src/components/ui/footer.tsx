@@ -20,30 +20,30 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/about">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                     About
-                  </a>
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/auth">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                     Register
-                  </a>
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/support">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                     Support
-                  </a>
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/terms">
-                  <a className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                     Terms & Conditions
-                  </a>
+                  </span>
                 </Link>
               </li>
             </ul>

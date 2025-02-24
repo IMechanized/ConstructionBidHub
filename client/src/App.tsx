@@ -10,12 +10,18 @@ import ContractorDashboard from "@/pages/dashboard/contractor";
 import GovernmentDashboard from "@/pages/dashboard/government";
 import OnboardingForm from "@/components/onboarding-form";
 import { ProtectedRoute } from "./lib/protected-route";
+import AboutPage from "@/pages/about";
+import SupportPage from "@/pages/support";
+import TermsPage from "@/pages/terms";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/support" component={SupportPage} />
+      <Route path="/terms" component={TermsPage} />
       <Route path="/onboarding/:userType" component={({ params }) => (
         <ProtectedRoute
           path="/onboarding/:userType"

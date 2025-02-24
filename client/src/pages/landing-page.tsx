@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Building2, GanttChart, Users, CheckCircle } from "lucide-react";
+import { Footer } from "@/components/ui/footer";
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -83,6 +84,8 @@ export default function LandingPage() {
           </Button>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -25,6 +26,8 @@ type LoginData = {
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
+
   const {
     data: user,
     error,
@@ -40,10 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      console.log('Sending login request with credentials:', {
-        email: credentials.email,
-        password: '[REDACTED]'
-      });
       const res = await apiRequest("POST", "/api/login", credentials);
       if (!res.ok) {
         const error = await res.json();
@@ -53,6 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      if (!user.onboardingComplete) {
+        navigate("/onboarding");
+      } else {
+        navigate("/dashboard");
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -70,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      navigate("/onboarding");
     },
     onError: (error: Error) => {
       toast({
@@ -86,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -50,6 +50,7 @@ export default function OnboardingForm() {
   const { user } = useAuth();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user?.onboardingComplete) {
@@ -68,7 +69,7 @@ export default function OnboardingForm() {
       minorityGroup: "",
       trade: "",
       certificationName: "",
-      logo: "",
+      logo: undefined,
     },
   });
 
@@ -101,12 +102,20 @@ export default function OnboardingForm() {
     },
   });
 
+  const resetForm = () => {
+    form.reset();
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (data: any) => {
     try {
       let logoUrl = data.logo;
-      if (data.logo instanceof FileList && data.logo.length > 0) {
+      if (data.logo instanceof File) {
         setIsUploading(true);
-        logoUrl = await uploadToCloudinary(data.logo[0]);
+        logoUrl = await uploadToCloudinary(data.logo);
       }
 
       const formData = {
@@ -134,6 +143,7 @@ export default function OnboardingForm() {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+      form.setValue('logo', file);
     }
   };
 
@@ -251,7 +261,7 @@ export default function OnboardingForm() {
               <FormField
                 control={form.control}
                 name="logo"
-                render={({ field: { onChange, ...field } }) => (
+                render={({ field: { onChange, value, ...field } }) => (
                   <FormItem>
                     <FormLabel>Company Logo</FormLabel>
                     <FormControl>
@@ -280,12 +290,10 @@ export default function OnboardingForm() {
                           <input
                             id="logo-upload"
                             type="file"
+                            ref={fileInputRef}
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
-                              onChange(e.target.files);
-                              handleLogoChange(e);
-                            }}
+                            onChange={handleLogoChange}
                             disabled={isUploading}
                             {...field}
                           />

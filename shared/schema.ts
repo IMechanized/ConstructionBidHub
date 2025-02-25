@@ -97,16 +97,13 @@ export const insertRfpSchema = createInsertSchema(rfps)
     budgetMin: z.number().min(0, "Minimum budget must be a positive number").optional(),
     budgetMax: z.number().min(0, "Maximum budget must be a positive number")
       .optional()
-      .refine(
-        (val, ctx) => {
-          const budgetMin = ctx.parent.budgetMin;
-          if (budgetMin && val && val < budgetMin) {
-            return false;
-          }
-          return true;
-        },
-        "Maximum budget must be greater than minimum budget"
-      ),
+      .refine((budgetMax, { input }) => {
+        const { budgetMin } = input as { budgetMin?: number };
+        if (budgetMin && budgetMax && budgetMax < budgetMin) {
+          return false;
+        }
+        return true;
+      }, "Maximum budget must be greater than minimum budget"),
     jobLocation: z.string().min(1, "Job location is required"),
     certificationGoals: z.string().optional(),
     portfolioLink: z.string().url("Portfolio link must be a valid URL").optional(),

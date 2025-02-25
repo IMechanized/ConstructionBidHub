@@ -9,9 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
-import { LoadingOverlay } from "@/components/ui/loader";
 
-export default function RfpForm() {
+interface RfpFormProps {
+  onSuccess?: () => void;
+}
+
+export default function RfpForm({ onSuccess }: RfpFormProps) {
   const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(insertRfpSchema),
@@ -44,6 +47,7 @@ export default function RfpForm() {
         title: "RFP Created",
         description: "Your RFP has been successfully created",
       });
+      onSuccess?.();
     },
     onError: (error: Error) => {
       toast({
@@ -58,14 +62,8 @@ export default function RfpForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data) => createRfpMutation.mutate(data))}
-        className="space-y-6 bg-card p-6 rounded-lg border relative"
+        className="space-y-6"
       >
-        {createRfpMutation.isPending && (
-          <LoadingOverlay message="Creating RFP..." />
-        )}
-
-        <h2 className="text-lg font-semibold">Create New RFP</h2>
-
         <FormField
           control={form.control}
           name="title"
@@ -198,20 +196,28 @@ export default function RfpForm() {
           )}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={createRfpMutation.isPending}
-        >
-          {createRfpMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            "Create RFP"
-          )}
-        </Button>
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={form.reset}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={createRfpMutation.isPending}
+          >
+            {createRfpMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create RFP"
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );

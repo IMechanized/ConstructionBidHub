@@ -34,11 +34,23 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received');
-      requireAuth(req); // Added authentication check
+
+      // Check authentication first
+      try {
+        requireAuth(req);
+      } catch (error) {
+        console.log('Authentication failed:', error);
+        return res.status(401).json({ message: "Authentication required" });
+      }
 
       if (!req.file) {
         console.log('No file in request');
         return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      if (!req.file.mimetype.startsWith('image/')) {
+        console.log('Invalid file type:', req.file.mimetype);
+        return res.status(400).json({ message: "Only image files are allowed" });
       }
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
@@ -57,7 +69,10 @@ export function registerRoutes(app: Express): Server {
       res.json({ url: result.secure_url });
     } catch (error) {
       console.error('Upload error:', error);
-      res.status(500).json({ message: "Failed to upload file" });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to upload file",
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      });
     }
   });
 

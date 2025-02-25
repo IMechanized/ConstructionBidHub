@@ -94,24 +94,23 @@ export const insertRfpSchema = createInsertSchema(rfps)
     walkthroughDate: z.string(),
     rfiDate: z.string(),
     deadline: z.string(),
-    budgetMin: z.number().min(0, "Minimum budget must be a positive number").optional().nullable(),
+    budgetMin: z.number().min(0, "Minimum budget must be a positive number")
+      .nullish(),
     budgetMax: z.number().min(0, "Maximum budget must be a positive number")
-      .optional()
-      .nullable()
+      .nullish()
       .superRefine((budgetMax, ctx) => {
-        const { budgetMin } = ctx.parent;
+        const budgetMin = ctx.path[0] === 'budgetMax' ? 
+          (ctx.parent as any).budgetMin : null;
         if (budgetMin && budgetMax && budgetMax < budgetMin) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Maximum budget must be greater than minimum budget",
           });
-          return false;
         }
-        return true;
       }),
     jobLocation: z.string().min(1, "Job location is required"),
-    certificationGoals: z.string().optional().nullable(),
-    portfolioLink: z.string().url("Portfolio link must be a valid URL").optional().nullable(),
+    certificationGoals: z.string().nullish(),
+    portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish(),
   });
 
 export const insertBidSchema = createInsertSchema(bids).pick({

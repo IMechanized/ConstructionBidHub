@@ -78,8 +78,15 @@ export class DatabaseStorage implements IStorage {
       .insert(rfps)
       .values({
         ...rfp,
-        status: "open" as const,
-        deadline: new Date(rfp.deadline)
+        walkthroughDate: new Date(rfp.walkthroughDate),
+        rfiDate: new Date(rfp.rfiDate),
+        deadline: new Date(rfp.deadline),
+        jobLocation: rfp.jobLocation,
+        budgetMin: rfp.budgetMin || null,
+        budgetMax: rfp.budgetMax || null,
+        certificationGoals: rfp.certificationGoals || null,
+        portfolioLink: rfp.portfolioLink || null,
+        organizationId: rfp.organizationId,
       })
       .returning();
     return newRfp;

@@ -21,13 +21,18 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
-      <Route path="/onboarding" component={() => (
+      <Route path="/onboarding">
         <ProtectedRoute
           path="/onboarding"
           component={OnboardingForm}
         />
-      )} />
-      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      </Route>
+      <Route path="/dashboard">
+        <ProtectedRoute
+          path="/dashboard"
+          component={Dashboard}
+        />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

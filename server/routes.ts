@@ -3,6 +3,23 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, onboardingSchema } from "@shared/schema";
+import { v2 as cloudinary } from 'cloudinary';
+import multer from 'multer';
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure multer for handling file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
 
 function requireAuth(req: Request) {
   if (!req.isAuthenticated()) {
@@ -13,13 +30,36 @@ function requireAuth(req: Request) {
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
+  // File upload endpoint
+  app.post("/api/upload", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Convert buffer to base64
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'auto',
+        folder: 'construction-bids',
+      });
+
+      res.json({ url: result.secure_url });
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
   // New onboarding endpoint
   app.post("/api/user/onboarding", async (req, res) => {
     requireAuth(req);
     const user = req.user!;
 
     try {
-      // Validate the data with unified onboarding schema
       onboardingSchema.parse(req.body);
 
       const updatedUser = await storage.updateUser(user.id, {

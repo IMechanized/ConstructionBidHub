@@ -26,16 +26,6 @@ export default function ContractorDashboard() {
     queryKey: ["/api/rfps/bids"],
   });
 
-  useEffect(() => {
-    if (user?.userType !== "contractor") {
-      toast({
-        title: "Unauthorized",
-        description: "You must be a contractor to view this page",
-        variant: "destructive",
-      });
-    }
-  }, [user, toast]);
-
   const filteredRfps = rfps?.filter(
     (rfp) =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,6 +40,13 @@ export default function ContractorDashboard() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">FindConstructionBids</h1>
           <div className="flex items-center gap-4">
+            {user?.logo && (
+              <img
+                src={user.logo}
+                alt={`${user.companyName} logo`}
+                className="h-8 w-8 object-contain"
+              />
+            )}
             <span className="text-sm text-muted-foreground">
               {user?.companyName}
             </span>
@@ -102,7 +99,7 @@ export default function ContractorDashboard() {
                           <span className="font-medium">Budget:</span>
                           <span>
                             {rfp.budgetMin
-                              ? `Minimum $${rfp.budgetMin.toLocaleString()}`
+                              ? `$${rfp.budgetMin.toLocaleString()}`
                               : "Not specified"}
                           </span>
                         </div>
@@ -124,20 +121,6 @@ export default function ContractorDashboard() {
                         <div className="mb-4">
                           <h4 className="text-sm font-medium mb-1">Certification Goals:</h4>
                           <p className="text-sm text-muted-foreground">{rfp.certificationGoals}</p>
-                        </div>
-                      )}
-
-                      {rfp.portfolioLink && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium mb-1">Portfolio:</h4>
-                          <a
-                            href={rfp.portfolioLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
-                          >
-                            View Portfolio
-                          </a>
                         </div>
                       )}
 

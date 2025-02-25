@@ -13,7 +13,8 @@ import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const TRADE_OPTIONS = [
   "General Contractor",
@@ -48,6 +49,7 @@ export default function OnboardingForm() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (user?.onboardingComplete) {
@@ -66,12 +68,12 @@ export default function OnboardingForm() {
       minorityGroup: "",
       trade: "",
       certificationName: "",
-      logo: undefined,
+      logo: "",
     },
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/user/onboarding", data);
       return res.json();
     },
@@ -100,15 +102,28 @@ export default function OnboardingForm() {
   });
 
   const handleSubmit = async (data: any) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (key === 'logo' && data[key]?.[0]) {
-        formData.append('logo', data[key][0]);
-      } else if (data[key] !== undefined) {
-        formData.append(key, data[key]);
+    try {
+      let logoUrl = data.logo;
+      if (data.logo instanceof FileList && data.logo.length > 0) {
+        setIsUploading(true);
+        logoUrl = await uploadToCloudinary(data.logo[0]);
       }
-    });
-    updateProfileMutation.mutate(formData);
+
+      const formData = {
+        ...data,
+        logo: logoUrl,
+      };
+
+      updateProfileMutation.mutate(formData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,7 +260,12 @@ export default function OnboardingForm() {
                           htmlFor="logo-upload"
                           className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors"
                         >
-                          {logoPreview ? (
+                          {isUploading ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="h-8 w-8 animate-spin" />
+                              <span>Uploading...</span>
+                            </div>
+                          ) : logoPreview ? (
                             <img
                               src={logoPreview}
                               alt="Logo preview"
@@ -266,6 +286,7 @@ export default function OnboardingForm() {
                               onChange(e.target.files);
                               handleLogoChange(e);
                             }}
+                            disabled={isUploading}
                             {...field}
                           />
                         </label>
@@ -329,9 +350,16 @@ export default function OnboardingForm() {
               <Button
                 type="submit"
                 className="w-full mt-6"
-                disabled={updateProfileMutation.isPending}
+                disabled={updateProfileMutation.isPending || isUploading}
               >
-                Complete Profile
+                {updateProfileMutation.isPending || isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    {isUploading ? "Uploading..." : "Saving..."}
+                  </>
+                ) : (
+                  "Complete Profile"
+                )}
               </Button>
             </form>
           </Form>

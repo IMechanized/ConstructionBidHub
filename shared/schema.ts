@@ -7,9 +7,6 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
-  userType: text("user_type", { enum: ["government", "contractor"] }).notNull(),
-  trade: text("trade"),
-  yearlyRevenue: text("yearly_revenue"),
   contact: text("contact"),
   telephone: text("telephone"),
   cell: text("cell"),
@@ -53,26 +50,21 @@ export const employees = pgTable("employees", {
   status: text("status", { enum: ["pending", "active"] }).default("pending"),
 });
 
-export const contractorOnboardingSchema = z.object({
-  trade: z.string().min(1, "Trade is required"),
-  yearlyRevenue: z.string().min(1, "Yearly revenue is required"),
+// Unified onboarding schema
+export const onboardingSchema = z.object({
   contact: z.string().min(1, "Contact name is required"),
   telephone: z.string().min(1, "Telephone number is required"),
   cell: z.string().min(1, "Cell phone number is required"),
-  email: z.string().email("Invalid email address"),
+  businessEmail: z.string().email("Invalid email address"),
   isMinorityOwned: z.boolean(),
   minorityGroup: z.string().optional(),
-});
-
-export const governmentOnboardingSchema = z.object({
-  department: z.string().min(1, "Department is required"),
-  jurisdiction: z.string().min(1, "Jurisdiction is required"),
+  department: z.string().optional(),
+  jurisdiction: z.string().optional(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   companyName: true,
-  userType: true,
   email: true,
 });
 

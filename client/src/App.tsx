@@ -6,8 +6,7 @@ import { AuthProvider } from "./hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import LandingPage from "@/pages/landing-page";
-import ContractorDashboard from "@/pages/dashboard/contractor";
-import GovernmentDashboard from "@/pages/dashboard/government";
+import Dashboard from "@/pages/dashboard";
 import OnboardingForm from "@/components/onboarding-form";
 import { ProtectedRoute } from "./lib/protected-route";
 import AboutPage from "@/pages/about";
@@ -22,14 +21,13 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
-      <Route path="/onboarding/:userType" component={({ params }) => (
+      <Route path="/onboarding" component={() => (
         <ProtectedRoute
-          path="/onboarding/:userType"
-          component={() => <OnboardingForm userType={params.userType as "contractor" | "government"} />}
+          path="/onboarding"
+          component={OnboardingForm}
         />
       )} />
-      <ProtectedRoute path="/dashboard/contractor" component={ContractorDashboard} />
-      <ProtectedRoute path="/dashboard/government" component={GovernmentDashboard} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );

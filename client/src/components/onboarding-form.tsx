@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { contractorOnboardingSchema, governmentOnboardingSchema } from "@shared/schema";
+import { onboardingSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,81 +14,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 
-const TRADE_OPTIONS = [
-  "General Contractor",
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Carpentry",
-  "Masonry",
-  "Painting",
-  "Roofing",
-  "Flooring",
-  "Landscaping",
-  "Concrete",
-  "Steel/Metal Work",
-  "Glass/Glazing",
-  "Insulation",
-  "Drywall",
-  "Other",
-];
-
-const MINORITY_GROUPS = [
-  "African American",
-  "Hispanic American",
-  "Asian Pacific American",
-  "Native American",
-  "Subcontinent Asian American",
-  "Other",
-];
-
-const REVENUE_RANGES = [
-  "Less than $1M",
-  "$1M - $5M",
-  "$5M - $10M",
-  "$10M - $50M",
-  "More than $50M",
-];
-
-const JURISDICTION_OPTIONS = [
-  "Federal",
-  "State/Provincial",
-  "Municipal",
-  "Regional",
-  "Other",
-];
-
-export default function OnboardingForm({ userType }: { userType: "contractor" | "government" }) {
+export default function OnboardingForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     if (user?.onboardingComplete) {
-      navigate(`/dashboard/${userType}`);
+      navigate("/dashboard");
     }
-  }, [user, userType, navigate]);
+  }, [user, navigate]);
 
   const form = useForm({
-    resolver: zodResolver(
-      userType === "contractor" ? contractorOnboardingSchema : governmentOnboardingSchema
-    ),
-    defaultValues:
-      userType === "contractor"
-        ? {
-            trade: "",
-            yearlyRevenue: "",
-            contact: "",
-            telephone: "",
-            cell: "",
-            email: "",
-            isMinorityOwned: false,
-            minorityGroup: "",
-          }
-        : {
-            department: "",
-            jurisdiction: "",
-          },
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: {
+      contact: "",
+      telephone: "",
+      cell: "",
+      businessEmail: "",
+      isMinorityOwned: false,
+      minorityGroup: "",
+      department: "",
+      jurisdiction: "",
+    },
   });
 
   const updateProfileMutation = useMutation({
@@ -104,11 +52,11 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
       });
       queryClient.refetchQueries({ queryKey: ["/api/user"] })
         .then(() => {
-          navigate(`/dashboard/${userType}`);
+          navigate("/dashboard");
         })
         .catch((error) => {
           console.error("Error refetching user data:", error);
-          navigate(`/dashboard/${userType}`);
+          navigate("/dashboard");
         });
     },
     onError: (error: Error) => {
@@ -132,207 +80,167 @@ export default function OnboardingForm({ userType }: { userType: "contractor" | 
               onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
               className="space-y-4"
             >
-              {userType === "contractor" ? (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="trade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Trade</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your trade" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {TRADE_OPTIONS.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Name</FormLabel>
+              <FormField
+                control={form.control}
+                name="contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Full Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="telephone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telephone</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Office Phone" type="tel" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cell"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cell Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Mobile Number" type="tel" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="businessEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Business Email" type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isMinorityOwned"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Minority-Owned Business
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("isMinorityOwned") && (
+                <FormField
+                  control={form.control}
+                  name="minorityGroup"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Minority Group</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
-                          <Input {...field} placeholder="Full Name" />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select minority group" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="telephone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telephone</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Office Phone" type="tel" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cell"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cell Phone</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Mobile Number" type="tel" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Business Email" type="email" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="yearlyRevenue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Yearly Revenue</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select revenue range" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {REVENUE_RANGES.map((range) => (
-                              <SelectItem key={range} value={range}>
-                                {range}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isMinorityOwned"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            Minority-Owned Business
-                          </FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                  {form.watch("isMinorityOwned") && (
-                    <FormField
-                      control={form.control}
-                      name="minorityGroup"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minority Group</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select minority group" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {MINORITY_GROUPS.map((group) => (
-                                <SelectItem key={group} value={group}>
-                                  {group}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <SelectContent>
+                          {[
+                            "African American",
+                            "Hispanic American",
+                            "Asian Pacific American",
+                            "Native American",
+                            "Subcontinent Asian American",
+                            "Other"
+                          ].map((group) => (
+                            <SelectItem key={group} value={group}>
+                              {group}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </>
-              ) : (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="department"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Department</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g. Public Works" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="jurisdiction"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jurisdiction</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select jurisdiction level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {JURISDICTION_OPTIONS.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
+                />
               )}
+
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department (Optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g. Public Works" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jurisdiction"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jurisdiction (Optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select jurisdiction level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[
+                          "Federal",
+                          "State/Provincial",
+                          "Municipal",
+                          "Regional",
+                          "Other"
+                        ].map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <Button
                 type="submit"
                 className="w-full mt-6"

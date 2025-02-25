@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, contractorOnboardingSchema, governmentOnboardingSchema } from "@shared/schema";
+import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, onboardingSchema } from "@shared/schema";
 
 function requireAuth(req: Request) {
   if (!req.isAuthenticated()) {
@@ -19,12 +19,8 @@ export function registerRoutes(app: Express): Server {
     const user = req.user!;
 
     try {
-      // Validate the data based on user type
-      if (user.userType === "contractor") {
-        contractorOnboardingSchema.parse(req.body);
-      } else {
-        governmentOnboardingSchema.parse(req.body);
-      }
+      // Validate the data with unified onboarding schema
+      onboardingSchema.parse(req.body);
 
       const updatedUser = await storage.updateUser(user.id, {
         ...req.body,
@@ -45,14 +41,11 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/rfps", async (req, res) => {
     requireAuth(req);
-    if (req.user?.userType !== "government") {
-      return res.status(403).send("Only government organizations can create RFPs");
-    }
 
     const data = insertRfpSchema.parse(req.body);
     const rfp = await storage.createRfp({
       ...data,
-      organizationId: req.user.id,
+      organizationId: req.user!.id,
     });
     res.status(201).json(rfp);
   });
@@ -88,15 +81,21 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/rfps/:id/bids", async (req, res) => {
     requireAuth(req);
-    if (req.user?.userType !== "contractor") {
-      return res.status(403).send("Only contractors can submit bids");
+
+    // Check if user is trying to bid on their own RFP
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp) {
+      return res.status(404).send("RFP not found");
+    }
+    if (rfp.organizationId === req.user!.id) {
+      return res.status(403).send("Cannot bid on your own RFP");
     }
 
     const data = insertBidSchema.parse(req.body);
     const bid = await storage.createBid({
       ...data,
       rfpId: Number(req.params.id),
-      contractorId: req.user.id,
+      contractorId: req.user!.id,
     });
     res.status(201).json(bid);
   });
@@ -111,7 +110,6 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/employees", async (req, res) => {
     try {
       requireAuth(req);
-      // Get employees only for the authenticated user's organization
       const employees = await storage.getEmployees(req.user!.id);
       res.json(employees);
     } catch (error) {
@@ -140,7 +138,6 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/employees/:id", async (req, res) => {
     try {
       requireAuth(req);
-      // First verify that the employee belongs to the user's organization
       const employee = await storage.getEmployee(Number(req.params.id));
       if (!employee || employee.organizationId !== req.user!.id) {
         return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });

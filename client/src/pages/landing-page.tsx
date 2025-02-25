@@ -7,9 +7,9 @@ import { Footer } from "@/components/ui/footer";
 export default function LandingPage() {
   const { user } = useAuth();
 
-  // If user is logged in, redirect to their dashboard
+  // If user is logged in, redirect to dashboard
   if (user) {
-    return <Link to={`/dashboard/${user.userType}`} />;
+    return <Link to="/dashboard" />;
   }
 
   return (

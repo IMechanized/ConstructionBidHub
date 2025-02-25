@@ -93,14 +93,58 @@ export default function ContractorDashboard() {
                       <p className="text-sm text-muted-foreground mb-4">
                         {rfp.description}
                       </p>
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-sm">
-                          Budget: ${rfp.budget.toLocaleString()}
-                        </span>
-                        <span className="text-sm">
-                          Due: {new Date(rfp.deadline).toLocaleDateString()}
-                        </span>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">Location:</span>
+                          <span>{rfp.jobLocation}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">Budget Range:</span>
+                          <span>
+                            {rfp.budgetMin && rfp.budgetMax
+                              ? `$${rfp.budgetMin.toLocaleString()} - $${rfp.budgetMax.toLocaleString()}`
+                              : rfp.budgetMin
+                              ? `From $${rfp.budgetMin.toLocaleString()}`
+                              : rfp.budgetMax
+                              ? `Up to $${rfp.budgetMax.toLocaleString()}`
+                              : "Not specified"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">Walkthrough:</span>
+                          <span>{new Date(rfp.walkthroughDate).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">RFI Due:</span>
+                          <span>{new Date(rfp.rfiDate).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">Deadline:</span>
+                          <span>{new Date(rfp.deadline).toLocaleString()}</span>
+                        </div>
                       </div>
+
+                      {rfp.certificationGoals && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium mb-1">Certification Goals:</h4>
+                          <p className="text-sm text-muted-foreground">{rfp.certificationGoals}</p>
+                        </div>
+                      )}
+
+                      {rfp.portfolioLink && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium mb-1">Portfolio:</h4>
+                          <a
+                            href={rfp.portfolioLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            View Portfolio
+                          </a>
+                        </div>
+                      )}
+
                       <BidForm rfpId={rfp.id} />
                     </CardContent>
                   </Card>

@@ -26,8 +26,14 @@ export const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  budget: integer("budget").notNull(),
+  walkthroughDate: timestamp("walkthrough_date").notNull(),
+  rfiDate: timestamp("rfi_date").notNull(),
   deadline: timestamp("deadline").notNull(),
+  budgetMin: integer("budget_min"),
+  budgetMax: integer("budget_max"),
+  certificationGoals: text("certification_goals"),
+  jobLocation: text("job_location").notNull(),
+  portfolioLink: text("portfolio_link"),
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
 });
@@ -75,12 +81,35 @@ export const insertRfpSchema = createInsertSchema(rfps)
   .pick({
     title: true,
     description: true,
-    budget: true,
+    walkthroughDate: true,
+    rfiDate: true,
     deadline: true,
+    budgetMin: true,
+    budgetMax: true,
+    certificationGoals: true,
+    jobLocation: true,
+    portfolioLink: true,
   })
   .extend({
+    walkthroughDate: z.string(),
+    rfiDate: z.string(),
     deadline: z.string(),
-    budget: z.number().min(0, "Budget must be a positive number"),
+    budgetMin: z.number().min(0, "Minimum budget must be a positive number").optional(),
+    budgetMax: z.number().min(0, "Maximum budget must be a positive number")
+      .optional()
+      .refine(
+        (val, ctx) => {
+          const budgetMin = ctx.parent.budgetMin;
+          if (budgetMin && val && val < budgetMin) {
+            return false;
+          }
+          return true;
+        },
+        "Maximum budget must be greater than minimum budget"
+      ),
+    jobLocation: z.string().min(1, "Job location is required"),
+    certificationGoals: z.string().optional(),
+    portfolioLink: z.string().url("Portfolio link must be a valid URL").optional(),
   });
 
 export const insertBidSchema = createInsertSchema(bids).pick({

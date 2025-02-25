@@ -24,7 +24,7 @@ function Router() {
       <Route path="/onboarding">
         <ProtectedRoute
           path="/onboarding"
-          component={OnboardingForm}
+          component={Dashboard}
         />
       </Route>
       <Route path="/dashboard">

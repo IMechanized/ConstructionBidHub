@@ -17,6 +17,7 @@ import { Search } from "lucide-react";
 import RfpForm from "@/components/rfp-form";
 import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
+import SettingsForm from "@/components/settings-form";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 
 export default function Dashboard() {
@@ -54,6 +55,13 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">FindConstructionBids</h1>
           <div className="flex items-center gap-4">
+            {user?.logo && (
+              <img
+                src={user.logo}
+                alt={`${user.companyName} logo`}
+                className="h-8 w-8 object-contain"
+              />
+            )}
             <span className="text-sm text-muted-foreground">
               {user?.companyName}
             </span>
@@ -71,6 +79,7 @@ export default function Dashboard() {
             <TabsTrigger value="my-rfps">My RFPs</TabsTrigger>
             <TabsTrigger value="my-bids">My Bids</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="available">
@@ -287,6 +296,9 @@ export default function Dashboard() {
 
           <TabsContent value="employees">
             <EmployeeManagement />
+          </TabsContent>
+          <TabsContent value="settings">
+            <SettingsForm />
           </TabsContent>
         </Tabs>
 

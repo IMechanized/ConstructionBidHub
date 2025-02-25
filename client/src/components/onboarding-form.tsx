@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
+import { Upload } from "lucide-react";
 
 const TRADE_OPTIONS = [
   "General Contractor",
@@ -46,6 +47,7 @@ export default function OnboardingForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.onboardingComplete) {
@@ -64,12 +66,12 @@ export default function OnboardingForm() {
       minorityGroup: "",
       trade: "",
       certificationName: "",
-      logoUrl: "",
+      logo: undefined,
     },
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FormData) => {
       const res = await apiRequest("POST", "/api/user/onboarding", data);
       return res.json();
     },
@@ -97,6 +99,29 @@ export default function OnboardingForm() {
     },
   });
 
+  const handleSubmit = async (data: any) => {
+    const formData = new FormData();
+    Object.keys(data).forEach(key => {
+      if (key === 'logo' && data[key]?.[0]) {
+        formData.append('logo', data[key][0]);
+      } else if (data[key] !== undefined) {
+        formData.append(key, data[key]);
+      }
+    });
+    updateProfileMutation.mutate(formData);
+  };
+
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -106,8 +131,9 @@ export default function OnboardingForm() {
           <h2 className="text-2xl font-bold mb-6">Complete Your Profile</h2>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
+              onSubmit={form.handleSubmit(handleSubmit)}
               className="space-y-4"
+              encType="multipart/form-data"
             >
               <FormField
                 control={form.control}
@@ -209,12 +235,41 @@ export default function OnboardingForm() {
 
               <FormField
                 control={form.control}
-                name="logoUrl"
-                render={({ field }) => (
+                name="logo"
+                render={({ field: { onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>Company Logo URL</FormLabel>
+                    <FormLabel>Company Logo</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="https://example.com/logo.png" type="url" />
+                      <div className="flex flex-col items-center gap-4">
+                        <label
+                          htmlFor="logo-upload"
+                          className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors"
+                        >
+                          {logoPreview ? (
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
+                              className="max-h-32 object-contain"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                              <Upload className="h-8 w-8" />
+                              <span>Click to upload logo</span>
+                            </div>
+                          )}
+                          <input
+                            id="logo-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              onChange(e.target.files);
+                              handleLogoChange(e);
+                            }}
+                            {...field}
+                          />
+                        </label>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

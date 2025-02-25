@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   minorityGroup: text("minority_group"),
   trade: text("trade"),
   certificationName: text("certification_name"),
-  logoUrl: text("logo_url"),
+  logo: text("logo"),
   onboardingComplete: boolean("onboarding_complete").default(false),
   status: text("status", { enum: ["active", "deactivated"] }).default("active"),
 });
@@ -60,7 +60,7 @@ export const onboardingSchema = z.object({
   minorityGroup: z.string().optional(),
   trade: z.string().min(1, "Trade is required"),
   certificationName: z.string().optional(),
-  logoUrl: z.string().url("Invalid logo URL").optional(),
+  logo: z.any().optional(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

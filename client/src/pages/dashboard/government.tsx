@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";

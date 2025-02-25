@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -36,13 +35,12 @@ export default function AuthPage() {
       companyName: "",
       email: "",
       password: "",
-      userType: "contractor" as const,
     },
   });
 
   useEffect(() => {
     if (user) {
-      navigate(`/dashboard/${user.userType}`);
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
@@ -135,35 +133,11 @@ export default function AuthPage() {
                       control={registerForm.control}
                       name="password"
                       render={({ field }) => (
-                        <FormItem className="mb-4">
+                        <FormItem className="mb-6">
                           <FormLabel>Password</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="userType"
-                      render={({ field }) => (
-                        <FormItem className="mb-6">
-                          <FormLabel>Account Type</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select account type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="contractor">Contractor</SelectItem>
-                              <SelectItem value="government">Government Organization</SelectItem>
-                            </SelectContent>
-                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

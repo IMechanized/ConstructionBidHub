@@ -64,9 +64,9 @@ export const onboardingSchema = z.object({
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
+  email: true,
   password: true,
   companyName: true,
-  email: true,
 });
 
 export const insertRfpSchema = createInsertSchema(rfps)

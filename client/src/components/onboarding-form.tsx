@@ -14,6 +14,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 
+const TRADE_OPTIONS = [
+  "General Contractor",
+  "Electrical",
+  "Plumbing",
+  "HVAC",
+  "Carpentry",
+  "Masonry",
+  "Painting",
+  "Roofing",
+  "Flooring",
+  "Landscaping",
+  "Concrete",
+  "Steel/Metal Work",
+  "Glass/Glazing",
+  "Insulation",
+  "Drywall",
+  "Other",
+];
+
+const MINORITY_GROUPS = [
+  "African American",
+  "Hispanic American",
+  "Asian Pacific American",
+  "Native American",
+  "Subcontinent Asian American",
+  "Other",
+];
+
 export default function OnboardingForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -34,8 +62,9 @@ export default function OnboardingForm() {
       businessEmail: "",
       isMinorityOwned: false,
       minorityGroup: "",
-      department: "",
-      jurisdiction: "",
+      trade: "",
+      certificationName: "",
+      logoUrl: "",
     },
   });
 
@@ -80,6 +109,34 @@ export default function OnboardingForm() {
               onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
               className="space-y-4"
             >
+              <FormField
+                control={form.control}
+                name="trade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trade</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your trade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TRADE_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="contact"
@@ -138,6 +195,34 @@ export default function OnboardingForm() {
 
               <FormField
                 control={form.control}
+                name="certificationName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Certification Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g. Professional Constructor Certification" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Logo URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="https://example.com/logo.png" type="url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="isMinorityOwned"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -173,14 +258,7 @@ export default function OnboardingForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {[
-                            "African American",
-                            "Hispanic American",
-                            "Asian Pacific American",
-                            "Native American",
-                            "Subcontinent Asian American",
-                            "Other"
-                          ].map((group) => (
+                          {MINORITY_GROUPS.map((group) => (
                             <SelectItem key={group} value={group}>
                               {group}
                             </SelectItem>
@@ -192,54 +270,6 @@ export default function OnboardingForm() {
                   )}
                 />
               )}
-
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department (Optional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. Public Works" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="jurisdiction"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jurisdiction (Optional)</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select jurisdiction level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[
-                          "Federal",
-                          "State/Provincial",
-                          "Municipal",
-                          "Regional",
-                          "Other"
-                        ].map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <Button
                 type="submit"

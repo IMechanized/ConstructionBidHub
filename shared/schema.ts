@@ -13,8 +13,9 @@ export const users = pgTable("users", {
   businessEmail: text("business_email"),
   isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),
-  department: text("department"),
-  jurisdiction: text("jurisdiction"),
+  trade: text("trade"),
+  certificationName: text("certification_name"),
+  logoUrl: text("logo_url"),
   onboardingComplete: boolean("onboarding_complete").default(false),
   status: text("status", { enum: ["active", "deactivated"] }).default("active"),
 });
@@ -50,7 +51,6 @@ export const employees = pgTable("employees", {
   status: text("status", { enum: ["pending", "active"] }).default("pending"),
 });
 
-// Unified onboarding schema
 export const onboardingSchema = z.object({
   contact: z.string().min(1, "Contact name is required"),
   telephone: z.string().min(1, "Telephone number is required"),
@@ -58,8 +58,9 @@ export const onboardingSchema = z.object({
   businessEmail: z.string().email("Invalid email address"),
   isMinorityOwned: z.boolean(),
   minorityGroup: z.string().optional(),
-  department: z.string().optional(),
-  jurisdiction: z.string().optional(),
+  trade: z.string().min(1, "Trade is required"),
+  certificationName: z.string().optional(),
+  logoUrl: z.string().url("Invalid logo URL").optional(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

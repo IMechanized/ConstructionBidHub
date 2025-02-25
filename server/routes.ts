@@ -31,11 +31,17 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // File upload endpoint
-  app.post("/api/upload", requireAuth, upload.single('file'), async (req, res) => {
+  app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
+      console.log('Upload request received');
+      requireAuth(req); // Added authentication check
+
       if (!req.file) {
+        console.log('No file in request');
         return res.status(400).json({ message: "No file uploaded" });
       }
+
+      console.log('File received:', req.file.originalname, req.file.mimetype);
 
       // Convert buffer to base64
       const b64 = Buffer.from(req.file.buffer).toString('base64');
@@ -47,6 +53,7 @@ export function registerRoutes(app: Express): Server {
         folder: 'construction-bids',
       });
 
+      console.log('Upload successful:', result.secure_url);
       res.json({ url: result.secure_url });
     } catch (error) {
       console.error('Upload error:', error);

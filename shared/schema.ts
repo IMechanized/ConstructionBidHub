@@ -30,7 +30,6 @@ export const rfps = pgTable("rfps", {
   rfiDate: timestamp("rfi_date").notNull(),
   deadline: timestamp("deadline").notNull(),
   budgetMin: integer("budget_min"),
-  budgetMax: integer("budget_max"),
   certificationGoals: text("certification_goals"),
   jobLocation: text("job_location").notNull(),
   portfolioLink: text("portfolio_link"),
@@ -85,7 +84,6 @@ export const insertRfpSchema = createInsertSchema(rfps)
     rfiDate: true,
     deadline: true,
     budgetMin: true,
-    budgetMax: true,
     certificationGoals: true,
     jobLocation: true,
     portfolioLink: true,
@@ -94,20 +92,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     walkthroughDate: z.string(),
     rfiDate: z.string(),
     deadline: z.string(),
-    budgetMin: z.number().min(0, "Minimum budget must be a positive number")
-      .nullish(),
-    budgetMax: z.number().min(0, "Maximum budget must be a positive number")
-      .nullish()
-      .superRefine((budgetMax, ctx) => {
-        const budgetMin = ctx.path[0] === 'budgetMax' ? 
-          (ctx.parent as any).budgetMin : null;
-        if (budgetMin && budgetMax && budgetMax < budgetMin) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Maximum budget must be greater than minimum budget",
-          });
-        }
-      }),
+    budgetMin: z.number().min(0, "Minimum budget must be a positive number").nullish(),
     jobLocation: z.string().min(1, "Job location is required"),
     certificationGoals: z.string().nullish(),
     portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish(),

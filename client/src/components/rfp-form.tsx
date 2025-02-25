@@ -22,7 +22,6 @@ export default function RfpForm() {
       rfiDate: new Date().toISOString().split('T')[0],
       deadline: new Date().toISOString().split('T')[0],
       budgetMin: undefined,
-      budgetMax: undefined,
       certificationGoals: "",
       jobLocation: "",
       portfolioLink: "",
@@ -34,7 +33,6 @@ export default function RfpForm() {
       const formattedData = {
         ...data,
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
-        budgetMax: data.budgetMax ? Number(data.budgetMax) : null,
       };
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
@@ -140,43 +138,23 @@ export default function RfpForm() {
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="budgetMin"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum Budget (Optional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field}
-                    onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="budgetMax"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Maximum Budget (Optional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field}
-                    onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="budgetMin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Minimum Budget</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  {...field}
+                  onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

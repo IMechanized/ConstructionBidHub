@@ -99,14 +99,10 @@ export default function ContractorDashboard() {
                           <span>{rfp.jobLocation}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="font-medium">Budget Range:</span>
+                          <span className="font-medium">Budget:</span>
                           <span>
-                            {rfp.budgetMin && rfp.budgetMax
-                              ? `$${rfp.budgetMin.toLocaleString()} - $${rfp.budgetMax.toLocaleString()}`
-                              : rfp.budgetMin
-                              ? `From $${rfp.budgetMin.toLocaleString()}`
-                              : rfp.budgetMax
-                              ? `Up to $${rfp.budgetMax.toLocaleString()}`
+                            {rfp.budgetMin
+                              ? `Minimum $${rfp.budgetMin.toLocaleString()}`
                               : "Not specified"}
                           </span>
                         </div>

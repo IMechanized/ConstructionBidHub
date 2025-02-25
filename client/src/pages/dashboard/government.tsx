@@ -81,14 +81,10 @@ export default function GovernmentDashboard() {
                           <span>{rfp.jobLocation}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="font-medium">Budget Range:</span>
+                          <span className="font-medium">Budget:</span>
                           <span>
-                            {rfp.budgetMin && rfp.budgetMax
-                              ? `$${rfp.budgetMin.toLocaleString()} - $${rfp.budgetMax.toLocaleString()}`
-                              : rfp.budgetMin
-                              ? `From $${rfp.budgetMin.toLocaleString()}`
-                              : rfp.budgetMax
-                              ? `Up to $${rfp.budgetMax.toLocaleString()}`
+                            {rfp.budgetMin
+                              ? `Minimum $${rfp.budgetMin.toLocaleString()}`
                               : "Not specified"}
                           </span>
                         </div>
@@ -141,10 +137,7 @@ export default function GovernmentDashboard() {
                           {bids
                             ?.filter((bid) => bid.rfpId === rfp.id)
                             .map((bid) => (
-                              <div
-                                key={bid.id}
-                                className="text-sm p-2 bg-secondary rounded"
-                              >
+                              <div key={bid.id} className="text-sm p-2 bg-secondary rounded">
                                 <div className="flex justify-between">
                                   <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
                                   <span>Contractor #{bid.contractorId}</span>

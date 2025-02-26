@@ -119,7 +119,7 @@ export default function Dashboard() {
             <TabsTrigger value="my-bids">My Bids</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger asChild>
+            <TabsTrigger value="analytics" asChild>
               <Link href="/dashboard/analytics" className="cursor-pointer">Analytics</Link>
             </TabsTrigger>
           </TabsList>

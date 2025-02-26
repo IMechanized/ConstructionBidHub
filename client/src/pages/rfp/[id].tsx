@@ -29,11 +29,19 @@ export default function RfpPage() {
   });
 
   if (loadingRfp) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin">Loading...</div>
+      </div>
+    );
   }
 
   if (!rfp) {
-    return <div>RFP not found</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div>RFP not found</div>
+      </div>
+    );
   }
 
   const isOwner = user?.id === rfp.organizationId;

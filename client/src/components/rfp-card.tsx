@@ -1,7 +1,6 @@
 import { Rfp } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 
@@ -67,10 +66,6 @@ export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
             <span>{format(new Date(rfp.deadline), 'MMM dd, yyyy')}</span>
           </div>
         </div>
-
-        {!compact && !isOwner && (
-          <Button className="w-full mt-4">Bid Now</Button>
-        )}
       </CardContent>
     </Card>
   );

@@ -37,6 +37,7 @@ export interface IStorage {
   trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession>;
   getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
+  getBidsByContractor(contractorId: number): Promise<Bid[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -290,6 +291,9 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return newAnalytics;
+  }
+  async getBidsByContractor(contractorId: number): Promise<Bid[]> {
+    return db.select().from(bids).where(eq(bids.contractorId, contractorId));
   }
 }
 

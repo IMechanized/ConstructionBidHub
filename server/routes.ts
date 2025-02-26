@@ -281,6 +281,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/rfps/:id", async (req, res) => {
+    try {
+      const rfp = await storage.getRfpById(Number(req.params.id));
+      if (!rfp) {
+        return res.status(404).json({ message: "RFP not found" });
+      }
+      res.json(rfp);
+    } catch (error) {
+      console.error('Error fetching RFP:', error);
+      res.status(500).json({ message: "Failed to fetch RFP" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

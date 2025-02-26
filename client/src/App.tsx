@@ -41,12 +41,7 @@ function Router() {
           component={AnalyticsDashboard}
         />
       </Route>
-      <Route path="/rfp/:id">
-        <ProtectedRoute
-          path="/rfp/:id"
-          component={RfpDetailPage}
-        />
-      </Route>
+      <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );

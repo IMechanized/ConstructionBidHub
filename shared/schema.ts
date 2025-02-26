@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -34,6 +34,26 @@ export const rfps = pgTable("rfps", {
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),
+});
+
+export const rfpAnalytics = pgTable("rfp_analytics", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  date: date("date").notNull(),
+  totalViews: integer("total_views").default(0),
+  uniqueViews: integer("unique_views").default(0),
+  averageViewTime: integer("average_view_time").default(0), 
+  totalBids: integer("total_bids").default(0),
+  clickThroughRate: integer("click_through_rate").default(0), 
+});
+
+export const rfpViewSessions = pgTable("rfp_view_sessions", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  userId: integer("user_id").references(() => users.id),
+  viewDate: timestamp("view_date").notNull(),
+  duration: integer("duration").default(0), 
+  convertedToBid: boolean("converted_to_bid").default(false),
 });
 
 export const bids = pgTable("bids", {
@@ -112,3 +132,5 @@ export type Employee = typeof employees.$inferSelect;
 export type InsertRfp = z.infer<typeof insertRfpSchema>;
 export type InsertBid = z.infer<typeof insertBidSchema>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
+export type RfpViewSession = typeof rfpViewSessions.$inferSelect;

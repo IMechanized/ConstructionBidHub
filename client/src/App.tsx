@@ -13,6 +13,7 @@ import AboutPage from "@/pages/about";
 import SupportPage from "@/pages/support";
 import TermsPage from "@/pages/terms";
 import RfpDetailPage from "@/pages/rfp/[id]";
+import AnalyticsDashboard from "@/pages/dashboard/analytics";
 
 function Router() {
   return (
@@ -32,6 +33,12 @@ function Router() {
         <ProtectedRoute
           path="/dashboard"
           component={Dashboard}
+        />
+      </Route>
+      <Route path="/dashboard/analytics">
+        <ProtectedRoute
+          path="/dashboard/analytics"
+          component={AnalyticsDashboard}
         />
       </Route>
       <Route path="/rfp/:id">

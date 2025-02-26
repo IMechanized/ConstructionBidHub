@@ -294,6 +294,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Analytics endpoints
+  app.get("/api/analytics/boosted", async (req, res) => {
+    try {
+      requireAuth(req);
+      const analytics = await storage.getBoostedAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching boosted analytics:', error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.post("/api/analytics/track-view", async (req, res) => {
+    try {
+      requireAuth(req);
+      const { rfpId, duration } = req.body;
+      const viewSession = await storage.trackRfpView(rfpId, req.user!.id, duration);
+      res.json(viewSession);
+    } catch (error) {
+      console.error('Error tracking RFP view:', error);
+      res.status(500).json({ message: "Failed to track view" });
+    }
+  });
+
+  app.get("/api/analytics/rfp/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+      const analytics = await storage.getAnalyticsByRfpId(Number(req.params.id));
+      if (!analytics) {
+        return res.status(404).json({ message: "Analytics not found" });
+      }
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching RFP analytics:', error);
+      res.status(500).json({ message: "Failed to fetch RFP analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

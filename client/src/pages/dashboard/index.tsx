@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -118,6 +119,9 @@ export default function Dashboard() {
             <TabsTrigger value="my-bids">My Bids</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger asChild>
+              <Link href="/dashboard/analytics" className="cursor-pointer">Analytics</Link>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="available">

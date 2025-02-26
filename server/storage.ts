@@ -1,6 +1,6 @@
-import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee, users, rfps, bids, employees } from "@shared/schema";
+import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee, users, rfps, bids, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
@@ -31,6 +31,12 @@ export interface IStorage {
   deleteEmployee(id: number): Promise<void>;
 
   sessionStore: Store;
+
+  // Analytics methods
+  getBoostedAnalytics(): Promise<(RfpAnalytics & { rfp: Rfp })[]>;
+  trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession>;
+  getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
+  updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -156,6 +162,134 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmployee(id: number): Promise<void> {
     await db.delete(employees).where(eq(employees.id, id));
+  }
+
+  async getBoostedAnalytics(): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
+    const today = new Date().toISOString().split('T')[0];
+
+    const results = await db
+      .select({
+        analytics: rfpAnalytics,
+        rfp: rfps,
+      })
+      .from(rfpAnalytics)
+      .innerJoin(rfps, eq(rfpAnalytics.rfpId, rfps.id))
+      .where(
+        and(
+          eq(rfps.featured, true),
+          eq(rfpAnalytics.date, today)
+        )
+      );
+
+    return results.map(r => ({ ...r.analytics, rfp: r.rfp }));
+  }
+
+  async trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession> {
+    // Create or update view session
+    const [viewSession] = await db
+      .insert(rfpViewSessions)
+      .values({
+        rfpId,
+        userId,
+        viewDate: new Date(),
+        duration,
+      })
+      .returning();
+
+    // Update analytics
+    const today = new Date().toISOString().split('T')[0];
+    const [existingAnalytics] = await db
+      .select()
+      .from(rfpAnalytics)
+      .where(
+        and(
+          eq(rfpAnalytics.rfpId, rfpId),
+          eq(rfpAnalytics.date, today)
+        )
+      );
+
+    if (existingAnalytics) {
+      await db
+        .update(rfpAnalytics)
+        .set({
+          totalViews: sql`${rfpAnalytics.totalViews} + 1`,
+          uniqueViews: sql`${rfpAnalytics.uniqueViews} + CASE WHEN NOT EXISTS (
+            SELECT 1 FROM ${rfpViewSessions} 
+            WHERE rfp_id = ${rfpId} 
+            AND user_id = ${userId} 
+            AND view_date::date = CURRENT_DATE
+          ) THEN 1 ELSE 0 END`,
+          averageViewTime: sql`(${rfpAnalytics.averageViewTime} * ${rfpAnalytics.totalViews} + ${duration}) / (${rfpAnalytics.totalViews} + 1)`,
+        })
+        .where(eq(rfpAnalytics.id, existingAnalytics.id));
+    } else {
+      await db
+        .insert(rfpAnalytics)
+        .values({
+          rfpId,
+          date: today,
+          totalViews: 1,
+          uniqueViews: 1,
+          averageViewTime: duration,
+          totalBids: 0,
+          clickThroughRate: 0,
+        });
+    }
+
+    return viewSession;
+  }
+
+  async getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined> {
+    const today = new Date().toISOString().split('T')[0];
+    const [analytics] = await db
+      .select()
+      .from(rfpAnalytics)
+      .where(
+        and(
+          eq(rfpAnalytics.rfpId, rfpId),
+          eq(rfpAnalytics.date, today)
+        )
+      );
+
+    return analytics;
+  }
+
+  async updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics> {
+    const today = new Date().toISOString().split('T')[0];
+    const [analytics] = await db
+      .select()
+      .from(rfpAnalytics)
+      .where(
+        and(
+          eq(rfpAnalytics.rfpId, rfpId),
+          eq(rfpAnalytics.date, today)
+        )
+      );
+
+    if (analytics) {
+      const [updated] = await db
+        .update(rfpAnalytics)
+        .set(updates)
+        .where(eq(rfpAnalytics.id, analytics.id))
+        .returning();
+      return updated;
+    }
+
+    const [newAnalytics] = await db
+      .insert(rfpAnalytics)
+      .values({
+        rfpId,
+        date: today,
+        totalViews: 0,
+        uniqueViews: 0,
+        averageViewTime: 0,
+        totalBids: 0,
+        clickThroughRate: 0,
+        ...updates,
+      })
+      .returning();
+
+    return newAnalytics;
   }
 }
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
@@ -13,14 +13,10 @@ const EXPANDED_DISPLAY = 12; // 3x4 grid when expanded
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = isExpanded ? EXPANDED_DISPLAY : INITIAL_DISPLAY;
-
-  // If user is logged in, redirect to dashboard
-  if (user) {
-    return <Link to="/dashboard" />;
-  }
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -32,6 +28,12 @@ export default function LandingPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Redirect after hooks are declared
+  if (user) {
+    setLocation("/dashboard");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">

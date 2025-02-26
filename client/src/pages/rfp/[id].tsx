@@ -13,11 +13,13 @@ import {
 import { format } from "date-fns";
 import BidForm from "@/components/bid-form";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
     queryKey: [`/api/rfps/${id}`],
@@ -135,27 +137,40 @@ export default function RfpPage() {
           </div>
 
           {!isOwner && (
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={() => setIsBidModalOpen(true)}
-            >
-              Submit Bid
-            </Button>
+            user ? (
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => setIsBidModalOpen(true)}
+              >
+                Submit Bid
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                size="lg"
+                variant="outline"
+                onClick={() => setLocation('/auth')}
+              >
+                Login to Submit Bid
+              </Button>
+            )
           )}
         </div>
 
-        <Dialog open={isBidModalOpen} onOpenChange={setIsBidModalOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Submit Your Bid</DialogTitle>
-            </DialogHeader>
-            <BidForm
-              rfpId={Number(id)}
-              onSuccess={() => setIsBidModalOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {user && !isOwner && (
+          <Dialog open={isBidModalOpen} onOpenChange={setIsBidModalOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Submit Your Bid</DialogTitle>
+              </DialogHeader>
+              <BidForm
+                rfpId={Number(id)}
+                onSuccess={() => setIsBidModalOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </main>
     </div>
   );

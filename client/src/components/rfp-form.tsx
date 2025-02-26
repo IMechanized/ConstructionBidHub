@@ -34,10 +34,12 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
 
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log('Submitting RFP data:', data);
       const formattedData = {
         ...data,
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
       };
+      console.log('Formatted RFP data:', formattedData);
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
@@ -51,6 +53,7 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
       onSuccess?.();
     },
     onError: (error: Error) => {
+      console.error('RFP creation error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -60,8 +63,31 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
   });
 
   const handleSubmit = (featured: boolean) => {
-    const data = form.getValues();
-    createRfpMutation.mutate({ ...data, featured });
+    const values = form.getValues();
+    const data = {
+      ...values,
+      portfolioLink: values.portfolioLink || null,
+      certificationGoals: values.certificationGoals || null,
+      budgetMin: values.budgetMin ? Number(values.budgetMin) : null,
+      featured
+    };
+
+    // Validate form before submission
+    const result = insertRfpSchema.safeParse(data);
+    if (!result.success) {
+      console.error('Validation errors:', result.error.issues);
+      result.error.issues.forEach(issue => {
+        toast({
+          title: "Validation Error",
+          description: `${issue.path}: ${issue.message}`,
+          variant: "destructive"
+        });
+      });
+      return;
+    }
+
+    console.log('Submitting validated data:', data);
+    createRfpMutation.mutate(data);
   };
 
   return (
@@ -146,8 +172,8 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
             <FormItem>
               <FormLabel>Minimum Budget</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
+                <Input
+                  type="number"
                   {...field}
                   onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                 />
@@ -207,8 +233,8 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
           >
             Cancel
           </Button>
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             variant="outline"
             onClick={() => handleSubmit(false)}
             disabled={createRfpMutation.isPending}
@@ -222,7 +248,7 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
               "Submit RFP"
             )}
           </Button>
-          <Button 
+          <Button
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={createRfpMutation.isPending}

@@ -102,14 +102,27 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/rfps", async (req, res) => {
-    requireAuth(req);
+    try {
+      requireAuth(req);
+      console.log('RFP creation request received:', req.body);
 
-    const data = insertRfpSchema.parse(req.body);
-    const rfp = await storage.createRfp({
-      ...data,
-      organizationId: req.user!.id,
-    });
-    res.status(201).json(rfp);
+      const data = insertRfpSchema.parse(req.body);
+      console.log('Validated RFP data:', data);
+
+      const rfp = await storage.createRfp({
+        ...data,
+        organizationId: req.user!.id,
+      });
+      console.log('RFP created successfully:', rfp);
+      res.status(201).json(rfp);
+    } catch (error) {
+      console.error('RFP creation error:', error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to create RFP" });
+      }
+    }
   });
 
   app.put("/api/rfps/:id", async (req, res) => {

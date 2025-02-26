@@ -90,7 +90,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     budgetMin: z.number().min(0, "Minimum budget must be a positive number").nullish(),
     jobLocation: z.string().min(1, "Job location is required"),
     certificationGoals: z.string().nullish(),
-    portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish(),
+    portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish().or(z.literal("")),
     featured: z.boolean().default(false),
   });
 

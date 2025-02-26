@@ -47,9 +47,9 @@ export default function Dashboard() {
 
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id) || [];
   const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id) || [];
-  const featuredRfps = myRfps.filter((rfp) => rfp.featured).slice(0, FEATURED_ITEMS);
+  const featuredRfps = availableRfps.filter((rfp) => rfp.featured).slice(0, FEATURED_ITEMS);
 
-  const filteredRfps = myRfps.filter(
+  const filteredMyRfps = myRfps.filter(
     (rfp) =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,9 +63,16 @@ export default function Dashboard() {
       rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination
-  const totalPages = Math.ceil(filteredRfps.length / ITEMS_PER_PAGE);
-  const paginatedRfps = filteredRfps.slice(
+  // Pagination for My RFPs
+  const totalMyPages = Math.ceil(filteredMyRfps.length / ITEMS_PER_PAGE);
+  const paginatedMyRfps = filteredMyRfps.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Pagination for Available RFPs
+  const totalAvailablePages = Math.ceil(filteredAvailableRfps.length / ITEMS_PER_PAGE);
+  const paginatedAvailableRfps = filteredAvailableRfps.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -104,7 +111,7 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="my-rfps">
+        <Tabs defaultValue="available">
           <TabsList className="mb-8">
             <TabsTrigger value="available">Available RFPs</TabsTrigger>
             <TabsTrigger value="my-rfps">My RFPs</TabsTrigger>
@@ -114,34 +121,6 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="available">
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search RFPs..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {loadingRfps ? (
-              <DashboardSectionSkeleton count={6} />
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredAvailableRfps?.map((rfp) => (
-                  <RfpCard
-                    key={rfp.id}
-                    rfp={rfp}
-                    user={usersMap[rfp.organizationId]}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="my-rfps">
             <div className="space-y-8">
               {featuredRfps.length > 0 && (
                 <div>
@@ -158,8 +137,66 @@ export default function Dashboard() {
                 </div>
               )}
 
+              <div>
+                <h2 className="text-xl font-semibold mb-4">All Available RFPs</h2>
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search RFPs..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+
+                {loadingRfps ? (
+                  <DashboardSectionSkeleton count={ITEMS_PER_PAGE} />
+                ) : (
+                  <>
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                      {paginatedAvailableRfps.map((rfp) => (
+                        <RfpCard
+                          key={rfp.id}
+                          rfp={rfp}
+                          user={usersMap[rfp.organizationId]}
+                        />
+                      ))}
+                    </div>
+
+                    {totalAvailablePages > 1 && (
+                      <div className="flex justify-center gap-2 mt-8">
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          Previous
+                        </Button>
+                        <span className="flex items-center px-4">
+                          Page {currentPage} of {totalAvailablePages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={currentPage === totalAvailablePages}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="my-rfps">
+            <div className="space-y-8">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">All RFPs</h2>
+                <h2 className="text-xl font-semibold">My RFPs</h2>
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   Create RFP
                 </Button>
@@ -168,12 +205,12 @@ export default function Dashboard() {
               <div className="relative mb-6">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search RFPs by title, description, or location..."
+                  placeholder="Search my RFPs..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset to first page on search
+                    setCurrentPage(1);
                   }}
                 />
               </div>
@@ -183,7 +220,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {paginatedRfps.map((rfp) => (
+                    {paginatedMyRfps.map((rfp) => (
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
@@ -192,7 +229,7 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {totalPages > 1 && (
+                  {totalMyPages > 1 && (
                     <div className="flex justify-center gap-2 mt-8">
                       <Button
                         variant="outline"
@@ -202,12 +239,12 @@ export default function Dashboard() {
                         Previous
                       </Button>
                       <span className="flex items-center px-4">
-                        Page {currentPage} of {totalPages}
+                        Page {currentPage} of {totalMyPages}
                       </span>
                       <Button
                         variant="outline"
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage === totalMyPages}
                       >
                         Next
                       </Button>

@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import AboutPage from "@/pages/about";
 import SupportPage from "@/pages/support";
 import TermsPage from "@/pages/terms";
+import RfpDetailPage from "@/pages/rfp/[id]";
 
 function Router() {
   return (
@@ -24,13 +25,19 @@ function Router() {
       <Route path="/onboarding">
         <ProtectedRoute
           path="/onboarding"
-          component={Dashboard}
+          component={OnboardingForm}
         />
       </Route>
       <Route path="/dashboard">
         <ProtectedRoute
           path="/dashboard"
           component={Dashboard}
+        />
+      </Route>
+      <Route path="/rfp/:id">
+        <ProtectedRoute
+          path="/rfp/:id"
+          component={RfpDetailPage}
         />
       </Route>
       <Route component={NotFound} />

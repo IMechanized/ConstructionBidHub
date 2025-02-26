@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Rfp, Bid, User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -15,9 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Search } from "lucide-react";
 import RfpForm from "@/components/rfp-form";
 import { RfpCard } from "@/components/rfp-card";
+import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import SettingsForm from "@/components/settings-form";
-import { DashboardSectionSkeleton } from "@/components/skeletons";
+import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 const FEATURED_ITEMS = 6; // 3x2 grid for featured items
@@ -33,14 +35,28 @@ export default function Dashboard() {
     queryKey: ["/api/rfps"],
   });
 
-  const { data: users } = useQuery<{ [key: number]: User }>({
+  const { data: users } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
+  // Get the users map for easy lookup
+  const usersMap = users?.reduce((acc, user) => {
+    acc[user.id] = user;
+    return acc;
+  }, {} as { [key: number]: User }) ?? {};
+
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id) || [];
+  const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id) || [];
   const featuredRfps = myRfps.filter((rfp) => rfp.featured).slice(0, FEATURED_ITEMS);
 
   const filteredRfps = myRfps.filter(
+    (rfp) =>
+      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredAvailableRfps = availableRfps.filter(
     (rfp) =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,16 +79,6 @@ export default function Dashboard() {
   });
 
   const myBids = bids?.filter((bid) => bid.contractorId === user?.id);
-
-  const filteredAvailableRfps = availableRfps?.filter(
-    (rfp) =>
-      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-
-  const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +118,7 @@ export default function Dashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search RFPs by title, description, or location..."
+                  placeholder="Search RFPs..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -125,63 +131,11 @@ export default function Dashboard() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredAvailableRfps?.map((rfp) => (
-                  <Card key={rfp.id}>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {rfp.description}
-                      </p>
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Location:</span>
-                          <span>{rfp.jobLocation}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Budget:</span>
-                          <span>
-                            {rfp.budgetMin
-                              ? `Minimum $${rfp.budgetMin.toLocaleString()}`
-                              : "Not specified"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Walkthrough:</span>
-                          <span>{new Date(rfp.walkthroughDate).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">RFI Due:</span>
-                          <span>{new Date(rfp.rfiDate).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Deadline:</span>
-                          <span>{new Date(rfp.deadline).toLocaleString()}</span>
-                        </div>
-                      </div>
-
-                      {rfp.certificationGoals && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium mb-1">Certification Goals:</h4>
-                          <p className="text-sm text-muted-foreground">{rfp.certificationGoals}</p>
-                        </div>
-                      )}
-
-                      {rfp.portfolioLink && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium mb-1">Portfolio:</h4>
-                          <a
-                            href={rfp.portfolioLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
-                          >
-                            View Portfolio
-                          </a>
-                        </div>
-                      )}
-
-                      <BidForm rfpId={rfp.id} />
-                    </CardContent>
-                  </Card>
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                    user={usersMap[rfp.organizationId]}
+                  />
                 ))}
               </div>
             )}
@@ -197,11 +151,10 @@ export default function Dashboard() {
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
-                        user={users?.[rfp.organizationId]}
+                        user={usersMap[rfp.organizationId]}
                       />
                     ))}
                   </div>
-                  <Button>See More</Button>
                 </div>
               )}
 
@@ -234,7 +187,7 @@ export default function Dashboard() {
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
-                        user={users?.[rfp.organizationId]}
+                        user={usersMap[rfp.organizationId]}
                       />
                     ))}
                   </div>
@@ -300,6 +253,7 @@ export default function Dashboard() {
           <TabsContent value="employees">
             <EmployeeManagement />
           </TabsContent>
+
           <TabsContent value="settings">
             <SettingsForm />
           </TabsContent>

@@ -21,16 +21,12 @@ export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
   const { user: currentUser } = useAuth();
   const isOwner = currentUser?.id === rfp.organizationId;
 
-  const handleClick = () => {
-    setLocation(`/rfp/${rfp.id}`);
-  };
-
   return (
     <Card 
       className={`cursor-pointer transition-shadow hover:shadow-lg ${
         rfp.featured ? 'border-primary' : ''
       }`}
-      onClick={handleClick}
+      onClick={() => setLocation(`/rfp/${rfp.id}`)}
     >
       <CardContent className={compact ? "p-4" : "p-6"}>
         <div className="flex items-center gap-3 mb-3">
@@ -70,23 +66,14 @@ export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
           </div>
         </div>
 
-        {!compact && !isOwner && (
+        {!compact && !isOwner && !currentUser && (
           <div className="mt-4">
-            {currentUser ? (
-              <Button className="w-full" onClick={(e) => {
-                e.stopPropagation();
-                setLocation(`/rfp/${rfp.id}`);
-              }}>
-                View Details & Bid
-              </Button>
-            ) : (
-              <Button variant="outline" className="w-full" onClick={(e) => {
-                e.stopPropagation();
-                setLocation('/auth');
-              }}>
-                Login to Bid
-              </Button>
-            )}
+            <Button variant="outline" className="w-full" onClick={(e) => {
+              e.stopPropagation();
+              setLocation('/auth');
+            }}>
+              Login to Bid
+            </Button>
           </div>
         )}
       </CardContent>

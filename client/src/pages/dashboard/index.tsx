@@ -31,6 +31,8 @@ export default function Dashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [featuredPage, setFeaturedPage] = useState(1);
+  const [availablePage, setAvailablePage] = useState(1);
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -48,7 +50,8 @@ export default function Dashboard() {
 
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id) || [];
   const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id) || [];
-  const featuredRfps = availableRfps.filter((rfp) => rfp.featured).slice(0, FEATURED_ITEMS);
+  const featuredRfps = availableRfps.filter((rfp) => rfp.featured);
+  const nonFeaturedRfps = availableRfps.filter((rfp) => !rfp.featured);
 
   const filteredMyRfps = myRfps.filter(
     (rfp) =>
@@ -57,7 +60,14 @@ export default function Dashboard() {
       rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredAvailableRfps = availableRfps.filter(
+  const filteredFeaturedRfps = featuredRfps.filter(
+    (rfp) =>
+      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredAvailableRfps = nonFeaturedRfps.filter(
     (rfp) =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,11 +81,18 @@ export default function Dashboard() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Pagination for Featured RFPs
+  const totalFeaturedPages = Math.ceil(filteredFeaturedRfps.length / ITEMS_PER_PAGE);
+  const paginatedFeaturedRfps = filteredFeaturedRfps.slice(
+    (featuredPage - 1) * ITEMS_PER_PAGE,
+    featuredPage * ITEMS_PER_PAGE
+  );
+
   // Pagination for Available RFPs
   const totalAvailablePages = Math.ceil(filteredAvailableRfps.length / ITEMS_PER_PAGE);
   const paginatedAvailableRfps = filteredAvailableRfps.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (availablePage - 1) * ITEMS_PER_PAGE,
+    availablePage * ITEMS_PER_PAGE
   );
 
   const handleCreateSuccess = () => {
@@ -114,6 +131,7 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="available">
           <TabsList className="mb-8">
+            <TabsTrigger value="featured">Featured RFPs</TabsTrigger>
             <TabsTrigger value="available">Available RFPs</TabsTrigger>
             <TabsTrigger value="my-rfps">My RFPs</TabsTrigger>
             <TabsTrigger value="my-bids">My Bids</TabsTrigger>
@@ -124,13 +142,28 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="available">
+          <TabsContent value="featured">
             <div className="space-y-8">
-              {featuredRfps.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Featured RFPs</h2>
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {featuredRfps.map((rfp) => (
+              <h2 className="text-xl font-semibold mb-4">Featured RFPs</h2>
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search featured RFPs..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setFeaturedPage(1);
+                  }}
+                />
+              </div>
+
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={ITEMS_PER_PAGE} />
+              ) : (
+                <>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedFeaturedRfps.map((rfp) => (
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
@@ -138,62 +171,86 @@ export default function Dashboard() {
                       />
                     ))}
                   </div>
-                </div>
-              )}
 
-              <div>
-                <h2 className="text-xl font-semibold mb-4">All Available RFPs</h2>
-                <div className="relative mb-6">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search RFPs..."
-                    className="pl-10"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
-
-                {loadingRfps ? (
-                  <DashboardSectionSkeleton count={ITEMS_PER_PAGE} />
-                ) : (
-                  <>
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                      {paginatedAvailableRfps.map((rfp) => (
-                        <RfpCard
-                          key={rfp.id}
-                          rfp={rfp}
-                          user={usersMap[rfp.organizationId]}
-                        />
-                      ))}
+                  {totalFeaturedPages > 1 && (
+                    <div className="flex justify-center gap-2 mt-8">
+                      <Button
+                        variant="outline"
+                        onClick={() => setFeaturedPage(featuredPage - 1)}
+                        disabled={featuredPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="flex items-center px-4">
+                        Page {featuredPage} of {totalFeaturedPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setFeaturedPage(featuredPage + 1)}
+                        disabled={featuredPage === totalFeaturedPages}
+                      >
+                        Next
+                      </Button>
                     </div>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
 
-                    {totalAvailablePages > 1 && (
-                      <div className="flex justify-center gap-2 mt-8">
-                        <Button
-                          variant="outline"
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        >
-                          Previous
-                        </Button>
-                        <span className="flex items-center px-4">
-                          Page {currentPage} of {totalAvailablePages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={currentPage === totalAvailablePages}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
+          <TabsContent value="available">
+            <div className="space-y-8">
+              <h2 className="text-xl font-semibold mb-4">Available RFPs</h2>
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search available RFPs..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setAvailablePage(1);
+                  }}
+                />
               </div>
+
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={ITEMS_PER_PAGE} />
+              ) : (
+                <>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    {paginatedAvailableRfps.map((rfp) => (
+                      <RfpCard
+                        key={rfp.id}
+                        rfp={rfp}
+                        user={usersMap[rfp.organizationId]}
+                      />
+                    ))}
+                  </div>
+
+                  {totalAvailablePages > 1 && (
+                    <div className="flex justify-center gap-2 mt-8">
+                      <Button
+                        variant="outline"
+                        onClick={() => setAvailablePage(availablePage - 1)}
+                        disabled={availablePage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="flex items-center px-4">
+                        Page {availablePage} of {totalAvailablePages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setAvailablePage(availablePage + 1)}
+                        disabled={availablePage === totalAvailablePages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </TabsContent>
 

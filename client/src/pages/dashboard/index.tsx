@@ -100,10 +100,10 @@ export default function Dashboard() {
   };
 
   const { data: bids, isLoading: loadingBids } = useQuery<Bid[]>({
-    queryKey: ["/api/rfps/bids"],
+    queryKey: ["/api/bids"],
   });
 
-  const myBids = bids?.filter((bid) => bid.contractorId === user?.id);
+  const myBids = bids;
 
   return (
     <div className="min-h-screen bg-background">

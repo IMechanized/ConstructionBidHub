@@ -168,6 +168,18 @@ export function registerRoutes(app: Express): Server {
     res.json(bids);
   });
 
+  // New endpoint to get all bids for current user
+  app.get("/api/bids", async (req, res) => {
+    try {
+      requireAuth(req);
+      const bids = await storage.getBidsByContractor(req.user!.id);
+      res.json(bids);
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+      res.status(500).json({ message: "Failed to fetch bids" });
+    }
+  });
+
   app.post("/api/rfps/:id/bids", async (req, res) => {
     requireAuth(req);
 

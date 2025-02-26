@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 interface RfpCardProps {
   rfp: Rfp;
@@ -16,7 +18,8 @@ interface RfpCardProps {
 
 export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
   const [, setLocation] = useLocation();
-  const isOwner = user?.id === rfp.organizationId;
+  const { user: currentUser } = useAuth();
+  const isOwner = currentUser?.id === rfp.organizationId;
 
   const handleClick = () => {
     setLocation(`/rfp/${rfp.id}`);
@@ -66,6 +69,26 @@ export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
             <span>{format(new Date(rfp.deadline), 'MMM dd, yyyy')}</span>
           </div>
         </div>
+
+        {!compact && !isOwner && (
+          <div className="mt-4">
+            {currentUser ? (
+              <Button className="w-full" onClick={(e) => {
+                e.stopPropagation();
+                setLocation(`/rfp/${rfp.id}`);
+              }}>
+                View Details & Bid
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full" onClick={(e) => {
+                e.stopPropagation();
+                setLocation('/auth');
+              }}>
+                Login to Bid
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

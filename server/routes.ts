@@ -101,6 +101,20 @@ export function registerRoutes(app: Express): Server {
     res.json(rfps);
   });
 
+  app.get("/api/rfps/:id", async (req, res) => {
+    try {
+      const rfp = await storage.getRfpById(Number(req.params.id));
+      if (!rfp) {
+        return res.status(404).json({ message: "RFP not found" });
+      }
+      res.json(rfp);
+    } catch (error) {
+      console.error('Error fetching RFP:', error);
+      res.status(500).json({ message: "Failed to fetch RFP" });
+    }
+  });
+
+  // Protected RFP routes
   app.post("/api/rfps", async (req, res) => {
     try {
       requireAuth(req);
@@ -281,18 +295,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/rfps/:id", async (req, res) => {
-    try {
-      const rfp = await storage.getRfpById(Number(req.params.id));
-      if (!rfp) {
-        return res.status(404).json({ message: "RFP not found" });
-      }
-      res.json(rfp);
-    } catch (error) {
-      console.error('Error fetching RFP:', error);
-      res.status(500).json({ message: "Failed to fetch RFP" });
-    }
-  });
 
   // Analytics endpoints
   app.get("/api/analytics/boosted", async (req, res) => {

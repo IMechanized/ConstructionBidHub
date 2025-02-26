@@ -33,6 +33,7 @@ export const rfps = pgTable("rfps", {
   portfolioLink: text("portfolio_link"),
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
+  featured: boolean("featured").default(false),
 });
 
 export const bids = pgTable("bids", {
@@ -80,6 +81,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     certificationGoals: true,
     jobLocation: true,
     portfolioLink: true,
+    featured: true,
   })
   .extend({
     walkthroughDate: z.string(),
@@ -89,6 +91,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobLocation: z.string().min(1, "Job location is required"),
     certificationGoals: z.string().nullish(),
     portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish(),
+    featured: z.boolean().default(false),
   });
 
 export const insertBidSchema = createInsertSchema(bids).pick({

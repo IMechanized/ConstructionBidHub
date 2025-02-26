@@ -28,6 +28,7 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
       certificationGoals: "",
       jobLocation: "",
       portfolioLink: "",
+      featured: false,
     },
   });
 
@@ -58,12 +59,14 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
     },
   });
 
+  const handleSubmit = (featured: boolean) => {
+    const data = form.getValues();
+    createRfpMutation.mutate({ ...data, featured });
+  };
+
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit((data) => createRfpMutation.mutate(data))}
-        className="space-y-6"
-      >
+      <form className="space-y-6">
         <FormField
           control={form.control}
           name="title"
@@ -200,12 +203,14 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={form.reset}
+            onClick={() => form.reset()}
           >
             Cancel
           </Button>
           <Button 
-            type="submit" 
+            type="button" 
+            variant="outline"
+            onClick={() => handleSubmit(false)}
             disabled={createRfpMutation.isPending}
           >
             {createRfpMutation.isPending ? (
@@ -214,7 +219,21 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
                 Creating...
               </>
             ) : (
-              "Create RFP"
+              "Submit RFP"
+            )}
+          </Button>
+          <Button 
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={createRfpMutation.isPending}
+          >
+            {createRfpMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Boosting...
+              </>
+            ) : (
+              "Boost for Visibility"
             )}
           </Button>
         </div>

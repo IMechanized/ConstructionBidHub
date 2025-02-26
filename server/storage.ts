@@ -15,6 +15,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
 
   getRfps(): Promise<Rfp[]>;
+  getFeaturedRfps(): Promise<Rfp[]>;
   getRfpById(id: number): Promise<Rfp | undefined>;
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
@@ -68,6 +69,10 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(rfps);
   }
 
+  async getFeaturedRfps(): Promise<Rfp[]> {
+    return db.select().from(rfps).where(eq(rfps.featured, true));
+  }
+
   async getRfpById(id: number): Promise<Rfp | undefined> {
     const [rfp] = await db.select().from(rfps).where(eq(rfps.id, id));
     return rfp;
@@ -77,16 +82,17 @@ export class DatabaseStorage implements IStorage {
     const [newRfp] = await db
       .insert(rfps)
       .values({
-        ...rfp,
+        title: rfp.title,
+        description: rfp.description,
         walkthroughDate: new Date(rfp.walkthroughDate),
         rfiDate: new Date(rfp.rfiDate),
         deadline: new Date(rfp.deadline),
         jobLocation: rfp.jobLocation,
         budgetMin: rfp.budgetMin || null,
-        budgetMax: rfp.budgetMax || null,
         certificationGoals: rfp.certificationGoals || null,
         portfolioLink: rfp.portfolioLink || null,
         organizationId: rfp.organizationId,
+        featured: rfp.featured || false,
       })
       .returning();
     return newRfp;

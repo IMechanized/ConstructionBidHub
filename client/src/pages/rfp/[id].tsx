@@ -67,8 +67,12 @@ export default function RfpPage() {
       ]
     : [
         {
-          label: "Opportunities",
+          label: "Home",
           href: "/",
+        },
+        {
+          label: rfp.featured ? "Featured Opportunities" : "New Opportunities",
+          href: rfp.featured ? "/featured" : "/new", // Added href for better UX
         },
         {
           label: rfp?.title || "RFP Details",

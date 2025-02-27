@@ -50,26 +50,36 @@ export default function RfpPage() {
   }
 
   const isOwner = user?.id === rfp.organizationId;
+  const breadcrumbItems = user 
+    ? [
+        {
+          label: "Home",
+          href: "/"
+        },
+        {
+          label: "Dashboard",
+          href: "/dashboard"
+        },
+        {
+          label: rfp?.title || "RFP Details",
+          href: `/rfp/${id}`
+        }
+      ]
+    : [
+        {
+          label: "Home",
+          href: "/"
+        },
+        {
+          label: rfp?.title || "RFP Details",
+          href: `/rfp/${id}`
+        }
+      ];
 
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav
-          items={[
-            {
-              label: "Home",
-              href: "/"
-            },
-            {
-              label: "Dashboard",
-              href: "/dashboard"
-            },
-            {
-              label: rfp?.title || "RFP Details",
-              href: `/rfp/${id}`
-            }
-          ]}
-        />
+        <BreadcrumbNav items={breadcrumbItems} />
 
         <div className="max-w-3xl mx-auto">
           {/* Organization Header */}

@@ -17,6 +17,7 @@ import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
 import RfpCard from "@/components/rfp-card"; // Assumed component
+import Link from 'next/link'; // Added import for Link component
 
 
 export default function GovernmentDashboard() {
@@ -57,7 +58,9 @@ export default function GovernmentDashboard() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">FindConstructionBids</h1>
+          <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
               {user?.companyName}

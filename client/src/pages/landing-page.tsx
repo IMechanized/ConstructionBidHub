@@ -41,7 +41,9 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-xl font-bold">FindConstructionBids</span>
+          <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
           <Button asChild variant="outline">
             {user ? (
               <Link href="/dashboard">Back to Dashboard</Link>

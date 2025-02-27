@@ -53,29 +53,21 @@ export default function RfpPage() {
   const breadcrumbItems = user
     ? [
         {
-          label: "Home",
-          href: "/",
-        },
-        {
           label: "Dashboard",
           href: "/dashboard",
         },
         {
-          label: rfp?.title || "RFP Details",
+          label: rfp.title || "RFP Details",
           href: `/rfp/${id}`,
         },
       ]
     : [
         {
-          label: "Home",
+          label: rfp.featured ? "Featured Opportunities" : "New Opportunities",
           href: "/",
         },
         {
-          label: rfp.featured ? "Featured Opportunities" : "New Opportunities",
-          href: rfp.featured ? "/featured" : "/new", // Added href for better UX
-        },
-        {
-          label: rfp?.title || "RFP Details",
+          label: rfp.title || "RFP Details",
           href: `/rfp/${id}`,
         },
       ];

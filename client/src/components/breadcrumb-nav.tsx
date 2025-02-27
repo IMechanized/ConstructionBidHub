@@ -23,12 +23,6 @@ export function BreadcrumbNav({ items }: BreadcrumbNavProps) {
   return (
     <Breadcrumb className="mb-6">
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/">Home</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
         {items.map((item, index) => (
           <BreadcrumbItem key={item.href}>
             {index === items.length - 1 ? (

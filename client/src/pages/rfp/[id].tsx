@@ -50,30 +50,30 @@ export default function RfpPage() {
   }
 
   const isOwner = user?.id === rfp.organizationId;
-  const breadcrumbItems = user 
+  const breadcrumbItems = user
     ? [
         {
           label: "Home",
-          href: "/"
+          href: "/",
         },
         {
           label: "Dashboard",
-          href: "/dashboard"
+          href: "/dashboard",
         },
         {
           label: rfp?.title || "RFP Details",
-          href: `/rfp/${id}`
-        }
+          href: `/rfp/${id}`,
+        },
       ]
     : [
         {
-          label: "Home",
-          href: "/"
+          label: "Opportunities",
+          href: "/",
         },
         {
           label: rfp?.title || "RFP Details",
-          href: `/rfp/${id}`
-        }
+          href: `/rfp/${id}`,
+        },
       ];
 
   return (
@@ -185,7 +185,7 @@ export default function RfpPage() {
                 className="w-full"
                 size="lg"
                 variant="outline"
-                onClick={() => setLocation('/auth')}
+                onClick={() => setLocation("/auth")}
               >
                 Login to Submit Bid
               </Button>

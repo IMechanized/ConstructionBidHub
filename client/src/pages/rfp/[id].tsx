@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { Rfp, User } from "@shared/schema";
+import { Rfp } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import BidForm from "@/components/bid-form";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { Avatar } from "@/components/ui/avatar";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -21,13 +22,14 @@ export default function RfpPage() {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [, setLocation] = useLocation();
 
-  const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
+  const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
+    organization?: {
+      id: number;
+      companyName: string;
+      logo?: string;
+    } | null;
+  }>({
     queryKey: [`/api/rfps/${id}`],
-  });
-
-  const { data: organization } = useQuery<User>({
-    queryKey: [`/api/users/${rfp?.organizationId}`],
-    enabled: !!rfp?.organizationId,
   });
 
   if (loadingRfp) {
@@ -52,22 +54,27 @@ export default function RfpPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            {organization?.logo && (
-              <img
-                src={organization.logo}
-                alt={`${organization.companyName} logo`}
-                className="h-12 w-12 object-contain"
-              />
-            )}
-            <div>
-              <h1 className="text-2xl font-bold">{rfp.title}</h1>
-              <p className="text-muted-foreground">
-                Posted by {organization?.companyName}
-              </p>
-            </div>
+          {/* Organization Header */}
+          <div className="flex flex-col items-center mb-8 text-center">
+            <Avatar className="h-20 w-20 mb-4">
+              {rfp.organization?.logo ? (
+                <img
+                  src={rfp.organization.logo}
+                  alt={`${rfp.organization.companyName} logo`}
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-2xl">
+                  {rfp.organization?.companyName?.charAt(0)}
+                </span>
+              )}
+            </Avatar>
+            <h1 className="text-2xl font-bold mb-2">{rfp.title}</h1>
+            <p className="text-muted-foreground mb-2">
+              Posted by {rfp.organization?.companyName || "Unknown Organization"}
+            </p>
             {rfp.featured && (
-              <span className="ml-auto bg-primary/10 text-primary px-3 py-1 rounded-full">
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full">
                 Featured
               </span>
             )}

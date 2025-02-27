@@ -98,7 +98,20 @@ export function registerRoutes(app: Express): Server {
   // RFP routes
   app.get("/api/rfps", async (req, res) => {
     const rfps = await storage.getRfps();
-    res.json(rfps);
+    const rfpsWithOrgs = await Promise.all(
+      rfps.map(async (rfp) => {
+        const org = await storage.getUser(rfp.organizationId);
+        return {
+          ...rfp,
+          organization: org ? {
+            id: org.id,
+            companyName: org.companyName,
+            logo: org.logo
+          } : null
+        };
+      })
+    );
+    res.json(rfpsWithOrgs);
   });
 
   app.get("/api/rfps/:id", async (req, res) => {
@@ -107,7 +120,16 @@ export function registerRoutes(app: Express): Server {
       if (!rfp) {
         return res.status(404).json({ message: "RFP not found" });
       }
-      res.json(rfp);
+      const org = await storage.getUser(rfp.organizationId);
+      const rfpWithOrg = {
+        ...rfp,
+        organization: org ? {
+          id: org.id,
+          companyName: org.companyName,
+          logo: org.logo
+        } : null
+      };
+      res.json(rfpWithOrg);
     } catch (error) {
       console.error('Error fetching RFP:', error);
       res.status(500).json({ message: "Failed to fetch RFP" });

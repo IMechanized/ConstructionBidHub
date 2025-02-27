@@ -7,17 +7,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
 interface RfpCardProps {
-  rfp: Rfp;
-  user?: {
-    id: number;
-    companyName: string;
-    logo?: string;
+  rfp: Rfp & {
+    organization?: {
+      id: number;
+      companyName: string;
+      logo?: string;
+    } | null;
   };
   compact?: boolean;
   isNew?: boolean;
 }
 
-export function RfpCard({ rfp, user, compact = false, isNew = false }: RfpCardProps) {
+export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
   const isOwner = currentUser?.id === rfp.organizationId;
@@ -30,25 +31,36 @@ export function RfpCard({ rfp, user, compact = false, isNew = false }: RfpCardPr
       onClick={() => setLocation(`/rfp/${rfp.id}`)}
     >
       <CardContent className={compact ? "p-4" : "p-6"}>
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-8 w-8">
-            {user?.logo ? (
-              <img src={user.logo} alt={`${user.companyName} logo`} />
+        {/* Organization Header */}
+        <div className="flex flex-col items-center gap-3 mb-4 text-center">
+          <Avatar className="h-12 w-12">
+            {rfp.organization?.logo ? (
+              <img
+                src={rfp.organization.logo}
+                alt={`${rfp.organization.companyName} logo`}
+                className="object-cover"
+              />
             ) : (
-              <span className="text-xs">{user?.companyName?.charAt(0)}</span>
+              <span className="text-lg">
+                {rfp.organization?.companyName?.charAt(0)}
+              </span>
             )}
           </Avatar>
-          <span className="text-sm font-medium">{user?.companyName}</span>
-          {rfp.featured && (
-            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-              Featured
-            </span>
-          )}
-          {isNew && !rfp.featured && (
-            <span className="ml-auto text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
-              New
-            </span>
-          )}
+          <span className="font-medium">
+            {rfp.organization?.companyName || "Unknown Organization"}
+          </span>
+          <div className="flex gap-2">
+            {rfp.featured && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                Featured
+              </span>
+            )}
+            {isNew && !rfp.featured && (
+              <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+                New
+              </span>
+            )}
+          </div>
         </div>
 
         <h3 className={`font-semibold ${compact ? 'text-base' : 'text-lg'} mb-2`}>

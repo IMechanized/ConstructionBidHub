@@ -14,9 +14,10 @@ interface RfpCardProps {
     logo?: string;
   };
   compact?: boolean;
+  isNew?: boolean;
 }
 
-export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
+export function RfpCard({ rfp, user, compact = false, isNew = false }: RfpCardProps) {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
   const isOwner = currentUser?.id === rfp.organizationId;
@@ -41,6 +42,11 @@ export function RfpCard({ rfp, user, compact = false }: RfpCardProps) {
           {rfp.featured && (
             <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
               Featured
+            </span>
+          )}
+          {isNew && !rfp.featured && (
+            <span className="ml-auto text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+              New
             </span>
           )}
         </div>

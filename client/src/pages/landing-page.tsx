@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Loader2 } from "lucide-react";
+import { isAfter, subHours } from "date-fns";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 const EXPANDED_DISPLAY = 12; // 3x4 grid when expanded
@@ -23,6 +24,12 @@ export default function LandingPage() {
   });
 
   const featuredRfps = rfps?.filter(rfp => rfp.featured) || [];
+  const twentyFourHoursAgo = subHours(new Date(), 24);
+  const newRfps = rfps?.filter(rfp =>
+    !rfp.featured &&
+    isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
+  ) || [];
+
   const totalPages = Math.ceil(featuredRfps.length / itemsPerPage);
   const displayedRfps = featuredRfps.slice(
     (currentPage - 1) * itemsPerPage,
@@ -61,6 +68,25 @@ export default function LandingPage() {
           </Button>
         </div>
       </section>
+
+      {/* New RFPs Section */}
+      {newRfps.length > 0 && (
+        <section className="py-16 px-4 bg-muted/10">
+          <div className="container mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">New Opportunities</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {newRfps.map((rfp) => (
+                <RfpCard
+                  key={rfp.id}
+                  rfp={rfp}
+                  compact
+                  isNew
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured RFPs Section */}
       <section className="py-16 px-4 bg-muted/30">

@@ -34,6 +34,7 @@ export const rfps = pgTable("rfps", {
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const rfpAnalytics = pgTable("rfp_analytics", {

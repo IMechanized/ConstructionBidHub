@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import { isAfter, subHours } from "date-fns";
+import RfpCard from "@/components/rfp-card"; // Assumed component
+
 
 export default function GovernmentDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -29,7 +32,12 @@ export default function GovernmentDashboard() {
     queryKey: ["/api/rfps/bids"],
   });
 
+  const twentyFourHoursAgo = subHours(new Date(), 24);
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id);
+  const newRfps = rfps?.filter((rfp) =>
+    !rfp.featured &&
+    isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
+  );
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
@@ -65,6 +73,7 @@ export default function GovernmentDashboard() {
         <Tabs defaultValue="rfps">
           <TabsList className="mb-8">
             <TabsTrigger value="rfps">RFP Management</TabsTrigger>
+            <TabsTrigger value="new">New RFPs</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
           </TabsList>
 
@@ -114,27 +123,6 @@ export default function GovernmentDashboard() {
                         </div>
                       </div>
 
-                      {rfp.certificationGoals && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium mb-1">Certification Goals:</h4>
-                          <p className="text-sm text-muted-foreground">{rfp.certificationGoals}</p>
-                        </div>
-                      )}
-
-                      {rfp.portfolioLink && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium mb-1">Portfolio:</h4>
-                          <a
-                            href={rfp.portfolioLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
-                          >
-                            View Portfolio
-                          </a>
-                        </div>
-                      )}
-
                       <h4 className="font-medium mb-2">Bids</h4>
                       {loadingBids ? (
                         <div className="space-y-2">
@@ -163,6 +151,26 @@ export default function GovernmentDashboard() {
                       )}
                     </CardContent>
                   </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="new">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl font-semibold">New RFPs (Last 24 Hours)</h2>
+            </div>
+
+            {loadingRfps ? (
+              <DashboardSectionSkeleton count={6} />
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {newRfps?.map((rfp) => (
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                    isNew
+                  />
                 ))}
               </div>
             )}

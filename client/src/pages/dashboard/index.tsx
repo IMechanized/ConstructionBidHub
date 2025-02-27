@@ -21,6 +21,7 @@ import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import SettingsForm from "@/components/settings-form";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 const FEATURED_ITEMS = 6; // 3x2 grid for featured items
@@ -108,29 +109,38 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
-                FindConstructionBids
-              </Link>
-              <div className="flex items-center gap-4">
-                {user?.logo && (
-                  <img
-                    src={user.logo}
-                    alt={`${user.companyName} logo`}
-                    className="h-8 w-8 object-contain"
-                  />
-                )}
-                <span className="text-sm text-muted-foreground">
-                  {user?.companyName}
-                </span>
-                <Button variant="outline" onClick={() => logoutMutation.mutate()}>
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </header>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
+          <div className="flex items-center gap-4">
+            {user?.logo && (
+              <img
+                src={user.logo}
+                alt={`${user.companyName} logo`}
+                className="h-8 w-8 object-contain"
+              />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {user?.companyName}
+            </span>
+            <Button variant="outline" onClick={() => logoutMutation.mutate()}>
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
 
       <main className="container mx-auto px-4 py-8">
+        <BreadcrumbNav
+          items={[
+            {
+              label: "Dashboard",
+              href: "/dashboard"
+            }
+          ]}
+        />
+
         <Tabs defaultValue="available">
           <TabsList className="mb-8">
             <TabsTrigger value="featured">Featured RFPs</TabsTrigger>

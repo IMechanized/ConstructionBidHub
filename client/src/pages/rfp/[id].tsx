@@ -4,6 +4,7 @@ import { useParams } from "wouter";
 import { Rfp } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,23 @@ export default function RfpPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
+        <BreadcrumbNav
+          items={[
+            {
+              label: "Home",
+              href: "/"
+            },
+            {
+              label: "Dashboard",
+              href: "/dashboard"
+            },
+            {
+              label: rfp?.title || "RFP Details",
+              href: `/rfp/${id}`
+            }
+          ]}
+        />
+
         <div className="max-w-3xl mx-auto">
           {/* Organization Header */}
           <div className="flex flex-col items-center mb-8 text-center">

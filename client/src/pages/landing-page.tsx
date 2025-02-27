@@ -36,12 +36,6 @@ export default function LandingPage() {
     currentPage * itemsPerPage
   );
 
-  // Redirect after hooks are declared
-  if (user) {
-    setLocation("/dashboard");
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -49,7 +43,11 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-xl font-bold">FindConstructionBids</span>
           <Button asChild variant="outline">
-            <Link href="/auth">Get Started</Link>
+            {user ? (
+              <Link href="/dashboard">Back to Dashboard</Link>
+            ) : (
+              <Link href="/auth">Get Started</Link>
+            )}
           </Button>
         </div>
       </nav>
@@ -64,7 +62,11 @@ export default function LandingPage() {
             Connect government organizations with qualified contractors. Make the bidding process efficient and transparent.
           </p>
           <Button asChild size="lg" className="text-lg px-8">
-            <Link href="/auth">Join Now</Link>
+            {user ? (
+              <Link href="/dashboard">Back to Dashboard</Link>
+            ) : (
+              <Link href="/auth">Join Now</Link>
+            )}
           </Button>
         </div>
       </section>

@@ -16,8 +16,8 @@ export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
     <>
       <Button
         variant="subtle"
-        size="sm"
-        className="md:hidden"
+        size="lg"
+        className="md:hidden p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
         onClick={() => setOpened(true)}
       >
         <IconMenu2 size={24} />
@@ -54,7 +54,8 @@ export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
             variant="subtle"
             fullWidth
             size="lg"
-            h={48}
+            h={56}
+            className="hover:bg-gray-50 dark:hover:bg-gray-800"
             onClick={() => setOpened(false)}
           >
             Dashboard
@@ -64,7 +65,8 @@ export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
             variant="subtle"
             fullWidth
             size="lg"
-            h={48}
+            h={56}
+            className="hover:bg-gray-50 dark:hover:bg-gray-800"
             onClick={() => {
               onLogout();
               setOpened(false);

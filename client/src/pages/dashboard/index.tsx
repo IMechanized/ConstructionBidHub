@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Rfp, Bid, User } from "@shared/schema";
+import { Rfp, Bid, User } from "@shared/schema"; // Added back the User import
 import { useAuth } from "@/hooks/use-auth";
 import { Box, Button, Card, TextInput, Tabs, Stack, Title, Container, Group, Modal } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import RfpForm from "@/components/rfp-form";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
 import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 
@@ -13,32 +13,17 @@ export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [featuredPage, setFeaturedPage] = useState(1);
-  const [availablePage, setAvailablePage] = useState(1);
+  const [location] = useLocation();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
-  });
-
-  const { data: users } = useQuery<User[]>({
-    queryKey: ["/api/users"],
   });
 
   const { data: bids, isLoading: loadingBids } = useQuery<Bid[]>({
     queryKey: ["/api/bids"],
   });
 
-  // Get the users map for easy lookup
-  const usersMap = users?.reduce((acc, user) => {
-    acc[user.id] = user;
-    return acc;
-  }, {} as { [key: number]: User }) ?? {};
-
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id) || [];
-  const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id) || [];
-  const featuredRfps = availableRfps.filter((rfp) => rfp.featured);
-  const nonFeaturedRfps = availableRfps.filter((rfp) => !rfp.featured);
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
@@ -67,7 +52,7 @@ export default function Dashboard() {
             <Tabs.List grow>
               <Tabs.Tab value="rfps">RFP Management</Tabs.Tab>
               <Tabs.Tab value="bids">My Bids</Tabs.Tab>
-              <Tabs.Tab value="analytics" component={Link} href="/dashboard/analytics">Analytics</Tabs.Tab>
+              <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
             </Tabs.List>
 
             <Box mt="md">
@@ -133,11 +118,19 @@ export default function Dashboard() {
                   ))}
                 </div>
               </Tabs.Panel>
+
+              <Tabs.Panel value="analytics">
+                <Box ta="center" py="xl">
+                  <Link href="/dashboard/analytics">
+                    <Button size="lg">View Analytics Dashboard</Button>
+                  </Link>
+                </Box>
+              </Tabs.Panel>
             </Box>
           </Tabs>
         </div>
 
-        <MobileDashboardNav userType="contractor" currentPath={window.location.pathname} />
+        <MobileDashboardNav userType="contractor" currentPath={location} />
 
         <Modal
           opened={isCreateModalOpen}

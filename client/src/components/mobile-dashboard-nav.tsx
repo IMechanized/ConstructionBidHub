@@ -1,71 +1,44 @@
 import { Box, UnstyledButton, Stack, rem } from '@mantine/core';
-import { IconFileText, IconUsers, IconSettings, IconLayoutDashboard, IconAlertCircle } from '@tabler/icons-react';
+import { IconFileText, IconLayoutDashboard, IconAlertCircle } from '@tabler/icons-react';
 import { Link } from "wouter";
 
 interface MobileDashboardNavProps {
-  userType: "government" | "contractor";
+  userType: "contractor";
   currentPath: string;
 }
 
 export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNavProps) {
-  const navItems = userType === "government" 
-    ? [
-        {
-          label: "RFPs",
-          icon: IconFileText,
-          href: "/dashboard",
-          active: currentPath === "/dashboard"
-        },
-        {
-          label: "New",
-          icon: IconAlertCircle,
-          href: "/dashboard/new",
-          active: currentPath === "/dashboard/new"
-        },
-        {
-          label: "Team",
-          icon: IconUsers,
-          href: "/dashboard/employees",
-          active: currentPath === "/dashboard/employees"
-        }
-      ]
-    : [
-        {
-          label: "RFPs",
-          icon: IconFileText,
-          href: "/dashboard",
-          active: currentPath === "/dashboard"
-        },
-        {
-          label: "Bids",
-          icon: IconLayoutDashboard,
-          href: "/dashboard/bids",
-          active: currentPath === "/dashboard/bids"
-        },
-        {
-          label: "Team",
-          icon: IconUsers,
-          href: "/dashboard/employees",
-          active: currentPath === "/dashboard/employees"
-        },
-        {
-          label: "Settings",
-          icon: IconSettings,
-          href: "/dashboard/settings",
-          active: currentPath === "/dashboard/settings"
-        }
-      ];
+  const navItems = [
+    {
+      label: "RFPs",
+      icon: IconFileText,
+      href: "/dashboard",
+      active: currentPath === "/dashboard"
+    },
+    {
+      label: "Bids",
+      icon: IconLayoutDashboard,
+      href: "/dashboard/bids",
+      active: currentPath === "/dashboard/bids"
+    },
+    {
+      label: "Analytics",
+      icon: IconAlertCircle,
+      href: "/dashboard/analytics",
+      active: currentPath === "/dashboard/analytics"
+    }
+  ];
 
   return (
     <Box className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t z-50">
       <Stack h={64} justify="center" align="center" gap={0}>
-        <div className="flex w-full justify-around">
+        <div className="flex w-full justify-around items-stretch">
           {navItems.map((item) => (
             <UnstyledButton
               key={item.label}
               component={Link}
               href={item.href}
-              className="flex-1 flex flex-col items-center justify-center px-2"
+              className="flex-1 flex flex-col items-center justify-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               style={{
                 color: item.active ? 'var(--mantine-color-blue-6)' : 'inherit',
               }}

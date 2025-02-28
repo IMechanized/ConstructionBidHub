@@ -18,6 +18,7 @@ import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
 import SettingsForm from "@/components/settings-form";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import { isAfter, subHours } from "date-fns";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
@@ -33,7 +34,18 @@ export default function Dashboard() {
     queryKey: ["/api/bids"],
   });
 
+  const twentyFourHoursAgo = subHours(new Date(), 24);
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id) || [];
+  const availableRfps = rfps?.filter((rfp) => rfp.organizationId !== user?.id) || [];
+  const featuredRfps = availableRfps.filter((rfp) => rfp.featured);
+  const newRfps = availableRfps.filter((rfp) =>
+    !rfp.featured &&
+    isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
+  );
+  const otherRfps = availableRfps.filter((rfp) =>
+    !rfp.featured &&
+    !isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
+  );
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
@@ -65,18 +77,21 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="rfps" className="space-y-6">
+        <Tabs defaultValue="my-rfps" className="space-y-6">
           <TabsList className="w-full">
-            <TabsTrigger value="rfps" className="flex-1">RFP Management</TabsTrigger>
+            <TabsTrigger value="my-rfps" className="flex-1">My RFPs</TabsTrigger>
+            <TabsTrigger value="featured" className="flex-1">Featured RFPs</TabsTrigger>
+            <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
+            <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
             <TabsTrigger value="bids" className="flex-1">My Bids</TabsTrigger>
-            <TabsTrigger value="employees" className="flex-1">Employee Management</TabsTrigger>
+            <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
             <TabsTrigger value="analytics" asChild className="flex-1">
               <Link href="/dashboard/analytics">Analytics</Link>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="rfps">
+          <TabsContent value="my-rfps">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
               <h2 className="text-xl font-semibold">My RFPs</h2>
               <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -113,6 +128,78 @@ export default function Dashboard() {
                           </p>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="featured">
+            <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {featuredRfps.map((rfp) => (
+                <Card key={rfp.id}>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {rfp.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
+                      </span>
+                      <Button size="sm" asChild>
+                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="new">
+            <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {newRfps.map((rfp) => (
+                <Card key={rfp.id}>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {rfp.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
+                      </span>
+                      <Button size="sm" asChild>
+                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="available">
+            <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {otherRfps.map((rfp) => (
+                <Card key={rfp.id}>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {rfp.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
+                      </span>
+                      <Button size="sm" asChild>
+                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

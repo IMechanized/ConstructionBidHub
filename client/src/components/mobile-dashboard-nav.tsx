@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { FileText, LayoutDashboard, AlertCircle } from "lucide-react";
+import { FileText, Star, Clock, LayoutDashboard, AlertCircle } from "lucide-react";
 
 interface MobileDashboardNavProps {
   userType: "contractor";
@@ -10,16 +10,22 @@ interface MobileDashboardNavProps {
 export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNavProps) {
   const navItems = [
     {
-      label: "RFPs",
+      label: "My RFPs",
       icon: FileText,
       href: "/dashboard",
       active: currentPath === "/dashboard"
     },
     {
-      label: "Bids",
-      icon: LayoutDashboard,
-      href: "/dashboard/bids",
-      active: currentPath === "/dashboard/bids"
+      label: "Featured",
+      icon: Star,
+      href: "/dashboard/featured",
+      active: currentPath === "/dashboard/featured"
+    },
+    {
+      label: "New",
+      icon: Clock,
+      href: "/dashboard/new",
+      active: currentPath === "/dashboard/new"
     },
     {
       label: "Analytics",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,11 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 import SettingsForm from "@/components/settings-form";
+import { Link } from "wouter";
+import { MobileMenu } from "@/components/mobile-menu";
 
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -36,11 +38,14 @@ export default function ContractorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="border-b sticky top-0 bg-background z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h1 className="text-2xl font-bold">FindConstructionBids</h1>
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+              FindConstructionBids
+            </Link>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-4">
               {user?.logo && (
                 <img
                   src={user.logo}
@@ -55,18 +60,28 @@ export default function ContractorDashboard() {
                 Logout
               </Button>
             </div>
+            {/* Mobile Menu */}
+            <div className="md:hidden">
+              <MobileMenu
+                companyName={user?.companyName}
+                logo={user?.logo}
+                onLogout={() => logoutMutation.mutate()}
+              />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="rfps" className="space-y-6">
-          <TabsList className="w-full flex flex-wrap justify-start gap-2">
-            <TabsTrigger value="rfps">Available RFPs</TabsTrigger>
-            <TabsTrigger value="bids">My Bids</TabsTrigger>
-            <TabsTrigger value="employees">Employee Management</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 pb-3">
+            <TabsList className="w-[500px] sm:w-full flex">
+              <TabsTrigger value="rfps" className="flex-1">Available RFPs</TabsTrigger>
+              <TabsTrigger value="bids" className="flex-1">My Bids</TabsTrigger>
+              <TabsTrigger value="employees" className="flex-1">Employee Management</TabsTrigger>
+              <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="rfps">
             <div className="mb-6">

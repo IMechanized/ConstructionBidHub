@@ -42,9 +42,9 @@ export default function ContractorDashboard() {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+        <div className="container mx-auto px-4 h-14">
+          <div className="flex justify-between items-center h-full">
+            <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
               FindConstructionBids
             </Link>
             <MobileMenu
@@ -56,7 +56,7 @@ export default function ContractorDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6">
         <div className="hidden md:block">
           <Tabs defaultValue="rfps" className="space-y-6">
             <TabsList className="w-full flex">
@@ -82,10 +82,10 @@ export default function ContractorDashboard() {
               {loadingRfps ? (
                 <DashboardSectionSkeleton count={6} />
               ) : (
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {filteredRfps?.map((rfp) => (
                     <Card key={rfp.id}>
-                      <CardContent className="p-4 sm:p-6">
+                      <CardContent className="p-4">
                         <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                           {rfp.description}
@@ -134,20 +134,20 @@ export default function ContractorDashboard() {
 
             <TabsContent value="bids">
               {loadingBids ? (
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Card key={i}>
-                      <CardContent className="p-4 sm:p-6">
+                      <CardContent className="p-4">
                         <BidCardSkeleton />
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               ) : (
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {myBids?.map((bid) => (
                     <Card key={bid.id}>
-                      <CardContent className="p-4 sm:p-6">
+                      <CardContent className="p-4">
                         <h3 className="text-lg font-semibold mb-2">
                           Bid for RFP #{bid.rfpId}
                         </h3>

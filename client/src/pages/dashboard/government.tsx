@@ -50,9 +50,9 @@ export default function GovernmentDashboard() {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+        <div className="container mx-auto px-4 h-14">
+          <div className="flex justify-between items-center h-full">
+            <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
               FindConstructionBids
             </Link>
             <MobileMenu
@@ -64,7 +64,7 @@ export default function GovernmentDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6">
         <div className="hidden md:block">
           <Tabs defaultValue="rfps" className="space-y-6">
             <TabsList className="w-full flex">
@@ -74,107 +74,107 @@ export default function GovernmentDashboard() {
             </TabsList>
 
             <TabsContent value="rfps">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-              <h2 className="text-xl font-semibold">My RFPs</h2>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                Create RFP
-              </Button>
-            </div>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+                <h2 className="text-xl font-semibold">My RFPs</h2>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  Create RFP
+                </Button>
+              </div>
 
-            {loadingRfps ? (
-              <DashboardSectionSkeleton count={6} />
-            ) : (
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {myRfps?.map((rfp) => (
-                  <Card key={rfp.id}>
-                    <CardContent className="p-4 sm:p-6">
-                      <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                        {rfp.description}
-                      </p>
-                      <div className="space-y-2 mb-4">
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                          <span className="font-medium">Location:</span>
-                          <span className="text-right">{rfp.jobLocation}</span>
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={6} />
+              ) : (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {myRfps?.map((rfp) => (
+                    <Card key={rfp.id}>
+                      <CardContent className="p-4">
+                        <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                          {rfp.description}
+                        </p>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                            <span className="font-medium">Location:</span>
+                            <span className="text-right">{rfp.jobLocation}</span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                            <span className="font-medium">Budget:</span>
+                            <span className="text-right">
+                              {rfp.budgetMin
+                                ? `$${rfp.budgetMin.toLocaleString()}`
+                                : "Not specified"}
+                            </span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                            <span className="font-medium">Walkthrough:</span>
+                            <span className="text-right">{new Date(rfp.walkthroughDate).toLocaleString()}</span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                            <span className="font-medium">RFI Due:</span>
+                            <span className="text-right">{new Date(rfp.rfiDate).toLocaleString()}</span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                            <span className="font-medium">Deadline:</span>
+                            <span className="text-right">{new Date(rfp.deadline).toLocaleString()}</span>
+                          </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                          <span className="font-medium">Budget:</span>
-                          <span className="text-right">
-                            {rfp.budgetMin
-                              ? `$${rfp.budgetMin.toLocaleString()}`
-                              : "Not specified"}
-                          </span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                          <span className="font-medium">Walkthrough:</span>
-                          <span className="text-right">{new Date(rfp.walkthroughDate).toLocaleString()}</span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                          <span className="font-medium">RFI Due:</span>
-                          <span className="text-right">{new Date(rfp.rfiDate).toLocaleString()}</span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                          <span className="font-medium">Deadline:</span>
-                          <span className="text-right">{new Date(rfp.deadline).toLocaleString()}</span>
-                        </div>
-                      </div>
 
-                      <h4 className="font-medium mb-2">Bids</h4>
-                      {loadingBids ? (
-                        <div className="space-y-2">
-                          {Array.from({ length: 2 }).map((_, i) => (
-                            <div key={i} className="p-2 bg-secondary rounded">
-                              <BidCardSkeleton />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {bids
-                            ?.filter((bid) => bid.rfpId === rfp.id)
-                            .map((bid) => (
-                              <div key={bid.id} className="text-sm p-2 bg-secondary rounded">
-                                <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-                                  <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
-                                  <span>Contractor #{bid.contractorId}</span>
-                                </div>
-                                <p className="mt-2 text-muted-foreground line-clamp-3">
-                                  {bid.proposal}
-                                </p>
+                        <h4 className="font-medium mb-2">Bids</h4>
+                        {loadingBids ? (
+                          <div className="space-y-2">
+                            {Array.from({ length: 2 }).map((_, i) => (
+                              <div key={i} className="p-2 bg-secondary rounded">
+                                <BidCardSkeleton />
                               </div>
                             ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {bids
+                              ?.filter((bid) => bid.rfpId === rfp.id)
+                              .map((bid) => (
+                                <div key={bid.id} className="text-sm p-2 bg-secondary rounded">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                                    <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
+                                    <span>Contractor #{bid.contractorId}</span>
+                                  </div>
+                                  <p className="mt-2 text-muted-foreground line-clamp-3">
+                                    {bid.proposal}
+                                  </p>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="new">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+                <h2 className="text-xl font-semibold">New RFPs (Last 24 Hours)</h2>
               </div>
-            )}
-          </TabsContent>
 
-          <TabsContent value="new">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-              <h2 className="text-xl font-semibold">New RFPs (Last 24 Hours)</h2>
-            </div>
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={6} />
+              ) : (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {newRfps?.map((rfp) => (
+                    <RfpCard
+                      key={rfp.id}
+                      rfp={rfp}
+                      isNew
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
-            {loadingRfps ? (
-              <DashboardSectionSkeleton count={6} />
-            ) : (
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {newRfps?.map((rfp) => (
-                  <RfpCard
-                    key={rfp.id}
-                    rfp={rfp}
-                    isNew
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="employees">
-            <EmployeeManagement />
-          </TabsContent>
+            <TabsContent value="employees">
+              <EmployeeManagement />
+            </TabsContent>
           </Tabs>
         </div>
 

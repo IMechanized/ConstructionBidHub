@@ -2,8 +2,6 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./hooks/use-auth";
-import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import LandingPage from "@/pages/landing-page";
@@ -43,21 +41,11 @@ function Router() {
 
 function App() {
   return (
-    <MantineProvider
-      defaultColorScheme="auto"
-      theme={{
-        primaryColor: 'blue',
-        fontFamily: 'Inter, sans-serif',
-        headings: { fontFamily: 'Inter, sans-serif' },
-      }}
-    >
-      <Notifications />
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-        </AuthProvider>
-      </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

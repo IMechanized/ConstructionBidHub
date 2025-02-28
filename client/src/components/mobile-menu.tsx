@@ -1,7 +1,8 @@
-import { Drawer, Button, Avatar, Text, Stack, Divider } from '@mantine/core';
-import { IconMenu2 } from '@tabler/icons-react';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
 import { Link } from "wouter";
-import { useState } from 'react';
+import { Menu } from "lucide-react";
 
 interface MobileMenuProps {
   companyName?: string;
@@ -10,72 +11,49 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
-  const [opened, setOpened] = useState(false);
-
   return (
-    <>
-      <Button
-        variant="subtle"
-        size="lg"
-        className="md:hidden p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-        onClick={() => setOpened(true)}
-      >
-        <IconMenu2 size={24} />
-      </Button>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent>
+        <div className="flex flex-col h-full">
+          <div className="flex flex-col items-center gap-4 py-6">
+            {logo && (
+              <Avatar className="h-16 w-16">
+                <img
+                  src={logo}
+                  alt={`${companyName} logo`}
+                  className="h-full w-full object-cover"
+                />
+              </Avatar>
+            )}
+            {companyName && (
+              <p className="text-lg font-medium">{companyName}</p>
+            )}
+          </div>
 
-      <Drawer
-        opened={opened}
-        onClose={() => setOpened(false)}
-        position="right"
-        size="85%"
-        title="Menu"
-      >
-        <Stack gap="xl" mt="xl">
-          {logo && (
-            <Avatar
-              src={logo}
-              alt={`${companyName} logo`}
-              size="xl"
-              radius="xl"
-              mx="auto"
-            />
-          )}
-          {companyName && (
-            <Text ta="center" size="lg" fw={500}>
-              {companyName}
-            </Text>
-          )}
-
-          <Divider my="sm" />
+          <div className="space-y-2 flex-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              asChild
+            >
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          </div>
 
           <Button
-            component={Link}
-            href="/dashboard"
-            variant="subtle"
-            fullWidth
-            size="lg"
-            h={56}
-            className="hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => setOpened(false)}
-          >
-            Dashboard
-          </Button>
-
-          <Button
-            variant="subtle"
-            fullWidth
-            size="lg"
-            h={56}
-            className="hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => {
-              onLogout();
-              setOpened(false);
-            }}
+            variant="ghost"
+            className="w-full justify-start mt-auto"
+            onClick={onLogout}
           >
             Logout
           </Button>
-        </Stack>
-      </Drawer>
-    </>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

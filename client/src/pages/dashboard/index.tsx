@@ -1,19 +1,29 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Rfp, Bid, User } from "@shared/schema"; // Added back the User import
+import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Box, Button, Card, TextInput, Tabs, Stack, Title, Container, Group, Modal } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import RfpForm from "@/components/rfp-form";
-import { Link, useLocation } from "wouter";
-import { MobileMenu } from "@/components/mobile-menu";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
+import EmployeeManagement from "@/components/employee-management";
+import SettingsForm from "@/components/settings-form";
+import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [location] = useLocation();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -30,117 +40,136 @@ export default function Dashboard() {
   };
 
   return (
-    <Box className="min-h-screen bg-white dark:bg-gray-900 pb-16 md:pb-0">
-      <Box component="header" className="border-b sticky top-0 bg-white dark:bg-gray-900 z-50">
-        <Container size="lg">
-          <Group justify="space-between" align="center" h={56}>
-            <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
-              FindConstructionBids
-            </Link>
-            <MobileMenu
-              companyName={user?.companyName}
-              logo={user?.logo}
-              onLogout={() => logoutMutation.mutate()}
-            />
-          </Group>
-        </Container>
-      </Box>
-
-      <Container size="lg" py="md">
-        <div className="hidden md:block">
-          <Tabs defaultValue="rfps">
-            <Tabs.List grow>
-              <Tabs.Tab value="rfps">RFP Management</Tabs.Tab>
-              <Tabs.Tab value="bids">My Bids</Tabs.Tab>
-              <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
-            </Tabs.List>
-
-            <Box mt="md">
-              <Tabs.Panel value="rfps">
-                <Group justify="space-between" align="center" mb="lg">
-                  <Title order={2}>My RFPs</Title>
-                  <Button onClick={() => setIsCreateModalOpen(true)}>
-                    Create RFP
-                  </Button>
-                </Group>
-
-                <Box mb="md">
-                  <TextInput
-                    placeholder="Search RFPs..."
-                    leftSection={<IconSearch size="1rem" />}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ maxWidth: '400px' }}
-                  />
-                </Box>
-
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {myRfps.map((rfp) => (
-                    <Card key={rfp.id} padding="md" radius="md" withBorder>
-                      <Stack gap="md">
-                        <Title order={3}>{rfp.title}</Title>
-                        <Box className="text-sm text-muted-foreground line-clamp-3">
-                          {rfp.description}
-                        </Box>
-                        <Stack gap="xs">
-                          {bids?.filter(bid => bid.rfpId === rfp.id).map((bid) => (
-                            <Box key={bid.id} p="sm" bg="gray.1" style={{ borderRadius: 8 }}>
-                              <Group justify="space-between" mb="xs">
-                                <Box>Bid Amount: ${bid.amount.toLocaleString()}</Box>
-                                <Box>Contractor #{bid.contractorId}</Box>
-                              </Group>
-                              <Box className="text-sm text-muted-foreground line-clamp-3">
-                                {bid.proposal}
-                              </Box>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </Stack>
-                    </Card>
-                  ))}
-                </div>
-              </Tabs.Panel>
-
-              <Tabs.Panel value="bids">
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {bids?.map((bid) => (
-                    <Card key={bid.id} padding="md" radius="md" withBorder>
-                      <Stack gap="md">
-                        <Title order={3}>Bid for RFP #{bid.rfpId}</Title>
-                        <Box className="text-sm text-muted-foreground line-clamp-3">
-                          {bid.proposal}
-                        </Box>
-                        <Box className="text-sm">
-                          Amount: ${bid.amount.toLocaleString()}
-                        </Box>
-                      </Stack>
-                    </Card>
-                  ))}
-                </div>
-              </Tabs.Panel>
-
-              <Tabs.Panel value="analytics">
-                <Box ta="center" py="xl">
-                  <Link href="/dashboard/analytics">
-                    <Button size="lg">View Analytics Dashboard</Button>
-                  </Link>
-                </Box>
-              </Tabs.Panel>
-            </Box>
-          </Tabs>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
+          <div className="flex items-center gap-4">
+            {user?.logo && (
+              <img
+                src={user.logo}
+                alt={`${user.companyName} logo`}
+                className="h-8 w-8 object-contain rounded-full"
+              />
+            )}
+            <span className="text-sm text-muted-foreground hidden md:inline">
+              {user?.companyName}
+            </span>
+            <Button variant="outline" onClick={() => logoutMutation.mutate()}>
+              Logout
+            </Button>
+          </div>
         </div>
+      </header>
 
-        <MobileDashboardNav userType="contractor" currentPath={location} />
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="rfps" className="space-y-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="rfps" className="flex-1">RFP Management</TabsTrigger>
+            <TabsTrigger value="bids" className="flex-1">My Bids</TabsTrigger>
+            <TabsTrigger value="employees" className="flex-1">Employee Management</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
+            <TabsTrigger value="analytics" asChild className="flex-1">
+              <Link href="/dashboard/analytics">Analytics</Link>
+            </TabsTrigger>
+          </TabsList>
 
-        <Modal
-          opened={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          title="Create New RFP"
-          size="lg"
-        >
-          <RfpForm onSuccess={handleCreateSuccess} />
-        </Modal>
-      </Container>
-    </Box>
+          <TabsContent value="rfps">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+              <h2 className="text-xl font-semibold">My RFPs</h2>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                Create RFP
+              </Button>
+            </div>
+
+            <div className="relative mb-6">
+              <Input
+                placeholder="Search RFPs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {myRfps.map((rfp) => (
+                <Card key={rfp.id}>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      {rfp.description}
+                    </p>
+                    <div className="space-y-2">
+                      {bids?.filter(bid => bid.rfpId === rfp.id).map((bid) => (
+                        <div key={bid.id} className="text-sm p-3 bg-muted rounded-lg">
+                          <div className="flex justify-between mb-1">
+                            <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
+                            <span>Contractor #{bid.contractorId}</span>
+                          </div>
+                          <p className="text-muted-foreground line-clamp-2">
+                            {bid.proposal}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="bids">
+            {loadingBids ? (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <BidCardSkeleton />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {bids?.map((bid) => (
+                  <Card key={bid.id}>
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold mb-2">
+                        Bid for RFP #{bid.rfpId}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {bid.proposal}
+                      </p>
+                      <div className="text-sm">
+                        Amount: ${bid.amount.toLocaleString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="employees">
+            <EmployeeManagement />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsForm />
+          </TabsContent>
+        </Tabs>
+
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create New RFP</DialogTitle>
+            </DialogHeader>
+            <RfpForm onSuccess={handleCreateSuccess} />
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
   );
 }

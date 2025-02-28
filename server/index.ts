@@ -51,6 +51,7 @@ const startServer = async (): Promise<void> => {
     const HOST = "0.0.0.0";
 
     log(`Starting server setup...`);
+    log("Setting up middleware..."); //Added log
     const server = registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -62,8 +63,10 @@ const startServer = async (): Promise<void> => {
 
     // Setup static file serving or Vite middleware based on environment
     if (process.env.NODE_ENV === "production") {
+      log('Setting up static file serving...');
       serveStatic(app);
     } else {
+      log('Setting up Vite middleware...');
       await setupVite(app, server);
     }
 

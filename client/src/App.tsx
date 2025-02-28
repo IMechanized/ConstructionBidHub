@@ -27,22 +27,13 @@ function Router() {
       <Route path="/terms" component={TermsPage} />
       <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
-        <ProtectedRoute
-          path="/onboarding"
-          component={OnboardingForm}
-        />
+        <ProtectedRoute path="/onboarding" component={OnboardingForm} />
       </Route>
       <Route path="/dashboard">
-        <ProtectedRoute
-          path="/dashboard"
-          component={Dashboard}
-        />
+        <ProtectedRoute path="/dashboard" component={Dashboard} />
       </Route>
       <Route path="/dashboard/analytics">
-        <ProtectedRoute
-          path="/dashboard/analytics"
-          component={AnalyticsDashboard}
-        />
+        <ProtectedRoute path="/dashboard/analytics" component={AnalyticsDashboard} />
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route component={NotFound} />

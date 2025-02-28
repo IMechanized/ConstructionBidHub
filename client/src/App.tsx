@@ -14,6 +14,7 @@ import SupportPage from "@/pages/support";
 import TermsPage from "@/pages/terms";
 import RfpDetailPage from "@/pages/rfp/[id]";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
+import OpportunitiesPage from "@/pages/opportunities/[type]";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
+      <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
         <ProtectedRoute
           path="/onboarding"

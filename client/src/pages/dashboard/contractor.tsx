@@ -37,29 +37,31 @@ export default function ContractorDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">FindConstructionBids</h1>
-          <div className="flex items-center gap-4">
-            {user?.logo && (
-              <img
-                src={user.logo}
-                alt={`${user.companyName} logo`}
-                className="h-8 w-8 object-contain"
-              />
-            )}
-            <span className="text-sm text-muted-foreground">
-              {user?.companyName}
-            </span>
-            <Button variant="outline" onClick={() => logoutMutation.mutate()}>
-              Logout
-            </Button>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h1 className="text-2xl font-bold">FindConstructionBids</h1>
+            <div className="flex items-center gap-4">
+              {user?.logo && (
+                <img
+                  src={user.logo}
+                  alt={`${user.companyName} logo`}
+                  className="h-8 w-8 object-contain"
+                />
+              )}
+              <span className="text-sm text-muted-foreground">
+                {user?.companyName}
+              </span>
+              <Button variant="outline" onClick={() => logoutMutation.mutate()}>
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="rfps">
-          <TabsList className="mb-8">
+        <Tabs defaultValue="rfps" className="space-y-6">
+          <TabsList className="w-full flex flex-wrap justify-start gap-2">
             <TabsTrigger value="rfps">Available RFPs</TabsTrigger>
             <TabsTrigger value="bids">My Bids</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
@@ -68,7 +70,7 @@ export default function ContractorDashboard() {
 
           <TabsContent value="rfps">
             <div className="mb-6">
-              <div className="relative">
+              <div className="relative max-w-md mx-auto sm:mx-0">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search RFPs..."
@@ -82,38 +84,38 @@ export default function ContractorDashboard() {
             {loadingRfps ? (
               <DashboardSectionSkeleton count={6} />
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {filteredRfps?.map((rfp) => (
                   <Card key={rfp.id}>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                         {rfp.description}
                       </p>
                       <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Location:</span>
-                          <span>{rfp.jobLocation}</span>
+                          <span className="text-right">{rfp.jobLocation}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Budget:</span>
-                          <span>
+                          <span className="text-right">
                             {rfp.budgetMin
                               ? `$${rfp.budgetMin.toLocaleString()}`
                               : "Not specified"}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Walkthrough:</span>
-                          <span>{new Date(rfp.walkthroughDate).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.walkthroughDate).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">RFI Due:</span>
-                          <span>{new Date(rfp.rfiDate).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.rfiDate).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Deadline:</span>
-                          <span>{new Date(rfp.deadline).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.deadline).toLocaleString()}</span>
                         </div>
                       </div>
 
@@ -134,24 +136,24 @@ export default function ContractorDashboard() {
 
           <TabsContent value="bids">
             {loadingBids ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <BidCardSkeleton />
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {myBids?.map((bid) => (
                   <Card key={bid.id}>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <h3 className="text-lg font-semibold mb-2">
                         Bid for RFP #{bid.rfpId}
                       </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                         {bid.proposal}
                       </p>
                       <div className="text-sm">

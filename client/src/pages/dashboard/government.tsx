@@ -16,9 +16,8 @@ import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
-import RfpCard from "@/components/rfp-card"; // Assumed component
-import Link from 'next/link'; // Added import for Link component
-
+import RfpCard from "@/components/rfp-card";
+import Link from 'next/link';
 
 export default function GovernmentDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -44,44 +43,36 @@ export default function GovernmentDashboard() {
     setIsCreateModalOpen(false);
   };
 
-  useEffect(() => {
-    if (user?.userType !== "government") {
-      toast({
-        title: "Unauthorized",
-        description: "You must be a government organization to view this page",
-        variant: "destructive",
-      });
-    }
-  }, [user, toast]);
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
-            FindConstructionBids
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.companyName}
-            </span>
-            <Button variant="outline" onClick={() => logoutMutation.mutate()}>
-              Logout
-            </Button>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
+              FindConstructionBids
+            </Link>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {user?.companyName}
+              </span>
+              <Button variant="outline" onClick={() => logoutMutation.mutate()}>
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="rfps">
-          <TabsList className="mb-8">
+        <Tabs defaultValue="rfps" className="space-y-6">
+          <TabsList className="w-full flex flex-wrap justify-start gap-2">
             <TabsTrigger value="rfps">RFP Management</TabsTrigger>
             <TabsTrigger value="new">New RFPs</TabsTrigger>
             <TabsTrigger value="employees">Employee Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rfps">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
               <h2 className="text-xl font-semibold">My RFPs</h2>
               <Button onClick={() => setIsCreateModalOpen(true)}>
                 Create RFP
@@ -91,38 +82,38 @@ export default function GovernmentDashboard() {
             {loadingRfps ? (
               <DashboardSectionSkeleton count={6} />
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {myRfps?.map((rfp) => (
                   <Card key={rfp.id}>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                         {rfp.description}
                       </p>
                       <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Location:</span>
-                          <span>{rfp.jobLocation}</span>
+                          <span className="text-right">{rfp.jobLocation}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Budget:</span>
-                          <span>
+                          <span className="text-right">
                             {rfp.budgetMin
-                              ? `Minimum $${rfp.budgetMin.toLocaleString()}`
+                              ? `$${rfp.budgetMin.toLocaleString()}`
                               : "Not specified"}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Walkthrough:</span>
-                          <span>{new Date(rfp.walkthroughDate).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.walkthroughDate).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">RFI Due:</span>
-                          <span>{new Date(rfp.rfiDate).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.rfiDate).toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                           <span className="font-medium">Deadline:</span>
-                          <span>{new Date(rfp.deadline).toLocaleString()}</span>
+                          <span className="text-right">{new Date(rfp.deadline).toLocaleString()}</span>
                         </div>
                       </div>
 
@@ -141,11 +132,11 @@ export default function GovernmentDashboard() {
                             ?.filter((bid) => bid.rfpId === rfp.id)
                             .map((bid) => (
                               <div key={bid.id} className="text-sm p-2 bg-secondary rounded">
-                                <div className="flex justify-between">
+                                <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
                                   <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
                                   <span>Contractor #{bid.contractorId}</span>
                                 </div>
-                                <p className="mt-1 text-muted-foreground">
+                                <p className="mt-2 text-muted-foreground line-clamp-3">
                                   {bid.proposal}
                                 </p>
                               </div>
@@ -160,14 +151,14 @@ export default function GovernmentDashboard() {
           </TabsContent>
 
           <TabsContent value="new">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
               <h2 className="text-xl font-semibold">New RFPs (Last 24 Hours)</h2>
             </div>
 
             {loadingRfps ? (
               <DashboardSectionSkeleton count={6} />
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {newRfps?.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
@@ -185,7 +176,7 @@ export default function GovernmentDashboard() {
         </Tabs>
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New RFP</DialogTitle>
             </DialogHeader>

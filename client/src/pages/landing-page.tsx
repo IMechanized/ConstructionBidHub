@@ -57,13 +57,18 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Connect government organizations with qualified contractors. Make the bidding process efficient and transparent.
           </p>
-          <Button asChild size="lg" className="text-lg px-8">
-            {user ? (
-              <Link href="/dashboard">Back to Dashboard</Link>
-            ) : (
-              <Link href="/auth">Join Now</Link>
-            )}
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button asChild size="lg" className="text-lg px-8">
+              <Link href="/opportunities/featured">Find RFPs</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="text-lg px-8">
+              {user ? (
+                <Link href="/dashboard">Back to Dashboard</Link>
+              ) : (
+                <Link href="/auth">Post RFPs</Link>
+              )}
+            </Button>
+          </div>
         </div>
       </section>
 

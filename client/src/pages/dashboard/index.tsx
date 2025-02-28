@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
@@ -17,8 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
 import SettingsForm from "@/components/settings-form";
-import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
+import { RfpCard } from "@/components/rfp-card";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
@@ -50,6 +50,12 @@ export default function Dashboard() {
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
   };
+
+  const filteredRfps = myRfps.filter(
+    (rfp) =>
+      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,53 +114,30 @@ export default function Dashboard() {
               />
             </div>
 
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {myRfps.map((rfp) => (
-                <Card key={rfp.id}>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {rfp.description}
-                    </p>
-                    <div className="space-y-2">
-                      {bids?.filter(bid => bid.rfpId === rfp.id).map((bid) => (
-                        <div key={bid.id} className="text-sm p-3 bg-muted rounded-lg">
-                          <div className="flex justify-between mb-1">
-                            <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
-                            <span>Contractor #{bid.contractorId}</span>
-                          </div>
-                          <p className="text-muted-foreground line-clamp-2">
-                            {bid.proposal}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {loadingRfps ? (
+              <DashboardSectionSkeleton count={6} />
+            ) : (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {filteredRfps.map((rfp) => (
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                    isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="featured">
             <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {featuredRfps.map((rfp) => (
-                <Card key={rfp.id}>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {rfp.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
-                      </span>
-                      <Button size="sm" asChild>
-                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RfpCard
+                  key={rfp.id}
+                  rfp={rfp}
+                  isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                />
               ))}
             </div>
           </TabsContent>
@@ -163,22 +146,11 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {newRfps.map((rfp) => (
-                <Card key={rfp.id}>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {rfp.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
-                      </span>
-                      <Button size="sm" asChild>
-                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RfpCard
+                  key={rfp.id}
+                  rfp={rfp}
+                  isNew={true}
+                />
               ))}
             </div>
           </TabsContent>
@@ -187,54 +159,29 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {otherRfps.map((rfp) => (
-                <Card key={rfp.id}>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {rfp.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        Budget: ${rfp.budgetMin?.toLocaleString() ?? 'Not specified'}
-                      </span>
-                      <Button size="sm" asChild>
-                        <Link href={`/rfp/${rfp.id}`}>View Details</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RfpCard
+                  key={rfp.id}
+                  rfp={rfp}
+                />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="bids">
             {loadingBids ? (
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-6">
-                      <BidCardSkeleton />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <DashboardSectionSkeleton count={3} />
             ) : (
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {bids?.map((bid) => (
-                  <Card key={bid.id}>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold mb-2">
-                        Bid for RFP #{bid.rfpId}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {bid.proposal}
-                      </p>
-                      <div className="text-sm">
-                        Amount: ${bid.amount.toLocaleString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {bids?.map((bid) => {
+                  const rfp = rfps?.find(r => r.id === bid.rfpId);
+                  return rfp ? (
+                    <RfpCard
+                      key={bid.id}
+                      rfp={rfp}
+                      compact
+                    />
+                  ) : null;
+                })}
               </div>
             )}
           </TabsContent>

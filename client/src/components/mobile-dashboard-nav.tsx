@@ -1,12 +1,6 @@
+import { Box, Navbar, UnstyledButton, Stack, rem } from '@mantine/core';
+import { IconFileText, IconUsers, IconSettings, IconLayoutDashboard, IconAlertCircle } from '@tabler/icons-react';
 import { Link } from "wouter";
-import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Settings,
-  AlertCircle 
-} from "lucide-react";
 
 interface MobileDashboardNavProps {
   userType: "government" | "contractor";
@@ -18,19 +12,19 @@ export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNav
     ? [
         {
           label: "RFPs",
-          icon: FileText,
+          icon: IconFileText,
           href: "/dashboard",
           active: currentPath === "/dashboard"
         },
         {
           label: "New",
-          icon: AlertCircle,
+          icon: IconAlertCircle,
           href: "/dashboard/new",
           active: currentPath === "/dashboard/new"
         },
         {
           label: "Team",
-          icon: Users,
+          icon: IconUsers,
           href: "/dashboard/employees",
           active: currentPath === "/dashboard/employees"
         }
@@ -38,50 +32,59 @@ export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNav
     : [
         {
           label: "RFPs",
-          icon: FileText,
+          icon: IconFileText,
           href: "/dashboard",
           active: currentPath === "/dashboard"
         },
         {
           label: "Bids",
-          icon: LayoutDashboard,
+          icon: IconLayoutDashboard,
           href: "/dashboard/bids",
           active: currentPath === "/dashboard/bids"
         },
         {
           label: "Team",
-          icon: Users,
+          icon: IconUsers,
           href: "/dashboard/employees",
           active: currentPath === "/dashboard/employees"
         },
         {
           label: "Settings",
-          icon: Settings,
+          icon: IconSettings,
           href: "/dashboard/settings",
           active: currentPath === "/dashboard/settings"
         }
       ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t">
-      <div className="flex justify-around items-center h-16">
-        {navItems.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center justify-center flex-1 h-full",
-              "text-xs gap-1 py-1",
-              item.active 
-                ? "text-primary border-t-2 border-primary" 
-                : "text-muted-foreground hover:text-primary"
-            )}
-          >
-            <item.icon className="h-6 w-6" />
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </div>
-    </nav>
+    <Box className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t z-50">
+      <Navbar height={64} p="md">
+        <Navbar.Section grow>
+          <Stack justify="center" align="center" gap={0}>
+            <div className="flex w-full justify-around">
+              {navItems.map((item) => (
+                <UnstyledButton
+                  key={item.label}
+                  component={Link}
+                  href={item.href}
+                  className="flex-1 flex flex-col items-center justify-center px-2"
+                  style={{
+                    color: item.active ? 'var(--mantine-color-blue-6)' : 'inherit',
+                  }}
+                >
+                  <item.icon
+                    style={{ width: rem(24), height: rem(24) }}
+                    stroke={1.5}
+                  />
+                  <Box mt={4} style={{ fontSize: rem(12) }}>
+                    {item.label}
+                  </Box>
+                </UnstyledButton>
+              ))}
+            </div>
+          </Stack>
+        </Navbar.Section>
+      </Navbar>
+    </Box>
   );
 }

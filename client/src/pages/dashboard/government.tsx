@@ -3,20 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import RfpForm from "@/components/rfp-form";
+import { Box, Button, Card, Tabs, Stack, Title, Container, Group } from '@mantine/core';
+import BidForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
-import { isAfter, subHours } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import { Link } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
@@ -24,7 +14,6 @@ import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 
 export default function GovernmentDashboard() {
   const { user, logoutMutation } = useAuth();
-  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [location] = useLocation();
 
@@ -36,11 +25,11 @@ export default function GovernmentDashboard() {
     queryKey: ["/api/rfps/bids"],
   });
 
-  const twentyFourHoursAgo = subHours(new Date(), 24);
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const myRfps = rfps?.filter((rfp) => rfp.organizationId === user?.id);
   const newRfps = rfps?.filter((rfp) =>
     !rfp.featured &&
-    isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
+    new Date(rfp.createdAt) > twentyFourHoursAgo
   );
 
   const handleCreateSuccess = () => {
@@ -48,10 +37,10 @@ export default function GovernmentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
-      <header className="border-b sticky top-0 bg-background z-50">
-        <div className="container mx-auto px-4 h-14">
-          <div className="flex justify-between items-center h-full">
+    <Box className="min-h-screen bg-white dark:bg-gray-900 pb-16 md:pb-0">
+      <Box component="header" className="border-b sticky top-0 bg-white dark:bg-gray-900 z-50">
+        <Container size="lg">
+          <Group justify="space-between" align="center" h={56}>
             <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
               FindConstructionBids
             </Link>
@@ -60,135 +49,127 @@ export default function GovernmentDashboard() {
               logo={user?.logo}
               onLogout={() => logoutMutation.mutate()}
             />
-          </div>
-        </div>
-      </header>
+          </Group>
+        </Container>
+      </Box>
 
-      <main className="container mx-auto px-4 py-6">
+      <Container size="lg" py="md">
         <div className="hidden md:block">
-          <Tabs defaultValue="rfps" className="space-y-6">
-            <TabsList className="w-full flex">
-              <TabsTrigger value="rfps" className="flex-1">RFP Management</TabsTrigger>
-              <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
-              <TabsTrigger value="employees" className="flex-1">Employee Management</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="rfps">
+            <Tabs.List grow>
+              <Tabs.Tab value="rfps">RFP Management</Tabs.Tab>
+              <Tabs.Tab value="new">New RFPs</Tabs.Tab>
+              <Tabs.Tab value="employees">Employee Management</Tabs.Tab>
+            </Tabs.List>
 
-            <TabsContent value="rfps">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-                <h2 className="text-xl font-semibold">My RFPs</h2>
-                <Button onClick={() => setIsCreateModalOpen(true)}>
-                  Create RFP
-                </Button>
-              </div>
+            <Box mt="md">
+              <Tabs.Panel value="rfps">
+                <Group justify="space-between" align="center" mb="lg">
+                  <Title order={2}>My RFPs</Title>
+                  <Button onClick={() => setIsCreateModalOpen(true)}>
+                    Create RFP
+                  </Button>
+                </Group>
 
-              {loadingRfps ? (
-                <DashboardSectionSkeleton count={6} />
-              ) : (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {myRfps?.map((rfp) => (
-                    <Card key={rfp.id}>
-                      <CardContent className="p-4">
-                        <h3 className="text-lg font-semibold mb-2">{rfp.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                          {rfp.description}
-                        </p>
-                        <div className="space-y-2 mb-4">
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                            <span className="font-medium">Location:</span>
-                            <span className="text-right">{rfp.jobLocation}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                            <span className="font-medium">Budget:</span>
-                            <span className="text-right">
-                              {rfp.budgetMin
-                                ? `$${rfp.budgetMin.toLocaleString()}`
-                                : "Not specified"}
-                            </span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                            <span className="font-medium">Walkthrough:</span>
-                            <span className="text-right">{new Date(rfp.walkthroughDate).toLocaleString()}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                            <span className="font-medium">RFI Due:</span>
-                            <span className="text-right">{new Date(rfp.rfiDate).toLocaleString()}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
-                            <span className="font-medium">Deadline:</span>
-                            <span className="text-right">{new Date(rfp.deadline).toLocaleString()}</span>
-                          </div>
-                        </div>
+                {loadingRfps ? (
+                  <DashboardSectionSkeleton count={6} />
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {myRfps?.map((rfp) => (
+                      <Card key={rfp.id} padding="md" radius="md" withBorder>
+                        <Stack gap="md">
+                          <Title order={3}>{rfp.title}</Title>
+                          <Box className="text-sm text-muted-foreground line-clamp-3">
+                            {rfp.description}
+                          </Box>
+                          <Stack gap="xs">
+                            <Group justify="space-between">
+                              <Box className="font-medium">Location:</Box>
+                              <Box>{rfp.jobLocation}</Box>
+                            </Group>
+                            <Group justify="space-between">
+                              <Box className="font-medium">Budget:</Box>
+                              <Box>
+                                {rfp.budgetMin
+                                  ? `$${rfp.budgetMin.toLocaleString()}`
+                                  : "Not specified"}
+                              </Box>
+                            </Group>
+                            <Group justify="space-between">
+                              <Box className="font-medium">Walkthrough:</Box>
+                              <Box>{new Date(rfp.walkthroughDate).toLocaleString()}</Box>
+                            </Group>
+                            <Group justify="space-between">
+                              <Box className="font-medium">RFI Due:</Box>
+                              <Box>{new Date(rfp.rfiDate).toLocaleString()}</Box>
+                            </Group>
+                            <Group justify="space-between">
+                              <Box className="font-medium">Deadline:</Box>
+                              <Box>{new Date(rfp.deadline).toLocaleString()}</Box>
+                            </Group>
+                          </Stack>
 
-                        <h4 className="font-medium mb-2">Bids</h4>
-                        {loadingBids ? (
-                          <div className="space-y-2">
-                            {Array.from({ length: 2 }).map((_, i) => (
-                              <div key={i} className="p-2 bg-secondary rounded">
-                                <BidCardSkeleton />
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {bids
-                              ?.filter((bid) => bid.rfpId === rfp.id)
-                              .map((bid) => (
-                                <div key={bid.id} className="text-sm p-2 bg-secondary rounded">
-                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-                                    <span>Bid Amount: ${bid.amount.toLocaleString()}</span>
-                                    <span>Contractor #{bid.contractorId}</span>
-                                  </div>
-                                  <p className="mt-2 text-muted-foreground line-clamp-3">
-                                    {bid.proposal}
-                                  </p>
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+                          <Box>
+                            <Title order={4} mb="sm">Bids</Title>
+                            {loadingBids ? (
+                              <Stack gap="sm">
+                                {Array.from({ length: 2 }).map((_, i) => (
+                                  <Box key={i} p="sm" bg="gray.1" style={{ borderRadius: 8 }}>
+                                    <BidCardSkeleton />
+                                  </Box>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Stack gap="sm">
+                                {bids
+                                  ?.filter((bid) => bid.rfpId === rfp.id)
+                                  .map((bid) => (
+                                    <Box key={bid.id} p="sm" bg="gray.1" style={{ borderRadius: 8 }}>
+                                      <Group justify="space-between" mb="xs">
+                                        <Box>Bid Amount: ${bid.amount.toLocaleString()}</Box>
+                                        <Box>Contractor #{bid.contractorId}</Box>
+                                      </Group>
+                                      <Box className="text-sm text-muted-foreground line-clamp-3">
+                                        {bid.proposal}
+                                      </Box>
+                                    </Box>
+                                  ))}
+                              </Stack>
+                            )}
+                          </Box>
+                        </Stack>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </Tabs.Panel>
 
-            <TabsContent value="new">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-                <h2 className="text-xl font-semibold">New RFPs (Last 24 Hours)</h2>
-              </div>
+              <Tabs.Panel value="new">
+                <Title order={2} mb="lg">New RFPs (Last 24 Hours)</Title>
+                {loadingRfps ? (
+                  <DashboardSectionSkeleton count={6} />
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {newRfps?.map((rfp) => (
+                      <RfpCard
+                        key={rfp.id}
+                        rfp={rfp}
+                        isNew
+                      />
+                    ))}
+                  </div>
+                )}
+              </Tabs.Panel>
 
-              {loadingRfps ? (
-                <DashboardSectionSkeleton count={6} />
-              ) : (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {newRfps?.map((rfp) => (
-                    <RfpCard
-                      key={rfp.id}
-                      rfp={rfp}
-                      isNew
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="employees">
-              <EmployeeManagement />
-            </TabsContent>
+              <Tabs.Panel value="employees">
+                <EmployeeManagement />
+              </Tabs.Panel>
+            </Box>
           </Tabs>
         </div>
 
         <MobileDashboardNav userType="government" currentPath={location} />
-      </main>
-
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New RFP</DialogTitle>
-          </DialogHeader>
-          <RfpForm onSuccess={handleCreateSuccess} />
-        </DialogContent>
-      </Dialog>
-    </div>
+      </Container>
+    </Box>
   );
 }

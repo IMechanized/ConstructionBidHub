@@ -1,14 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { Drawer, Button, Avatar, Text, Stack, Divider } from '@mantine/core';
+import { IconMenu2 } from '@tabler/icons-react';
 import { Link } from "wouter";
-import { Menu } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+import { useState } from 'react';
 
 interface MobileMenuProps {
   companyName?: string;
@@ -17,37 +10,70 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
+  const [opened, setOpened] = useState(false);
+
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-6 w-6" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[85vw] sm:w-[350px]">
-        <SheetHeader className="text-left">
-          <SheetTitle>Menu</SheetTitle>
-        </SheetHeader>
-        <div className="mt-8 flex flex-col gap-4">
+    <>
+      <Button
+        variant="subtle"
+        size="sm"
+        className="md:hidden"
+        onClick={() => setOpened(true)}
+      >
+        <IconMenu2 size={24} />
+      </Button>
+
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="right"
+        size="85%"
+        title="Menu"
+      >
+        <Stack gap="xl" mt="xl">
           {logo && (
-            <img
+            <Avatar
               src={logo}
               alt={`${companyName} logo`}
-              className="h-16 w-16 object-contain mx-auto rounded-full"
+              size="xl"
+              radius="xl"
+              mx="auto"
             />
           )}
           {companyName && (
-            <div className="text-center font-medium text-lg">{companyName}</div>
+            <Text ta="center" size="lg" fw={500}>
+              {companyName}
+            </Text>
           )}
-          <Separator className="my-2" />
-          <Button variant="ghost" className="w-full justify-start h-12 text-base" asChild>
-            <Link href="/dashboard">Dashboard</Link>
+
+          <Divider my="sm" />
+
+          <Button
+            component={Link}
+            href="/dashboard"
+            variant="subtle"
+            fullWidth
+            size="lg"
+            h={48}
+            onClick={() => setOpened(false)}
+          >
+            Dashboard
           </Button>
-          <Button variant="ghost" className="w-full justify-start h-12 text-base" onClick={onLogout}>
+
+          <Button
+            variant="subtle"
+            fullWidth
+            size="lg"
+            h={48}
+            onClick={() => {
+              onLogout();
+              setOpened(false);
+            }}
+          >
             Logout
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </Stack>
+      </Drawer>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -19,11 +20,13 @@ import { isAfter, subHours } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import { Link } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
+import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 
 export default function GovernmentDashboard() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [location] = useLocation();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -45,45 +48,32 @@ export default function GovernmentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <header className="border-b sticky top-0 bg-background z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold hover:text-primary transition-colors">
               FindConstructionBids
             </Link>
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {user?.companyName}
-              </span>
-              <Button variant="outline" onClick={() => logoutMutation.mutate()}>
-                Logout
-              </Button>
-            </div>
-            {/* Mobile Menu */}
-            <div className="md:hidden">
-              <MobileMenu
-                companyName={user?.companyName}
-                logo={user?.logo}
-                onLogout={() => logoutMutation.mutate()}
-              />
-            </div>
+            <MobileMenu
+              companyName={user?.companyName}
+              logo={user?.logo}
+              onLogout={() => logoutMutation.mutate()}
+            />
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="rfps" className="space-y-6">
-          <div className="overflow-x-auto -mx-4 px-4 pb-3">
-            <TabsList className="w-[500px] sm:w-full flex">
+        <div className="hidden md:block">
+          <Tabs defaultValue="rfps" className="space-y-6">
+            <TabsList className="w-full flex">
               <TabsTrigger value="rfps" className="flex-1">RFP Management</TabsTrigger>
               <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
               <TabsTrigger value="employees" className="flex-1">Employee Management</TabsTrigger>
             </TabsList>
-          </div>
 
-          <TabsContent value="rfps">
+            <TabsContent value="rfps">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
               <h2 className="text-xl font-semibold">My RFPs</h2>
               <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -185,17 +175,20 @@ export default function GovernmentDashboard() {
           <TabsContent value="employees">
             <EmployeeManagement />
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
 
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New RFP</DialogTitle>
-            </DialogHeader>
-            <RfpForm onSuccess={handleCreateSuccess} />
-          </DialogContent>
-        </Dialog>
+        <MobileDashboardNav userType="government" currentPath={location} />
       </main>
+
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New RFP</DialogTitle>
+          </DialogHeader>
+          <RfpForm onSuccess={handleCreateSuccess} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

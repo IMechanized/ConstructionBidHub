@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 
 interface MobileMenuProps {
   companyName?: string;
-  logo?: string;
+  logo?: string | null;
   onLogout: () => void;
 }
 
@@ -24,8 +24,8 @@ export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
           <Menu className="h-6 w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
+      <SheetContent side="right" className="w-[85vw] sm:w-[350px]">
+        <SheetHeader className="text-left">
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
         <div className="mt-8 flex flex-col gap-4">
@@ -33,17 +33,17 @@ export function MobileMenu({ companyName, logo, onLogout }: MobileMenuProps) {
             <img
               src={logo}
               alt={`${companyName} logo`}
-              className="h-12 w-12 object-contain mx-auto"
+              className="h-16 w-16 object-contain mx-auto rounded-full"
             />
           )}
           {companyName && (
-            <div className="text-center font-medium">{companyName}</div>
+            <div className="text-center font-medium text-lg">{companyName}</div>
           )}
-          <Separator />
-          <Button variant="ghost" className="w-full justify-start" asChild>
+          <Separator className="my-2" />
+          <Button variant="ghost" className="w-full justify-start h-12 text-base" asChild>
             <Link href="/dashboard">Dashboard</Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start" onClick={onLogout}>
+          <Button variant="ghost" className="w-full justify-start h-12 text-base" onClick={onLogout}>
             Logout
           </Button>
         </div>

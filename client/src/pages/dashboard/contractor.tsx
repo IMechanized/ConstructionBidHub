@@ -37,9 +37,14 @@ export default function ContractorDashboard() {
       <Box component="header" className="border-b sticky top-0 bg-white dark:bg-gray-900 z-50">
         <Container size="lg">
           <Group justify="space-between" align="center" h={56}>
-            <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
-              FindConstructionBids
-            </Link>
+            <div className="flex items-center space-x-6">
+              <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
+                FindConstructionBids
+              </Link>
+              <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Support
+              </Link>
+            </div>
             <MobileMenu
               companyName={user?.companyName}
               logo={user?.logo}

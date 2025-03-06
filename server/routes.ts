@@ -368,6 +368,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add RFI endpoint
+  app.post("/api/rfps/:id/rfi", async (req, res) => {
+    try {
+      const { email, message } = req.body;
+
+      // Validate input
+      if (!email || !message) {
+        return res.status(400).json({ message: "Email and message are required" });
+      }
+
+      // Get the RFP to include its title in the response
+      const rfp = await storage.getRfpById(Number(req.params.id));
+      if (!rfp) {
+        return res.status(404).json({ message: "RFP not found" });
+      }
+
+      // In a real application, you would:
+      // 1. Store the RFI in the database
+      // 2. Send an email notification
+      // For now, we'll just return success
+
+      res.status(200).json({ 
+        message: "Request for information submitted successfully",
+        rfpTitle: rfp.title
+      });
+    } catch (error) {
+      console.error('Error submitting RFI:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to submit RFI"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Rfp, Bid } from "@shared/schema";
+import { Rfp } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Box, Button, Card, TextInput, Tabs, Stack, Title, Container, Group } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import RfiForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
-import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
+import { DashboardSectionSkeleton } from "@/components/skeletons";
 import SettingsForm from "@/components/settings-form";
 import { Link } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
@@ -22,17 +22,11 @@ export default function ContractorDashboard() {
     queryKey: ["/api/rfps"],
   });
 
-  const { data: bids, isLoading: loadingBids } = useQuery<Bid[]>({
-    queryKey: ["/api/rfps/bids"],
-  });
-
   const filteredRfps = rfps?.filter(
     (rfp) =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const myBids = bids?.filter((bid) => bid.contractorId === user?.id);
 
   return (
     <Box className="min-h-screen bg-white dark:bg-gray-900 pb-16 md:pb-0">
@@ -56,7 +50,6 @@ export default function ContractorDashboard() {
           <Tabs defaultValue="rfps">
             <Tabs.List grow>
               <Tabs.Tab value="rfps">Available RFPs</Tabs.Tab>
-              <Tabs.Tab value="bids">My Bids</Tabs.Tab>
               <Tabs.Tab value="employees">Employee Management</Tabs.Tab>
               <Tabs.Tab value="settings">Settings</Tabs.Tab>
             </Tabs.List>
@@ -121,34 +114,6 @@ export default function ContractorDashboard() {
                           )}
 
                           <RfiForm rfpId={rfp.id} />
-                        </Stack>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </Tabs.Panel>
-
-              <Tabs.Panel value="bids">
-                {loadingBids ? (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Card key={i} padding="md" radius="md" withBorder>
-                        <BidCardSkeleton />
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {myBids?.map((bid) => (
-                      <Card key={bid.id} padding="md" radius="md" withBorder>
-                        <Stack gap="md">
-                          <Title order={3}>Bid for RFP #{bid.rfpId}</Title>
-                          <Box className="text-sm text-muted-foreground line-clamp-3">
-                            {bid.proposal}
-                          </Box>
-                          <Box className="text-sm">
-                            Amount: ${bid.amount.toLocaleString()}
-                          </Box>
                         </Stack>
                       </Card>
                     ))}

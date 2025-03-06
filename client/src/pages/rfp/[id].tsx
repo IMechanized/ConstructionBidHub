@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import RfiForm from "@/components/bid-form"; // Updated import
+import RfiForm from "@/components/bid-form";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
@@ -20,7 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
@@ -169,8 +169,8 @@ export default function RfpPage() {
 
           {!isOwner && (
             user ? (
-              <Button className="w-full" size="lg" onClick={() => setIsBidModalOpen(true)}>
-                Submit Bid
+              <Button className="w-full" size="lg" onClick={() => setIsRfiModalOpen(true)}>
+                Request Information
               </Button>
             ) : (
               <Button
@@ -179,21 +179,21 @@ export default function RfpPage() {
                 variant="outline"
                 onClick={() => setLocation("/auth")}
               >
-                Login to Submit Bid
+                Login to Request Information
               </Button>
             )
           )}
         </div>
 
         {user && !isOwner && (
-          <Dialog open={isBidModalOpen} onOpenChange={setIsBidModalOpen}>
+          <Dialog open={isRfiModalOpen} onOpenChange={setIsRfiModalOpen}>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Request Additional Information</DialogTitle> {/* Updated Dialog Title */}
+                <DialogTitle>Request Additional Information</DialogTitle>
               </DialogHeader>
               <RfiForm
                 rfpId={Number(id)}
-                onSuccess={() => setIsBidModalOpen(false)}
+                onSuccess={() => setIsRfiModalOpen(false)}
               />
             </DialogContent>
           </Dialog>

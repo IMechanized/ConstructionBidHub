@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import BidForm from "@/components/bid-form";
+import RfiForm from "@/components/bid-form"; // Updated import
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
@@ -169,11 +169,7 @@ export default function RfpPage() {
 
           {!isOwner && (
             user ? (
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={() => setIsBidModalOpen(true)}
-              >
+              <Button className="w-full" size="lg" onClick={() => setIsBidModalOpen(true)}>
                 Submit Bid
               </Button>
             ) : (
@@ -193,9 +189,9 @@ export default function RfpPage() {
           <Dialog open={isBidModalOpen} onOpenChange={setIsBidModalOpen}>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Submit Your Bid</DialogTitle>
+                <DialogTitle>Request Additional Information</DialogTitle> {/* Updated Dialog Title */}
               </DialogHeader>
-              <BidForm
+              <RfiForm
                 rfpId={Number(id)}
                 onSuccess={() => setIsBidModalOpen(false)}
               />

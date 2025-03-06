@@ -1,35 +1,41 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { insertBidSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { z } from "zod";
 
-export default function BidForm({ rfpId }: { rfpId: number }) {
+const rfiSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  message: z.string().min(1, "Please enter your question or message"),
+});
+
+type RfiFormData = z.infer<typeof rfiSchema>;
+
+export default function RfiForm({ rfpId }: { rfpId: number }) {
   const { toast } = useToast();
-  const form = useForm({
-    resolver: zodResolver(insertBidSchema),
+  const form = useForm<RfiFormData>({
+    resolver: zodResolver(rfiSchema),
     defaultValues: {
-      amount: 0,
-      proposal: "",
+      email: "",
+      message: "",
     },
   });
 
-  const createBidMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", `/api/rfps/${rfpId}/bids`, data);
+  const submitRfiMutation = useMutation({
+    mutationFn: async (data: RfiFormData) => {
+      const res = await apiRequest("POST", `/api/rfps/${rfpId}/rfi`, data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/rfps/bids"] });
       form.reset();
       toast({
-        title: "Bid Submitted",
-        description: "Your bid has been successfully submitted",
+        title: "Request Sent",
+        description: "Your request for information has been submitted successfully",
       });
     },
     onError: (error: Error) => {
@@ -44,20 +50,20 @@ export default function BidForm({ rfpId }: { rfpId: number }) {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => createBidMutation.mutate(data))}
+        onSubmit={form.handleSubmit((data) => submitRfiMutation.mutate(data))}
         className="space-y-4"
       >
         <FormField
           control={form.control}
-          name="amount"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bid Amount</FormLabel>
+              <FormLabel>Email Address</FormLabel>
               <FormControl>
                 <Input 
-                  type="number" 
+                  type="email" 
+                  placeholder="Enter your email address"
                   {...field}
-                  onChange={e => field.onChange(Number(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -67,12 +73,15 @@ export default function BidForm({ rfpId }: { rfpId: number }) {
 
         <FormField
           control={form.control}
-          name="proposal"
+          name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Proposal</FormLabel>
+              <FormLabel>Question/Message</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Describe your proposal..." />
+                <Textarea 
+                  {...field} 
+                  placeholder="Enter your questions or request for additional information..." 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -82,9 +91,9 @@ export default function BidForm({ rfpId }: { rfpId: number }) {
         <Button 
           type="submit" 
           className="w-full"
-          disabled={createBidMutation.isPending}
+          disabled={submitRfiMutation.isPending}
         >
-          Submit Bid
+          Submit Request
         </Button>
       </form>
     </Form>

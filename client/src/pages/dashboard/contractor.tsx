@@ -5,7 +5,7 @@ import { Rfp, Bid } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Box, Button, Card, TextInput, Tabs, Stack, Title, Container, Group } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import BidForm from "@/components/bid-form";
+import RfiForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton, BidCardSkeleton } from "@/components/skeletons";
 import SettingsForm from "@/components/settings-form";
@@ -120,7 +120,7 @@ export default function ContractorDashboard() {
                             </Stack>
                           )}
 
-                          <BidForm rfpId={rfp.id} />
+                          <RfiForm rfpId={rfp.id} />
                         </Stack>
                       </Card>
                     ))}

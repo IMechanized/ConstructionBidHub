@@ -61,14 +61,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
-              FindConstructionBids
-            </Link>
-            <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Support
-            </Link>
-          </div>
+          <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
           <div className="flex items-center gap-4">
             {user?.logo && (
               <img
@@ -94,11 +89,14 @@ export default function Dashboard() {
             <TabsTrigger value="featured" className="flex-1">Featured RFPs</TabsTrigger>
             <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
             <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
-            <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger> {/* Changed label */}
+            <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger>
             <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
             <TabsTrigger value="analytics" asChild className="flex-1">
               <Link href="/dashboard/analytics">Analytics</Link>
+            </TabsTrigger>
+            <TabsTrigger value="support" asChild className="flex-1">
+              <Link href="/support">Support</Link>
             </TabsTrigger>
           </TabsList>
 

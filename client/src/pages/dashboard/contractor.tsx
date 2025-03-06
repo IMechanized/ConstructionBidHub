@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "wouter";
 import { Rfp, Rfi } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, TextInput, Tabs, Stack, Title, Container, Group, Box, Button } from '@mantine/core';
@@ -16,7 +16,8 @@ import { format } from "date-fns";
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -37,14 +38,9 @@ export default function ContractorDashboard() {
       <Box component="header" className="border-b sticky top-0 bg-white dark:bg-gray-900 z-50">
         <Container size="lg">
           <Group justify="space-between" align="center" h={56}>
-            <div className="flex items-center space-x-6">
-              <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
-                FindConstructionBids
-              </Link>
-              <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Support
-              </Link>
-            </div>
+            <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
+              FindConstructionBids
+            </Link>
             <MobileMenu
               companyName={user?.companyName}
               logo={user?.logo}
@@ -62,6 +58,7 @@ export default function ContractorDashboard() {
               <Tabs.Tab value="rfis">My RFIs</Tabs.Tab>
               <Tabs.Tab value="employees">Employee Management</Tabs.Tab>
               <Tabs.Tab value="settings">Settings</Tabs.Tab>
+              <Tabs.Tab value="support" onClick={() => navigate("/support")}>Support</Tabs.Tab>
             </Tabs.List>
 
             <Box mt="md">
@@ -123,7 +120,6 @@ export default function ContractorDashboard() {
                             </Stack>
                           )}
 
-                          {/*Removed RfiForm*/}
                         </Stack>
                       </Card>
                     ))}

@@ -35,21 +35,21 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
-              FindConstructionBids
-            </Link>
+          <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
+            FindConstructionBids
+          </Link>
+          <div className="flex items-center gap-4">
             <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Support
             </Link>
+            <Button asChild variant="outline">
+              {user ? (
+                <Link href="/dashboard">Back to Dashboard</Link>
+              ) : (
+                <Link href="/auth">Get Started</Link>
+              )}
+            </Button>
           </div>
-          <Button asChild variant="outline">
-            {user ? (
-              <Link href="/dashboard">Back to Dashboard</Link>
-            ) : (
-              <Link href="/auth">Get Started</Link>
-            )}
-          </Button>
         </div>
       </nav>
 

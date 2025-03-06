@@ -57,14 +57,6 @@ export const rfpViewSessions = pgTable("rfp_view_sessions", {
   convertedToBid: boolean("converted_to_bid").default(false),
 });
 
-export const bids = pgTable("bids", {
-  id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id),
-  contractorId: integer("contractor_id").references(() => users.id),
-  amount: integer("amount").notNull(),
-  proposal: text("proposal").notNull(),
-});
-
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
   organizationId: integer("organization_id").references(() => users.id),
@@ -124,11 +116,6 @@ export const insertRfpSchema = createInsertSchema(rfps)
     featured: z.boolean().default(false),
   });
 
-export const insertBidSchema = createInsertSchema(bids).pick({
-  amount: true,
-  proposal: true,
-});
-
 export const insertEmployeeSchema = createInsertSchema(employees).pick({
   email: true,
   role: true,
@@ -142,10 +129,8 @@ export const insertRfiSchema = createInsertSchema(rfis).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
-export type Bid = typeof bids.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
 export type InsertRfp = z.infer<typeof insertRfpSchema>;
-export type InsertBid = z.infer<typeof insertBidSchema>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;

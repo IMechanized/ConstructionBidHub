@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Rfp } from "@shared/schema";
+import { Rfp, Rfi } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Box, Button, Card, TextInput, Tabs, Stack, Title, Container, Group } from '@mantine/core';
+import { Card, TextInput, Tabs, Stack, Title, Container, Group, Box, Button } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import RfiForm from "@/components/bid-form";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import SettingsForm from "@/components/settings-form";
 import { Link } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
 import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
+import { format } from "date-fns";
 
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -20,6 +20,10 @@ export default function ContractorDashboard() {
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
+  });
+
+  const { data: rfis, isLoading: loadingRfis } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
+    queryKey: ["/api/rfis"],
   });
 
   const filteredRfps = rfps?.filter(
@@ -50,6 +54,7 @@ export default function ContractorDashboard() {
           <Tabs defaultValue="rfps">
             <Tabs.List grow>
               <Tabs.Tab value="rfps">Available RFPs</Tabs.Tab>
+              <Tabs.Tab value="rfis">My RFIs</Tabs.Tab>
               <Tabs.Tab value="employees">Employee Management</Tabs.Tab>
               <Tabs.Tab value="settings">Settings</Tabs.Tab>
             </Tabs.List>
@@ -113,7 +118,38 @@ export default function ContractorDashboard() {
                             </Stack>
                           )}
 
-                          <RfiForm rfpId={rfp.id} />
+                          {/*Removed RfiForm*/}
+                        </Stack>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </Tabs.Panel>
+
+              <Tabs.Panel value="rfis">
+                {loadingRfis ? (
+                  <DashboardSectionSkeleton count={3} />
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {rfis?.map((rfi) => (
+                      <Card key={rfi.id} padding="md" radius="md" withBorder>
+                        <Stack gap="md">
+                          <Title order={3}>{rfi.rfp?.title || "Unknown RFP"}</Title>
+                          <Box className="text-sm text-muted-foreground">
+                            {rfi.message}
+                          </Box>
+                          <Box className="text-sm">
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Box className="font-medium">Status:</Box>
+                                <Box className="capitalize">{rfi.status}</Box>
+                              </Group>
+                              <Group justify="space-between">
+                                <Box className="font-medium">Submitted:</Box>
+                                <Box>{format(new Date(rfi.createdAt), "PPp")}</Box>
+                              </Group>
+                            </Stack>
+                          </Box>
                         </Stack>
                       </Card>
                     ))}

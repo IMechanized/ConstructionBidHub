@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Rfp, Bid } from "@shared/schema";
+import { Rfp, Rfi } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
 import SettingsForm from "@/components/settings-form";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
-import { isAfter, subHours } from "date-fns";
+import { isAfter, subHours, format } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 
 export default function Dashboard() {
@@ -30,8 +30,8 @@ export default function Dashboard() {
     queryKey: ["/api/rfps"],
   });
 
-  const { data: bids, isLoading: loadingBids } = useQuery<Bid[]>({
-    queryKey: ["/api/bids"],
+  const { data: rfis, isLoading: loadingRfis } = useQuery<Rfi[]>({ // Added RFI query
+    queryKey: ["/api/rfis"], // Assuming this is the correct endpoint
   });
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
@@ -89,7 +89,7 @@ export default function Dashboard() {
             <TabsTrigger value="featured" className="flex-1">Featured RFPs</TabsTrigger>
             <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
             <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
-            <TabsTrigger value="bids" className="flex-1">My Bids</TabsTrigger>
+            <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger> {/* Changed label */}
             <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
             <TabsTrigger value="analytics" asChild className="flex-1">
@@ -168,18 +168,27 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="bids">
-            {loadingBids ? (
+            {loadingRfis ? (
               <DashboardSectionSkeleton count={3} />
             ) : (
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {bids?.map((bid) => {
-                  const rfp = rfps?.find(r => r.id === bid.rfpId);
+                {rfis?.map((rfi) => {
+                  const rfp = rfps?.find(r => r.id === rfi.rfpId);
                   return rfp ? (
-                    <RfpCard
-                      key={bid.id}
-                      rfp={rfp}
-                      compact
-                    />
+                    <div key={rfi.id} className="bg-card rounded-lg border p-6">
+                      <h3 className="font-semibold mb-4">{rfp.title}</h3>
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          {rfi.message}
+                        </p>
+                        <p className="text-sm">
+                          Status: <span className="capitalize">{rfi.status}</span>
+                        </p>
+                        <p className="text-sm">
+                          Submitted: {format(new Date(rfi.createdAt), "PPp")}
+                        </p>
+                      </div>
+                    </div>
                   ) : null;
                 })}
               </div>

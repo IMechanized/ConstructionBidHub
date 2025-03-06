@@ -1,6 +1,6 @@
-import { User, InsertUser, Rfp, InsertRfp, Bid, InsertBid, Employee, InsertEmployee, users, rfps, bids, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession } from "@shared/schema";
+import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
@@ -22,10 +22,6 @@ export interface IStorage {
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
   deleteRfp(id: number): Promise<void>;
 
-  getBids(rfpId: number): Promise<Bid[]>;
-  createBid(bid: InsertBid & { rfpId: number; contractorId: number }): Promise<Bid>;
-  deleteBid(id: number): Promise<void>;
-
   getEmployees(organizationId: number): Promise<Employee[]>;
   getEmployee(id: number): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee>;
@@ -38,11 +34,11 @@ export interface IStorage {
   trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession>;
   getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
-  getBidsByContractor(contractorId: number): Promise<Bid[]>;
 
-  // Add RFI methods
+  // RFI methods
   createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi>;
   getRfisByRfp(rfpId: number): Promise<Rfi[]>;
+  getRfisByEmail(email: string): Promise<Rfi[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -120,15 +116,6 @@ export class DatabaseStorage implements IStorage {
     return rfp;
   }
 
-  async getBids(rfpId: number): Promise<Bid[]> {
-    return db.select().from(bids).where(eq(bids.rfpId, rfpId));
-  }
-
-  async createBid(bid: InsertBid & { rfpId: number; contractorId: number }): Promise<Bid> {
-    const [newBid] = await db.insert(bids).values(bid).returning();
-    return newBid;
-  }
-
   async getEmployees(organizationId: number): Promise<Employee[]> {
     return db
       .select()
@@ -160,10 +147,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRfp(id: number): Promise<void> {
     await db.delete(rfps).where(eq(rfps.id, id));
-  }
-
-  async deleteBid(id: number): Promise<void> {
-    await db.delete(bids).where(eq(bids.id, id));
   }
 
   async deleteEmployee(id: number): Promise<void> {
@@ -297,9 +280,6 @@ export class DatabaseStorage implements IStorage {
 
     return newAnalytics;
   }
-  async getBidsByContractor(contractorId: number): Promise<Bid[]> {
-    return db.select().from(bids).where(eq(bids.contractorId, contractorId));
-  }
   async createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi> {
     const [newRfi] = await db
       .insert(rfis)
@@ -313,6 +293,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(rfis)
       .where(eq(rfis.rfpId, rfpId));
+  }
+  async getRfisByEmail(email: string): Promise<Rfi[]> {
+    return db
+      .select()
+      .from(rfis)
+      .where(eq(rfis.email, email))
+      .orderBy(desc(rfis.createdAt));
   }
 }
 

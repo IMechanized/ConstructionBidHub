@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema } from "@shared/schema";
+import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema } from "@shared/schema";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 
@@ -183,52 +183,6 @@ export function registerRoutes(app: Express): Server {
     res.sendStatus(200);
   });
 
-  // Bid routes
-  app.get("/api/rfps/:id/bids", async (req, res) => {
-    requireAuth(req);
-    const bids = await storage.getBids(Number(req.params.id));
-    res.json(bids);
-  });
-
-  // New endpoint to get all bids for current user
-  app.get("/api/bids", async (req, res) => {
-    try {
-      requireAuth(req);
-      const bids = await storage.getBidsByContractor(req.user!.id);
-      res.json(bids);
-    } catch (error) {
-      console.error('Error fetching bids:', error);
-      res.status(500).json({ message: "Failed to fetch bids" });
-    }
-  });
-
-  app.post("/api/rfps/:id/bids", async (req, res) => {
-    requireAuth(req);
-
-    // Check if user is trying to bid on their own RFP
-    const rfp = await storage.getRfpById(Number(req.params.id));
-    if (!rfp) {
-      return res.status(404).send("RFP not found");
-    }
-    if (rfp.organizationId === req.user!.id) {
-      return res.status(403).send("Cannot bid on your own RFP");
-    }
-
-    const data = insertBidSchema.parse(req.body);
-    const bid = await storage.createBid({
-      ...data,
-      rfpId: Number(req.params.id),
-      contractorId: req.user!.id,
-    });
-    res.status(201).json(bid);
-  });
-
-  app.delete("/api/bids/:id", async (req, res) => {
-    requireAuth(req);
-    await storage.deleteBid(Number(req.params.id));
-    res.sendStatus(200);
-  });
-
   // Employee routes
   app.get("/api/employees", async (req, res) => {
     try {
@@ -329,7 +283,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-
   // Analytics endpoints
   app.get("/api/analytics/boosted", async (req, res) => {
     try {
@@ -392,6 +345,31 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to submit RFI"
       });
+    }
+  });
+
+  // Get RFIs for current user
+  app.get("/api/rfis", async (req, res) => {
+    try {
+      requireAuth(req);
+      const user = req.user!;
+      const userRfis = await storage.getRfisByEmail(user.email);
+
+      // Fetch RFP details for each RFI
+      const rfisWithRfp = await Promise.all(
+        userRfis.map(async (rfi) => {
+          const rfp = await storage.getRfpById(rfi.rfpId);
+          return {
+            ...rfi,
+            rfp
+          };
+        })
+      );
+
+      res.json(rfisWithRfp);
+    } catch (error) {
+      console.error('Error fetching RFIs:', error);
+      res.status(500).json({ message: "Failed to fetch RFIs" });
     }
   });
 

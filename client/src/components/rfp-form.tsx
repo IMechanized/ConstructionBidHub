@@ -12,9 +12,10 @@ import { Loader2 } from "lucide-react";
 
 interface RfpFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export default function RfpForm({ onSuccess }: RfpFormProps) {
+export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(insertRfpSchema),
@@ -229,7 +230,10 @@ export default function RfpForm({ onSuccess }: RfpFormProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.reset()}
+            onClick={() => {
+              form.reset();
+              onCancel?.();
+            }}
           >
             Cancel
           </Button>

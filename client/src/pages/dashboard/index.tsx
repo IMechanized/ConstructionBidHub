@@ -212,7 +212,7 @@ export default function Dashboard() {
             <DialogHeader>
               <DialogTitle>Create New RFP</DialogTitle>
             </DialogHeader>
-            <RfpForm onSuccess={handleCreateSuccess} />
+            <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
           </DialogContent>
         </Dialog>
       </main>

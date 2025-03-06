@@ -1,13 +1,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { insertRfpSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { insertRfpSchema } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
 interface RfpFormProps {
@@ -93,7 +93,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
 
   return (
     <Form {...form}>
-      <form className="space-y-6">
+      <form 
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(false);
+        }}
+        data-testid="rfp-form"
+      >
         <FormField
           control={form.control}
           name="title"
@@ -101,9 +108,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input 
+                  data-testid="title-input"
+                  placeholder="Enter RFP title"
+                  {...field} 
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="title-error" />
             </FormItem>
           )}
         />
@@ -115,9 +126,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea 
+                  data-testid="description-input"
+                  placeholder="Enter RFP description"
+                  {...field} 
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="description-error" />
             </FormItem>
           )}
         />
@@ -130,9 +145,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <FormItem>
                 <FormLabel>Walkthrough Date</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} />
+                  <Input 
+                    data-testid="walkthrough-date-input"
+                    type="datetime-local"
+                    {...field}
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage role="alert" data-testid="walkthrough-date-error" />
               </FormItem>
             )}
           />
@@ -144,9 +163,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <FormItem>
                 <FormLabel>RFI Date</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} />
+                  <Input 
+                    data-testid="rfi-date-input"
+                    type="datetime-local"
+                    {...field}
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage role="alert" data-testid="rfi-date-error" />
               </FormItem>
             )}
           />
@@ -159,9 +182,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Deadline</FormLabel>
               <FormControl>
-                <Input type="datetime-local" {...field} />
+                <Input 
+                  data-testid="deadline-input"
+                  type="datetime-local"
+                  {...field}
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="deadline-error" />
             </FormItem>
           )}
         />
@@ -174,12 +201,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <FormLabel>Minimum Budget</FormLabel>
               <FormControl>
                 <Input
+                  data-testid="budget-input"
                   type="number"
+                  placeholder="Enter minimum budget"
                   {...field}
                   onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="budget-error" />
             </FormItem>
           )}
         />
@@ -191,9 +220,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Job Location</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input 
+                  data-testid="location-input"
+                  placeholder="Enter job location"
+                  {...field}
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="location-error" />
             </FormItem>
           )}
         />
@@ -205,9 +238,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Certification Goals (Optional)</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Enter any certification requirements or goals..." />
+                <Textarea 
+                  data-testid="certification-input"
+                  placeholder="Enter any certification requirements or goals..."
+                  {...field}
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="certification-error" />
             </FormItem>
           )}
         />
@@ -219,9 +256,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>Portfolio Link (Optional)</FormLabel>
               <FormControl>
-                <Input type="url" {...field} placeholder="https://..." />
+                <Input 
+                  data-testid="portfolio-input"
+                  type="url"
+                  placeholder="https://..."
+                  {...field}
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage role="alert" data-testid="portfolio-error" />
             </FormItem>
           )}
         />
@@ -234,14 +276,15 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               form.reset();
               onCancel?.();
             }}
+            data-testid="cancel-button"
           >
             Cancel
           </Button>
           <Button
-            type="button"
+            type="submit"
             variant="outline"
-            onClick={() => handleSubmit(false)}
             disabled={createRfpMutation.isPending}
+            data-testid="submit-button"
           >
             {createRfpMutation.isPending ? (
               <>
@@ -256,6 +299,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={createRfpMutation.isPending}
+            data-testid="boost-button"
           >
             {createRfpMutation.isPending ? (
               <>

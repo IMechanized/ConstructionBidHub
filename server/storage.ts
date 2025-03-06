@@ -174,7 +174,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession> {
-    // Create or update view session
     const [viewSession] = await db
       .insert(rfpViewSessions)
       .values({
@@ -185,7 +184,6 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
 
-    // Update analytics
     const today = new Date().toISOString().split('T')[0];
     const [existingAnalytics] = await db
       .select()
@@ -280,6 +278,7 @@ export class DatabaseStorage implements IStorage {
 
     return newAnalytics;
   }
+
   async createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi> {
     const [newRfi] = await db
       .insert(rfis)
@@ -294,6 +293,7 @@ export class DatabaseStorage implements IStorage {
       .from(rfis)
       .where(eq(rfis.rfpId, rfpId));
   }
+
   async getRfisByEmail(email: string): Promise<Rfi[]> {
     return db
       .select()

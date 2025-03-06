@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, onboardingSchema } from "@shared/schema";
+import { insertRfpSchema, insertBidSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema } from "@shared/schema";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 
@@ -368,30 +368,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add RFI endpoint
+  // Update the RFI endpoint
   app.post("/api/rfps/:id/rfi", async (req, res) => {
     try {
-      const { email, message } = req.body;
+      const data = insertRfiSchema.parse(req.body);
 
-      // Validate input
-      if (!email || !message) {
-        return res.status(400).json({ message: "Email and message are required" });
-      }
-
-      // Get the RFP to include its title in the response
       const rfp = await storage.getRfpById(Number(req.params.id));
       if (!rfp) {
         return res.status(404).json({ message: "RFP not found" });
       }
 
-      // In a real application, you would:
-      // 1. Store the RFI in the database
-      // 2. Send an email notification
-      // For now, we'll just return success
+      const rfi = await storage.createRfi({
+        ...data,
+        rfpId: Number(req.params.id),
+      });
 
-      res.status(200).json({ 
+      res.status(201).json({ 
         message: "Request for information submitted successfully",
-        rfpTitle: rfp.title
+        rfi
       });
     } catch (error) {
       console.error('Error submitting RFI:', error);

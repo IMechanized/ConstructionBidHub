@@ -43,9 +43,9 @@ export const rfpAnalytics = pgTable("rfp_analytics", {
   date: date("date").notNull(),
   totalViews: integer("total_views").default(0),
   uniqueViews: integer("unique_views").default(0),
-  averageViewTime: integer("average_view_time").default(0), 
+  averageViewTime: integer("average_view_time").default(0),
   totalBids: integer("total_bids").default(0),
-  clickThroughRate: integer("click_through_rate").default(0), 
+  clickThroughRate: integer("click_through_rate").default(0),
 });
 
 export const rfpViewSessions = pgTable("rfp_view_sessions", {
@@ -53,7 +53,7 @@ export const rfpViewSessions = pgTable("rfp_view_sessions", {
   rfpId: integer("rfp_id").references(() => rfps.id),
   userId: integer("user_id").references(() => users.id),
   viewDate: timestamp("view_date").notNull(),
-  duration: integer("duration").default(0), 
+  duration: integer("duration").default(0),
   convertedToBid: boolean("converted_to_bid").default(false),
 });
 
@@ -71,6 +71,15 @@ export const employees = pgTable("employees", {
   email: text("email").notNull(),
   role: text("role").notNull(),
   status: text("status", { enum: ["pending", "active"] }).default("pending"),
+});
+
+export const rfis = pgTable("rfis", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  email: text("email").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  status: text("status", { enum: ["pending", "responded"] }).default("pending"),
 });
 
 export const onboardingSchema = z.object({
@@ -125,6 +134,11 @@ export const insertEmployeeSchema = createInsertSchema(employees).pick({
   role: true,
 });
 
+export const insertRfiSchema = createInsertSchema(rfis).pick({
+  email: true,
+  message: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
@@ -135,3 +149,5 @@ export type InsertBid = z.infer<typeof insertBidSchema>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
+export type Rfi = typeof rfis.$inferSelect;
+export type InsertRfi = z.infer<typeof insertRfiSchema>;

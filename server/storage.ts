@@ -4,6 +4,7 @@ import { eq, and, sql } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
+import { rfis, type Rfi, type InsertRfi } from "@shared/schema";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -38,6 +39,10 @@ export interface IStorage {
   getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
   getBidsByContractor(contractorId: number): Promise<Bid[]>;
+
+  // Add RFI methods
+  createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi>;
+  getRfisByRfp(rfpId: number): Promise<Rfi[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -294,6 +299,20 @@ export class DatabaseStorage implements IStorage {
   }
   async getBidsByContractor(contractorId: number): Promise<Bid[]> {
     return db.select().from(bids).where(eq(bids.contractorId, contractorId));
+  }
+  async createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi> {
+    const [newRfi] = await db
+      .insert(rfis)
+      .values(rfi)
+      .returning();
+    return newRfi;
+  }
+
+  async getRfisByRfp(rfpId: number): Promise<Rfi[]> {
+    return db
+      .select()
+      .from(rfis)
+      .where(eq(rfis.rfpId, rfpId));
   }
 }
 

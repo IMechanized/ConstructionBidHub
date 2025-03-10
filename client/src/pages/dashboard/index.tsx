@@ -19,6 +19,7 @@ import SettingsForm from "@/components/settings-form";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { isAfter, subHours, format } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
+import RfpReport from "@/components/rfp-report";
 
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
@@ -90,6 +91,7 @@ export default function Dashboard() {
             <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
             <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
             <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger>
+            <TabsTrigger value="reports" className="flex-1">Reports</TabsTrigger>
             <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
             <TabsTrigger value="analytics" asChild className="flex-1">
@@ -195,6 +197,17 @@ export default function Dashboard() {
                   ) : null;
                 })}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+              <h2 className="text-xl font-semibold">RFP Reports</h2>
+            </div>
+            {loadingRfps ? (
+              <DashboardSectionSkeleton count={3} />
+            ) : (
+              <RfpReport rfps={myRfps} />
             )}
           </TabsContent>
 

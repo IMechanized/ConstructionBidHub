@@ -151,58 +151,115 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1 max-w-sm">
-              <Input
-                placeholder="Search RFPs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Default</SelectItem>
-                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                <SelectItem value="deadline">Deadline</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={locationFilter}
-              onValueChange={setLocationFilter}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                {locations.map(location => (
-                  <SelectItem key={location} value={location}>
-                    {location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <TabsContent value="my-rfps">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-              <h2 className="text-xl font-semibold">My RFPs</h2>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                Create RFP
-              </Button>
-            </div>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+                <h2 className="text-xl font-semibold">My RFPs</h2>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  Create RFP
+                </Button>
+              </div>
 
-            {loadingRfps ? (
-              <DashboardSectionSkeleton count={6} />
-            ) : (
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search RFPs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Default</SelectItem>
+                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={locationFilter}
+                  onValueChange={setLocationFilter}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={6} />
+              ) : (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredMyRfps.map((rfp) => (
+                    <RfpCard
+                      key={rfp.id}
+                      rfp={rfp}
+                      isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="featured">
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search featured RFPs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Default</SelectItem>
+                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={locationFilter}
+                  onValueChange={setLocationFilter}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {filteredMyRfps.map((rfp) => (
+                {filteredFeaturedRfps.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
                     rfp={rfp}
@@ -210,44 +267,115 @@ export default function Dashboard() {
                   />
                 ))}
               </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="featured">
-            <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {filteredFeaturedRfps.map((rfp) => (
-                <RfpCard
-                  key={rfp.id}
-                  rfp={rfp}
-                  isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
-                />
-              ))}
             </div>
           </TabsContent>
 
           <TabsContent value="new">
-            <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {filteredNewRfps.map((rfp) => (
-                <RfpCard
-                  key={rfp.id}
-                  rfp={rfp}
-                  isNew={true}
-                />
-              ))}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search new RFPs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Default</SelectItem>
+                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={locationFilter}
+                  onValueChange={setLocationFilter}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {filteredNewRfps.map((rfp) => (
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                    isNew={true}
+                  />
+                ))}
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="available">
-            <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {filteredOtherRfps.map((rfp) => (
-                <RfpCard
-                  key={rfp.id}
-                  rfp={rfp}
-                />
-              ))}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Search available RFPs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Default</SelectItem>
+                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={locationFilter}
+                  onValueChange={setLocationFilter}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {filteredOtherRfps.map((rfp) => (
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                  />
+                ))}
+              </div>
             </div>
           </TabsContent>
 

@@ -5,16 +5,27 @@ import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ArrowUpDown } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { Link } from "wouter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
+
+type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
 export default function OpportunitiesPage() {
   const { type } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("none");
+  const [locationFilter, setLocationFilter] = useState("");
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -39,11 +50,35 @@ export default function OpportunitiesPage() {
     );
   }
 
+  // Apply location filter
+  if (locationFilter) {
+    filteredRfps = filteredRfps.filter(rfp =>
+      rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
+    );
+  }
+
+  // Apply sorting
+  filteredRfps = [...filteredRfps].sort((a, b) => {
+    switch (sortBy) {
+      case "priceAsc":
+        return (a.budgetMin || 0) - (b.budgetMin || 0);
+      case "priceDesc":
+        return (b.budgetMin || 0) - (a.budgetMin || 0);
+      case "deadline":
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      default:
+        return 0;
+    }
+  });
+
   const totalPages = Math.ceil(filteredRfps.length / ITEMS_PER_PAGE);
   const displayedRfps = filteredRfps.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Get unique locations for the location filter dropdown
+  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,18 +92,49 @@ export default function OpportunitiesPage() {
           </h1>
         </div>
 
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search opportunities..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset to first page when searching
-              }}
-            />
+        <div className="mb-8 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search opportunities..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Default</SelectItem>
+                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                <SelectItem value="deadline">Deadline</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={locationFilter}
+              onValueChange={setLocationFilter}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Locations</SelectItem>
+                {locations.map(location => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

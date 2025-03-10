@@ -12,6 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import RfpForm from "@/components/rfp-form";
 import EmployeeManagement from "@/components/employee-management";
@@ -21,18 +28,22 @@ import { isAfter, subHours, format } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import RfpReport from "@/components/rfp-report";
 
+type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
+
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("none");
+  const [locationFilter, setLocationFilter] = useState("");
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
   });
 
-  const { data: rfis, isLoading: loadingRfis } = useQuery<Rfi[]>({ // Added RFI query
-    queryKey: ["/api/rfis"], // Assuming this is the correct endpoint
+  const { data: rfis, isLoading: loadingRfis } = useQuery<Rfi[]>({
+    queryKey: ["/api/rfis"],
   });
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
@@ -52,11 +63,49 @@ export default function Dashboard() {
     setIsCreateModalOpen(false);
   };
 
-  const filteredRfps = myRfps.filter(
-    (rfp) =>
-      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+
+  const applyFilters = (rfpList: Rfp[]) => {
+    let filtered = rfpList;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (rfp) =>
+          rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply location filter
+    if (locationFilter) {
+      filtered = filtered.filter(rfp =>
+        rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "priceAsc":
+          return (a.budgetMin || 0) - (b.budgetMin || 0);
+        case "priceDesc":
+          return (b.budgetMin || 0) - (a.budgetMin || 0);
+        case "deadline":
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  };
+
+  const filteredMyRfps = applyFilters(myRfps);
+  const filteredFeaturedRfps = applyFilters(featuredRfps);
+  const filteredNewRfps = applyFilters(newRfps);
+  const filteredOtherRfps = applyFilters(otherRfps);
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,6 +151,45 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1 max-w-sm">
+              <Input
+                placeholder="Search RFPs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Default</SelectItem>
+                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                <SelectItem value="deadline">Deadline</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={locationFilter}
+              onValueChange={setLocationFilter}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Locations</SelectItem>
+                {locations.map(location => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <TabsContent value="my-rfps">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
               <h2 className="text-xl font-semibold">My RFPs</h2>
@@ -110,20 +198,11 @@ export default function Dashboard() {
               </Button>
             </div>
 
-            <div className="relative mb-6">
-              <Input
-                placeholder="Search RFPs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-            </div>
-
             {loadingRfps ? (
               <DashboardSectionSkeleton count={6} />
             ) : (
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {filteredRfps.map((rfp) => (
+                {filteredMyRfps.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
                     rfp={rfp}
@@ -137,7 +216,7 @@ export default function Dashboard() {
           <TabsContent value="featured">
             <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {featuredRfps.map((rfp) => (
+              {filteredFeaturedRfps.map((rfp) => (
                 <RfpCard
                   key={rfp.id}
                   rfp={rfp}
@@ -150,7 +229,7 @@ export default function Dashboard() {
           <TabsContent value="new">
             <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {newRfps.map((rfp) => (
+              {filteredNewRfps.map((rfp) => (
                 <RfpCard
                   key={rfp.id}
                   rfp={rfp}
@@ -163,7 +242,7 @@ export default function Dashboard() {
           <TabsContent value="available">
             <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {otherRfps.map((rfp) => (
+              {filteredOtherRfps.map((rfp) => (
                 <RfpCard
                   key={rfp.id}
                   rfp={rfp}

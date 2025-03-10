@@ -76,30 +76,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // New onboarding endpoint
-  app.post("/api/user/onboarding", async (req, res) => {
-    requireAuth(req);
-    const user = req.user!;
-
-    try {
-      onboardingSchema.parse(req.body);
-
-      const updatedUser = await storage.updateUser(user.id, {
-        ...req.body,
-        onboardingComplete: true,
-      });
-
-      res.json(updatedUser);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid data provided" });
-    }
-  });
-
   // RFP routes
   app.get("/api/rfps", async (req, res) => {
     const rfps = await storage.getRfps();
     const rfpsWithOrgs = await Promise.all(
       rfps.map(async (rfp) => {
+        if (rfp.organizationId === null) {
+          return {
+            ...rfp,
+            organization: null
+          };
+        }
         const org = await storage.getUser(rfp.organizationId);
         return {
           ...rfp,
@@ -119,6 +106,12 @@ export function registerRoutes(app: Express): Server {
       const rfp = await storage.getRfpById(Number(req.params.id));
       if (!rfp) {
         return res.status(404).json({ message: "RFP not found" });
+      }
+      if (rfp.organizationId === null) {
+        return res.json({
+          ...rfp,
+          organization: null
+        });
       }
       const org = await storage.getUser(rfp.organizationId);
       const rfpWithOrg = {
@@ -358,6 +351,12 @@ export function registerRoutes(app: Express): Server {
       // Fetch RFP details for each RFI
       const rfisWithRfp = await Promise.all(
         userRfis.map(async (rfi) => {
+          if (rfi.rfpId === null) {
+            return {
+              ...rfi,
+              rfp: null
+            };
+          }
           const rfp = await storage.getRfpById(rfi.rfpId);
           return {
             ...rfi,

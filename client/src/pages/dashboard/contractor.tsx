@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Rfp, Rfi } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Card, TextInput, Tabs, Stack, Title, Container, Group, Box, Button } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search } from "lucide-react";
 import EmployeeManagement from "@/components/employee-management";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import SettingsForm from "@/components/settings-form";
@@ -13,11 +21,14 @@ import { MobileMenu } from "@/components/mobile-menu";
 import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { format } from "date-fns";
 
+type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
+
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("none");
+  const [locationFilter, setLocationFilter] = useState("");
   const [location, setLocation] = useLocation();
-  const navigate = useNavigate();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -27,17 +38,46 @@ export default function ContractorDashboard() {
     queryKey: ["/api/rfis"],
   });
 
+  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+
   const filteredRfps = rfps?.filter(
-    (rfp) =>
-      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    (rfp) => {
+      let matches = true;
+
+      // Search filter
+      if (searchTerm) {
+        matches = matches && (
+          rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      // Location filter
+      if (locationFilter) {
+        matches = matches && rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase());
+      }
+
+      return matches;
+    }
+  ).sort((a, b) => {
+    switch (sortBy) {
+      case "priceAsc":
+        return (a.budgetMin || 0) - (b.budgetMin || 0);
+      case "priceDesc":
+        return (b.budgetMin || 0) - (a.budgetMin || 0);
+      case "deadline":
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      default:
+        return 0;
+    }
+  }) || [];
 
   return (
-    <Box className="min-h-screen bg-white dark:bg-gray-900 pb-16 md:pb-0">
-      <Box component="header" className="border-b sticky top-0 bg-white dark:bg-gray-900 z-50">
-        <Container size="lg">
-          <Group justify="space-between" align="center" h={56}>
+    <div className="min-h-screen bg-background">
+      <header className="border-b sticky top-0 bg-background z-50">
+        <div className="container mx-auto px-4">
+          <div className="h-16 flex items-center justify-between">
             <Link href="/" className="text-xl md:text-2xl font-bold hover:text-primary transition-colors truncate flex-shrink">
               FindConstructionBids
             </Link>
@@ -46,131 +86,117 @@ export default function ContractorDashboard() {
               logo={user?.logo}
               onLogout={() => logoutMutation.mutate()}
             />
-          </Group>
-        </Container>
-      </Box>
+          </div>
+        </div>
+      </header>
 
-      <Container size="lg" py="md">
-        <div className="hidden md:block">
-          <Tabs defaultValue="rfps">
-            <Tabs.List grow>
-              <Tabs.Tab value="rfps">Available RFPs</Tabs.Tab>
-              <Tabs.Tab value="rfis">My RFIs</Tabs.Tab>
-              <Tabs.Tab value="employees">Employee Management</Tabs.Tab>
-              <Tabs.Tab value="settings">Settings</Tabs.Tab>
-              <Tabs.Tab value="support" onClick={() => navigate("/support")}>Support</Tabs.Tab>
-            </Tabs.List>
+      <main className="container mx-auto px-4 py-8">
+        <div className="hidden md:block space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search RFPs..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-            <Box mt="md">
-              <Tabs.Panel value="rfps">
-                <Box mb="md">
-                  <TextInput
-                    placeholder="Search RFPs..."
-                    leftSection={<IconSearch size="1rem" />}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ maxWidth: '400px' }}
-                  />
-                </Box>
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Default</SelectItem>
+                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                <SelectItem value="deadline">Deadline</SelectItem>
+              </SelectContent>
+            </Select>
 
-                {loadingRfps ? (
-                  <DashboardSectionSkeleton count={6} />
-                ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredRfps?.map((rfp) => (
-                      <Card key={rfp.id} padding="md" radius="md" withBorder>
-                        <Stack gap="md">
-                          <Title order={3}>{rfp.title}</Title>
-                          <Box className="text-sm text-muted-foreground line-clamp-3">
-                            {rfp.description}
-                          </Box>
-                          <Stack gap="xs">
-                            <Group justify="space-between">
-                              <Box className="font-medium">Location:</Box>
-                              <Box>{rfp.jobLocation}</Box>
-                            </Group>
-                            <Group justify="space-between">
-                              <Box className="font-medium">Budget:</Box>
-                              <Box>
-                                {rfp.budgetMin
-                                  ? `$${rfp.budgetMin.toLocaleString()}`
-                                  : "Not specified"}
-                              </Box>
-                            </Group>
-                            <Group justify="space-between">
-                              <Box className="font-medium">Walkthrough:</Box>
-                              <Box>{new Date(rfp.walkthroughDate).toLocaleString()}</Box>
-                            </Group>
-                            <Group justify="space-between">
-                              <Box className="font-medium">RFI Due:</Box>
-                              <Box>{new Date(rfp.rfiDate).toLocaleString()}</Box>
-                            </Group>
-                            <Group justify="space-between">
-                              <Box className="font-medium">Deadline:</Box>
-                              <Box>{new Date(rfp.deadline).toLocaleString()}</Box>
-                            </Group>
-                          </Stack>
+            <Select
+              value={locationFilter}
+              onValueChange={setLocationFilter}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Locations</SelectItem>
+                {locations.map(location => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-                          {rfp.certificationGoals && (
-                            <Stack gap="xs">
-                              <Box className="font-medium">Certification Goals:</Box>
-                              <Box className="text-sm text-muted-foreground">
-                                {rfp.certificationGoals}
-                              </Box>
-                            </Stack>
-                          )}
-
-                        </Stack>
-                      </Card>
-                    ))}
+          {loadingRfps ? (
+            <DashboardSectionSkeleton count={6} />
+          ) : (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {filteredRfps.map((rfp) => (
+                <div key={rfp.id} className="bg-card rounded-lg border p-6">
+                  <h3 className="font-semibold mb-4">{rfp.title}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                    {rfp.description}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Location:</span>
+                      <span>{rfp.jobLocation}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Budget:</span>
+                      <span>
+                        {rfp.budgetMin
+                          ? `$${rfp.budgetMin.toLocaleString()}`
+                          : "Not specified"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Deadline:</span>
+                      <span>{format(new Date(rfp.deadline), "PPp")}</span>
+                    </div>
                   </div>
-                )}
-              </Tabs.Panel>
+                </div>
+              ))}
+            </div>
+          )}
 
-              <Tabs.Panel value="rfis">
-                {loadingRfis ? (
-                  <DashboardSectionSkeleton count={3} />
-                ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {rfis?.map((rfi) => (
-                      <Card key={rfi.id} padding="md" radius="md" withBorder>
-                        <Stack gap="md">
-                          <Title order={3}>{rfi.rfp?.title || "Unknown RFP"}</Title>
-                          <Box className="text-sm text-muted-foreground">
-                            {rfi.message}
-                          </Box>
-                          <Box className="text-sm">
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Box className="font-medium">Status:</Box>
-                                <Box className="capitalize">{rfi.status}</Box>
-                              </Group>
-                              <Group justify="space-between">
-                                <Box className="font-medium">Submitted:</Box>
-                                <Box>{format(new Date(rfi.createdAt), "PPp")}</Box>
-                              </Group>
-                            </Stack>
-                          </Box>
-                        </Stack>
-                      </Card>
-                    ))}
+          {loadingRfis ? (
+            <DashboardSectionSkeleton count={3} />
+          ) : (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {rfis?.map((rfi) => (
+                <div key={rfi.id} className="bg-card rounded-lg border p-6">
+                  <h3 className="font-semibold mb-4">{rfi.rfp?.title || "Unknown RFP"}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {rfi.message}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Status:</span>
+                      <span className="capitalize">{rfi.status}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Submitted:</span>
+                      <span>{format(new Date(rfi.createdAt), "PPp")}</span>
+                    </div>
                   </div>
-                )}
-              </Tabs.Panel>
+                </div>
+              ))}
+            </div>
+          )}
 
-              <Tabs.Panel value="employees">
-                <EmployeeManagement />
-              </Tabs.Panel>
-
-              <Tabs.Panel value="settings">
-                <SettingsForm />
-              </Tabs.Panel>
-            </Box>
-          </Tabs>
+          <EmployeeManagement />
+          <SettingsForm />
         </div>
 
         <MobileDashboardNav userType="contractor" currentPath={location} />
-      </Container>
-    </Box>
+      </main>
+    </div>
   );
 }

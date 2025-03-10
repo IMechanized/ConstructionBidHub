@@ -50,10 +50,12 @@ const startServer = async (): Promise<void> => {
     const PORT = 5000;
     const HOST = "0.0.0.0";
 
-    log(`Starting server setup...`);
-    log("Setting up middleware..."); //Added log
+    log(`Starting server setup on port ${PORT}...`);
+
+    // Register routes and get HTTP server instance
     const server = registerRoutes(app);
 
+    // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -81,8 +83,14 @@ const startServer = async (): Promise<void> => {
       }
     });
 
-    server.listen(PORT, HOST, () => {
-      log(`Server started successfully on http://${HOST}:${PORT}`);
+    // Start listening
+    await new Promise<void>((resolve, reject) => {
+      server.listen(PORT, HOST, () => {
+        log(`Server started successfully on http://${HOST}:${PORT}`);
+        resolve();
+      }).on('error', (err) => {
+        reject(err);
+      });
     });
 
   } catch (error) {
@@ -91,6 +99,7 @@ const startServer = async (): Promise<void> => {
   }
 };
 
+// Start server with proper error handling
 (async () => {
   try {
     await startServer();

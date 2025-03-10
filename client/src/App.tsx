@@ -14,6 +14,7 @@ import TermsPage from "@/pages/terms";
 import RfpDetailPage from "@/pages/rfp/[id]";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
 import OpportunitiesPage from "@/pages/opportunities/[type]";
+import DetailedReportPage from "@/pages/reports/[id]";
 
 function Router() {
   return (
@@ -32,6 +33,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/analytics">
         <ProtectedRoute path="/dashboard/analytics" component={AnalyticsDashboard} />
+      </Route>
+      <Route path="/reports/:id">
+        <ProtectedRoute path="/reports/:id" component={DetailedReportPage} />
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route component={NotFound} />

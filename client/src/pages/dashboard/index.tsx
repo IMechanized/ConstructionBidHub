@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
-  const [locationFilter, setLocationFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all");
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -79,7 +79,7 @@ export default function Dashboard() {
     }
 
     // Apply location filter
-    if (locationFilter) {
+    if (locationFilter && locationFilter !== "all") {
       filtered = filtered.filter(rfp =>
         rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
       );
@@ -180,7 +180,7 @@ export default function Dashboard() {
                 <SelectValue placeholder="Filter by location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
                 {locations.map(location => (
                   <SelectItem key={location} value={location}>
                     {location}

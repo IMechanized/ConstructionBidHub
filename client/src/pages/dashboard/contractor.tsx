@@ -27,7 +27,7 @@ export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
-  const [locationFilter, setLocationFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [location, setLocation] = useLocation();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
@@ -54,7 +54,7 @@ export default function ContractorDashboard() {
       }
 
       // Location filter
-      if (locationFilter) {
+      if (locationFilter && locationFilter !== "all") {
         matches = matches && rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase());
       }
 
@@ -123,7 +123,7 @@ export default function ContractorDashboard() {
                 <SelectValue placeholder="Filter by location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
                 {locations.map(location => (
                   <SelectItem key={location} value={location}>
                     {location}

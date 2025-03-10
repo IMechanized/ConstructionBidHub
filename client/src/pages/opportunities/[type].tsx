@@ -25,7 +25,7 @@ export default function OpportunitiesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
-  const [locationFilter, setLocationFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("all"); // Changed from empty string to "all"
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -51,7 +51,7 @@ export default function OpportunitiesPage() {
   }
 
   // Apply location filter
-  if (locationFilter) {
+  if (locationFilter && locationFilter !== "all") { // Updated filter logic
     filteredRfps = filteredRfps.filter(rfp =>
       rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
     );
@@ -127,7 +127,7 @@ export default function OpportunitiesPage() {
                 <SelectValue placeholder="Filter by location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem> {/* Changed from empty string to "all" */}
                 {locations.map(location => (
                   <SelectItem key={location} value={location}>
                     {location}

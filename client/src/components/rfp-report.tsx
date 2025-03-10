@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 interface RfpReportProps {
   rfps: Rfp[];
@@ -26,6 +28,7 @@ interface RfpReportProps {
 
 export default function RfpReport({ rfps }: RfpReportProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [, navigate] = useLocation();
   const itemsPerPage = 5;
   const totalPages = Math.ceil(rfps.length / itemsPerPage);
 
@@ -33,64 +36,37 @@ export default function RfpReport({ rfps }: RfpReportProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentRfps = rfps.slice(startIndex, endIndex);
 
-  const { data: rfis } = useQuery<Rfi[]>({
-    queryKey: ["/api/rfis"],
-  });
-
   return (
     <div className="space-y-6">
-      {currentRfps.map((rfp) => {
-        const rfpRfis = rfis?.filter((rfi) => rfi.rfpId === rfp.id) || [];
-        
-        return (
-          <Card key={rfp.id} className="p-6">
-            <h3 className="text-2xl font-bold mb-4">{rfp.title}</h3>
-            <div className="mb-4">
-              <p><strong>Location:</strong> {rfp.jobLocation}</p>
-              <p><strong>Due Date:</strong> {format(new Date(rfp.deadline), "PPp")}</p>
-              <p><strong>Budget:</strong> ${rfp.budgetMin?.toLocaleString() || "Not specified"}</p>
-            </div>
-
-            <div className="mb-6">
-              <h4 className="text-lg font-semibold mb-2">Bidders Information</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Submission Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rfpRfis.map((rfi) => (
-                    <TableRow key={rfi.id}>
-                      <TableCell>{rfi.email}</TableCell>
-                      <TableCell>{rfi.email}</TableCell>
-                      <TableCell>{format(new Date(rfi.createdAt), "PP")}</TableCell>
-                      <TableCell className="capitalize">{rfi.status}</TableCell>
-                    </TableRow>
-                  ))}
-                  {rfpRfis.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center">No bids received yet</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div>
-              <h4 className="text-lg font-semibold mb-2">Additional Information</h4>
-              <p><strong>Walkthrough Date:</strong> {format(new Date(rfp.walkthroughDate), "PP")}</p>
-              <p><strong>RFI Due Date:</strong> {format(new Date(rfp.rfiDate), "PP")}</p>
-              {rfp.certificationGoals && (
-                <p><strong>Certification Goals:</strong> {rfp.certificationGoals}</p>
-              )}
-            </div>
-          </Card>
-        );
-      })}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Due Date</TableHead>
+            <TableHead>Budget</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {currentRfps.map((rfp) => (
+            <TableRow key={rfp.id}>
+              <TableCell className="font-medium">{rfp.title}</TableCell>
+              <TableCell>{rfp.jobLocation}</TableCell>
+              <TableCell>{format(new Date(rfp.deadline), "PPp")}</TableCell>
+              <TableCell>${rfp.budgetMin?.toLocaleString() || "Not specified"}</TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate(`/reports/${rfp.id}`)}
+                >
+                  View Full Report
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       <Pagination>
         <PaginationContent>

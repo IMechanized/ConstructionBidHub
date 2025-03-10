@@ -98,7 +98,7 @@ export default function ContractorDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="hidden md:block space-y-6">
+        <div className="hidden md:block">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="rfps">RFPs</TabsTrigger>
@@ -107,7 +107,7 @@ export default function ContractorDashboard() {
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="rfps">
+            <TabsContent value="rfps" className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Allow crawling of all content
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://findconstructionbids.com/sitemap.xml

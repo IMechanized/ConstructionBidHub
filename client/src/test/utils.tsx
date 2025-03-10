@@ -7,6 +7,7 @@ import { render as rtlRender } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
+import { HelmetProvider } from 'react-helmet-async';
 import userEvent from '@testing-library/user-event';
 
 // Create a custom render function that includes providers
@@ -24,12 +25,14 @@ function render(ui: React.ReactElement, { route = '/' } = {}) {
   return {
     user: userEvent.setup(),
     ...rtlRender(
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          {ui}
-          <Toaster />
-        </AuthProvider>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {ui}
+            <Toaster />
+          </AuthProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     ),
   };
 }

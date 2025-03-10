@@ -1,3 +1,25 @@
+/**
+ * RFP Form Component
+ * 
+ * A form component for creating and editing Request for Proposals (RFPs).
+ * Handles form validation, submission, and error display using react-hook-form and zod.
+ * 
+ * Features:
+ * - Required field validation
+ * - Date field formatting
+ * - Optional fields (budget, certifications, portfolio)
+ * - Boost option for featured RFPs
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <RfpForm 
+ *   onSuccess={() => console.log('RFP created')}
+ *   onCancel={() => console.log('Form cancelled')}
+ * />
+ * ```
+ */
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -17,14 +39,25 @@ interface RfpFormProps {
 
 export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const { toast } = useToast();
+
+  // Initialize form with validation schema and default values
   const form = useForm({
-    resolver: zodResolver(insertRfpSchema),
+    resolver: zodResolver(
+      insertRfpSchema.extend({
+        title: insertRfpSchema.shape.title.min(1, "Title is required"),
+        description: insertRfpSchema.shape.description.min(1, "Description is required"),
+        jobLocation: insertRfpSchema.shape.jobLocation.min(1, "Job location is required"),
+        walkthroughDate: insertRfpSchema.shape.walkthroughDate.min(1, "Walkthrough date is required"),
+        rfiDate: insertRfpSchema.shape.rfiDate.min(1, "RFI date is required"),
+        deadline: insertRfpSchema.shape.deadline.min(1, "Deadline is required"),
+      })
+    ),
     defaultValues: {
       title: "",
       description: "",
-      walkthroughDate: new Date().toISOString().split('T')[0],
-      rfiDate: new Date().toISOString().split('T')[0],
-      deadline: new Date().toISOString().split('T')[0],
+      walkthroughDate: "",
+      rfiDate: "",
+      deadline: "",
       budgetMin: undefined,
       certificationGoals: "",
       jobLocation: "",
@@ -33,18 +66,20 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     },
   });
 
+  // Mutation for creating new RFP
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log('Submitting RFP data:', data);
       const formattedData = {
         ...data,
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
+        portfolioLink: data.portfolioLink || null,
+        certificationGoals: data.certificationGoals || null,
       };
-      console.log('Formatted RFP data:', formattedData);
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
     onSuccess: () => {
+      // Invalidate cache and reset form
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
       form.reset();
       toast({
@@ -54,7 +89,6 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       onSuccess?.();
     },
     onError: (error: Error) => {
-      console.error('RFP creation error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -63,31 +97,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     },
   });
 
-  const handleSubmit = (featured: boolean) => {
-    const values = form.getValues();
-    const data = {
-      ...values,
-      portfolioLink: values.portfolioLink || null,
-      certificationGoals: values.certificationGoals || null,
-      budgetMin: values.budgetMin ? Number(values.budgetMin) : null,
-      featured
-    };
-
-    // Validate form before submission
-    const result = insertRfpSchema.safeParse(data);
-    if (!result.success) {
-      console.error('Validation errors:', result.error.issues);
-      result.error.issues.forEach(issue => {
-        toast({
-          title: "Validation Error",
-          description: `${issue.path}: ${issue.message}`,
-          variant: "destructive"
-        });
-      });
-      return;
-    }
-
-    console.log('Submitting validated data:', data);
+  // Form submission handler
+  const onSubmit = async (data: any) => {
     createRfpMutation.mutate(data);
   };
 
@@ -95,12 +106,10 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     <Form {...form}>
       <form 
         className="space-y-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit(false);
-        }}
+        onSubmit={form.handleSubmit(onSubmit)}
         data-testid="rfp-form"
       >
+        {/* Title Field */}
         <FormField
           control={form.control}
           name="title"
@@ -119,6 +128,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Description Field */}
         <FormField
           control={form.control}
           name="description"
@@ -137,6 +147,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Date Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -175,6 +186,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           />
         </div>
 
+        {/* Deadline Field */}
         <FormField
           control={form.control}
           name="deadline"
@@ -193,6 +205,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Budget Field */}
         <FormField
           control={form.control}
           name="budgetMin"
@@ -213,6 +226,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Location Field */}
         <FormField
           control={form.control}
           name="jobLocation"
@@ -231,6 +245,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Certification Goals Field */}
         <FormField
           control={form.control}
           name="certificationGoals"
@@ -249,6 +264,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Portfolio Link Field */}
         <FormField
           control={form.control}
           name="portfolioLink"
@@ -268,6 +284,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Form Actions */}
         <div className="flex justify-end gap-4">
           <Button
             type="button"
@@ -297,7 +314,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           </Button>
           <Button
             type="button"
-            onClick={() => handleSubmit(true)}
+            onClick={() => form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()}
             disabled={createRfpMutation.isPending}
             data-testid="boost-button"
           >

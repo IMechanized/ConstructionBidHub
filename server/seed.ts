@@ -1,14 +1,21 @@
+/**
+ * Database Seeding Script
+ * Creates test data for the FindConstructionBids platform including:
+ * - User accounts (both contractors and government organizations)
+ * - RFPs with varied requirements and deadlines
+ * - Employee records
+ * - RFI samples
+ */
+
 import { db } from "./db";
-import { users, rfps, bids } from "../shared/schema";
+import { users, rfps, rfis } from "../shared/schema";
 import { hashPassword } from "./auth";
 import { faker } from "@faker-js/faker";
 
 async function seed() {
   console.log("🌱 Starting seeding...");
 
-  // Create 10 user accounts
-  const userIds: number[] = [];
-
+  // Sample data for realistic construction industry details
   const trades = [
     "General Contractor",
     "Electrical",
@@ -29,10 +36,16 @@ async function seed() {
     "Master Electrician",
     "Master Plumber",
     "Energy Star Partner",
-    "Green Building Professional"
+    "Green Building Professional",
+    "Minority-Owned Business Enterprise (MBE)",
+    "Women-Owned Business Enterprise (WBE)",
+    "Service-Disabled Veteran-Owned Business"
   ];
 
-  for (let i = 0; i < 10; i++) {
+  // Create 20 user accounts (increased from 10)
+  const userIds: number[] = [];
+
+  for (let i = 0; i < 20; i++) {
     const [user] = await db.insert(users).values({
       email: faker.internet.email(),
       password: await hashPassword("password123"),
@@ -52,16 +65,37 @@ async function seed() {
     userIds.push(user.id);
   }
 
-  // Generate 30 RFPs
-  const rfpIds: number[] = [];
-
+  // Generate detailed RFP descriptions with specific sections
   const generateDescription = () => {
-    const projectOverview = faker.lorem.paragraph(4);
+    const projectScope = [
+      "New Construction",
+      "Renovation",
+      "Retrofit",
+      "Maintenance",
+      "Emergency Repair",
+      "Upgrade",
+      "Expansion"
+    ];
+
+    const buildingTypes = [
+      "Office Building",
+      "School",
+      "Hospital",
+      "Government Facility",
+      "Community Center",
+      "Library",
+      "Fire Station",
+      "Police Station",
+      "Public Housing",
+      "Transportation Hub"
+    ];
+
+    const projectOverview = `${faker.helpers.arrayElement(projectScope)} project for ${faker.helpers.arrayElement(buildingTypes)} located in ${faker.location.city()}, ${faker.location.state()}.`;
     const background = faker.lorem.paragraph(3);
-    const objectives = Array.from({ length: 5 }, () => faker.lorem.sentence()).join('\n');
+    const objectives = Array.from({ length: 5 }, () => `- ${faker.commerce.productDescription()}`).join('\n');
     const scope = faker.lorem.paragraph(3);
     const requirements = Array.from({ length: 6 }, () => `- ${faker.lorem.sentence()}`).join('\n');
-    const qualifications = Array.from({ length: 4 }, () => `- ${faker.lorem.sentence()}`).join('\n');
+    const qualifications = Array.from({ length: 4 }, () => `- ${faker.company.catchPhrase()}`).join('\n');
     const timeline = faker.lorem.paragraph(2);
     const evaluation = Array.from({ length: 3 }, () => `- ${faker.lorem.sentence()}`).join('\n');
 
@@ -90,16 +124,43 @@ Evaluation Criteria:
 ${evaluation}`;
   };
 
-  for (let i = 0; i < 30; i++) {
-    const startDate = faker.date.future();
+  // Generate 50 RFPs (increased from 30)
+  const rfpIds: number[] = [];
+
+  for (let i = 0; i < 50; i++) {
+    // Generate dates ensuring logical sequence
+    const now = new Date();
+    const maxMonthsAhead = 12;
+
+    const walkthroughDate = faker.date.between({
+      from: now,
+      to: faker.date.future({ years: 1, refDate: now })
+    });
+
+    const rfiDate = faker.date.between({
+      from: walkthroughDate,
+      to: faker.date.future({ months: 1, refDate: walkthroughDate })
+    });
+
+    const deadline = faker.date.between({
+      from: rfiDate,
+      to: faker.date.future({ months: 2, refDate: rfiDate })
+    });
+
     const [rfp] = await db.insert(rfps).values({
-      title: faker.company.catchPhrase(),
+      title: `${faker.helpers.arrayElement([
+        "Construction of",
+        "Renovation for",
+        "Upgrade to",
+        "Maintenance of",
+        "Expansion of"
+      ])} ${faker.company.catchPhrase()}`,
       description: generateDescription(),
-      walkthroughDate: faker.date.between({ from: startDate, to: faker.date.future({ refDate: startDate }) }),
-      rfiDate: faker.date.between({ from: startDate, to: faker.date.future({ refDate: startDate }) }),
-      deadline: faker.date.between({ from: startDate, to: faker.date.future({ refDate: startDate, years: 1 }) }),
+      walkthroughDate,
+      rfiDate,
+      deadline,
       budgetMin: faker.number.int({ min: 50000, max: 5000000 }),
-      certificationGoals: faker.helpers.arrayElement(certifications),
+      certificationGoals: faker.helpers.arrayElements(certifications, { min: 1, max: 3 }).join(", "),
       jobLocation: `${faker.location.city()}, ${faker.location.state()}`,
       portfolioLink: faker.internet.url(),
       status: faker.helpers.arrayElement(["open", "closed"]),
@@ -110,38 +171,28 @@ ${evaluation}`;
     rfpIds.push(rfp.id);
   }
 
-  // Generate bids for RFPs
+  // Generate RFIs for the RFPs
   for (const rfpId of rfpIds) {
-    // Generate 2-5 bids per RFP
-    const numBids = faker.number.int({ min: 2, max: 5 });
+    // Generate 2-5 RFIs per RFP
+    const numRfis = faker.number.int({ min: 2, max: 5 });
 
-    for (let i = 0; i < numBids; i++) {
-      // Ensure contractor is different from RFP creator
+    for (let i = 0; i < numRfis; i++) {
+      // Get a random contractor (different from RFP creator)
       const availableContractors = userIds.filter(id => id !== rfpId);
 
-      await db.insert(bids).values({
-        rfpId: rfpId,
-        contractorId: faker.helpers.arrayElement(availableContractors),
-        amount: faker.number.int({ min: 45000, max: 6000000 }),
-        proposal: `Executive Summary:
-${faker.lorem.paragraph(3)}
-
-Technical Approach:
-${faker.lorem.paragraph(2)}
-
-Key Advantages:
-- ${faker.lorem.sentence()}
-- ${faker.lorem.sentence()}
-- ${faker.lorem.sentence()}
-
-Project Timeline:
-${faker.lorem.paragraph()}
-
-Cost Breakdown:
-${faker.lorem.paragraph(2)}
-
-Team Qualifications:
-${faker.lorem.paragraph()}`,
+      await db.insert(rfis).values({
+        rfpId,
+        email: faker.internet.email(),
+        message: `Question regarding ${faker.helpers.arrayElement([
+          "technical specifications",
+          "timeline requirements",
+          "budget constraints",
+          "certification requirements",
+          "material specifications",
+          "safety protocols",
+          "warranty terms"
+        ])}:\n\n${faker.lorem.paragraph(3)}`,
+        status: faker.helpers.arrayElement(["pending", "responded"]),
       });
     }
   }

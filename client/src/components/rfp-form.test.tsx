@@ -1,8 +1,20 @@
+/**
+ * RFP Form Component Tests
+ * 
+ * Tests the functionality of the RFP form component, including:
+ * - Form field rendering
+ * - Form validation
+ * - Form submission
+ * - Error handling
+ * - Cancel functionality
+ */
+
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '../test/utils';
 import RfpForm from './rfp-form';
 
 describe('RfpForm', () => {
+  // Set up a consistent date for testing
   const mockDate = new Date('2025-03-06T12:00:00Z').toISOString().split('T')[0];
 
   it('renders all form fields', async () => {
@@ -50,10 +62,8 @@ describe('RfpForm', () => {
     expect(screen.getByTestId('rfi-date-input')).toHaveValue(futureDates[1]);
     expect(screen.getByTestId('deadline-input')).toHaveValue(futureDates[2]);
 
-    // Submit the form
+    // Submit the form and verify success callback
     await user.click(screen.getByTestId('submit-button'));
-
-    // Wait for success callback
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalled();
     });
@@ -62,27 +72,27 @@ describe('RfpForm', () => {
   it('validates required fields', async () => {
     const { user } = render(<RfpForm />);
 
-    // Submit empty form
+    // Try to submit empty form
     await user.click(screen.getByTestId('submit-button'));
 
-    // Wait for error messages to appear
+    // Wait for alert role elements to verify error message presence
     await waitFor(() => {
       expect(screen.getAllByRole('alert')).toHaveLength(6); // 6 required fields
     });
 
-    // Check each required field's error message
+    // Check each required field's error message specifically
     const errorMessages = {
-      'title-error': 'Title is required',
-      'description-error': 'Description is required',
-      'location-error': 'Job location is required',
-      'walkthrough-date-error': 'Walkthrough date is required',
-      'rfi-date-error': 'RFI date is required',
-      'deadline-error': 'Deadline is required',
+      'title-error': /title is required/i,
+      'description-error': /description is required/i,
+      'location-error': /job location is required/i,
+      'walkthrough-date-error': /walkthrough date is required/i,
+      'rfi-date-error': /rfi date is required/i,
+      'deadline-error': /deadline is required/i,
     };
 
-    for (const [testId, message] of Object.entries(errorMessages)) {
+    for (const [testId, pattern] of Object.entries(errorMessages)) {
       const errorElement = screen.getByTestId(testId);
-      expect(errorElement).toHaveTextContent(message);
+      expect(errorElement).toHaveTextContent(pattern);
     }
   });
 
@@ -90,6 +100,7 @@ describe('RfpForm', () => {
     const onCancel = vi.fn();
     const { user } = render(<RfpForm onCancel={onCancel} />);
 
+    // Click cancel button and verify callback
     await user.click(screen.getByTestId('cancel-button'));
     expect(onCancel).toHaveBeenCalled();
   });

@@ -3,9 +3,20 @@ import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { useLocation } from "wouter";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import EmployeeManagement from "@/components/employee-management";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 export default function EmployeesPage() {
   const [location] = useLocation();
+  const breadcrumbItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+    {
+      label: "Employees",
+      href: "/dashboard/employees",
+    },
+  ];
 
   return (
     <SidebarProvider defaultOpen>
@@ -17,8 +28,9 @@ export default function EmployeesPage() {
 
           <main className="flex-1 min-h-screen w-full">
             <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-              <div className="space-y-6">
-                <h1 className="text-2xl font-bold">Employees</h1>
+              <BreadcrumbNav items={breadcrumbItems} />
+              <h1 className="text-3xl font-bold mb-8">Employee Management</h1>
+              <div className="bg-card rounded-lg border shadow-sm p-6">
                 <EmployeeManagement />
               </div>
             </div>

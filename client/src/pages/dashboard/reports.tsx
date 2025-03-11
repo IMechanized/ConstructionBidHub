@@ -5,9 +5,20 @@ import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FileBarChart } from "lucide-react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 export default function ReportsPage() {
   const [location] = useLocation();
+  const breadcrumbItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+    {
+      label: "Reports",
+      href: "/dashboard/reports",
+    },
+  ];
 
   return (
     <SidebarProvider defaultOpen>
@@ -19,11 +30,15 @@ export default function ReportsPage() {
 
           <main className="flex-1 min-h-screen w-full">
             <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-              <div className="space-y-6">
-                <h1 className="text-2xl font-bold">Reports</h1>
+              <BreadcrumbNav items={breadcrumbItems} />
+              <h1 className="text-3xl font-bold mb-8">Reports</h1>
+              <div className="bg-card rounded-lg border shadow-sm p-12">
                 <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
-                  <FileBarChart className="h-12 w-12 mb-4" />
-                  <p>Reports coming soon</p>
+                  <FileBarChart className="h-16 w-16 mb-6 text-primary" />
+                  <p className="text-lg font-medium mb-2">Reports Coming Soon</p>
+                  <p className="text-sm text-center max-w-md">
+                    We're working on comprehensive reporting features to help you track and analyze your bidding activities.
+                  </p>
                 </div>
               </div>
             </div>

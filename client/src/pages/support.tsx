@@ -14,7 +14,7 @@ export default function SupportPage() {
     },
     {
       label: "Support",
-      href: "/support",
+      href: "/dashboard/support",
     },
   ];
 

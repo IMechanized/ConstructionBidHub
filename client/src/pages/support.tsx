@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { useLocation } from "wouter";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SupportPage() {
   const [location] = useLocation();
+  const isMobile = useIsMobile();
   const breadcrumbItems = [
     {
       label: "Dashboard",
@@ -143,12 +144,10 @@ export default function SupportPage() {
 
   if (isDashboard) {
     return (
-      <SidebarProvider defaultOpen>
+      <SidebarProvider defaultOpen={!isMobile}>
         <div className="min-h-screen bg-background">
           <div className="flex">
-            <div className="hidden md:block flex-shrink-0">
-              <DashboardSidebar currentPath={location} />
-            </div>
+            <DashboardSidebar currentPath={location} />
 
             <main className="flex-1 min-h-screen w-full">
               <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
@@ -158,11 +157,6 @@ export default function SupportPage() {
               </div>
             </main>
           </div>
-
-          <MobileDashboardNav
-            userType="contractor"
-            currentPath={location}
-          />
         </div>
       </SidebarProvider>
     );

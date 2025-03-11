@@ -24,9 +24,9 @@ import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { Link } from "wouter";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
   const [locationFilter, setLocationFilter] = useState("all");
+  const isMobile = useIsMobile();
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -92,18 +93,15 @@ export default function Dashboard() {
   const filteredMyRfps = applyFilters(myRfps);
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen bg-background">
         <div className="flex">
-          {/* Desktop Sidebar */}
-          <div className="hidden md:block">
-            <DashboardSidebar currentPath={location} />
-          </div>
+          <DashboardSidebar currentPath={location} />
 
           {/* Main Content */}
           <main className="flex-1 min-h-screen">
             {/* Page Content */}
-            <div className="container mx-auto px-4 py-6 md:py-8 pb-20 md:pb-8">
+            <div className="container mx-auto px-4 py-6 md:py-8">
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
                   <h2 className="text-xl font-semibold">My RFPs</h2>
@@ -171,12 +169,6 @@ export default function Dashboard() {
             </div>
           </main>
         </div>
-
-        {/* Mobile Navigation */}
-        <MobileDashboardNav
-          userType={user?.type || "contractor"}
-          currentPath={location}
-        />
 
         {/* Modals */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

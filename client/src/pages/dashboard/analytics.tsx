@@ -3,9 +3,9 @@ import { RfpAnalytics, Rfp } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { useLocation } from "wouter";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import { format } from "date-fns";
 
 export default function AnalyticsDashboard() {
   const [location] = useLocation();
+  const isMobile = useIsMobile();
   const breadcrumbItems = [
     {
       label: "Dashboard",
@@ -50,12 +51,10 @@ export default function AnalyticsDashboard() {
   }));
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen bg-background">
         <div className="flex">
-          <div className="hidden md:block flex-shrink-0">
-            <DashboardSidebar currentPath={location} />
-          </div>
+          <DashboardSidebar currentPath={location} />
 
           <main className="flex-1 min-h-screen w-full">
             <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
@@ -172,11 +171,6 @@ export default function AnalyticsDashboard() {
             </div>
           </main>
         </div>
-
-        <MobileDashboardNav
-          userType="contractor"
-          currentPath={location}
-        />
       </div>
     </SidebarProvider>
   );

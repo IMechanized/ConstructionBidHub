@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
 import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FileBarChart } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ReportsPage() {
   const [location] = useLocation();
+  const isMobile = useIsMobile();
   const breadcrumbItems = [
     {
       label: "Dashboard",
@@ -21,12 +22,10 @@ export default function ReportsPage() {
   ];
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen bg-background">
         <div className="flex">
-          <div className="hidden md:block flex-shrink-0">
-            <DashboardSidebar currentPath={location} />
-          </div>
+          <DashboardSidebar currentPath={location} />
 
           <main className="flex-1 min-h-screen w-full">
             <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
@@ -44,11 +43,6 @@ export default function ReportsPage() {
             </div>
           </main>
         </div>
-
-        <MobileDashboardNav
-          userType="contractor"
-          currentPath={location}
-        />
       </div>
     </SidebarProvider>
   );

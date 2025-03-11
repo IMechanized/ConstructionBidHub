@@ -100,10 +100,10 @@ export default function ContractorDashboard() {
       <main className="container mx-auto px-4 py-8">
         <div className="hidden md:block">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full max-w-full">
+            <TabsList>
               <TabsTrigger value="rfps">RFPs</TabsTrigger>
               <TabsTrigger value="rfis">RFIs</TabsTrigger>
-              <TabsTrigger value="employees">Team</TabsTrigger>
+              <TabsTrigger value="employees">Employees</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 

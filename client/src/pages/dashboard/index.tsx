@@ -5,8 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, useLocation } from "wouter";
-import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
+import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -151,11 +150,6 @@ export default function Dashboard() {
               <Link href="/support">Support</Link>
             </TabsTrigger>
           </TabsList>
-          
-          {/* Mobile navigation will only show on small screens */}
-          <div className="md:hidden mt-6">
-            <MobileDashboardNav userType="contractor" currentPath={location} />
-          </div>
 
           <TabsContent value="my-rfps">
             <div className="space-y-6">

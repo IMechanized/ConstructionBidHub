@@ -27,7 +27,7 @@ export default function SettingsPage() {
           </div>
 
           <main className="flex-1 min-h-screen w-full">
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl xl:max-w-[110rem]">
               <BreadcrumbNav items={breadcrumbItems} />
               <h1 className="text-3xl font-bold mb-8">Account Settings</h1>
               <div className="bg-card rounded-lg border shadow-sm p-6">

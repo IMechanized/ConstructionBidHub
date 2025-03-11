@@ -1,29 +1,82 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, FileText, Star, Clock, AlertCircle, MessageSquare, Settings, Building, Home } from "lucide-react";
+import {
+  Menu,
+  FileText,
+  MessageSquare,
+  Settings,
+  Building,
+  Users,
+  FileBarChart,
+  HelpCircle,
+  BarChart3,
+  Star,
+  Clock,
+  Layout,
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar } from "@/components/ui/avatar";
 
 interface MobileDashboardNavProps {
-  userType: "contractor" | "government";
   currentPath: string;
 }
 
-export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNavProps) {
-  const navItems = userType === "contractor" 
-    ? [
-        { label: "Dashboard", href: "/dashboard/contractor", icon: Home },
-        { label: "Browse RFPs", href: "/dashboard/contractor/rfps", icon: FileText },
-        { label: "My Bids", href: "/dashboard/contractor/bids", icon: Star },
-        { label: "My Company", href: "/dashboard/contractor/profile", icon: Building },
-        { label: "Settings", href: "/dashboard/contractor/settings", icon: Settings },
-      ]
-    : [
-        { label: "Dashboard", href: "/dashboard", icon: Home },
-        { label: "My RFPs", href: "/dashboard/rfps", icon: FileText },
-        { label: "Messages", href: "/dashboard/messages", icon: MessageSquare },
-        { label: "Analytics", href: "/dashboard/analytics", icon: AlertCircle },
-        { label: "Settings", href: "/dashboard/settings", icon: Settings },
-      ];
+export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
+  const { user, logoutMutation } = useAuth();
+
+  const navItems = [
+    {
+      label: "My RFPs",
+      href: "/dashboard",
+      icon: FileText,
+    },
+    {
+      label: "Featured RFPs",
+      href: "/dashboard/featured",
+      icon: Star,
+    },
+    {
+      label: "New RFPs",
+      href: "/dashboard/new",
+      icon: Clock,
+    },
+    {
+      label: "All RFPs",
+      href: "/dashboard/all",
+      icon: Layout,
+    },
+    {
+      label: "RFIs",
+      href: "/dashboard/rfis",
+      icon: MessageSquare,
+    },
+    {
+      label: "Reports",
+      href: "/dashboard/reports",
+      icon: FileBarChart,
+    },
+    {
+      label: "Analytics",
+      href: "/dashboard/analytics",
+      icon: BarChart3,
+    },
+    {
+      label: "Employees",
+      href: "/dashboard/employees",
+      icon: Users,
+    },
+    {
+      label: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+    },
+    {
+      label: "Support",
+      href: "/support",
+      icon: HelpCircle,
+    },
+  ];
 
   return (
     <div className="block md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-30">
@@ -38,22 +91,54 @@ export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNav
             <span className="text-sm">Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[60vh] p-4">
-          <div className="grid gap-3">
-            <h2 className="text-lg font-semibold">Navigation</h2>
-            <nav className="grid gap-1">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button 
-                    variant={currentPath === item.href ? "default" : "ghost"} 
-                    className="w-full justify-start gap-3 h-10"
+        <SheetContent side="bottom" className="h-[85vh]">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-4 py-4 px-2 border-b">
+              <Link href="/" className="flex items-center gap-2">
+                <Building className="h-6 w-6" />
+                <span className="font-semibold text-lg">FindConstructionBids</span>
+              </Link>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto py-4">
+              <div className="grid gap-1">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.href}
+                    variant={currentPath === item.href ? "default" : "ghost"}
+                    className="w-full justify-start gap-3"
+                    asChild
                   >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
+                    <Link href={item.href}>
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
                   </Button>
-                </Link>
-              ))}
+                ))}
+              </div>
             </nav>
+
+            <div className="border-t p-4">
+              <div className="flex items-center gap-3 mb-4">
+                {user?.logo && (
+                  <Avatar>
+                    <img
+                      src={user.logo}
+                      alt={`${user.companyName} logo`}
+                      className="h-full w-full object-cover"
+                    />
+                  </Avatar>
+                )}
+                <span className="font-medium">{user?.companyName}</span>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => logoutMutation.mutate()}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

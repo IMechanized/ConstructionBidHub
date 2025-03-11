@@ -4,11 +4,9 @@ import { Mail, Phone } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function SupportPage() {
   const [location] = useLocation();
-  const isMobile = useIsMobile();
   const breadcrumbItems = [
     {
       label: "Dashboard",
@@ -20,8 +18,8 @@ export default function SupportPage() {
     },
   ];
 
-  // Check if we're in the dashboard context
-  const isDashboard = location.startsWith("/dashboard") || location === "/support";
+  // Only show dashboard layout if accessed from dashboard
+  const isDashboard = location.startsWith("/dashboard/support");
 
   const content = (
     <div className="space-y-8">

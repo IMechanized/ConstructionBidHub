@@ -104,7 +104,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
                 tooltip={item.label}
                 isActive={currentPath === item.href}
               >
-                <Link href={item.href}>
+                <Link href={item.href} className="flex items-center w-full">
                   <item.icon className="h-4 w-4" />
                   <span>{item.label}</span>
                 </Link>

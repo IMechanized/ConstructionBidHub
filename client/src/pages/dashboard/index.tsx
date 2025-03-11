@@ -109,100 +109,107 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold hover:text-primary transition-colors">
-            FindConstructionBids
-          </Link>
-          <div className="flex items-center gap-4">
-            {user?.logo && (
-              <img
-                src={user.logo}
-                alt={`${user.companyName} logo`}
-                className="h-8 w-8 object-contain rounded-full"
-              />
-            )}
-            <span className="text-sm text-muted-foreground hidden md:inline">
-              {user?.companyName}
-            </span>
-            <Button variant="outline" onClick={() => logoutMutation.mutate()}>
-              Logout
-            </Button>
+      <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+        <div className="container mx-auto px-4">
+          <div className="h-14 md:h-16 flex items-center justify-between">
+            <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors truncate flex-shrink">
+              FindConstructionBids
+            </Link>
+            <div className="flex items-center gap-2 md:gap-4">
+              {user?.logo && (
+                <img
+                  src={user.logo}
+                  alt={`${user.companyName} logo`}
+                  className="h-6 w-6 md:h-8 md:w-8 object-contain rounded-full"
+                />
+              )}
+              <span className="text-sm text-muted-foreground hidden md:inline">
+                {user?.companyName}
+              </span>
+              <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()}>
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 md:py-8 pb-20 md:pb-8">
         <Tabs defaultValue="my-rfps" className="space-y-6">
-          <TabsList className="w-full">
-            <TabsTrigger value="my-rfps" className="flex-1">My RFPs</TabsTrigger>
-            <TabsTrigger value="featured" className="flex-1">Featured RFPs</TabsTrigger>
-            <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
-            <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
-            <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1">Reports</TabsTrigger>
-            <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
-            <TabsTrigger value="analytics" asChild className="flex-1">
-              <Link href="/dashboard/analytics">Analytics</Link>
-            </TabsTrigger>
-            <TabsTrigger value="support" asChild className="flex-1">
-              <Link href="/support">Support</Link>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="w-max md:w-full inline-flex md:inline-flex space-x-1 md:space-x-0">
+              <TabsTrigger value="my-rfps" className="flex-1 whitespace-nowrap">My RFPs</TabsTrigger>
+              <TabsTrigger value="featured" className="flex-1 whitespace-nowrap">Featured</TabsTrigger>
+              <TabsTrigger value="new" className="flex-1 whitespace-nowrap">New</TabsTrigger>
+              <TabsTrigger value="available" className="flex-1 whitespace-nowrap">Available</TabsTrigger>
+              <TabsTrigger value="bids" className="flex-1 whitespace-nowrap">RFIs</TabsTrigger>
+              <TabsTrigger value="reports" className="flex-1 whitespace-nowrap">Reports</TabsTrigger>
+              <TabsTrigger value="employees" className="flex-1 whitespace-nowrap">Employees</TabsTrigger>
+              <TabsTrigger value="settings" className="flex-1 whitespace-nowrap">Settings</TabsTrigger>
+              <TabsTrigger value="analytics" asChild className="flex-1 whitespace-nowrap">
+                <Link href="/dashboard/analytics">Analytics</Link>
+              </TabsTrigger>
+              <TabsTrigger value="support" asChild className="flex-1 whitespace-nowrap">
+                <Link href="/support">Support</Link>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="my-rfps">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
                 <h2 className="text-xl font-semibold">My RFPs</h2>
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   Create RFP
                 </Button>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
                   <Input
                     placeholder="Search RFPs..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
                   />
                 </div>
 
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Default</SelectItem>
-                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select
-                  value={locationFilter}
-                  onValueChange={setLocationFilter}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {locations.map(location => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {loadingRfps ? (
                 <DashboardSectionSkeleton count={6} />
               ) : (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredMyRfps.map((rfp) => (
                     <RfpCard
                       key={rfp.id}
@@ -219,46 +226,48 @@ export default function Dashboard() {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-6">Featured Opportunities</h2>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
                   <Input
                     placeholder="Search featured RFPs..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
                   />
                 </div>
+                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Default</SelectItem>
-                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={locationFilter}
-                  onValueChange={setLocationFilter}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {locations.map(location => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredFeaturedRfps.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
@@ -274,46 +283,48 @@ export default function Dashboard() {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-6">New Opportunities (Last 24h)</h2>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
                   <Input
                     placeholder="Search new RFPs..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
                   />
                 </div>
+                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Default</SelectItem>
-                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={locationFilter}
-                  onValueChange={setLocationFilter}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {locations.map(location => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredNewRfps.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
@@ -329,46 +340,48 @@ export default function Dashboard() {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-6">Available Opportunities</h2>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1 max-w-sm">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
                   <Input
                     placeholder="Search available RFPs..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
                   />
                 </div>
+                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Default</SelectItem>
-                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={locationFilter}
-                  onValueChange={setLocationFilter}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {locations.map(location => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {locations.map(location => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredOtherRfps.map((rfp) => (
                   <RfpCard
                     key={rfp.id}
@@ -428,7 +441,7 @@ export default function Dashboard() {
         </Tabs>
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto">
             <DialogHeader>
               <DialogTitle>Create New RFP</DialogTitle>
             </DialogHeader>

@@ -81,7 +81,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   ];
 
   const NavigationContent = () => (
-    <>
+    <div className="flex flex-col h-full">
       <div className="flex items-center gap-4 py-4 px-2 border-b">
         <Link href="/" className="flex items-center gap-2">
           <Building className="h-6 w-6" />
@@ -128,37 +128,31 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           Logout
         </Button>
       </div>
-    </>
+    </div>
   );
 
   if (isMobile) {
     return (
-      <>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="fixed top-4 left-4 md:hidden z-50"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] p-0">
-            <div className="flex flex-col h-full">
-              <NavigationContent />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </>
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="fixed top-4 left-4 md:hidden z-50"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[280px] p-0">
+          <NavigationContent />
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
-    <div className="hidden md:block w-[280px] border-r h-screen">
-      <div className="flex flex-col h-full">
-        <NavigationContent />
-      </div>
+    <div className="hidden md:block fixed top-0 left-0 w-[280px] h-screen border-r bg-background">
+      <NavigationContent />
     </div>
   );
 }

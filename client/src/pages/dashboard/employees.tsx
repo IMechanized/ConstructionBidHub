@@ -17,18 +17,20 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
 
-      <main className="md:ml-[280px] min-h-screen w-full">
-        <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
-          <BreadcrumbNav items={breadcrumbItems} />
-          <h1 className="text-3xl font-bold mb-8">Employee Management</h1>
-          <div className="bg-card rounded-lg border shadow-sm p-6">
-            <EmployeeManagement />
+      <div className="flex-1">
+        <main className="w-full min-h-screen pb-16 md:pb-0">
+          <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
+            <BreadcrumbNav items={breadcrumbItems} />
+            <h1 className="text-3xl font-bold mb-8">Employee Management</h1>
+            <div className="bg-card rounded-lg border shadow-sm p-6">
+              <EmployeeManagement />
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -16,12 +16,10 @@ export default function EmployeesPage() {
           </div>
 
           <main className="flex-1 min-h-screen w-full">
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-6xl">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
               <div className="space-y-6">
                 <h1 className="text-2xl font-bold">Employees</h1>
-                <div className="bg-card rounded-lg border p-6">
-                  <EmployeeManagement />
-                </div>
+                <EmployeeManagement />
               </div>
             </div>
           </main>

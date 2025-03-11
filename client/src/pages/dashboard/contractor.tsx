@@ -19,6 +19,7 @@ import SettingsForm from "@/components/settings-form";
 import { Link } from "wouter";
 import { MobileMenu } from "@/components/mobile-menu";
 import { MobileDashboardNav } from "@/components/mobile-dashboard-nav";
+import { useWindowSize } from "@/hooks/use-window-size";
 import { format } from "date-fns";
 import {
   Tabs,
@@ -220,6 +221,7 @@ export default function ContractorDashboard() {
           </Tabs>
         </div>
 
+        {/* Mobile navigation - shown only on small screens */}
         <MobileDashboardNav userType="contractor" currentPath={location} />
       </main>
     </div>

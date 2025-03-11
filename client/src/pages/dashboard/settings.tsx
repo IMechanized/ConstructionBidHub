@@ -16,10 +16,12 @@ export default function SettingsPage() {
           </div>
 
           <main className="flex-1 min-h-screen w-full">
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-6xl">
               <div className="space-y-6">
                 <h1 className="text-2xl font-bold">Settings</h1>
-                <SettingsForm />
+                <div className="bg-card rounded-lg border p-6">
+                  <SettingsForm />
+                </div>
               </div>
             </div>
           </main>

@@ -4,7 +4,6 @@ import {
   MessageSquare,
   Settings,
   Building,
-  Home,
   Users,
   FileBarChart,
   HelpCircle,
@@ -13,13 +12,13 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarFooter,
-  SidebarTrigger,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,11 +31,6 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const { user, logoutMutation } = useAuth();
 
   const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: Home,
-    },
     {
       label: "My RFPs",
       href: "/dashboard/rfps",

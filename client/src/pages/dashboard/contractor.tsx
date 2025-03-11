@@ -66,7 +66,7 @@ export default function ContractorDashboard() {
 
   const locations = Array.from(new Set(data?.rfps.map(rfp => rfp.jobLocation) || [])).sort();
 
-  const filteredRfps = data?.rfps.filter(
+  const filteredRfps = data?.rfps ? data.rfps.filter(
     (rfp) => {
       let matches = true;
 
@@ -97,7 +97,7 @@ export default function ContractorDashboard() {
       default:
         return 0;
     }
-  }) || [];
+  }) : [];
 
   return (
     <div className="min-h-screen bg-background">

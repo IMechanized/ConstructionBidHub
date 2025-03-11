@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import {
+  Menu,
   FileText,
   MessageSquare,
   Settings,
@@ -11,19 +12,7 @@ import {
   Star,
   Clock,
   Layout,
-  Menu,
 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarSeparator,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -144,16 +133,15 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   if (isMobile) {
     return (
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-30">
+      <>
         <Sheet>
           <SheetTrigger asChild>
             <Button 
               variant="ghost" 
-              size="sm" 
-              className="w-full flex items-center justify-center gap-2 h-12 rounded-none hover:bg-accent"
+              size="icon"
+              className="fixed top-4 left-4 md:hidden z-50"
             >
-              <Menu className="h-4 w-4" />
-              <span className="text-sm">Menu</span>
+              <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0">
@@ -162,7 +150,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
             </div>
           </SheetContent>
         </Sheet>
-      </div>
+      </>
     );
   }
 

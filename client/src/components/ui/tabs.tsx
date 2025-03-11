@@ -28,21 +28,6 @@ const TabsList = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => {
   const listRef = React.useRef<HTMLDivElement>(null)
-  const [showLeftArrow, setShowLeftArrow] = React.useState(false)
-  const [showRightArrow, setShowRightArrow] = React.useState(false)
-
-  const checkScroll = React.useCallback(() => {
-    if (!listRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = listRef.current
-    setShowLeftArrow(scrollLeft > 0)
-    setShowRightArrow(scrollLeft < scrollWidth - clientWidth)
-  }, [])
-
-  React.useEffect(() => {
-    checkScroll()
-    window.addEventListener('resize', checkScroll)
-    return () => window.removeEventListener('resize', checkScroll)
-  }, [checkScroll])
 
   const scroll = (direction: 'left' | 'right') => {
     if (!listRef.current) return
@@ -52,17 +37,14 @@ const TabsList = React.forwardRef<
 
   return (
     <div className="relative flex items-center">
-      {showLeftArrow && (
-        <TabsScrollButton 
-          onClick={() => scroll('left')}
-          className="absolute left-0 z-10 md:hidden"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </TabsScrollButton>
-      )}
+      <TabsScrollButton 
+        onClick={() => scroll('left')}
+        className="absolute -left-2 z-10 md:hidden"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </TabsScrollButton>
       <TabsPrimitive.List
         ref={(el) => {
-          // Handle both refs
           if (typeof ref === 'function') ref(el)
           else if (ref) ref.current = el
           // @ts-ignore - we know this is an HTMLDivElement
@@ -72,19 +54,17 @@ const TabsList = React.forwardRef<
           "inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground relative",
           "md:justify-center",
           "overflow-x-auto scrollbar-none scroll-smooth",
+          "px-8 md:px-1",
           className
         )}
-        onScroll={checkScroll}
         {...props}
       />
-      {showRightArrow && (
-        <TabsScrollButton 
-          onClick={() => scroll('right')}
-          className="absolute right-0 z-10 md:hidden"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </TabsScrollButton>
-      )}
+      <TabsScrollButton 
+        onClick={() => scroll('right')}
+        className="absolute -right-2 z-10 md:hidden"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </TabsScrollButton>
     </div>
   )
 })

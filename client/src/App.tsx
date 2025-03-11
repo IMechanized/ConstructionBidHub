@@ -18,6 +18,10 @@ import DetailedReportPage from "@/pages/reports/[id]";
 import AllRfps from "@/pages/dashboard/all";
 import NewRfps from "@/pages/dashboard/new";
 import FeaturedRfps from "@/pages/dashboard/featured";
+import RfiPage from "@/pages/dashboard/rfis";
+import ReportsPage from "@/pages/dashboard/reports";
+import EmployeesPage from "@/pages/dashboard/employees";
+import SettingsPage from "@/pages/dashboard/settings";
 
 function Router() {
   return (
@@ -42,6 +46,18 @@ function Router() {
       </Route>
       <Route path="/dashboard/featured">
         <ProtectedRoute path="/dashboard/featured" component={FeaturedRfps} />
+      </Route>
+      <Route path="/dashboard/rfis">
+        <ProtectedRoute path="/dashboard/rfis" component={RfiPage} />
+      </Route>
+      <Route path="/dashboard/reports">
+        <ProtectedRoute path="/dashboard/reports" component={ReportsPage} />
+      </Route>
+      <Route path="/dashboard/employees">
+        <ProtectedRoute path="/dashboard/employees" component={EmployeesPage} />
+      </Route>
+      <Route path="/dashboard/settings">
+        <ProtectedRoute path="/dashboard/settings" component={SettingsPage} />
       </Route>
       <Route path="/dashboard/analytics">
         <ProtectedRoute path="/dashboard/analytics" component={AnalyticsDashboard} />

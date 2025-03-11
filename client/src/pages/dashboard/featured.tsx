@@ -22,7 +22,7 @@ export default function FeaturedRfps() {
       <DashboardSidebar currentPath={location} />
 
       <main className="md:ml-[280px] min-h-screen pb-16 md:pb-0">
-        <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="container mx-auto px-4 py-6 md:py-8 mt-14 md:mt-0">
           <div className="space-y-6">
             <h1 className="text-2xl font-bold">Featured RFPs</h1>
             {isLoading ? (

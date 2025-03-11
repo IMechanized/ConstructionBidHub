@@ -26,23 +26,27 @@ export function MobileDashboardNav({ userType, currentPath }: MobileDashboardNav
       ];
 
   return (
-    <div className="block md:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-2 z-30">
+    <div className="block md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-30">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full flex items-center justify-center gap-2 h-12 rounded-none hover:bg-accent"
+          >
             <Menu className="h-4 w-4" />
-            <span>Menu</span>
+            <span className="text-sm">Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[70vh]">
-          <div className="grid gap-4 py-4">
-            <h2 className="text-lg font-semibold mb-2">Navigation</h2>
-            <nav className="grid gap-2">
+        <SheetContent side="bottom" className="h-[60vh] p-4">
+          <div className="grid gap-3">
+            <h2 className="text-lg font-semibold">Navigation</h2>
+            <nav className="grid gap-1">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <Button 
                     variant={currentPath === item.href ? "default" : "ghost"} 
-                    className="w-full justify-start gap-3"
+                    className="w-full justify-start gap-3 h-10"
                   >
                     <item.icon className="h-4 w-4" />
                     {item.label}

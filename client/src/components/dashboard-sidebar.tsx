@@ -1,9 +1,6 @@
 import { Link } from "wouter";
 import {
   FileText,
-  Star,
-  Clock,
-  AlertCircle,
   MessageSquare,
   Settings,
   Building,
@@ -11,6 +8,7 @@ import {
   Users,
   FileBarChart,
   HelpCircle,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,7 +50,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
     {
       label: "Analytics",
       href: "/dashboard/analytics",
-      icon: AlertCircle,
+      icon: BarChart3,
     },
     {
       label: "Employees",

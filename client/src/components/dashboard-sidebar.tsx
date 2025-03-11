@@ -8,6 +8,9 @@ import {
   FileBarChart,
   HelpCircle,
   BarChart3,
+  Star,
+  Clock,
+  Layout,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,8 +36,23 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const navItems = [
     {
       label: "My RFPs",
-      href: "/dashboard/rfps",
+      href: "/dashboard",
       icon: FileText,
+    },
+    {
+      label: "Featured RFPs",
+      href: "/dashboard/featured",
+      icon: Star,
+    },
+    {
+      label: "New RFPs",
+      href: "/dashboard/new",
+      icon: Clock,
+    },
+    {
+      label: "All RFPs",
+      href: "/dashboard/all",
+      icon: Layout,
     },
     {
       label: "RFIs",

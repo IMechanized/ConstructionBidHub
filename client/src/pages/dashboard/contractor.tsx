@@ -29,6 +29,16 @@ import {
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
+interface RfpResponse {
+  rfps: Rfp[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export default function ContractorDashboard() {
   const { user, logoutMutation } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,18 +46,27 @@ export default function ContractorDashboard() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("rfps");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
-    queryKey: ["/api/rfps"],
+  const { data, isLoading: loadingRfps } = useQuery<RfpResponse>({
+    queryKey: ["/api/rfps", currentPage, itemsPerPage],
+    queryFn: async () => {
+      const response = await fetch(`/api/rfps?page=${currentPage}&limit=${itemsPerPage}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }
   });
 
   const { data: rfis, isLoading: loadingRfis } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
     queryKey: ["/api/rfis"],
   });
 
-  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+  const locations = Array.from(new Set(data?.rfps.map(rfp => rfp.jobLocation) || [])).sort();
 
-  const filteredRfps = rfps?.filter(
+  const filteredRfps = data?.rfps.filter(
     (rfp) => {
       let matches = true;
 
@@ -152,34 +171,70 @@ export default function ContractorDashboard() {
               {loadingRfps ? (
                 <DashboardSectionSkeleton count={6} />
               ) : (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredRfps.map((rfp) => (
-                    <div key={rfp.id} className="bg-card rounded-lg border p-6">
-                      <h3 className="font-semibold mb-4">{rfp.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                        {rfp.description}
-                      </p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Location:</span>
-                          <span>{rfp.jobLocation}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Budget:</span>
-                          <span>
-                            {rfp.budgetMin
-                              ? `$${rfp.budgetMin.toLocaleString()}`
-                              : "Not specified"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">Deadline:</span>
-                          <span>{format(new Date(rfp.deadline), "PPp")}</span>
+                <>
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredRfps.map((rfp) => (
+                      <div key={rfp.id} className="bg-card rounded-lg border p-6">
+                        <h3 className="font-semibold mb-4">{rfp.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                          {rfp.description}
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">Location:</span>
+                            <span>{rfp.jobLocation}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">Budget:</span>
+                            <span>
+                              {rfp.budgetMin
+                                ? `$${rfp.budgetMin.toLocaleString()}`
+                                : "Not specified"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">Deadline:</span>
+                            <span>{format(new Date(rfp.deadline), "PPp")}</span>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {data && (
+                    <div className="mt-6 flex justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(data.pagination.totalPages, prev + 1))}
+                        disabled={currentPage === data.pagination.totalPages}
+                      >
+                        Next
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </TabsContent>
 
@@ -220,7 +275,10 @@ export default function ContractorDashboard() {
           </Tabs>
         </div>
 
-        <MobileDashboardNav userType="contractor" currentPath={location} />
+        <MobileDashboardNav
+          userType="contractor"
+          currentPath={location}
+        />
       </main>
     </div>
   );

@@ -30,6 +30,49 @@ function requireAuth(req: Request) {
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
+  // Modified RFP routes with pagination
+  app.get("/api/rfps", async (req, res) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      const { rfps, total } = await storage.getRfpsWithPagination(offset, limit);
+      const rfpsWithOrgs = await Promise.all(
+        rfps.map(async (rfp) => {
+          if (rfp.organizationId === null) {
+            return {
+              ...rfp,
+              organization: null
+            };
+          }
+          const org = await storage.getUser(rfp.organizationId);
+          return {
+            ...rfp,
+            organization: org ? {
+              id: org.id,
+              companyName: org.companyName,
+              logo: org.logo
+            } : null
+          };
+        })
+      );
+
+      res.json({
+        rfps: rfpsWithOrgs,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching RFPs:', error);
+      res.status(500).json({ message: "Failed to fetch RFPs" });
+    }
+  });
+
   // File upload endpoint
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
@@ -76,30 +119,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // RFP routes
-  app.get("/api/rfps", async (req, res) => {
-    const rfps = await storage.getRfps();
-    const rfpsWithOrgs = await Promise.all(
-      rfps.map(async (rfp) => {
-        if (rfp.organizationId === null) {
-          return {
-            ...rfp,
-            organization: null
-          };
-        }
-        const org = await storage.getUser(rfp.organizationId);
-        return {
-          ...rfp,
-          organization: org ? {
-            id: org.id,
-            companyName: org.companyName,
-            logo: org.logo
-          } : null
-        };
-      })
-    );
-    res.json(rfpsWithOrgs);
-  });
 
   app.get("/api/rfps/:id", async (req, res) => {
     try {

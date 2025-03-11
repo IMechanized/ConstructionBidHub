@@ -53,9 +53,6 @@ export interface IStorage {
   createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi>;
   getRfisByRfp(rfpId: number): Promise<Rfi[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
-
-  // Add new pagination method
-  getRfpsWithPagination(offset: number, limit: number): Promise<{ rfps: Rfp[], total: number }>;
 }
 
 /**
@@ -341,27 +338,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return newAnalytics;
-  }
-
-  /**
-   * Get paginated RFPs
-   */
-  async getRfpsWithPagination(offset: number, limit: number): Promise<{ rfps: Rfp[], total: number }> {
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(rfps);
-
-    const paginatedRfps = await db
-      .select()
-      .from(rfps)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(rfps.createdAt));
-
-    return {
-      rfps: paginatedRfps,
-      total: Number(count)
-    };
   }
 }
 

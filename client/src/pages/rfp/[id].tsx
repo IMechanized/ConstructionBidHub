@@ -16,6 +16,8 @@ import RfiForm from "@/components/bid-form";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
+import { Download } from "lucide-react";
+import html2pdf from 'html2pdf.js';
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -32,6 +34,30 @@ export default function RfpPage() {
   }>({
     queryKey: [`/api/rfps/${id}`],
   });
+
+  const handleDownload = () => {
+    const element = document.getElementById('rfp-content');
+    const opt = {
+      margin: 1,
+      filename: `${rfp?.title}-rfp.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    // Hide bid button before generating PDF
+    const bidButton = document.getElementById('bid-button');
+    if (bidButton) {
+      bidButton.style.display = 'none';
+    }
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Restore bid button after PDF generation
+      if (bidButton) {
+        bidButton.style.display = 'block';
+      }
+    });
+  };
 
   if (loadingRfp) {
     return (
@@ -77,119 +103,132 @@ export default function RfpPage() {
       <main className="container mx-auto px-4 py-8">
         <BreadcrumbNav items={breadcrumbItems} />
 
-        <div className="max-w-3xl mx-auto">
-          {/* Organization Header */}
-          <div className="flex flex-col items-center mb-8 text-center">
-            <Avatar className="h-20 w-20 mb-4">
-              {rfp.organization?.logo ? (
-                <img
-                  src={rfp.organization.logo}
-                  alt={`${rfp.organization.companyName} logo`}
-                  className="object-cover"
-                />
-              ) : (
-                <span className="text-2xl">
-                  {rfp.organization?.companyName?.charAt(0)}
-                </span>
-              )}
-            </Avatar>
-            <h1 className="text-2xl font-bold mb-2">{rfp.title}</h1>
-            <p className="text-muted-foreground mb-2">
-              Posted by {rfp.organization?.companyName || "Unknown Organization"}
-            </p>
-            {rfp.featured && (
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full">
-                Featured
-              </span>
-            )}
+        <div id="rfp-content" className="max-w-4xl mx-auto">
+          {/* Important Dates Section */}
+          <div className="mb-8 text-right text-sm text-muted-foreground">
+            <div>Posted: {format(new Date(rfp.createdAt), "MMMM d, yyyy")}</div>
+            <div>RFI Due: {format(new Date(rfp.rfiDate), "MMMM d, yyyy")}</div>
+            <div>Deadline: {format(new Date(rfp.deadline), "MMMM d, yyyy")}</div>
           </div>
 
-          <div className="bg-card rounded-lg border p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4">Project Details</h2>
-            <div className="space-y-4">
-              <p className="text-muted-foreground">{rfp.description}</p>
+          <hr className="my-6 border-muted" />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <h3 className="font-medium mb-2">Location</h3>
-                  <p>{rfp.jobLocation}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium mb-2">Budget</h3>
-                  <p>
-                    {rfp.budgetMin
-                      ? `Minimum $${rfp.budgetMin.toLocaleString()}`
-                      : "Not specified"}
-                  </p>
-                </div>
+          {/* Title and Organization Section */}
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">{rfp.title}</h1>
+              <p className="text-muted-foreground mt-2">
+                {rfp.organization?.companyName || "Unknown Organization"}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download RFP
+            </Button>
+          </div>
+
+          <hr className="my-6 border-muted" />
+
+          {/* Project Overview */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Project Overview</h2>
+            <p className="text-justify leading-relaxed">{rfp.description}</p>
+          </div>
+
+          <hr className="my-6 border-muted" />
+
+          {/* Project Details */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Project Details</h2>
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-medium mb-2">Location</h3>
+                <p>{rfp.jobLocation}</p>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <h3 className="font-medium mb-2">Important Dates</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-muted-foreground">Walkthrough: </span>
-                      {format(new Date(rfp.walkthroughDate), "PPp")}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">RFI Due: </span>
-                      {format(new Date(rfp.rfiDate), "PPp")}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Deadline: </span>
-                      {format(new Date(rfp.deadline), "PPp")}
-                    </div>
-                  </div>
-                </div>
-
-                {rfp.certificationGoals && (
-                  <div>
-                    <h3 className="font-medium mb-2">Certification Goals</h3>
-                    <p>{rfp.certificationGoals}</p>
-                  </div>
-                )}
+              <div>
+                <h3 className="font-medium mb-2">Budget</h3>
+                <p>
+                  {rfp.budgetMin
+                    ? `$${rfp.budgetMin.toLocaleString()}`
+                    : "Not specified"}
+                </p>
               </div>
-
-              {rfp.portfolioLink && (
-                <div>
-                  <h3 className="font-medium mb-2">Additional Resources</h3>
-                  <a
-                    href={rfp.portfolioLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    View Portfolio
-                  </a>
-                </div>
-              )}
             </div>
           </div>
 
-          {!isOwner && (
-            user ? (
-              <Button className="w-full" size="lg" onClick={() => setIsRfiModalOpen(true)}>
-                Request Information
+          <hr className="my-6 border-muted" />
+
+          {/* Schedule */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Project Schedule</h2>
+            <div className="space-y-2">
+              <div>
+                <span className="font-medium">Site Walkthrough: </span>
+                {format(new Date(rfp.walkthroughDate), "MMMM d, yyyy 'at' h:mm a")}
+              </div>
+              <div>
+                <span className="font-medium">RFI Submission Deadline: </span>
+                {format(new Date(rfp.rfiDate), "MMMM d, yyyy 'at' h:mm a")}
+              </div>
+              <div>
+                <span className="font-medium">Proposal Due Date: </span>
+                {format(new Date(rfp.deadline), "MMMM d, yyyy 'at' h:mm a")}
+              </div>
+            </div>
+          </div>
+
+          {rfp.certificationGoals && (
+            <>
+              <hr className="my-6 border-muted" />
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Certification Requirements</h2>
+                <p className="text-justify">{rfp.certificationGoals}</p>
+              </div>
+            </>
+          )}
+
+          {rfp.portfolioLink && (
+            <>
+              <hr className="my-6 border-muted" />
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
+                <a
+                  href={rfp.portfolioLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  View Portfolio Documents
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Bid Button - Outside of downloadable content */}
+        {!isOwner && (
+          <div id="bid-button" className="flex justify-center mt-12">
+            {user ? (
+              <Button size="lg" onClick={() => setIsRfiModalOpen(true)}>
+                Submit Bid Request
               </Button>
             ) : (
               <Button
-                className="w-full"
                 size="lg"
                 variant="outline"
                 onClick={() => setLocation("/auth")}
               >
-                Login to Request Information
+                Login to Submit Bid
               </Button>
-            )
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {user && !isOwner && (
           <Dialog open={isRfiModalOpen} onOpenChange={setIsRfiModalOpen}>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Request Additional Information</DialogTitle>
+                <DialogTitle>Submit Bid Request</DialogTitle>
               </DialogHeader>
               <RfiForm
                 rfpId={Number(id)}

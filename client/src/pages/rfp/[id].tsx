@@ -100,14 +100,8 @@ export default function RfpPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8">
           <BreadcrumbNav items={breadcrumbItems} />
-          <div id="download-button">
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download RFP
-            </Button>
-          </div>
         </div>
 
         <div id="rfp-content" className="max-w-4xl mx-auto">
@@ -121,11 +115,21 @@ export default function RfpPage() {
           <hr className="my-6 border-muted" />
 
           {/* Title and Organization Section */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">{rfp.title}</h1>
-            <p className="text-muted-foreground mt-2">
-              {rfp.organization?.companyName || "Unknown Organization"}
-            </p>
+          <div className="mb-6 relative">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 pr-32"> {/* Add padding to prevent title from overlapping button */}
+                <h1 className="text-3xl font-bold">{rfp.title}</h1>
+                <p className="text-muted-foreground mt-2">
+                  {rfp.organization?.companyName || "Unknown Organization"}
+                </p>
+              </div>
+              <div id="download-button" className="absolute right-0 top-0">
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download RFP
+                </Button>
+              </div>
+            </div>
           </div>
 
           <hr className="my-6 border-muted" />

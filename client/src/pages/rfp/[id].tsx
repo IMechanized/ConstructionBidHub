@@ -45,17 +45,16 @@ export default function RfpPage() {
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    // Hide bid button before generating PDF
+    // Hide buttons before generating PDF
     const bidButton = document.getElementById('bid-button');
-    if (bidButton) {
-      bidButton.style.display = 'none';
-    }
+    const downloadButton = document.getElementById('download-button');
+    if (bidButton) bidButton.style.display = 'none';
+    if (downloadButton) downloadButton.style.display = 'none';
 
     html2pdf().set(opt).from(element).save().then(() => {
-      // Restore bid button after PDF generation
-      if (bidButton) {
-        bidButton.style.display = 'block';
-      }
+      // Restore buttons after PDF generation
+      if (bidButton) bidButton.style.display = 'block';
+      if (downloadButton) downloadButton.style.display = 'block';
     });
   };
 
@@ -101,7 +100,15 @@ export default function RfpPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <BreadcrumbNav items={breadcrumbItems} />
+        <div className="flex justify-between items-center mb-8">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <div id="download-button">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download RFP
+            </Button>
+          </div>
+        </div>
 
         <div id="rfp-content" className="max-w-4xl mx-auto">
           {/* Important Dates Section */}
@@ -114,17 +121,11 @@ export default function RfpPage() {
           <hr className="my-6 border-muted" />
 
           {/* Title and Organization Section */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold">{rfp.title}</h1>
-              <p className="text-muted-foreground mt-2">
-                {rfp.organization?.companyName || "Unknown Organization"}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download RFP
-            </Button>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold">{rfp.title}</h1>
+            <p className="text-muted-foreground mt-2">
+              {rfp.organization?.companyName || "Unknown Organization"}
+            </p>
           </div>
 
           <hr className="my-6 border-muted" />

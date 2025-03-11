@@ -71,7 +71,7 @@ export default function FeaturedRfps() {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
 
-      <div className="flex-1">
+      <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <div className="space-y-6">

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Table,
@@ -51,127 +50,123 @@ export default function AnalyticsDashboard() {
   }));
 
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen bg-background">
-        <div className="flex">
-          <DashboardSidebar currentPath={location} />
+    <div className="min-h-screen bg-background">
+      <DashboardSidebar currentPath={location} />
 
-          <main className="flex-1 min-h-screen w-full">
-            <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-              <BreadcrumbNav items={breadcrumbItems} />
-              <h1 className="text-3xl font-bold mb-8">Boosted RFPs Analytics</h1>
+      <main className="md:ml-[280px] min-h-screen w-full">
+        <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <h1 className="text-3xl font-bold mb-8">Boosted RFPs Analytics</h1>
 
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Total Views</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {analytics?.reduce((sum, item) => sum + (item.totalViews || 0), 0)}
-                    </div>
-                  </CardContent>
-                </Card>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Views</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics?.reduce((sum, item) => sum + (item.totalViews || 0), 0)}
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Unique Visitors</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {analytics?.reduce((sum, item) => sum + (item.uniqueViews || 0), 0)}
-                    </div>
-                  </CardContent>
-                </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Unique Visitors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics?.reduce((sum, item) => sum + (item.uniqueViews || 0), 0)}
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Average View Time</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {Math.round(
-                        (analytics?.reduce((sum, item) => sum + (item.averageViewTime || 0), 0) || 0) /
-                          (analytics?.length || 1)
-                      )}s
-                    </div>
-                  </CardContent>
-                </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Average View Time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {Math.round(
+                    (analytics?.reduce((sum, item) => sum + (item.averageViewTime || 0), 0) || 0) /
+                      (analytics?.length || 1)
+                  )}s
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Total Bids</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {analytics?.reduce((sum, item) => sum + (item.totalBids || 0), 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Bids</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics?.reduce((sum, item) => sum + (item.totalBids || 0), 0)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="mb-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Performance Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="views" fill="#8884d8" name="Total Views" />
-                          <Bar dataKey="uniqueViews" fill="#82ca9d" name="Unique Views" />
-                          <Bar dataKey="bids" fill="#ffc658" name="Bids" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="views" fill="#8884d8" name="Total Views" />
+                      <Bar dataKey="uniqueViews" fill="#82ca9d" name="Unique Views" />
+                      <Bar dataKey="bids" fill="#ffc658" name="Bids" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detailed Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>RFP Title</TableHead>
-                        <TableHead>Total Views</TableHead>
-                        <TableHead>Unique Views</TableHead>
-                        <TableHead>Avg. View Time</TableHead>
-                        <TableHead>Total Bids</TableHead>
-                        <TableHead>CTR</TableHead>
-                        <TableHead>Created</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {analytics?.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{item.rfp.title}</TableCell>
-                          <TableCell>{item.totalViews || 0}</TableCell>
-                          <TableCell>{item.uniqueViews || 0}</TableCell>
-                          <TableCell>{item.averageViewTime || 0}s</TableCell>
-                          <TableCell>{item.totalBids || 0}</TableCell>
-                          <TableCell>{item.clickThroughRate || 0}%</TableCell>
-                          <TableCell>
-                            {format(new Date(item.date), 'MMM dd, yyyy')}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>RFP Title</TableHead>
+                    <TableHead>Total Views</TableHead>
+                    <TableHead>Unique Views</TableHead>
+                    <TableHead>Avg. View Time</TableHead>
+                    <TableHead>Total Bids</TableHead>
+                    <TableHead>CTR</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analytics?.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.rfp.title}</TableCell>
+                      <TableCell>{item.totalViews || 0}</TableCell>
+                      <TableCell>{item.uniqueViews || 0}</TableCell>
+                      <TableCell>{item.averageViewTime || 0}s</TableCell>
+                      <TableCell>{item.totalBids || 0}</TableCell>
+                      <TableCell>{item.clickThroughRate || 0}%</TableCell>
+                      <TableCell>
+                        {format(new Date(item.date), 'MMM dd, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }

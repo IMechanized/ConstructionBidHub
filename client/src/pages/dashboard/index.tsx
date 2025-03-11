@@ -134,19 +134,19 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="my-rfps" className="space-y-6">
-          <TabsList className="w-full">
-            <TabsTrigger value="my-rfps" className="flex-1">My RFPs</TabsTrigger>
-            <TabsTrigger value="featured" className="flex-1">Featured RFPs</TabsTrigger>
-            <TabsTrigger value="new" className="flex-1">New RFPs</TabsTrigger>
-            <TabsTrigger value="available" className="flex-1">Available RFPs</TabsTrigger>
-            <TabsTrigger value="bids" className="flex-1">My RFIs</TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1">Reports</TabsTrigger>
-            <TabsTrigger value="employees" className="flex-1">Employees</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
-            <TabsTrigger value="analytics" asChild className="flex-1">
+          <TabsList className="w-full max-w-full">
+            <TabsTrigger value="my-rfps">My RFPs</TabsTrigger>
+            <TabsTrigger value="featured">Featured</TabsTrigger>
+            <TabsTrigger value="new">New RFPs</TabsTrigger>
+            <TabsTrigger value="available">Available</TabsTrigger>
+            <TabsTrigger value="bids">My RFIs</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="employees">Team</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="analytics" asChild>
               <Link href="/dashboard/analytics">Analytics</Link>
             </TabsTrigger>
-            <TabsTrigger value="support" asChild className="flex-1">
+            <TabsTrigger value="support" asChild>
               <Link href="/support">Support</Link>
             </TabsTrigger>
           </TabsList>

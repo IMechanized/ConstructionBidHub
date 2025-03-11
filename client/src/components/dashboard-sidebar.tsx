@@ -19,13 +19,18 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 interface DashboardSidebarProps {
   currentPath: string;
 }
 
 export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
+  const { user, logoutMutation } = useAuth();
+
   const navItems = [
     {
       label: "Dashboard",
@@ -97,7 +102,30 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t">
+      <SidebarFooter className="border-t space-y-4">
+        <div className="px-2 py-2">
+          <div className="flex items-center gap-3 mb-2">
+            {user?.logo && (
+              <img
+                src={user.logo}
+                alt={`${user.companyName} logo`}
+                className="h-8 w-8 object-contain rounded-full"
+              />
+            )}
+            <span className="text-sm font-medium truncate">
+              {user?.companyName}
+            </span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={() => logoutMutation.mutate()}
+          >
+            Logout
+          </Button>
+        </div>
+        <SidebarSeparator />
         <SidebarTrigger />
       </SidebarFooter>
     </Sidebar>

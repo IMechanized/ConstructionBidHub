@@ -31,7 +31,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
 export default function Dashboard() {
-  const { user, logoutMutation } = useAuth();
+  const { user } = useAuth();
   const [location] = useLocation();
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -102,34 +102,6 @@ export default function Dashboard() {
 
           {/* Main Content */}
           <main className="flex-1 min-h-screen">
-            {/* Header */}
-            <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-              <div className="container mx-auto px-4">
-                <div className="h-14 md:h-16 flex items-center justify-between">
-                  <div className="md:hidden">
-                    <Link href="/" className="text-lg font-bold hover:text-primary transition-colors truncate flex-shrink">
-                      FindConstructionBids
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-2 md:gap-4">
-                    {user?.logo && (
-                      <img
-                        src={user.logo}
-                        alt={`${user.companyName} logo`}
-                        className="h-6 w-6 md:h-8 md:w-8 object-contain rounded-full"
-                      />
-                    )}
-                    <span className="text-sm text-muted-foreground hidden md:inline">
-                      {user?.companyName}
-                    </span>
-                    <Button variant="outline" size="sm" onClick={() => logoutMutation.mutate()}>
-                      Logout
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </header>
-
             {/* Page Content */}
             <div className="container mx-auto px-4 py-6 md:py-8 pb-20 md:pb-8">
               <div className="space-y-6">

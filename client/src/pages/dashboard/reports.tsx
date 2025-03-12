@@ -67,9 +67,9 @@ export default function ReportsPage() {
       <DashboardSidebar currentPath={location} />
 
       <div className="flex-1 md:ml-[280px]">
-        <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
-            <div className="flex justify-between items-center mb-8">
+        <main className="w-full min-h-screen">
+          <div className="p-4 md:p-6 mt-14 md:mt-0 max-w-[1400px] mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
               <Select defaultValue="all">
                 <SelectTrigger className="w-[180px]">
@@ -83,10 +83,10 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">RFPs by Month</h3>
-                <div className="h-[300px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <Card className="p-4">
+                <h3 className="text-lg font-semibold mb-3">RFPs by Month</h3>
+                <div className="h-[250px]">
                   <ChartContainer config={{}}>
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -99,9 +99,9 @@ export default function ReportsPage() {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">RFPs by Status</h3>
-                <div className="h-[300px]">
+              <Card className="p-4">
+                <h3 className="text-lg font-semibold mb-3">RFPs by Status</h3>
+                <div className="h-[250px]">
                   <ChartContainer config={{}}>
                     <BarChart data={statusData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -115,13 +115,13 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            <Card className="p-6">
-              <h2 className="text-2xl font-semibold mb-6">RFP Reports</h2>
+            <Card className="p-4">
+              <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
               {rfps && rfps.length > 0 ? (
                 <RfpReport rfps={rfps} />
               ) : (
-                <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
-                  <FileBarChart className="h-16 w-16 mb-6 text-primary" />
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <FileBarChart className="h-12 w-12 mb-4 text-primary" />
                   <p className="text-lg font-medium mb-2">No Reports Available</p>
                   <p className="text-sm text-center max-w-md">
                     There are currently no RFPs in the system. Create new RFPs to generate reports.

@@ -75,7 +75,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
     },
     {
       label: "Support",
-      href: "/support",
+      href: "/dashboard/support",
       icon: HelpCircle,
     },
   ];
@@ -135,8 +135,8 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             className="fixed top-4 left-4 md:hidden z-50"
           >

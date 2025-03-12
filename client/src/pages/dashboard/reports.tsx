@@ -73,7 +73,7 @@ export default function ReportsPage() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
+          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
               <Select defaultValue="all">
@@ -122,7 +122,7 @@ export default function ReportsPage() {
 
             <Card className="p-6 mt-6">
               <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
-              <div className="overflow-hidden">
+              <div className="overflow-x-auto">
                 {userRfps.length > 0 ? (
                   <RfpReport rfps={userRfps} />
                 ) : (

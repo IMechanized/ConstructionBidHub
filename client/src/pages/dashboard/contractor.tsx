@@ -85,7 +85,7 @@ export default function ContractorDashboard() {
 
       <div className="flex-1">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
+          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="rfps">RFPs</TabsTrigger>
@@ -139,7 +139,7 @@ export default function ContractorDashboard() {
                 {loadingRfps ? (
                   <DashboardSectionSkeleton count={6} />
                 ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredRfps.map((rfp) => (
                       <div key={rfp.id} className="bg-card rounded-lg border p-6">
                         <h3 className="font-semibold mb-4">{rfp.title}</h3>
@@ -174,7 +174,7 @@ export default function ContractorDashboard() {
                 {loadingRfis ? (
                   <DashboardSectionSkeleton count={3} />
                 ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {rfis?.map((rfi) => (
                       <div key={rfi.id} className="bg-card rounded-lg border p-6">
                         <h3 className="font-semibold mb-4">{rfi.rfp?.title || "Unknown RFP"}</h3>

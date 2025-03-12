@@ -24,6 +24,7 @@ import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -35,6 +36,8 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -87,6 +90,11 @@ export default function Dashboard() {
   };
 
   const filteredMyRfps = applyFilters(myRfps);
+  const totalPages = Math.ceil(filteredMyRfps.length / itemsPerPage);
+  const paginatedRfps = filteredMyRfps.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,7 +102,7 @@ export default function Dashboard() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto px-4 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-14 md:mt-0">
+          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
                 <h2 className="text-xl font-semibold">My RFPs</h2>
@@ -146,18 +154,49 @@ export default function Dashboard() {
               </div>
 
               {loadingRfps ? (
-                <DashboardSectionSkeleton count={6} />
+                <DashboardSectionSkeleton count={9} />
               ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {filteredMyRfps.map((rfp) => (
-                    <RfpCard
-                      key={rfp.id}
-                      rfp={rfp}
-                      isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
-                      compact
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedRfps.map((rfp) => (
+                      <RfpCard
+                        key={rfp.id}
+                        rfp={rfp}
+                        isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                      />
+                    ))}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
               )}
             </div>
           </div>

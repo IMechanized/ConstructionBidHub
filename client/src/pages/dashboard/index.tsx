@@ -92,74 +92,77 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
 
-      <main className="md:ml-[280px] min-h-screen">
-        <div className="container mx-auto px-4 py-6 md:py-8 mt-14 md:mt-0">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
-              <h2 className="text-xl font-semibold">My RFPs</h2>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                Create RFP
-              </Button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="relative flex-1">
-                <Input
-                  placeholder="Search RFPs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
+      <div className="flex-1 md:ml-[280px]">
+        <main className="w-full min-h-screen pb-16 md:pb-0">
+          <div className="container mx-auto px-4 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+                <h2 className="text-xl font-semibold">My RFPs</h2>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  Create RFP
+                </Button>
               </div>
 
-              <div className="flex flex-row sm:flex-col md:flex-row gap-2">
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Default</SelectItem>
-                    <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                    <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                    <SelectItem value="deadline">Deadline</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={locationFilter}
-                  onValueChange={setLocationFilter}
-                >
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Filter by location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {locations.map((location) => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {loadingRfps ? (
-              <DashboardSectionSkeleton count={6} />
-            ) : (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredMyRfps.map((rfp) => (
-                  <RfpCard
-                    key={rfp.id}
-                    rfp={rfp}
-                    isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Search RFPs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
                   />
-                ))}
+                </div>
+
+                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Default</SelectItem>
+                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
+                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
+                      <SelectItem value="deadline">Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={locationFilter}
+                    onValueChange={setLocationFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {locations.map((location) => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
+
+              {loadingRfps ? (
+                <DashboardSectionSkeleton count={6} />
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredMyRfps.map((rfp) => (
+                    <RfpCard
+                      key={rfp.id}
+                      rfp={rfp}
+                      isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                      compact
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
 
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto">

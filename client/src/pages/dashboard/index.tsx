@@ -5,19 +5,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import RfpForm from "@/components/rfp-form";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
@@ -25,6 +14,7 @@ import { isAfter, subHours } from "date-fns";
 import { RfpCard } from "@/components/rfp-card";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -38,6 +28,13 @@ export default function Dashboard() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+
+  const breadcrumbItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+  ];
 
   const { data: rfps, isLoading: loadingRfps } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -55,7 +52,6 @@ export default function Dashboard() {
   const applyFilters = (rfpList: Rfp[]) => {
     let filtered = rfpList;
 
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (rfp) =>
@@ -65,14 +61,12 @@ export default function Dashboard() {
       );
     }
 
-    // Apply location filter
     if (locationFilter && locationFilter !== "all") {
       filtered = filtered.filter((rfp) =>
         rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
       );
     }
 
-    // Apply sorting
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case "priceAsc":
@@ -102,16 +96,18 @@ export default function Dashboard() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
-                <h2 className="text-xl font-semibold">My RFPs</h2>
+          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+            <BreadcrumbNav items={breadcrumbItems} />
+
+            <div className="space-y-6 mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold">My RFPs</h2>
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   Create RFP
                 </Button>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Input
                     placeholder="Search RFPs..."

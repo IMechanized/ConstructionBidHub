@@ -30,8 +30,10 @@ export default function RfiPage() {
       <main className="md:ml-[280px] min-h-screen w-full">
         <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
           <BreadcrumbNav items={breadcrumbItems} />
-          <h1 className="text-3xl font-bold mb-8">Request for Information</h1>
-          <div className="space-y-6">
+
+          <div className="space-y-6 mt-6">
+            <h1 className="text-2xl font-bold">Request for Information</h1>
+
             {isLoading ? (
               <DashboardSectionSkeleton count={6} />
             ) : (

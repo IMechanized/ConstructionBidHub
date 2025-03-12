@@ -11,6 +11,7 @@ import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -20,6 +21,17 @@ const loginSchema = z.object({
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
+
+  const breadcrumbItems = [
+    {
+      label: "Home",
+      href: "/",
+    },
+    {
+      label: "Authentication",
+      href: "/auth",
+    },
+  ];
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -49,6 +61,7 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
+            <BreadcrumbNav items={breadcrumbItems} className="mb-6" />
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>

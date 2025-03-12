@@ -1,11 +1,24 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone } from "lucide-react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 export default function SupportPage() {
+  const breadcrumbItems = [
+    {
+      label: "Home",
+      href: "/",
+    },
+    {
+      label: "Support",
+      href: "/support",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-6 py-12">
+        <BreadcrumbNav items={breadcrumbItems} />
         <h1 className="text-4xl font-bold mb-8">Support Center</h1>
 
         <div className="space-y-8">

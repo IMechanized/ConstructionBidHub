@@ -38,38 +38,41 @@ export default function RfpReport({ rfps }: RfpReportProps) {
 
   return (
     <div className="space-y-6">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Due Date</TableHead>
-            <TableHead>Budget</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {currentRfps.map((rfp) => (
-            <TableRow key={rfp.id}>
-              <TableCell className="font-medium">{rfp.title}</TableCell>
-              <TableCell>{rfp.jobLocation}</TableCell>
-              <TableCell>{format(new Date(rfp.deadline), "PPp")}</TableCell>
-              <TableCell>${rfp.budgetMin?.toLocaleString() || "Not specified"}</TableCell>
-              <TableCell className="text-right">
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate(`/reports/${rfp.id}`)}
-                >
-                  View Full Report
-                </Button>
-              </TableCell>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead className="hidden sm:table-cell">Location</TableHead>
+              <TableHead className="hidden md:table-cell">Due Date</TableHead>
+              <TableHead>Budget</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {currentRfps.map((rfp) => (
+              <TableRow key={rfp.id}>
+                <TableCell className="font-medium">{rfp.title}</TableCell>
+                <TableCell className="hidden sm:table-cell">{rfp.jobLocation}</TableCell>
+                <TableCell className="hidden md:table-cell">{format(new Date(rfp.deadline), "PPp")}</TableCell>
+                <TableCell>${rfp.budgetMin?.toLocaleString() || "Not specified"}</TableCell>
+                <TableCell className="text-right">
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/reports/${rfp.id}`)}
+                    className="w-full sm:w-auto"
+                  >
+                    View Full Report
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <Pagination>
-        <PaginationContent>
+        <PaginationContent className="flex-wrap justify-center gap-2">
           <PaginationItem>
             <PaginationPrevious 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}

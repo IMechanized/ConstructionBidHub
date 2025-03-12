@@ -74,10 +74,10 @@ export default function ReportsPage() {
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-6 mt-14 md:mt-0 max-w-5xl">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
               <Select defaultValue="all">
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-full sm:w-[160px]">
                   <SelectValue placeholder="Filter by Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -88,12 +88,12 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
-              <Card className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <Card className="p-4 overflow-hidden">
                 <h3 className="text-lg font-semibold mb-3">RFPs by Month</h3>
-                <div className="h-[250px]">
+                <div className="h-[250px] w-full min-w-[300px] overflow-x-auto">
                   <ChartContainer config={{}}>
-                    <BarChart data={chartData}>
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -104,11 +104,11 @@ export default function ReportsPage() {
                 </div>
               </Card>
 
-              <Card className="p-4">
+              <Card className="p-4 overflow-hidden">
                 <h3 className="text-lg font-semibold mb-3">RFPs by Status</h3>
-                <div className="h-[250px]">
+                <div className="h-[250px] w-full min-w-[300px] overflow-x-auto">
                   <ChartContainer config={{}}>
-                    <BarChart data={statusData}>
+                    <BarChart data={statusData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="status" />
                       <YAxis />
@@ -120,7 +120,7 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            <Card className="p-4">
+            <Card className="p-4 overflow-x-auto">
               <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
               {userRfps.length > 0 ? (
                 <RfpReport rfps={userRfps} />

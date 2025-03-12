@@ -22,6 +22,7 @@ import RfiPage from "@/pages/dashboard/rfis";
 import ReportsPage from "@/pages/dashboard/reports";
 import EmployeesPage from "@/pages/dashboard/employees";
 import SettingsPage from "@/pages/dashboard/settings";
+import DashboardSupportPage from "@/pages/dashboard/support";
 
 function Router() {
   return (
@@ -61,6 +62,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/analytics">
         <ProtectedRoute path="/dashboard/analytics" component={AnalyticsDashboard} />
+      </Route>
+      <Route path="/dashboard/support">
+        <ProtectedRoute path="/dashboard/support" component={DashboardSupportPage} />
       </Route>
       <Route path="/reports/:id">
         <ProtectedRoute path="/reports/:id" component={DetailedReportPage} />

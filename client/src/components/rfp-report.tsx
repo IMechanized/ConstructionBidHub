@@ -37,67 +37,80 @@ export default function RfpReport({ rfps }: RfpReportProps) {
   const currentRfps = rfps.slice(startIndex, endIndex);
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead className="hidden sm:table-cell">Location</TableHead>
-              <TableHead className="hidden md:table-cell">Due Date</TableHead>
-              <TableHead>Budget</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentRfps.map((rfp) => (
-              <TableRow key={rfp.id}>
-                <TableCell className="font-medium">{rfp.title}</TableCell>
-                <TableCell className="hidden sm:table-cell">{rfp.jobLocation}</TableCell>
-                <TableCell className="hidden md:table-cell">{format(new Date(rfp.deadline), "PPp")}</TableCell>
-                <TableCell>${rfp.budgetMin?.toLocaleString() || "Not specified"}</TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate(`/reports/${rfp.id}`)}
-                    className="w-full sm:w-auto"
-                  >
-                    View Full Report
-                  </Button>
-                </TableCell>
+    <div className="space-y-4">
+      <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <div className="inline-block min-w-full align-middle">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px] min-w-[200px]">Title</TableHead>
+                <TableHead className="hidden sm:table-cell">Location</TableHead>
+                <TableHead className="hidden md:table-cell">Due Date</TableHead>
+                <TableHead className="w-[100px]">Budget</TableHead>
+                <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {currentRfps.map((rfp) => (
+                <TableRow key={rfp.id}>
+                  <TableCell className="font-medium truncate max-w-[200px]">
+                    {rfp.title}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell truncate max-w-[150px]">
+                    {rfp.jobLocation}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell whitespace-nowrap">
+                    {format(new Date(rfp.deadline), "PP")}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    ${rfp.budgetMin?.toLocaleString() || "N/A"}
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate(`/reports/${rfp.id}`)}
+                      className="w-full whitespace-nowrap"
+                      size="sm"
+                    >
+                      View Report
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <Pagination>
-        <PaginationContent className="flex-wrap justify-center gap-2">
-          <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <PaginationItem key={page}>
-              <PaginationLink
-                onClick={() => setCurrentPage(page)}
-                isActive={currentPage === page}
-                className="cursor-pointer"
-              >
-                {page}
-              </PaginationLink>
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent className="flex flex-wrap justify-center gap-1">
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={`${currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+              />
             </PaginationItem>
-          ))}
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(page)}
+                  isActive={currentPage === page}
+                  className="cursor-pointer"
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={`${currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 }

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChartContainer } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function ReportsPage() {
   const [location] = useLocation();
@@ -88,11 +88,11 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Card className="p-4 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <Card className="p-4">
                 <h3 className="text-lg font-semibold mb-3">RFPs by Month</h3>
-                <div className="h-[250px] w-full min-w-[300px] overflow-x-auto">
-                  <ChartContainer config={{}}>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
@@ -100,14 +100,14 @@ export default function ReportsPage() {
                       <Tooltip />
                       <Bar dataKey="count" fill="var(--primary)" />
                     </BarChart>
-                  </ChartContainer>
+                  </ResponsiveContainer>
                 </div>
               </Card>
 
-              <Card className="p-4 overflow-hidden">
+              <Card className="p-4">
                 <h3 className="text-lg font-semibold mb-3">RFPs by Status</h3>
-                <div className="h-[250px] w-full min-w-[300px] overflow-x-auto">
-                  <ChartContainer config={{}}>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={statusData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="status" />
@@ -115,24 +115,26 @@ export default function ReportsPage() {
                       <Tooltip />
                       <Bar dataKey="count" fill="var(--primary)" />
                     </BarChart>
-                  </ChartContainer>
+                  </ResponsiveContainer>
                 </div>
               </Card>
             </div>
 
-            <Card className="p-4 overflow-x-auto">
+            <Card className="p-4">
               <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
-              {userRfps.length > 0 ? (
-                <RfpReport rfps={userRfps} />
-              ) : (
-                <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
-                  <FileBarChart className="h-12 w-12 mb-4 text-primary" />
-                  <p className="text-lg font-medium mb-2">No Reports Available</p>
-                  <p className="text-sm text-center max-w-md">
-                    You haven't created any RFPs yet. Create new RFPs to generate reports.
-                  </p>
-                </div>
-              )}
+              <div className="overflow-hidden">
+                {userRfps.length > 0 ? (
+                  <RfpReport rfps={userRfps} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <FileBarChart className="h-12 w-12 mb-4 text-primary" />
+                    <p className="text-lg font-medium mb-2">No Reports Available</p>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      You haven't created any RFPs yet. Create new RFPs to generate reports.
+                    </p>
+                  </div>
+                )}
+              </div>
             </Card>
           </div>
         </main>

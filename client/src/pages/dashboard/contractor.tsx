@@ -5,6 +5,7 @@ import { Rfp, Rfi } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RfpCard } from "@/components/rfp-card";
 import {
   Select,
   SelectContent,
@@ -141,30 +142,10 @@ export default function ContractorDashboard() {
                 ) : (
                   <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredRfps.map((rfp) => (
-                      <div key={rfp.id} className="bg-card rounded-lg border p-6">
-                        <h3 className="font-semibold mb-4">{rfp.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                          {rfp.description}
-                        </p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">Location:</span>
-                            <span>{rfp.jobLocation}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">Budget:</span>
-                            <span>
-                              {rfp.budgetMin
-                                ? `$${rfp.budgetMin.toLocaleString()}`
-                                : "Not specified"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">Deadline:</span>
-                            <span>{format(new Date(rfp.deadline), "PPp")}</span>
-                          </div>
-                        </div>
-                      </div>
+                      <RfpCard
+                        key={rfp.id}
+                        rfp={rfp}
+                      />
                     ))}
                   </div>
                 )}

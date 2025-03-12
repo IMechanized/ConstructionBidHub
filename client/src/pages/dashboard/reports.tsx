@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import RfpReport from "@/components/rfp-report";
 import { Rfp } from "@shared/schema";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Select,
   SelectContent,
@@ -16,15 +17,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChartContainer } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 export default function ReportsPage() {
   const [location] = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
   });
+
+  // Filter RFPs to only show those created by the current user
+  const userRfps = rfps?.filter(rfp => rfp.organizationId === user?.id) || [];
 
   const breadcrumbItems = [
     {
@@ -37,7 +42,7 @@ export default function ReportsPage() {
     },
   ];
 
-  const chartData = rfps?.reduce((acc: any[], rfp) => {
+  const chartData = userRfps.reduce((acc: any[], rfp) => {
     const month = new Date(rfp.deadline).toLocaleString('default', { month: 'short' });
     const existingMonth = acc.find(item => item.month === month);
     if (existingMonth) {
@@ -46,9 +51,9 @@ export default function ReportsPage() {
       acc.push({ month, count: 1 });
     }
     return acc;
-  }, []) || [];
+  }, []);
 
-  const statusData = rfps?.reduce((acc: any[], rfp) => {
+  const statusData = userRfps.reduce((acc: any[], rfp) => {
     const existingStatus = acc.find(item => item.status === rfp.status);
     if (existingStatus) {
       existingStatus.count += 1;
@@ -56,7 +61,7 @@ export default function ReportsPage() {
       acc.push({ status: rfp.status, count: 1 });
     }
     return acc;
-  }, []) || [];
+  }, []);
 
   if (isLoading) {
     return <DashboardSectionSkeleton />;
@@ -117,14 +122,14 @@ export default function ReportsPage() {
 
             <Card className="p-4">
               <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
-              {rfps && rfps.length > 0 ? (
-                <RfpReport rfps={rfps} />
+              {userRfps.length > 0 ? (
+                <RfpReport rfps={userRfps} />
               ) : (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
                   <FileBarChart className="h-12 w-12 mb-4 text-primary" />
                   <p className="text-lg font-medium mb-2">No Reports Available</p>
                   <p className="text-sm text-center max-w-md">
-                    There are currently no RFPs in the system. Create new RFPs to generate reports.
+                    You haven't created any RFPs yet. Create new RFPs to generate reports.
                   </p>
                 </div>
               )}

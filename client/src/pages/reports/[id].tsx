@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Rfp, Rfi } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,6 +21,7 @@ import html2pdf from 'html2pdf.js';
 export default function DetailedReportPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
     queryKey: [`/api/rfps/${id}`],
@@ -29,6 +30,13 @@ export default function DetailedReportPage() {
   const { data: rfis } = useQuery<Rfi[]>({
     queryKey: ["/api/rfis"],
   });
+
+  // Redirect if the RFP doesn't exist or doesn't belong to the user
+  useEffect(() => {
+    if (!loadingRfp && (!rfp || rfp.organizationId !== user?.id)) {
+      navigate("/dashboard/reports");
+    }
+  }, [rfp, user, loadingRfp, navigate]);
 
   const rfpRfis = rfis?.filter((rfi) => rfi.rfpId === Number(id)) || [];
 
@@ -39,7 +47,7 @@ export default function DetailedReportPage() {
     },
     {
       label: "Reports",
-      href: "/dashboard?tab=reports",
+      href: "/dashboard/reports",
     },
     {
       label: rfp?.title || "Report Details",
@@ -57,7 +65,7 @@ export default function DetailedReportPage() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    
+
     html2pdf().set(opt).from(element).save();
   };
 
@@ -70,11 +78,7 @@ export default function DetailedReportPage() {
   }
 
   if (!rfp || rfp.organizationId !== user?.id) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div>Report not found or unauthorized access</div>
-      </div>
-    );
+    return null; // The useEffect will handle the redirect
   }
 
   return (
@@ -91,7 +95,7 @@ export default function DetailedReportPage() {
         <div id="report-content" className="space-y-8">
           <Card className="p-6">
             <h1 className="text-3xl font-bold mb-6">{rfp.title}</h1>
-            
+
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <h2 className="text-lg font-semibold mb-2">Project Details</h2>

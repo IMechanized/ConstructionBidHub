@@ -14,12 +14,12 @@ export default function SupportPage() {
     },
     {
       label: "Support",
-      href: "/dashboard/support",
+      href: "/support",
     },
   ];
 
-  // Only show dashboard layout if accessed from dashboard
-  const isDashboard = location.startsWith("/dashboard/support");
+  // Show dashboard layout if accessed from dashboard sidebar
+  const isDashboard = location === "/support" && location.includes("/dashboard");
 
   const content = (
     <div className="space-y-8">

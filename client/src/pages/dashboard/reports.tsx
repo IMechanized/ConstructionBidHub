@@ -73,7 +73,7 @@ export default function ReportsPage() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-6 mt-14 md:mt-0 max-w-5xl">
+          <div className="container px-4 mx-auto sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
               <Select defaultValue="all">
@@ -88,7 +88,7 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 gap-4 mb-6">
               <Card className="p-4">
                 <h3 className="text-lg font-semibold mb-3">RFPs by Month</h3>
                 <div className="h-[250px] w-full">

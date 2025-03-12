@@ -57,12 +57,12 @@ export default function AuthPage() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="container mx-auto px-4 py-4">
         <BreadcrumbNav items={breadcrumbItems} />
       </div>
 
-      <div className="min-h-[calc(100vh-4rem)] flex">
+      <div className="flex-1 flex">
         <div className="flex-1 flex items-center justify-center px-4">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6">
@@ -175,12 +175,12 @@ export default function AuthPage() {
         </div>
 
         <div 
-          className="hidden lg:flex flex-1 bg-cover bg-center"
+          className="hidden lg:block flex-1 bg-cover bg-center"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40')`
           }}
         >
-          <div className="w-full h-full bg-black/50 p-12 flex items-center">
+          <div className="h-full bg-black/50 p-12 flex items-center">
             <div className="max-w-md text-white">
               <h1 className="text-4xl font-bold mb-4">FindConstructionBids</h1>
               <p className="text-lg opacity-90">

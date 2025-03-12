@@ -145,7 +145,7 @@ export default function AllRfps() {
 
                   {totalPages > 1 && (
                     <Pagination className="mt-6">
-                      <PaginationContent>
+                      <PaginationContent className="flex flex-wrap justify-center gap-1">
                         <PaginationItem>
                           <PaginationPrevious
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}

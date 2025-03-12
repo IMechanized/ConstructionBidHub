@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
-import { FileBarChart } from "lucide-react";
+import { FileBarChart, ChevronDown } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import RfpReport from "@/components/rfp-report";
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChartContainer } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function ReportsPage() {
   const [location] = useLocation();
@@ -67,67 +67,69 @@ export default function ReportsPage() {
       <DashboardSidebar currentPath={location} />
 
       <div className="flex-1 md:ml-[280px]">
-        <main className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <BreadcrumbNav items={breadcrumbItems} />
-            <Select defaultValue="all">
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Reports</SelectItem>
-                <SelectItem value="open">Open RFPs</SelectItem>
-                <SelectItem value="closed">Closed RFPs</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <main className="w-full min-h-screen pb-16 md:pb-0">
+          <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
+            <div className="flex justify-between items-center mb-8">
+              <BreadcrumbNav items={breadcrumbItems} />
+              <Select defaultValue="all">
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Reports</SelectItem>
+                  <SelectItem value="open">Open RFPs</SelectItem>
+                  <SelectItem value="closed">Closed RFPs</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <Card className="p-2">
-              <h3 className="text-xs font-semibold mb-1 px-1">RFPs by Month</h3>
-              <div className="h-[180px]">
-                <ChartContainer config={{}}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="var(--primary)" />
-                  </BarChart>
-                </ChartContainer>
-              </div>
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">RFPs by Month</h3>
+                <div className="h-[300px]">
+                  <ChartContainer config={{}}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="var(--primary)" />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">RFPs by Status</h3>
+                <div className="h-[300px]">
+                  <ChartContainer config={{}}>
+                    <BarChart data={statusData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="status" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="var(--primary)" />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </Card>
+            </div>
+
+            <Card className="p-6">
+              <h2 className="text-2xl font-semibold mb-6">RFP Reports</h2>
+              {rfps && rfps.length > 0 ? (
+                <RfpReport rfps={rfps} />
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
+                  <FileBarChart className="h-16 w-16 mb-6 text-primary" />
+                  <p className="text-lg font-medium mb-2">No Reports Available</p>
+                  <p className="text-sm text-center max-w-md">
+                    There are currently no RFPs in the system. Create new RFPs to generate reports.
+                  </p>
+                </div>
+              )}
             </Card>
-
-            <Card className="p-2">
-              <h3 className="text-xs font-semibold mb-1 px-1">RFPs by Status</h3>
-              <div className="h-[180px]">
-                <ChartContainer config={{}}>
-                  <BarChart data={statusData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="status" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="var(--primary)" />
-                  </BarChart>
-                </ChartContainer>
-              </div>
-            </Card>
           </div>
-
-          <Card className="p-2">
-            <h2 className="text-xs font-semibold mb-2 px-1">RFP Reports</h2>
-            {rfps && rfps.length > 0 ? (
-              <RfpReport rfps={rfps} />
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                <FileBarChart className="h-6 w-6 mb-2 text-primary" />
-                <p className="text-xs font-medium mb-1">No Reports Available</p>
-                <p className="text-xs text-center max-w-md">
-                  There are currently no RFPs in the system.
-                </p>
-              </div>
-            )}
-          </Card>
         </main>
       </div>
     </div>

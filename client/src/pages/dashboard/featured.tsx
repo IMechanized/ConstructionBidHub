@@ -6,7 +6,6 @@ import { useLocation } from "wouter";
 import { RfpCard } from "@/components/rfp-card";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { isAfter, subHours } from "date-fns";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -15,7 +14,6 @@ type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
 export default function FeaturedRfps() {
   const [location] = useLocation();
-  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -73,7 +71,7 @@ export default function FeaturedRfps() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto px-4 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mt-14 md:mt-0">
+          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
             <div className="space-y-6">
               <h1 className="text-2xl font-bold">Featured RFPs</h1>
 
@@ -123,7 +121,7 @@ export default function FeaturedRfps() {
                 <DashboardSectionSkeleton count={9} />
               ) : (
                 <>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedRfps.map((rfp) => (
                       <RfpCard
                         key={rfp.id}

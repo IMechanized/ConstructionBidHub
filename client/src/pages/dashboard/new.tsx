@@ -9,6 +9,7 @@ import { isAfter, subHours } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -19,6 +20,17 @@ export default function NewRfps() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+
+  const breadcrumbItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+    },
+    {
+      label: "New RFPs",
+      href: "/dashboard/new",
+    },
+  ];
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -32,7 +44,6 @@ export default function NewRfps() {
 
     let matches = true;
 
-    // Search filter
     if (searchTerm) {
       matches = matches && (
         rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,7 +52,6 @@ export default function NewRfps() {
       );
     }
 
-    // Location filter
     if (locationFilter && locationFilter !== "all") {
       matches = matches && rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase());
     }
@@ -72,11 +82,13 @@ export default function NewRfps() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto px-4 xl:px-8 2xl:px-16 mt-14 md:mt-0">
-            <div className="space-y-6">
+          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+            <BreadcrumbNav items={breadcrumbItems} />
+
+            <div className="space-y-6 mt-6">
               <h1 className="text-2xl font-bold">New RFPs</h1>
 
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Input
                     placeholder="Search RFPs..."

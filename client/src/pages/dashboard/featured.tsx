@@ -85,7 +85,9 @@ export default function FeaturedRfps() {
             <BreadcrumbNav items={breadcrumbItems} />
 
             <div className="space-y-6 mt-6">
-              <h1 className="text-2xl font-bold">Featured RFPs</h1>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold">Featured RFPs</h2>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">

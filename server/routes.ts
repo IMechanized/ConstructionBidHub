@@ -28,7 +28,6 @@ function requireAuth(req: Request) {
 }
 
 export function registerRoutes(app: Express): Server {
-  // Setup authentication
   setupAuth(app);
 
   // File upload endpoint

@@ -138,7 +138,10 @@ export function setupAuth(app: Express) {
 
     if (!req.body.email || !req.body.password) {
       console.log(`[Auth] Missing credentials in request`);
-      return res.status(400).json({ message: "Email and password are required" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Email and password are required" 
+      });
     }
 
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
@@ -148,7 +151,10 @@ export function setupAuth(app: Express) {
       }
       if (!user) {
         console.log(`[Auth] Authentication failed: ${info?.message}`);
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
+        return res.status(401).json({ 
+          success: false,
+          message: info?.message || "Invalid email or password" 
+        });
       }
       req.login(user, (err) => {
         if (err) {
@@ -156,7 +162,10 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         console.log(`[Auth] Login successful for user: ${user.id}`);
-        res.status(200).json(user);
+        res.json({ 
+          success: true,
+          user: user 
+        });
       });
     })(req, res, next);
   });

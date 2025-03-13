@@ -28,7 +28,26 @@ function requireAuth(req: Request) {
 }
 
 export function registerRoutes(app: Express): Server {
-  setupAuth(app);
+  // Setup authentication
+  const { authenticate } = setupAuth(app);
+
+  // Add error handling middleware for authentication
+  app.post("/api/login", (req, res, next) => {
+    authenticate("local")(req, res, (err: any) => {
+      if (err) {
+        console.error("[Auth] Login error:", err);
+        return res.status(401).json({ 
+          success: false,
+          message: "Invalid email or password"
+        });
+      }
+      // If no error, login was successful
+      res.json({ 
+        success: true,
+        user: req.user 
+      });
+    });
+  });
 
   // File upload endpoint
   app.post("/api/upload", upload.single('file'), async (req, res) => {

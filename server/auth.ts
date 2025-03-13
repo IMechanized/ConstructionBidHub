@@ -181,4 +181,6 @@ export function setupAuth(app: Express) {
     console.log(`[Auth] User data retrieved for id: ${req.user.id}`);
     res.json(req.user);
   });
+
+  return { authenticate: passport.authenticate.bind(passport) };
 }

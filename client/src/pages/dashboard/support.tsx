@@ -4,6 +4,7 @@ import { Mail, Phone } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
+import SEOHead from "@/components/seo-head";
 
 export default function DashboardSupportPage() {
   const [location] = useLocation();
@@ -18,16 +19,47 @@ export default function DashboardSupportPage() {
     },
   ];
 
+  // Dynamic SEO configuration for the support page
+  const seoConfig = {
+    title: "Support Center - FindConstructionBids",
+    description: "Get help with your construction bidding process. Access our comprehensive support resources, contact our team, and find answers to frequently asked questions.",
+    keywords: "construction support, bid help, contractor support, RFP assistance, construction FAQ",
+    type: "website" as const,
+    schema: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I create an RFP?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To create an RFP, log into your government organization account, navigate to the dashboard, and click on the 'Create RFP' button. Follow the guided process to submit your RFP."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I submit a bid?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Contractors can submit bids by browsing available RFPs, selecting one of interest, and clicking the 'Submit Bid' button. Ensure all required documentation is included with your submission."
+          }
+        }
+        // Additional FAQ items can be added here
+      ]
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
+      <SEOHead {...seoConfig} />
       <DashboardSidebar currentPath={location} />
-
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-4xl font-bold mb-8">Support Center</h1>
-            
+
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                 <Card>

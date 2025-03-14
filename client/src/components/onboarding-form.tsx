@@ -44,6 +44,18 @@ const MINORITY_GROUPS = [
   "Other",
 ];
 
+type FormValues = {
+  contact: string;
+  telephone: string;
+  cell: string;
+  businessEmail: string;
+  isMinorityOwned: boolean;
+  minorityGroup: string;
+  trade: string;
+  certificationName: string;
+  logo: File | string | null;
+};
+
 export default function OnboardingForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -58,7 +70,7 @@ export default function OnboardingForm() {
     }
   }, [user, navigate]);
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       contact: "",
@@ -69,7 +81,7 @@ export default function OnboardingForm() {
       minorityGroup: "",
       trade: "",
       certificationName: "",
-      logo: undefined,
+      logo: null,
     },
   });
 
@@ -143,7 +155,7 @@ export default function OnboardingForm() {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      form.setValue('logo', file);
+      form.setValue('logo', file as File);
     }
   };
 
@@ -261,7 +273,7 @@ export default function OnboardingForm() {
               <FormField
                 control={form.control}
                 name="logo"
-                render={({ field: { onChange, value, ...field } }) => (
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel>Company Logo</FormLabel>
                     <FormControl>
@@ -295,7 +307,6 @@ export default function OnboardingForm() {
                             className="hidden"
                             onChange={handleLogoChange}
                             disabled={isUploading}
-                            {...field}
                           />
                         </label>
                       </div>

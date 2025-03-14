@@ -42,7 +42,7 @@ async function seed() {
     "Service-Disabled Veteran-Owned Business"
   ];
 
-  // Create 20 user accounts (increased from 10)
+  // Create 20 user accounts
   const userIds: number[] = [];
 
   for (let i = 0; i < 20; i++) {
@@ -124,13 +124,12 @@ Evaluation Criteria:
 ${evaluation}`;
   };
 
-  // Generate 50 RFPs (increased from 30)
+  // Generate 50 RFPs
   const rfpIds: number[] = [];
 
   for (let i = 0; i < 50; i++) {
     // Generate dates ensuring logical sequence
     const now = new Date();
-    const maxMonthsAhead = 12;
 
     const walkthroughDate = faker.date.between({
       from: now,
@@ -139,12 +138,12 @@ ${evaluation}`;
 
     const rfiDate = faker.date.between({
       from: walkthroughDate,
-      to: faker.date.future({ months: 1, refDate: walkthroughDate })
+      to: faker.date.future({ years: 1/12, refDate: walkthroughDate })
     });
 
     const deadline = faker.date.between({
       from: rfiDate,
-      to: faker.date.future({ months: 2, refDate: rfiDate })
+      to: faker.date.future({ years: 1/6, refDate: rfiDate })
     });
 
     const [rfp] = await db.insert(rfps).values({

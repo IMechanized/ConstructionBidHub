@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { onboardingSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -63,6 +63,7 @@ export default function OnboardingForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (user?.onboardingComplete) {
@@ -90,20 +91,22 @@ export default function OnboardingForm() {
       const res = await apiRequest("POST", "/api/user/onboarding", data);
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated",
-      });
-      queryClient.refetchQueries({ queryKey: ["/api/user"] })
-        .then(() => {
-          navigate("/dashboard");
-        })
-        .catch((error) => {
-          console.error("Error refetching user data:", error);
-          navigate("/dashboard");
+    onSuccess: async () => {
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully updated",
         });
+        navigate("/dashboard");
+      } catch (error) {
+        console.error("Error after profile update:", error);
+        toast({
+          title: "Warning",
+          description: "Profile updated but there was an error refreshing the page. Please try refreshing manually.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -122,7 +125,7 @@ export default function OnboardingForm() {
     }
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: FormValues) => {
     try {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {

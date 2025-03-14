@@ -372,6 +372,35 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // User onboarding endpoint
+  app.post("/api/user/onboarding", async (req, res) => {
+    try {
+      requireAuth(req);
+      console.log("Onboarding request received:", req.body);
+
+      // Validate onboarding data
+      const data = onboardingSchema.parse(req.body);
+      console.log("Validated onboarding data:", data);
+
+      // Update user profile
+      const updatedUser = await storage.updateUser(req.user!.id, {
+        ...data,
+        onboardingComplete: true,
+      });
+
+      console.log("User profile updated successfully:", updatedUser);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Onboarding error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to complete onboarding" });
+      }
+    }
+  });
+
+
   const httpServer = createServer(app);
   return httpServer;
 }

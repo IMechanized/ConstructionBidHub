@@ -87,31 +87,39 @@ export default function OnboardingForm() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FormValues) => {
+      console.log("Submitting form data:", data);
       const res = await apiRequest("POST", "/api/user/onboarding", data);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
       return res.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log("Profile update successful:", data);
       try {
         await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
         toast({
           title: "Profile Updated",
           description: "Your profile has been successfully updated",
         });
-        navigate("/dashboard");
+        setTimeout(() => navigate("/dashboard"), 500);
       } catch (error) {
         console.error("Error after profile update:", error);
         toast({
           title: "Warning",
-          description: "Profile updated but there was an error refreshing the page. Please try refreshing manually.",
+          description: "Profile updated but there was an error refreshing the data. Redirecting...",
           variant: "destructive",
         });
+        setTimeout(() => navigate("/dashboard"), 1000);
       }
     },
     onError: (error: Error) => {
+      console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
     },
@@ -126,11 +134,14 @@ export default function OnboardingForm() {
   };
 
   const handleSubmit = async (data: FormValues) => {
+    console.log("Form submission started with data:", data);
     try {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {
         setIsUploading(true);
+        console.log("Uploading logo file...");
         logoUrl = await uploadToCloudinary(data.logo);
+        console.log("Logo uploaded successfully:", logoUrl);
       }
 
       const formData = {
@@ -138,11 +149,13 @@ export default function OnboardingForm() {
         logo: logoUrl,
       };
 
+      console.log("Submitting form with processed data:", formData);
       updateProfileMutation.mutate(formData);
     } catch (error) {
+      console.error("Error in form submission:", error);
       toast({
         title: "Error",
-        description: "Failed to upload logo",
+        description: error instanceof Error ? error.message : "Failed to process form submission",
         variant: "destructive",
       });
     } finally {
@@ -153,12 +166,21 @@ export default function OnboardingForm() {
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Error",
+          description: "Logo file size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      form.setValue('logo', file as File);
+      form.setValue('logo', file);
     }
   };
 
@@ -369,20 +391,30 @@ export default function OnboardingForm() {
                 />
               )}
 
-              <Button
-                type="submit"
-                className="w-full mt-6"
-                disabled={updateProfileMutation.isPending || isUploading}
-              >
-                {updateProfileMutation.isPending || isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {isUploading ? "Uploading..." : "Saving..."}
-                  </>
-                ) : (
-                  "Complete Profile"
-                )}
-              </Button>
+              <div className="flex gap-4">
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={updateProfileMutation.isPending || isUploading}
+                >
+                  {updateProfileMutation.isPending || isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {isUploading ? "Uploading..." : "Saving..."}
+                    </>
+                  ) : (
+                    "Complete Profile"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={updateProfileMutation.isPending || isUploading}
+                >
+                  Reset
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

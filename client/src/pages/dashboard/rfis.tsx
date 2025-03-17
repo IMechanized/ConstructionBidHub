@@ -19,7 +19,7 @@ export default function RfiPage() {
     },
   ];
 
-  const { data: rfis, isLoading } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
+  const { data: rfis, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
     queryKey: ["/api/rfis"],
   });
 
@@ -35,7 +35,9 @@ export default function RfiPage() {
             <h1 className="text-2xl font-bold">Request for Information</h1>
 
             {isLoading ? (
-              <DashboardSectionSkeleton count={6} />
+              <DashboardSectionSkeleton count={6} data-testid="dashboard-section-skeleton" />
+            ) : error ? (
+              <div className="text-destructive">Error loading RFIs. Please try again later.</div>
             ) : (
               <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {rfis?.map((rfi) => (

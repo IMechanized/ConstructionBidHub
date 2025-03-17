@@ -4,9 +4,7 @@
  */
 
 import { http, HttpResponse } from 'msw'
-import type { User } from '@shared/schema'
-import type { Rfp } from '@shared/schema'; // Added import for Rfp type
-
+import type { User, Rfp, Rfi } from '@shared/schema'
 
 export const handlers = [
   // Mock user endpoint
@@ -94,5 +92,34 @@ export const handlers = [
       status: 'open',
       createdAt: new Date(),
     }, { status: 201 })
+  }),
+
+  // Mock RFI list endpoint
+  http.get('/api/rfis', () => {
+    return HttpResponse.json([
+      {
+        id: 1,
+        rfpId: 1,
+        message: 'Test RFI message',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        rfp: {
+          id: 1,
+          title: 'Test RFP',
+          description: 'Test Description',
+          walkthroughDate: new Date(),
+          rfiDate: new Date(),
+          deadline: new Date(),
+          jobLocation: 'San Francisco, CA',
+          featured: true,
+          createdAt: new Date(),
+          budgetMin: null,
+          certificationGoals: null,
+          organizationId: 1,
+          portfolioLink: null,
+          status: 'open',
+        }
+      }
+    ])
   }),
 ]

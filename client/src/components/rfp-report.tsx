@@ -20,8 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
-import { ChevronDown, ChevronUp, Building2, Mail, Phone, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface RfpReportProps {
   rfps: Rfp[];
@@ -104,71 +103,25 @@ export default function RfpReport({ rfps }: RfpReportProps) {
                     <TableRow>
                       <TableCell colSpan={5} className="p-0">
                         <div className="bg-muted/50 p-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-semibold">RFI Submissions</h4>
-                            <Badge variant="secondary">
-                              {rfis?.length || 0} Submissions
-                            </Badge>
-                          </div>
+                          <h4 className="font-semibold mb-2">RFI Submissions</h4>
                           {rfis && rfis.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               {rfis.map((rfi) => (
                                 <div 
                                   key={rfi.id}
-                                  className="bg-background rounded-lg border p-4 space-y-3"
+                                  className="bg-background rounded p-3 space-y-2"
                                 >
-                                  <div className="flex flex-col sm:flex-row justify-between gap-2">
-                                    <div className="space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-medium">{rfi.companyName || 'Company Name Not Provided'}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Mail className="h-4 w-4 text-muted-foreground" />
-                                        <span>{rfi.email}</span>
-                                      </div>
-                                      {rfi.phone && (
-                                        <div className="flex items-center gap-2">
-                                          <Phone className="h-4 w-4 text-muted-foreground" />
-                                          <span>{rfi.phone}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                      <Badge 
-                                        variant={rfi.status === 'pending' ? 'secondary' : 
-                                                rfi.status === 'approved' ? 'success' : 'destructive'}
-                                      >
-                                        {rfi.status}
-                                      </Badge>
-                                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>{format(new Date(rfi.createdAt), "PPp")}</span>
-                                      </div>
-                                    </div>
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">{rfi.email}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {format(new Date(rfi.createdAt), "PP")}
+                                    </span>
                                   </div>
-                                  <div className="bg-muted/30 rounded p-3">
-                                    <h5 className="font-medium mb-2">Message/Questions:</h5>
-                                    <p className="text-sm whitespace-pre-wrap">{rfi.message}</p>
+                                  <p className="text-sm">{rfi.message}</p>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Status:</span>
+                                    <span className="text-sm font-medium capitalize">{rfi.status}</span>
                                   </div>
-                                  {rfi.attachments && rfi.attachments.length > 0 && (
-                                    <div className="pt-2">
-                                      <h5 className="font-medium mb-2">Attachments:</h5>
-                                      <div className="flex flex-wrap gap-2">
-                                        {rfi.attachments.map((attachment, index) => (
-                                          <a
-                                            key={index}
-                                            href={attachment}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-primary hover:underline"
-                                          >
-                                            Attachment {index + 1}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               ))}
                             </div>

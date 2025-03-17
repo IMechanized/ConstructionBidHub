@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RfiPage from './rfis'
 import { Router } from 'wouter'
+import { AuthProvider } from '@/hooks/use-auth'
 
 // Create a fresh QueryClient for each test
 const createTestQueryClient = () => new QueryClient({
@@ -12,14 +13,31 @@ const createTestQueryClient = () => new QueryClient({
   },
 })
 
+// Mock auth context with default authenticated state
+const mockAuthContext = {
+  user: {
+    id: 1,
+    email: 'test@example.com',
+    companyName: 'Test Company',
+    onboardingComplete: true,
+  },
+  isAuthenticated: true,
+  isLoading: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+  signup: vi.fn(),
+}
+
 describe('RfiPage', () => {
   it('shows loading state initially', () => {
     const queryClient = createTestQueryClient()
     render(
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <RfiPage />
-        </Router>
+        <AuthProvider value={mockAuthContext}>
+          <Router>
+            <RfiPage />
+          </Router>
+        </AuthProvider>
       </QueryClientProvider>
     )
 
@@ -31,9 +49,11 @@ describe('RfiPage', () => {
     const queryClient = createTestQueryClient()
     render(
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <RfiPage />
-        </Router>
+        <AuthProvider value={mockAuthContext}>
+          <Router>
+            <RfiPage />
+          </Router>
+        </AuthProvider>
       </QueryClientProvider>
     )
 
@@ -56,9 +76,11 @@ describe('RfiPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <RfiPage />
-        </Router>
+        <AuthProvider value={mockAuthContext}>
+          <Router>
+            <RfiPage />
+          </Router>
+        </AuthProvider>
       </QueryClientProvider>
     )
 

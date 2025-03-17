@@ -9,31 +9,42 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import { HelmetProvider } from 'react-helmet-async';
 import userEvent from '@testing-library/user-event';
+import { Form } from '@/components/ui/form';
+import { Router } from 'wouter';
+import { vi } from 'vitest';
+
+// Create a fresh QueryClient for each test
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+// Create a wrapper with all providers needed for testing
+function AllTheProviders({ children }: { children: React.ReactNode }) {
+  const queryClient = createTestQueryClient();
+
+  return (
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          {children}
+          <Toaster />
+        </Router>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
+}
 
 // Create a custom render function that includes providers
 function render(ui: React.ReactElement, { route = '/' } = {}) {
   window.history.pushState({}, 'Test page', route);
 
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-
   return {
     user: userEvent.setup(),
-    ...rtlRender(
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            {ui}
-            <Toaster />
-          </AuthProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
-    ),
+    ...rtlRender(ui, { wrapper: AllTheProviders }),
   };
 }
 

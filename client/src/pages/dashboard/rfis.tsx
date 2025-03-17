@@ -28,8 +28,10 @@ export default function RfiPage() {
       <DashboardSidebar currentPath={location} />
 
       <main className="md:ml-[280px] min-h-screen">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <BreadcrumbNav items={breadcrumbItems} />
+        <div className="container mx-auto px-4 py-8 max-w-7xl mt-16 md:mt-0">
+          <div className="hidden md:block">
+            <BreadcrumbNav items={breadcrumbItems} />
+          </div>
 
           <div className="space-y-6 mt-6">
             <h1 className="text-2xl font-bold">Request for Information</h1>

@@ -17,11 +17,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
@@ -42,9 +37,15 @@ export default function RfpReport({ rfps }: RfpReportProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentRfps = rfps.slice(startIndex, endIndex);
 
-  // Query RFIs for the expanded RFP
+  // Query RFIs for the expanded RFP using the specific endpoint
   const { data: rfis } = useQuery<Rfi[]>({
-    queryKey: ["/api/rfis", expandedRfp],
+    queryKey: ["/api/rfps", expandedRfp, "rfis"],
+    queryFn: async () => {
+      if (!expandedRfp) return [];
+      const res = await fetch(`/api/rfps/${expandedRfp}/rfi`);
+      if (!res.ok) throw new Error('Failed to fetch RFIs');
+      return res.json();
+    },
     enabled: expandedRfp !== null,
   });
 

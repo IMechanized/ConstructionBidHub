@@ -341,6 +341,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get RFIs for specific RFP
+  app.get("/api/rfps/:id/rfi", async (req, res) => {
+    try {
+      const rfis = await storage.getRfisByRfp(Number(req.params.id));
+      res.json(rfis);
+    } catch (error) {
+      console.error('Error fetching RFIs for RFP:', error);
+      res.status(500).json({ message: "Failed to fetch RFIs" });
+    }
+  });
+
   // Get RFIs for current user
   app.get("/api/rfis", async (req, res) => {
     try {

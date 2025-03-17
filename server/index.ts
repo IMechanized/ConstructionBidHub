@@ -4,6 +4,7 @@ import { log, setupVite, serveStatic } from "./vite";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { startBackupScheduler } from "./lib/backup-scheduler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -70,6 +71,15 @@ const startServer = async (): Promise<void> => {
     } else {
       log('Setting up Vite middleware...');
       await setupVite(app, server);
+    }
+
+    // Start backup scheduler
+    try {
+      startBackupScheduler();
+      log('Automated backup scheduler started successfully');
+    } catch (error) {
+      console.error('Failed to start backup scheduler:', error);
+      // Continue server startup even if backup scheduler fails
     }
 
     // Check if port is in use before attempting to listen

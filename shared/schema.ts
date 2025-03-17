@@ -104,6 +104,18 @@ export const rfis = pgTable("rfis", {
 });
 
 /**
+ * Backup Logs Table
+ * Tracks database backup operations
+ */
+export const backupLogs = pgTable("backup_logs", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  status: text("status", { enum: ["success", "failed"] }).notNull(),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Validation Schemas
  */
 
@@ -175,3 +187,5 @@ export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;
 export type InsertRfi = z.infer<typeof insertRfiSchema>;
+export type BackupLog = typeof backupLogs.$inferSelect;
+export type InsertBackupLog = typeof backupLogs.$inferInsert;

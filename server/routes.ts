@@ -345,7 +345,19 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/rfps/:id/rfi", async (req, res) => {
     try {
       const rfis = await storage.getRfisByRfp(Number(req.params.id));
-      res.json(rfis);
+
+      // Get user information for each RFI
+      const rfisWithUserInfo = await Promise.all(
+        rfis.map(async (rfi) => {
+          const user = await storage.getUserByUsername(rfi.email);
+          return {
+            ...rfi,
+            companyName: user?.companyName || 'N/A'
+          };
+        })
+      );
+
+      res.json(rfisWithUserInfo);
     } catch (error) {
       console.error('Error fetching RFIs for RFP:', error);
       res.status(500).json({ message: "Failed to fetch RFIs" });

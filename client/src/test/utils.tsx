@@ -9,7 +9,6 @@ import { AuthContext } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import { HelmetProvider } from 'react-helmet-async';
 import userEvent from '@testing-library/user-event';
-import { Form } from '@/components/ui/form';
 import { Router } from 'wouter';
 import { vi } from 'vitest';
 
@@ -18,15 +17,50 @@ const defaultMockAuth = {
   user: {
     id: 1,
     email: 'test@example.com',
+    password: 'hashed_password',
     companyName: 'Test Company',
     onboardingComplete: true,
-    status: 'active',
+    status: 'active' as const,
+    cell: null,
+    contact: null,
+    telephone: null,
+    businessEmail: null,
+    isMinorityOwned: false,
+    minorityGroup: null,
+    trade: null,
+    certificationName: null,
+    logo: null
   },
   isAuthenticated: true,
   isLoading: false,
+  error: null,
   login: vi.fn(),
   logout: vi.fn(),
   signup: vi.fn(),
+  loginMutation: {
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    data: null,
+  },
+  logoutMutation: {
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    data: null,
+  },
+  registerMutation: {
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    data: null,
+  }
 };
 
 // Create a fresh QueryClient for each test

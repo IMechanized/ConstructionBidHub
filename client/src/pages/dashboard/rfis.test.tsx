@@ -1,61 +1,18 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, waitFor } from '@/test/utils'
 import RfiPage from './rfis'
-import { Router } from 'wouter'
-import { AuthProvider } from '@/hooks/use-auth'
-
-// Create a fresh QueryClient for each test
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-    },
-  },
-})
-
-// Mock auth context with default authenticated state
-const mockAuthContext = {
-  user: {
-    id: 1,
-    email: 'test@example.com',
-    companyName: 'Test Company',
-    onboardingComplete: true,
-  },
-  isAuthenticated: true,
-  isLoading: false,
-  login: vi.fn(),
-  logout: vi.fn(),
-  signup: vi.fn(),
-}
+import { QueryClient } from '@tanstack/react-query'
+import { vi } from 'vitest'
 
 describe('RfiPage', () => {
   it('shows loading state initially', () => {
-    const queryClient = createTestQueryClient()
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider value={mockAuthContext}>
-          <Router>
-            <RfiPage />
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
-    )
+    render(<RfiPage />)
 
     expect(screen.getByRole('heading', { name: /request for information/i })).toBeInTheDocument()
     expect(screen.getByTestId('dashboard-section-skeleton')).toBeInTheDocument()
   })
 
   it('displays RFIs when data is loaded', async () => {
-    const queryClient = createTestQueryClient()
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider value={mockAuthContext}>
-          <Router>
-            <RfiPage />
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
-    )
+    render(<RfiPage />)
 
     // Wait for the RFI data to load
     await waitFor(() => {
@@ -68,21 +25,16 @@ describe('RfiPage', () => {
   })
 
   it('handles error state appropriately', async () => {
-    const queryClient = createTestQueryClient()
-    // Force the query to error
-    queryClient.setQueryDefaults(['/api/rfis'], {
-      queryFn: () => Promise.reject('Error fetching RFIs'),
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          queryFn: () => Promise.reject('Error fetching RFIs'),
+        },
+      },
     })
 
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider value={mockAuthContext}>
-          <Router>
-            <RfiPage />
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
-    )
+    render(<RfiPage />, { queryClient })
 
     // Verify error handling UI
     await waitFor(() => {

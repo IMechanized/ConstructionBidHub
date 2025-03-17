@@ -28,7 +28,7 @@ export default function DetailedReportPage() {
   });
 
   const { data: rfis } = useQuery<Rfi[]>({
-    queryKey: ["/api/rfis"],
+    queryKey: [`/api/rfps/${id}/rfi`],
   });
 
   // Redirect if the RFP doesn't exist or doesn't belong to the user
@@ -37,8 +37,6 @@ export default function DetailedReportPage() {
       navigate("/dashboard/reports");
     }
   }, [rfp, user, loadingRfp, navigate]);
-
-  const rfpRfis = rfis?.filter((rfi) => rfi.rfpId === Number(id)) || [];
 
   const breadcrumbItems = [
     {
@@ -134,21 +132,31 @@ export default function DetailedReportPage() {
                     <TableHead>Company</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Submission Date</TableHead>
+                    <TableHead>Message</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rfpRfis.map((rfi) => (
+                  {rfis?.map((rfi) => (
                     <TableRow key={rfi.id}>
-                      <TableCell>{rfi.email}</TableCell>
+                      <TableCell>{rfi.companyName || 'N/A'}</TableCell>
                       <TableCell>{rfi.email}</TableCell>
                       <TableCell>{format(new Date(rfi.createdAt), "PP")}</TableCell>
-                      <TableCell className="capitalize">{rfi.status}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{rfi.message}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          rfi.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          rfi.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {rfi.status}
+                        </span>
+                      </TableCell>
                     </TableRow>
                   ))}
-                  {rfpRfis.length === 0 && (
+                  {(!rfis || rfis.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center">No bids received yet</TableCell>
+                      <TableCell colSpan={5} className="text-center">No bids received yet</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

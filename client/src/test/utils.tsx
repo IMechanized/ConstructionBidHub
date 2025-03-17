@@ -37,30 +37,9 @@ const defaultMockAuth = {
   login: vi.fn(),
   logout: vi.fn(),
   signup: vi.fn(),
-  loginMutation: {
-    isPending: false,
-    isError: false,
-    error: null,
-    mutate: vi.fn(),
-    reset: vi.fn(),
-    data: null,
-  },
-  logoutMutation: {
-    isPending: false,
-    isError: false,
-    error: null,
-    mutate: vi.fn(),
-    reset: vi.fn(),
-    data: null,
-  },
-  registerMutation: {
-    isPending: false,
-    isError: false,
-    error: null,
-    mutate: vi.fn(),
-    reset: vi.fn(),
-    data: null,
-  }
+  loginMutation: { isPending: false, mutate: vi.fn() },
+  logoutMutation: { isPending: false, mutate: vi.fn() },
+  registerMutation: { isPending: false, mutate: vi.fn() }
 };
 
 // Create a fresh QueryClient for each test

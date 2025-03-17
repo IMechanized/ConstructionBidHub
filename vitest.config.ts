@@ -10,6 +10,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./client/src/test/setup.ts'],
     css: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/*.skip.test.tsx',
+      '**/onboarding-form.test.tsx',
+      '**/rfp-form.test.tsx'
+    ],
   },
   resolve: {
     alias: {

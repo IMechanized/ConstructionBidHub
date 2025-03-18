@@ -47,6 +47,11 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
       icon: Layout,
     },
     {
+      label: "My RFIs",
+      href: "/dashboard/rfis",
+      icon: MessageSquare,
+    },
+    {
       label: "RFIs",
       href: "/dashboard/rfis",
       icon: MessageSquare,
@@ -82,9 +87,9 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
     <div className="block md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t z-30">
       <Sheet>
         <SheetTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="w-full flex items-center justify-center gap-2 h-12 rounded-none hover:bg-accent"
           >
             <Menu className="h-4 w-4" />

@@ -5,6 +5,15 @@ import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
 
 export default function RfiPage() {
   const [location] = useLocation();
@@ -14,7 +23,7 @@ export default function RfiPage() {
       href: "/dashboard",
     },
     {
-      label: "RFIs",
+      label: "My RFIs",
       href: "/dashboard/rfis",
     },
   ];
@@ -32,42 +41,51 @@ export default function RfiPage() {
           <BreadcrumbNav items={breadcrumbItems} />
 
           <div className="space-y-6 mt-4">
-            <h1 className="text-2xl font-bold">Request for Information</h1>
+            <h1 className="text-2xl font-bold">My RFIs</h1>
 
             {isLoading ? (
-              <DashboardSectionSkeleton count={6} data-testid="dashboard-section-skeleton" />
+              <DashboardSectionSkeleton count={5} />
             ) : error ? (
               <div className="p-4 rounded-lg bg-destructive/10 text-destructive">
                 Error loading RFIs. Please try again later.
               </div>
-            ) : (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {rfis?.map((rfi) => (
-                  <div 
-                    key={rfi.id} 
-                    className="bg-card rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <h3 className="text-lg font-semibold mb-3 line-clamp-2">
-                      {rfi.rfp?.title || "Unknown RFP"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {rfi.message}
-                    </p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Status</span>
-                        <span className="capitalize px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
-                          {rfi.status}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Submitted</span>
-                        <span className="text-xs">{format(new Date(rfi.createdAt), "PPp")}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            ) : !rfis?.length ? (
+              <div className="text-center py-8 text-muted-foreground">
+                You haven't submitted any RFIs yet.
               </div>
+            ) : (
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>RFP Title</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Submitted Date</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rfis.map((rfi) => (
+                      <TableRow key={rfi.id}>
+                        <TableCell className="font-medium">
+                          {rfi.rfp?.title || "Unknown RFP"}
+                        </TableCell>
+                        <TableCell className="max-w-md">
+                          <p className="truncate">{rfi.message}</p>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(rfi.createdAt), "PPp")}
+                        </TableCell>
+                        <TableCell>
+                          <span className="capitalize px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                            {rfi.status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
             )}
           </div>
         </div>

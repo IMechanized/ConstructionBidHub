@@ -361,6 +361,46 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 2	backup-2025-03-17T14-03-13-173Z.sql	success	\N	2025-03-17 14:03:20.044888
 3	backup-2025-03-17T14-08-56-726Z.sql	success	\N	2025-03-17 14:09:00.318664
 4	backup-2025-03-17T14-12-08-219Z.sql	success	\N	2025-03-17 14:12:14.623305
+5	backup-2025-03-17T14-14-00-739Z.sql	success	\N	2025-03-17 14:14:05.093066
+6	backup-2025-03-17T14-18-21-628Z.sql	success	\N	2025-03-17 14:18:28.222521
+7	backup-2025-03-17T14-22-08-427Z.sql	success	\N	2025-03-17 14:22:17.304009
+8	backup-2025-03-17T14-29-21-578Z.sql	success	\N	2025-03-17 14:29:33.999189
+9	backup-2025-03-17T14-59-33-811Z.sql	success	\N	2025-03-17 14:59:42.808704
+10	backup-2025-03-17T15-17-42-007Z.sql	success	\N	2025-03-17 15:18:11.740057
+11	backup-2025-03-17T15-52-56-865Z.sql	success	\N	2025-03-17 15:53:21.772155
+12	backup-2025-03-17T16-24-29-954Z.sql	success	\N	2025-03-17 16:24:46.019658
+13	backup-2025-03-17T16-44-23-529Z.sql	success	\N	2025-03-17 16:44:38.826093
+14	backup-2025-03-17T16-54-03-882Z.sql	success	\N	2025-03-17 16:54:28.056577
+15	backup-2025-03-17T17-57-47-889Z.sql	success	\N	2025-03-17 17:58:10.60738
+16	backup-2025-03-17T18-29-29-400Z.sql	success	\N	2025-03-17 18:29:38.398594
+17	backup-2025-03-17T19-26-25-006Z.sql	success	\N	2025-03-17 19:26:50.710476
+18	backup-2025-03-17T19-47-35-473Z.sql	success	\N	2025-03-17 19:47:59.835012
+19	backup-2025-03-17T20-05-20-058Z.sql	success	\N	2025-03-17 20:05:35.347937
+20	backup-2025-03-17T20-19-13-385Z.sql	success	\N	2025-03-17 20:19:46.611052
+21	backup-2025-03-17T21-00-51-778Z.sql	success	\N	2025-03-17 21:01:15.808709
+22	backup-2025-03-17T21-31-56-609Z.sql	success	\N	2025-03-17 21:32:17.278369
+23	backup-2025-03-17T22-14-14-977Z.sql	success	\N	2025-03-17 22:14:37.985247
+24	backup-2025-03-17T23-04-51-119Z.sql	success	\N	2025-03-17 23:05:07.160491
+25	backup-2025-03-17T23-18-03-813Z.sql	success	\N	2025-03-17 23:18:36.896109
+26	backup-2025-03-17T23-49-21-771Z.sql	success	\N	2025-03-17 23:49:44.383488
+27	backup-2025-03-18T01-07-49-011Z.sql	success	\N	2025-03-18 01:08:11.612208
+28	backup-2025-03-18T01-32-38-327Z.sql	success	\N	2025-03-18 01:33:03.509701
+29	backup-2025-03-18T01-57-12-464Z.sql	success	\N	2025-03-18 01:57:27.097547
+30	backup-2025-03-18T03-05-05-250Z.sql	success	\N	2025-03-18 03:05:26.979319
+31	backup-2025-03-18T03-45-40-300Z.sql	success	\N	2025-03-18 03:45:57.03358
+32	backup-2025-03-18T04-49-38-344Z.sql	success	\N	2025-03-18 04:50:01.482061
+33	backup-2025-03-18T05-47-11-899Z.sql	success	\N	2025-03-18 05:47:21.569075
+34	backup-2025-03-18T06-07-06-126Z.sql	success	\N	2025-03-18 06:07:20.445036
+35	backup-2025-03-18T06-32-13-661Z.sql	success	\N	2025-03-18 06:32:23.022556
+36	backup-2025-03-18T06-51-40-304Z.sql	success	\N	2025-03-18 06:52:02.738401
+37	backup-2025-03-18T07-24-07-438Z.sql	success	\N	2025-03-18 07:24:29.814665
+38	backup-2025-03-18T08-12-32-631Z.sql	success	\N	2025-03-18 08:12:55.656209
+39	backup-2025-03-18T08-57-03-278Z.sql	success	\N	2025-03-18 08:57:17.801878
+40	backup-2025-03-18T11-36-55-160Z.sql	success	\N	2025-03-18 11:37:23.042715
+41	backup-2025-03-18T12-34-52-680Z.sql	success	\N	2025-03-18 12:34:59.310645
+42	backup-2025-03-18T12-38-47-865Z.sql	success	\N	2025-03-18 12:38:55.441206
+43	backup-2025-03-18T12-45-22-205Z.sql	success	\N	2025-03-18 12:45:26.564257
+44	backup-2025-03-18T12-50-37-978Z.sql	success	\N	2025-03-18 12:50:44.135767
 \.
 
 
@@ -554,6 +594,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 175	128	Lois_Schoen-Howell38@gmail.com	Question regarding technical specifications:\n\nAperte cum succedo amaritudo. Amplexus tibi annus amor cometes succedo. Tempus adflicto caritas libero depulso canto tubineus.	2025-03-06 18:44:08.622218	responded
 176	128	Jasmin_Howe92@hotmail.com	Question regarding certification requirements:\n\nVirga turpis carus summisse blanditiis attollo tempus architecto. Depraedor volubilis voluptatum certe basium antiquus. Adfectus decor totam utpote celebrer contra usque unus.	2025-03-06 18:44:08.659063	pending
 177	1	sandy@mail.com	Asking a question.	2025-03-17 14:05:44.535272	pending
+178	3	mech@mail.com	Request for information.	2025-03-18 12:53:16.78613	pending
 \.
 
 
@@ -764,7 +805,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 4, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 44, true);
 
 
 --
@@ -778,7 +819,7 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 177, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 178, true);
 
 
 --

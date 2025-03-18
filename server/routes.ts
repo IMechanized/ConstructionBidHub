@@ -370,9 +370,20 @@ export function registerRoutes(app: Express): Server {
   // Get RFIs for current user
   app.get("/api/rfis", async (req, res) => {
     try {
-      requireAuth(req);
+      // Add debug logging
+      console.log('GET /api/rfis - Auth status:', req.isAuthenticated());
+      console.log('GET /api/rfis - User:', req.user);
+
+      if (!req.isAuthenticated()) {
+        console.log('User not authenticated, returning 401');
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       const user = req.user!;
+      console.log('Fetching RFIs for email:', user.email);
+
       const userRfis = await storage.getRfisByEmail(user.email);
+      console.log('Found RFIs:', userRfis.length);
 
       // Fetch RFP details for each RFI
       const rfisWithRfp = await Promise.all(
@@ -391,6 +402,7 @@ export function registerRoutes(app: Express): Server {
         })
       );
 
+      console.log('Sending response with', rfisWithRfp.length, 'RFIs');
       res.json(rfisWithRfp);
     } catch (error) {
       console.error('Error fetching RFIs:', error);

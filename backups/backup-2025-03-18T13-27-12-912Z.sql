@@ -406,6 +406,15 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 47	backup-2025-03-18T12-59-48-123Z.sql	success	\N	2025-03-18 12:59:51.91267
 48	backup-2025-03-18T13-02-06-966Z.sql	success	\N	2025-03-18 13:02:19.882347
 49	backup-2025-03-18T13-02-53-440Z.sql	success	\N	2025-03-18 13:02:58.517337
+50	backup-2025-03-18T13-03-39-907Z.sql	success	\N	2025-03-18 13:03:43.673106
+51	backup-2025-03-18T13-04-59-865Z.sql	success	\N	2025-03-18 13:05:03.424718
+52	backup-2025-03-18T13-12-48-827Z.sql	success	\N	2025-03-18 13:12:53.835792
+53	backup-2025-03-18T13-14-50-303Z.sql	success	\N	2025-03-18 13:14:53.978631
+54	backup-2025-03-18T13-17-54-618Z.sql	success	\N	2025-03-18 13:18:03.518084
+55	backup-2025-03-18T13-19-01-618Z.sql	success	\N	2025-03-18 13:19:05.71032
+56	backup-2025-03-18T13-22-21-920Z.sql	success	\N	2025-03-18 13:22:31.130623
+57	backup-2025-03-18T13-23-33-856Z.sql	success	\N	2025-03-18 13:23:45.07883
+58	backup-2025-03-18T13-26-01-177Z.sql	success	\N	2025-03-18 13:26:04.750274
 \.
 
 
@@ -602,6 +611,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 178	3	mech@mail.com	Request for information.	2025-03-18 12:53:16.78613	pending
 179	8	mech@mail.com	Need Information	2025-03-18 12:57:17.323762	pending
 180	12	mech@mail.com	Information	2025-03-18 13:01:26.476262	pending
+181	1	mechanizedsolutionsinc@gmail.com	Test RFI message	2025-03-18 13:25:56.846584	pending
 \.
 
 
@@ -812,7 +822,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 49, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 58, true);
 
 
 --
@@ -826,7 +836,7 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 180, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 181, true);
 
 
 --

@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -17,6 +18,8 @@ import { Card } from "@/components/ui/card";
 
 export default function RfiPage() {
   const [location] = useLocation();
+  const { toast } = useToast();
+
   const breadcrumbItems = [
     {
       label: "Dashboard",
@@ -29,7 +32,14 @@ export default function RfiPage() {
   ];
 
   const { data: rfis, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
-    queryKey: ["/api/rfis"],
+    queryKey: ["/api/rfis/my"],
+    onError: (err: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to load your RFIs. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   return (

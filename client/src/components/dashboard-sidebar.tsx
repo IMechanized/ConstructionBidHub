@@ -49,7 +49,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       icon: Layout,
     },
     {
-      label: "RFIs",
+      label: "RFI Management",
       href: "/dashboard/rfis",
       icon: MessageSquare,
     },

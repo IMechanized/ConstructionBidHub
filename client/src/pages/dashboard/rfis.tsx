@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Rfi, Rfp } from "@shared/schema";
+import { type Rfi, type Rfp } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 
+type RfiWithRfp = Rfi & { rfp: Rfp | null };
+
 export default function RfiPage() {
   const [location] = useLocation();
   const { toast } = useToast();
@@ -31,18 +33,18 @@ export default function RfiPage() {
     },
   ];
 
-  const { data, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
+  const { data: rfis = [], isLoading, error } = useQuery<RfiWithRfp[]>({
     queryKey: ["/api/rfis"],
-    onError: (err) => {
+    retry: 2,
+    staleTime: 30000,
+    onError: (error: unknown) => {
       toast({
         title: "Error",
-        description: "Failed to load your RFIs. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to load your RFIs. Please try again.",
         variant: "destructive",
       });
     },
   });
-
-  const rfis = data || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +63,7 @@ export default function RfiPage() {
               <div className="text-center py-8 text-destructive">
                 Failed to load RFIs. Please try again.
               </div>
-            ) : !rfis.length ? (
+            ) : rfis.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 You haven't submitted any RFIs yet.
               </div>
@@ -77,7 +79,7 @@ export default function RfiPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rfis.map((rfi) => (
+                    {rfis.map((rfi: RfiWithRfp) => (
                       <TableRow key={rfi.id}>
                         <TableCell className="font-medium">
                           {rfi.rfp?.title || "Unknown RFP"}
@@ -90,7 +92,7 @@ export default function RfiPage() {
                         </TableCell>
                         <TableCell>
                           <span className="capitalize px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
-                            {rfi.status}
+                            {rfi.status || "pending"}
                           </span>
                         </TableCell>
                       </TableRow>

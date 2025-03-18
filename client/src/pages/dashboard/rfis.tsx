@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { type Rfi, type Rfp } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -15,11 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
+import { useEffect } from "react";
 
 type RfiWithRfp = Rfi & { rfp: Rfp | null };
 
 export default function RfiPage() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
 
   const breadcrumbItems = [
@@ -37,14 +38,19 @@ export default function RfiPage() {
     queryKey: ["/api/rfis"],
     retry: 2,
     staleTime: 30000,
-    onError: (error: unknown) => {
+  });
+
+  // Handle unauthorized access
+  useEffect(() => {
+    if (error instanceof Error && error.message.includes("401")) {
+      navigate("/auth");
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load your RFIs. Please try again.",
+        title: "Authentication Required",
+        description: "Please sign in to view your RFIs",
         variant: "destructive",
       });
-    },
-  });
+    }
+  }, [error, navigate, toast]);
 
   return (
     <div className="min-h-screen bg-background">

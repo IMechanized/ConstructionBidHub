@@ -317,6 +317,7 @@ export function registerRoutes(app: Express): Server {
   // Update the RFI endpoint
   app.post("/api/rfps/:id/rfi", async (req, res) => {
     try {
+      requireAuth(req);  // Make sure user is authenticated
       const data = insertRfiSchema.parse(req.body);
 
       const rfp = await storage.getRfpById(Number(req.params.id));
@@ -324,8 +325,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "RFP not found" });
       }
 
+      // Use the authenticated user's email instead of form data
       const rfi = await storage.createRfi({
         ...data,
+        email: req.user!.email,  // Use authenticated user's email
         rfpId: Number(req.params.id),
       });
 

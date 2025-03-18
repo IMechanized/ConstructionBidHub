@@ -403,6 +403,14 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 44	backup-2025-03-18T12-50-37-978Z.sql	success	\N	2025-03-18 12:50:44.135767
 45	backup-2025-03-18T12-55-22-648Z.sql	success	\N	2025-03-18 12:55:26.98931
 46	backup-2025-03-18T12-58-13-908Z.sql	success	\N	2025-03-18 12:58:17.999607
+47	backup-2025-03-18T12-59-48-123Z.sql	success	\N	2025-03-18 12:59:51.91267
+48	backup-2025-03-18T13-02-06-966Z.sql	success	\N	2025-03-18 13:02:19.882347
+49	backup-2025-03-18T13-02-53-440Z.sql	success	\N	2025-03-18 13:02:58.517337
+50	backup-2025-03-18T13-03-39-907Z.sql	success	\N	2025-03-18 13:03:43.673106
+51	backup-2025-03-18T13-04-59-865Z.sql	success	\N	2025-03-18 13:05:03.424718
+52	backup-2025-03-18T13-12-48-827Z.sql	success	\N	2025-03-18 13:12:53.835792
+53	backup-2025-03-18T13-14-50-303Z.sql	success	\N	2025-03-18 13:14:53.978631
+54	backup-2025-03-18T13-17-54-618Z.sql	success	\N	2025-03-18 13:18:03.518084
 \.
 
 
@@ -598,6 +606,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 177	1	sandy@mail.com	Asking a question.	2025-03-17 14:05:44.535272	pending
 178	3	mech@mail.com	Request for information.	2025-03-18 12:53:16.78613	pending
 179	8	mech@mail.com	Need Information	2025-03-18 12:57:17.323762	pending
+180	12	mech@mail.com	Information	2025-03-18 13:01:26.476262	pending
 \.
 
 
@@ -808,7 +817,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 46, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 54, true);
 
 
 --
@@ -822,7 +831,7 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 179, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 180, true);
 
 
 --

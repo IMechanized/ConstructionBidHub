@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { type Rfi, type Rfp } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -15,12 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useEffect } from "react";
 
 type RfiWithRfp = Rfi & { rfp: Rfp | null };
 
 export default function RfiPage() {
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
   const breadcrumbItems = [
@@ -43,14 +44,14 @@ export default function RfiPage() {
   // Handle unauthorized access
   useEffect(() => {
     if (error instanceof Error && error.message.includes("401")) {
-      navigate("/auth");
+      setLocation("/auth");
       toast({
         title: "Authentication Required",
         description: "Please sign in to view your RFIs",
         variant: "destructive",
       });
     }
-  }, [error, navigate, toast]);
+  }, [error, setLocation, toast]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +62,7 @@ export default function RfiPage() {
           <BreadcrumbNav items={breadcrumbItems} />
 
           <div className="space-y-6 mt-4">
-            <h1 className="text-2xl font-bold">My RFIs</h1>
+            <h1 className="text-2xl font-bold">Request for Information</h1>
 
             {isLoading ? (
               <DashboardSectionSkeleton count={5} />
@@ -97,9 +98,12 @@ export default function RfiPage() {
                           {format(new Date(rfi.createdAt), "PPp")}
                         </TableCell>
                         <TableCell>
-                          <span className="capitalize px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                          <Badge 
+                            variant={rfi.status === "responded" ? "default" : "secondary"}
+                            className="capitalize"
+                          >
                             {rfi.status || "pending"}
-                          </span>
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -423,6 +423,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this new route before the registerRoutes function return statement
+  app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
+    try {
+      requireAuth(req);
+
+      const rfpId = Number(req.params.rfpId);
+      const rfiId = Number(req.params.rfiId);
+      const { status } = req.body;
+
+      // Verify the RFP belongs to the current user
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        return res.status(403).json({ message: "Unauthorized to update this RFI" });
+      }
+
+      // Update RFI status
+      const updatedRfi = await storage.updateRfiStatus(rfiId, status);
+      res.json(updatedRfi);
+    } catch (error) {
+      console.error('Error updating RFI status:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to update RFI status"
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

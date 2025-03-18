@@ -31,9 +31,9 @@ export default function RfiPage() {
     },
   ];
 
-  const { data: rfis, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
+  const { data, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
     queryKey: ["/api/rfis"],
-    onError: (err: Error) => {
+    onError: (err) => {
       toast({
         title: "Error",
         description: "Failed to load your RFIs. Please try again.",
@@ -41,6 +41,8 @@ export default function RfiPage() {
       });
     },
   });
+
+  const rfis = data || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,10 +58,10 @@ export default function RfiPage() {
             {isLoading ? (
               <DashboardSectionSkeleton count={5} />
             ) : error ? (
-              <div className="p-4 rounded-lg bg-destructive/10 text-destructive">
-                Error loading RFIs. Please try again later.
+              <div className="text-center py-8 text-destructive">
+                Failed to load RFIs. Please try again.
               </div>
-            ) : !rfis?.length ? (
+            ) : !rfis.length ? (
               <div className="text-center py-8 text-muted-foreground">
                 You haven't submitted any RFIs yet.
               </div>

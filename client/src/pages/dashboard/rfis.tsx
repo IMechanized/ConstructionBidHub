@@ -32,7 +32,7 @@ export default function RfiPage() {
   ];
 
   const { data: rfis, isLoading, error } = useQuery<(Rfi & { rfp: Rfp | null })[]>({
-    queryKey: ["/api/rfis/my"],
+    queryKey: ["/api/rfis"],
     onError: (err: Error) => {
       toast({
         title: "Error",

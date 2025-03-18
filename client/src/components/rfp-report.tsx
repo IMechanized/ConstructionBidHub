@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Rfp, Rfi } from "@shared/schema";
+import { Rfp } from "@shared/schema";
 import {
   Table,
   TableBody,
@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface RfpReportProps {
   rfps: Rfp[];
@@ -28,7 +27,6 @@ interface RfpReportProps {
 
 export default function RfpReport({ rfps }: RfpReportProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedRfp, setExpandedRfp] = useState<number | null>(null);
   const [, navigate] = useLocation();
   const itemsPerPage = 5;
   const totalPages = Math.ceil(rfps.length / itemsPerPage);
@@ -67,23 +65,13 @@ export default function RfpReport({ rfps }: RfpReportProps) {
                     ${rfp.budgetMin?.toLocaleString() || "N/A"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline"
-                        onClick={() => navigate(`/dashboard/rfi-management/${rfp.id}`)}
-                        className="whitespace-nowrap"
-                        size="sm"
-                      >
-                        Manage RFIs
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/reports/${rfp.id}`)}
-                      >
-                        View Report
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/reports/${rfp.id}`)}
+                    >
+                      View Report
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

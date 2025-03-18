@@ -6,12 +6,13 @@ import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { Button } from "@/components/ui/button";
-import { queryClient } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RfiManagementPage() {
   const [, params] = useRoute("/dashboard/rfi-management/:id");
   const rfpId = params?.id;
+  const { toast } = useToast();
 
   const breadcrumbItems = [
     {
@@ -35,16 +36,7 @@ export default function RfiManagementPage() {
 
   const updateRfiStatus = useMutation({
     mutationFn: async ({ rfiId, status }: { rfiId: number; status: string }) => {
-      const response = await fetch(`/api/rfps/${rfpId}/rfi/${rfiId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to update RFI status");
-      }
+      const response = await apiRequest("PUT", `/api/rfps/${rfpId}/rfi/${rfiId}/status`, { status });
       return response.json();
     },
     onSuccess: () => {
@@ -54,7 +46,7 @@ export default function RfiManagementPage() {
         description: "RFI status updated successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to update RFI status",
@@ -102,12 +94,12 @@ export default function RfiManagementPage() {
                           onClick={() => {
                             updateRfiStatus.mutate({
                               rfiId: rfi.id,
-                              status: rfi.status === "pending" ? "completed" : "pending",
+                              status: rfi.status === "pending" ? "responded" : "pending",
                             });
                           }}
                           disabled={updateRfiStatus.isPending}
                         >
-                          {rfi.status === "pending" ? "Mark as Complete" : "Mark as Pending"}
+                          {rfi.status === "pending" ? "Mark as Responded" : "Mark as Pending"}
                         </Button>
                       </div>
                     </div>

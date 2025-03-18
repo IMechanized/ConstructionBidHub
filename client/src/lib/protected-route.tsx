@@ -33,7 +33,7 @@ export function ProtectedRoute({
   if (!user.onboardingComplete && !path.includes("/onboarding")) {
     return (
       <Route path={path}>
-        <Redirect to={`/onboarding/${user.userType}`} />
+        <Redirect to="/onboarding" />
       </Route>
     );
   }

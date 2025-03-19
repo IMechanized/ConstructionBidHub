@@ -6,4 +6,48 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// Initialize the React app
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Register service worker
+async function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    try {
+      console.log('Service Worker: Registration starting...');
+      // Force reload of service worker in development
+      if (import.meta.env.DEV) {
+        await navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            console.log('Service Worker: Unregistering old service worker');
+            registration.unregister();
+          }
+        });
+      }
+
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        type: 'classic'
+      });
+
+      if (registration.active) {
+        console.log('Service Worker: Active', registration);
+      } else if (registration.installing) {
+        console.log('Service Worker: Installing', registration);
+      } else if (registration.waiting) {
+        console.log('Service Worker: Waiting', registration);
+      }
+
+      registration.addEventListener('statechange', (e) => {
+        console.log('Service Worker: State changed to', (e.target as ServiceWorker).state);
+      });
+
+    } catch (error) {
+      console.error('Service Worker: Registration failed', error);
+    }
+  } else {
+    console.log('Service Worker: Not supported in this browser');
+  }
+}
+
+// Start service worker registration after the app has loaded
+window.addEventListener('load', registerServiceWorker);

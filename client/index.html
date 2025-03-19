@@ -57,25 +57,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Service Worker Registration -->
-    <script>
-      console.log('Checking for service worker support...');
-      if ('serviceWorker' in navigator) {
-        console.log('Service Worker is supported');
-        window.addEventListener('load', async () => {
-          try {
-            console.log('Attempting to register service worker...');
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-              scope: '/'
-            });
-            console.log('ServiceWorker registration successful:', registration);
-          } catch (err) {
-            console.error('ServiceWorker registration failed:', err);
-          }
-        });
-      } else {
-        console.log('Service Worker is not supported');
-      }
-    </script>
   </body>
 </html>

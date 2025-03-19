@@ -25,6 +25,7 @@ import EmployeesPage from "@/pages/dashboard/employees";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
+import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 
 function Router() {
   return (
@@ -86,6 +87,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router />
+          <PwaInstallDialog />
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

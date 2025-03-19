@@ -5,11 +5,38 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export function usePwaInstall() {
+interface PwaInstallHook {
+  isInstallable: boolean;
+  install: () => Promise<void>;
+  isIOS: boolean;
+  isStandalone: boolean;
+}
+
+export function usePwaInstall(): PwaInstallHook {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
+    // Check if the device is iOS
+    const checkIOS = () => {
+      const ua = window.navigator.userAgent;
+      const iOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      setIsIOS(iOS);
+    };
+
+    // Check if app is already installed
+    const checkStandalone = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone ||
+        document.referrer.includes('android-app://');
+      setIsStandalone(isStandalone);
+    };
+
+    checkIOS();
+    checkStandalone();
+
     const handler = (e: Event) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
@@ -19,9 +46,11 @@ export function usePwaInstall() {
     };
 
     window.addEventListener('beforeinstallprompt', handler);
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
     };
   }, []);
 
@@ -33,7 +62,7 @@ export function usePwaInstall() {
 
     // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
     } else {
@@ -45,5 +74,5 @@ export function usePwaInstall() {
     setIsInstallable(false);
   };
 
-  return { isInstallable, install };
+  return { isInstallable, install, isIOS, isStandalone };
 }

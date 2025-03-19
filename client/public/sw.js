@@ -38,33 +38,43 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses
-        if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          // Return cached response
+          return cachedResponse;
         }
-        return response;
-      })
-      .catch(() => {
-        // Try to get from cache if network fails
-        return caches.match(event.request)
-          .then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
+
+        // If not in cache, fetch from network
+        return fetch(event.request)
+          .then((response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              // For navigation requests, return index.html from cache
+              if (event.request.mode === 'navigate') {
+                return caches.match('/index.html');
+              }
+              return response;
             }
+
+            // Clone the response as it can only be consumed once
+            const responseToCache = response.clone();
+
+            // Add the response to cache for future use
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          })
+          .catch((error) => {
+            console.error('Service Worker: Fetch failed:', error);
             // For navigation requests, return index.html from cache
             if (event.request.mode === 'navigate') {
               return caches.match('/index.html');
             }
-            return new Response('Network error occurred', {
-              status: 408,
-              headers: { 'Content-Type': 'text/plain' },
-            });
+            throw error;
           });
       })
   );

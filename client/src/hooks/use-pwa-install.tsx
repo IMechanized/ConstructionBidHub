@@ -5,85 +5,45 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-interface PwaInstallHook {
-  isInstallable: boolean;
-  install: () => Promise<void>;
-  isIOS: boolean;
-  isStandalone: boolean;
-}
-
-export function usePwaInstall(): PwaInstallHook {
+export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if the device is iOS
-    const checkIOS = () => {
-      const ua = window.navigator.userAgent;
-      const iOS = /iPad|iPhone|iPod/.test(ua);
-      setIsIOS(iOS);
-    };
-
-    // Check if app is already installed
-    const checkStandalone = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone ||
-        document.referrer.includes('android-app://');
-      setIsStandalone(isStandalone);
-    };
-
-    checkIOS();
-    checkStandalone();
-
     const handler = (e: Event) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Store the event for later use
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
-      console.log('PWA installation prompt event captured');
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
-
-    // Log PWA installation status
-    console.log('PWA Install Hook initialized:', {
-      isIOS,
-      isStandalone,
-      isInstallable: deferredPrompt !== null
-    });
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
-      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
     };
   }, []);
 
   const install = async () => {
-    if (!deferredPrompt) {
-      console.log('No installation prompt available');
-      return;
+    if (!deferredPrompt) return;
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
     }
 
-    try {
-      // Show the install prompt
-      console.log('Triggering install prompt');
-      await deferredPrompt.prompt();
-
-      // Wait for the user to respond to the prompt
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('Installation prompt result:', outcome);
-
-      // Clear the deferredPrompt for the next time
-      setDeferredPrompt(null);
-      setIsInstallable(false);
-    } catch (error) {
-      console.error('Error during PWA installation:', error);
-    }
+    // Clear the deferredPrompt for the next time
+    setDeferredPrompt(null);
+    setIsInstallable(false);
   };
 
-  return { isInstallable, install, isIOS, isStandalone };
+  return { isInstallable, install };
 }

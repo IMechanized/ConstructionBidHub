@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -120,9 +121,10 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           )}
           <span className="font-medium">{user?.companyName}</span>
         </div>
+        <PwaInstallButton />
         <Button
           variant="outline"
-          className="w-full justify-start"
+          className="w-full justify-start mt-2"
           onClick={() => logoutMutation.mutate()}
         >
           Logout

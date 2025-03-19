@@ -22,7 +22,7 @@ export function usePwaInstall(): PwaInstallHook {
     // Check if the device is iOS
     const checkIOS = () => {
       const ua = window.navigator.userAgent;
-      const iOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      const iOS = /iPad|iPhone|iPod/.test(ua);
       setIsIOS(iOS);
     };
 
@@ -43,10 +43,18 @@ export function usePwaInstall(): PwaInstallHook {
       // Store the event for later use
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
+      console.log('PWA installation prompt event captured');
     };
 
     window.addEventListener('beforeinstallprompt', handler);
     window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
+
+    // Log PWA installation status
+    console.log('PWA Install Hook initialized:', {
+      isIOS,
+      isStandalone,
+      isInstallable: deferredPrompt !== null
+    });
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
@@ -55,23 +63,26 @@ export function usePwaInstall(): PwaInstallHook {
   }, []);
 
   const install = async () => {
-    if (!deferredPrompt) return;
-
-    // Show the install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
+    if (!deferredPrompt) {
+      console.log('No installation prompt available');
+      return;
     }
 
-    // Clear the deferredPrompt for the next time
-    setDeferredPrompt(null);
-    setIsInstallable(false);
+    try {
+      // Show the install prompt
+      console.log('Triggering install prompt');
+      await deferredPrompt.prompt();
+
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Installation prompt result:', outcome);
+
+      // Clear the deferredPrompt for the next time
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    } catch (error) {
+      console.error('Error during PWA installation:', error);
+    }
   };
 
   return { isInstallable, install, isIOS, isStandalone };

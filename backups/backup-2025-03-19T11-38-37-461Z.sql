@@ -447,6 +447,20 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 88	backup-2025-03-19T08-04-45-276Z.sql	success	\N	2025-03-19 08:05:04.107363
 89	backup-2025-03-19T09-04-27-706Z.sql	success	\N	2025-03-19 09:04:33.814079
 90	backup-2025-03-19T09-07-56-099Z.sql	success	\N	2025-03-19 09:08:10.633571
+91	backup-2025-03-19T09-10-37-956Z.sql	success	\N	2025-03-19 09:10:42.380881
+92	backup-2025-03-19T09-19-12-465Z.sql	success	\N	2025-03-19 09:19:17.476895
+93	backup-2025-03-19T09-41-06-242Z.sql	success	\N	2025-03-19 09:41:20.761921
+94	backup-2025-03-19T10-10-52-049Z.sql	success	\N	2025-03-19 10:11:05.079692
+95	backup-2025-03-19T10-27-51-633Z.sql	success	\N	2025-03-19 10:28:15.725893
+96	backup-2025-03-19T10-51-28-735Z.sql	success	\N	2025-03-19 10:51:49.961863
+97	backup-2025-03-19T10-57-30-478Z.sql	success	\N	2025-03-19 10:57:35.547725
+98	backup-2025-03-19T11-01-56-967Z.sql	success	\N	2025-03-19 11:02:01.500211
+99	backup-2025-03-19T11-10-58-147Z.sql	success	\N	2025-03-19 11:11:13.309567
+100	backup-2025-03-19T11-14-48-097Z.sql	success	\N	2025-03-19 11:14:57.428706
+101	backup-2025-03-19T11-18-32-642Z.sql	success	\N	2025-03-19 11:18:37.275525
+102	backup-2025-03-19T11-24-52-883Z.sql	success	\N	2025-03-19 11:24:58.179705
+103	backup-2025-03-19T11-33-01-930Z.sql	success	\N	2025-03-19 11:33:07.013056
+104	backup-2025-03-19T11-35-52-669Z.sql	success	\N	2025-03-19 11:36:10.495764
 \.
 
 
@@ -855,7 +869,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 90, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 104, true);
 
 
 --

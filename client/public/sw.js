@@ -50,6 +50,10 @@ self.addEventListener('fetch', (event) => {
           .then((response) => {
             // Check if we received a valid response
             if (!response || response.status !== 200 || response.type !== 'basic') {
+              // For navigation requests, return index.html from cache
+              if (event.request.mode === 'navigate') {
+                return caches.match('/index.html');
+              }
               return response;
             }
 
@@ -66,7 +70,10 @@ self.addEventListener('fetch', (event) => {
           })
           .catch((error) => {
             console.error('Service Worker: Fetch failed:', error);
-            // You might want to return a custom offline page here
+            // For navigation requests, return index.html from cache
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
             throw error;
           });
       })

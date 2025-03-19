@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+
     <!-- Primary Meta Tags -->
     <title>FindConstructionBids - Leading Construction Bid Management Platform</title>
     <meta name="title" content="FindConstructionBids - Leading Construction Bid Management Platform">
@@ -52,5 +57,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

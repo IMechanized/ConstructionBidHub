@@ -14,7 +14,8 @@ async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
       console.log('Service Worker: Registration starting...');
-      // Force reload of service worker in development
+
+      // Only unregister service workers in development
       if (import.meta.env.DEV) {
         await navigator.serviceWorker.getRegistrations().then(function(registrations) {
           for(let registration of registrations) {
@@ -24,11 +25,22 @@ async function registerServiceWorker() {
         });
       }
 
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-        type: 'classic'
+      // Wait for the page to load
+      await new Promise(resolve => {
+        if (document.readyState === 'complete') {
+          resolve(undefined);
+        } else {
+          window.addEventListener('load', () => resolve(undefined));
+        }
       });
 
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        type: 'classic',
+        updateViaCache: 'none'
+      });
+
+      // Log registration state
       if (registration.active) {
         console.log('Service Worker: Active', registration);
       } else if (registration.installing) {
@@ -37,9 +49,20 @@ async function registerServiceWorker() {
         console.log('Service Worker: Waiting', registration);
       }
 
+      // Handle updates
       registration.addEventListener('statechange', (e) => {
         console.log('Service Worker: State changed to', (e.target as ServiceWorker).state);
       });
+
+      // Check for updates every hour
+      setInterval(async () => {
+        try {
+          await registration.update();
+          console.log('Service Worker: Checked for updates');
+        } catch (error) {
+          console.error('Service Worker: Update check failed:', error);
+        }
+      }, 60 * 60 * 1000);
 
     } catch (error) {
       console.error('Service Worker: Registration failed', error);
@@ -49,5 +72,5 @@ async function registerServiceWorker() {
   }
 }
 
-// Start service worker registration after the app has loaded
-window.addEventListener('load', registerServiceWorker);
+// Start service worker registration
+registerServiceWorker();

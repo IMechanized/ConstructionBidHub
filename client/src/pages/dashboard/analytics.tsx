@@ -130,12 +130,12 @@ export default function AnalyticsDashboard() {
                         />
                         <Bar 
                           dataKey="uniqueViews" 
-                          fill={theme === 'dark' ? "#a8a8a8" : "#82ca9d"} 
+                          fill={theme === 'dark' ? "#ffffff" : "#82ca9d"} 
                           name="Unique Views" 
                         />
                         <Bar 
                           dataKey="bids" 
-                          fill={theme === 'dark' ? "#d4d4d4" : "#ffc658"} 
+                          fill={theme === 'dark' ? "#ffffff" : "#ffc658"} 
                           name="Bids" 
                         />
                       </BarChart>

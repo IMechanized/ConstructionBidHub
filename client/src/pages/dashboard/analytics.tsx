@@ -123,9 +123,21 @@ export default function AnalyticsDashboard() {
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="views" fill="#8884d8" name="Total Views" />
-                        <Bar dataKey="uniqueViews" fill="#82ca9d" name="Unique Views" />
-                        <Bar dataKey="bids" fill="#ffc658" name="Bids" />
+                        <Bar 
+                          dataKey="views" 
+                          fill={theme === 'dark' ? "#ffffff" : "#8884d8"} 
+                          name="Total Views" 
+                        />
+                        <Bar 
+                          dataKey="uniqueViews" 
+                          fill={theme === 'dark' ? "#a8a8a8" : "#82ca9d"} 
+                          name="Unique Views" 
+                        />
+                        <Bar 
+                          dataKey="bids" 
+                          fill={theme === 'dark' ? "#d4d4d4" : "#ffc658"} 
+                          name="Bids" 
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

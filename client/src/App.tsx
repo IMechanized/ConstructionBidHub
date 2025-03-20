@@ -38,7 +38,7 @@ function Router() {
       <Route path="/terms" component={TermsPage} />
       <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
-        <ProtectedRoute path="/onboarding" component={OnboardingForm} />
+        <ProtectedRoute path="/onboarding" component={() => <OnboardingForm />} />
       </Route>
       <Route path="/dashboard">
         <ProtectedRoute path="/dashboard" component={Dashboard} />
@@ -74,7 +74,7 @@ function Router() {
         <ProtectedRoute path="/dashboard/rfi-management/:id" component={RfiManagementPage} />
       </Route>
       <Route path="/reports/:id">
-        <ProtectedRoute path="/reports/:id" component={DetailedReportPage} />
+        <ProtectedRoute path="/reports/:id" component={() => <DetailedReportPage />} />
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route component={NotFound} />

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface MobileDashboardNavProps {
   currentPath: string;
@@ -98,11 +99,12 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
         </SheetTrigger>
         <SheetContent side="bottom" className="h-[85vh]">
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-4 py-4 px-2 border-b">
+            <div className="flex items-center justify-between py-4 px-2 border-b">
               <Link href="/" className="flex items-center gap-2">
                 <Building className="h-6 w-6" />
                 <span className="font-semibold text-lg">FindConstructionBids</span>
               </Link>
+              <ThemeToggle variant="ghost" />
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4">

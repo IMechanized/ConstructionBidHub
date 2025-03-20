@@ -8,6 +8,7 @@ import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Loader2 } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 
@@ -42,6 +43,7 @@ export default function LandingPage() {
             <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Support
             </Link>
+            <ThemeToggle size="sm" />
             <Button asChild variant="outline" size="sm" className="md:text-base">
               {user ? (
                 <Link href="/dashboard">Dashboard</Link>

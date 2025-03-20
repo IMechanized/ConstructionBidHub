@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/select";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from "@/components/theme-provider";
 
 export default function ReportsPage() {
   const [location] = useLocation();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -98,7 +100,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="count" fill="var(--primary)" />
+                      <Bar dataKey="count" fill={theme === 'dark' ? "#ffffff" : "var(--primary)"} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -113,7 +115,7 @@ export default function ReportsPage() {
                       <XAxis dataKey="status" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="count" fill="var(--primary)" />
+                      <Bar dataKey="count" fill={theme === 'dark' ? "#ffffff" : "var(--primary)"} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

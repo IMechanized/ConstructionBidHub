@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from "date-fns";
+import { useTheme } from "@/components/theme-provider";
 
 export default function AnalyticsDashboard() {
   const [location] = useLocation();
   const isMobile = useIsMobile();
+  const { theme } = useTheme();
   const breadcrumbItems = [
     {
       label: "Dashboard",

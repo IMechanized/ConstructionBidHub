@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -82,11 +83,12 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   const NavigationContent = () => (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 py-4 px-2 border-b">
+      <div className="flex items-center justify-between py-4 px-2 border-b">
         <Link href="/" className="flex items-center gap-2">
           <Building className="h-6 w-6" />
           <span className="font-semibold text-lg">FindConstructionBids</span>
         </Link>
+        <ThemeToggle variant="ghost" />
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">

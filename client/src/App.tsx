@@ -26,6 +26,7 @@ import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function Router() {
   return (
@@ -84,12 +85,14 @@ function Router() {
 function App() {
   return (
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-          <PwaInstallDialog />
-        </AuthProvider>
-      </QueryClientProvider>
+      <ThemeProvider defaultTheme="system" storageKey="fcb-theme">
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router />
+            <PwaInstallDialog />
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </HelmetProvider>
   );
 }

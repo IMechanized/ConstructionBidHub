@@ -211,7 +211,7 @@ export default function SettingsForm() {
               name="companyName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Company Name</FormLabel>
+                  <FormLabel>{t('settings.companyName')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -225,14 +225,14 @@ export default function SettingsForm() {
               name="trade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Trade</FormLabel>
+                  <FormLabel>{t('settings.trade')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your trade" />
+                        <SelectValue placeholder={t('settings.selectTrade')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -253,7 +253,7 @@ export default function SettingsForm() {
               name="contact"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contact Name</FormLabel>
+                  <FormLabel>{t('settings.contactName')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -267,7 +267,7 @@ export default function SettingsForm() {
               name="telephone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telephone</FormLabel>
+                  <FormLabel>{t('settings.telephone')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="tel" />
                   </FormControl>
@@ -281,7 +281,7 @@ export default function SettingsForm() {
               name="cell"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cell Phone</FormLabel>
+                  <FormLabel>{t('settings.cellPhone')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="tel" />
                   </FormControl>
@@ -295,7 +295,7 @@ export default function SettingsForm() {
               name="businessEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Business Email</FormLabel>
+                  <FormLabel>{t('settings.businessEmail')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="email" />
                   </FormControl>
@@ -309,9 +309,9 @@ export default function SettingsForm() {
               name="certificationName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Certification Name</FormLabel>
+                  <FormLabel>{t('settings.certificationName')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g. Professional Constructor Certification" />
+                    <Input {...field} placeholder={t('settings.certificationPlaceholder')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -323,7 +323,7 @@ export default function SettingsForm() {
               name="logo"
               render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
-                  <FormLabel>Company Logo</FormLabel>
+                  <FormLabel>{t('settings.companyLogo')}</FormLabel>
                   <FormControl>
                     <div className="flex flex-col items-center gap-4">
                       <label
@@ -333,7 +333,7 @@ export default function SettingsForm() {
                         {isUploading ? (
                           <div className="flex flex-col items-center gap-2">
                             <Loader2 className="h-8 w-8 animate-spin" />
-                            <span>Uploading...</span>
+                            <span>{t('common.uploading')}</span>
                           </div>
                         ) : logoPreview ? (
                           <div className="relative">
@@ -358,7 +358,7 @@ export default function SettingsForm() {
                         ) : (
                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Upload className="h-8 w-8" />
-                            <span>Click to upload logo</span>
+                            <span>{t('settings.uploadLogo')}</span>
                           </div>
                         )}
                         <input
@@ -422,7 +422,7 @@ export default function SettingsForm() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                      Minority-Owned Business
+                      {t('settings.minorityOwned')}
                     </FormLabel>
                   </div>
                 </FormItem>
@@ -435,14 +435,14 @@ export default function SettingsForm() {
                 name="minorityGroup"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Minority Group</FormLabel>
+                    <FormLabel>{t('settings.minorityGroup')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select minority group" />
+                          <SelectValue placeholder={t('settings.selectMinorityGroup')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -467,10 +467,10 @@ export default function SettingsForm() {
               {updateSettingsMutation.isPending || isUploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isUploading ? "Uploading..." : "Saving..."}
+                  {isUploading ? t('common.uploading') : t('common.loading')}
                 </>
               ) : (
-                "Save Changes"
+                t('common.save')
               )}
             </Button>
           </form>
@@ -478,28 +478,28 @@ export default function SettingsForm() {
       </div>
 
       <div className="border-t pt-6">
-        <h2 className="text-lg font-semibold text-destructive mb-4">Danger Zone</h2>
+        <h2 className="text-lg font-semibold text-destructive mb-4">{t('settings.dangerZone')}</h2>
         <div className="space-y-4">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="w-full">
-                Deactivate Account
+                {t('settings.deactivateAccount')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogTitle>{t('settings.areYouSure')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Your account will be deactivated and you won't be able to access it until you contact support to reactivate it.
+                  {t('settings.deactivateWarning')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => deactivateAccountMutation.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Deactivate
+                  {t('settings.deactivateAccount')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -508,23 +508,23 @@ export default function SettingsForm() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="w-full">
-                Delete Account
+                {t('settings.deleteAccount')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>{t('settings.areYouAbsolutelySure')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                  {t('settings.deleteWarning')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => deleteAccountMutation.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Delete Account
+                  {t('settings.deleteAccount')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -23,6 +23,7 @@ import RfiPage from "@/pages/dashboard/rfis";
 import ReportsPage from "@/pages/dashboard/reports";
 import EmployeesPage from "@/pages/dashboard/employees";
 import SettingsPage from "@/pages/dashboard/settings";
+import LanguagePage from "@/pages/dashboard/language";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
@@ -69,6 +70,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/analytics">
         <ProtectedRoute path="/dashboard/analytics" component={AnalyticsDashboard} />
+      </Route>
+      <Route path="/dashboard/language">
+        <ProtectedRoute path="/dashboard/language" component={LanguagePage} />
       </Route>
       <Route path="/dashboard/support">
         <ProtectedRoute path="/dashboard/support" component={DashboardSupportPage} />

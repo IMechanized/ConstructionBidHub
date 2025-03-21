@@ -68,7 +68,7 @@ const settingsSchema = z.object({
   minorityGroup: z.string().optional(),
   certificationName: z.string().optional(),
   logo: z.any().optional(),
-  language: z.string().default("en"),
+  // language field removed - now handled on dedicated language page
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;

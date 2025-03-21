@@ -2,16 +2,19 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import SettingsForm from "@/components/settings-form";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { useTranslation } from "react-i18next";
 
 export default function SettingsPage() {
   const [location] = useLocation();
+  const { t } = useTranslation();
+  
   const breadcrumbItems = [
     {
-      label: "Dashboard",
+      label: t('dashboard.dashboard'),
       href: "/dashboard",
     },
     {
-      label: "Settings",
+      label: t('sidebar.settings'),
       href: "/dashboard/settings",
     },
   ];
@@ -24,7 +27,7 @@ export default function SettingsPage() {
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
-            <h1 className="text-3xl font-bold mb-8">Account Settings</h1>
+            <h1 className="text-3xl font-bold mb-8">{t('settings.organizationSettings')}</h1>
             <div className="bg-card rounded-lg border shadow-sm p-6">
               <SettingsForm />
             </div>

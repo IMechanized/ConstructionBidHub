@@ -16,6 +16,8 @@ const LANGUAGES = [
   { value: "de", label: "Deutsch" },
   { value: "zh", label: "中文" },
   { value: "ja", label: "日本語" },
+  { value: "ru", label: "Русский" },
+  { value: "ar", label: "العربية" },
 ];
 
 export default function LanguageSelector() {
@@ -52,7 +54,7 @@ export default function LanguageSelector() {
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 bg-card border shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Globe className="h-5 w-5" />
@@ -67,7 +69,7 @@ export default function LanguageSelector() {
           value={selectedLanguage}
           onValueChange={handleLanguageChange}
         >
-          <SelectTrigger className="w-full md:w-[280px]">
+          <SelectTrigger className="w-full md:w-[280px] bg-background">
             <SelectValue placeholder={t('settings.selectLanguage')} />
           </SelectTrigger>
           <SelectContent>

@@ -30,9 +30,12 @@ export default function SettingsPage() {
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-3xl font-bold mb-8">{t('settings.organizationSettings')}</h1>
             
-            {/* Dedicated Language Selector */}
-            <LanguageSelector />
+            {/* Language preferences */}
+            <div className="mb-8">
+              <LanguageSelector />
+            </div>
             
+            {/* Organization settings form */}
             <div className="bg-card rounded-lg border shadow-sm p-6">
               <SettingsForm />
             </div>

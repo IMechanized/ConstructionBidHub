@@ -28,6 +28,9 @@ import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 
+// Import i18n configuration
+import "./lib/i18n";
+
 function Router() {
   return (
     <Switch>

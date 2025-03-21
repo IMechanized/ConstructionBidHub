@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Loader2, Trash2 } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { useTranslation } from "react-i18next";
 
 const TRADE_OPTIONS = [
   "General Contractor",
@@ -76,6 +77,14 @@ export default function SettingsForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(user?.logo || null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t, i18n } = useTranslation();
+
+  // Set initial language from user preference
+  useEffect(() => {
+    if (user?.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -191,7 +200,7 @@ export default function SettingsForm() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold mb-4">Organization Settings</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('settings.organizationSettings')}</h2>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -374,14 +383,17 @@ export default function SettingsForm() {
               name="language"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Language</FormLabel>
+                  <FormLabel>{t('settings.language')}</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      i18n.changeLanguage(value);
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your language" />
+                        <SelectValue placeholder={t('settings.selectLanguage')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

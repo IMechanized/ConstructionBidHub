@@ -68,7 +68,7 @@ const settingsSchema = z.object({
   minorityGroup: z.string().optional(),
   certificationName: z.string().optional(),
   logo: z.any().optional(),
-  // language field removed - now handled on dedicated language page
+  language: z.string().default("en"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -102,6 +102,7 @@ export default function SettingsForm() {
       minorityGroup: user?.minorityGroup || "",
       certificationName: user?.certificationName || "",
       logo: user?.logo || undefined,
+      language: user?.language || "en",
     },
   });
 
@@ -230,7 +231,34 @@ export default function SettingsForm() {
               )}
             />
 
-            {/* Language field removed from here - now using the standalone language selector above the form */}
+            {/* Language Selection Field - with explicit styling */}
+            <FormField 
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem className="w-full mb-4 border-2 border-primary p-4 rounded-md">
+                  <FormLabel className="text-lg font-bold">{t('settings.language') || 'Language'}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 bg-background">
+                        <SelectValue placeholder={t('settings.selectLanguage') || 'Select Language'} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Trade Field */}
             <FormField 

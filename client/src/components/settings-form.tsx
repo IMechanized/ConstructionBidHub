@@ -43,6 +43,17 @@ const MINORITY_GROUPS = [
   "Other",
 ];
 
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Español" },
+  { value: "fr", label: "Français" },
+  { value: "de", label: "Deutsch" },
+  { value: "zh", label: "中文" },
+  { value: "ja", label: "日本語" },
+  { value: "ru", label: "Русский" },
+  { value: "ar", label: "العربية" },
+];
+
 const settingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   contact: z.string().min(1, "Contact name is required"),
@@ -54,6 +65,7 @@ const settingsSchema = z.object({
   minorityGroup: z.string().optional(),
   certificationName: z.string().optional(),
   logo: z.any().optional(),
+  language: z.string().default("en"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -78,6 +90,7 @@ export default function SettingsForm() {
       minorityGroup: user?.minorityGroup || "",
       certificationName: user?.certificationName || "",
       logo: user?.logo || undefined,
+      language: user?.language || "en",
     },
   });
 
@@ -347,7 +360,6 @@ export default function SettingsForm() {
                           className="hidden"
                           onChange={handleLogoChange}
                           disabled={isUploading}
-                          {...field}
                         />
                       </label>
                     </div>
@@ -357,6 +369,34 @@ export default function SettingsForm() {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your language" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="isMinorityOwned"

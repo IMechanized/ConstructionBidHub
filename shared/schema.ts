@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   logo: text("logo"),                         // Company logo URL
   onboardingComplete: boolean("onboarding_complete").default(false),
   status: text("status", { enum: ["active", "deactivated"] }).default("active"),
+  language: text("language").default("en"),    // User language preference
 });
 
 /**

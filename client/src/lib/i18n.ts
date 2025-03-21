@@ -231,6 +231,7 @@ const resources = {
         cancel: 'Annuler',
         loading: 'Chargement...',
         uploading: 'Téléchargement...',
+        submitting: 'Soumission...',
         appName: 'FindConstructionBids',
         error: 'Erreur'
       },
@@ -329,6 +330,7 @@ const resources = {
         cancel: 'Abbrechen',
         loading: 'Wird geladen...',
         uploading: 'Wird hochgeladen...',
+        submitting: 'Wird übermittelt...',
         appName: 'FindConstructionBids',
         error: 'Fehler'
       },
@@ -427,6 +429,7 @@ const resources = {
         cancel: 'キャンセル',
         loading: '読み込み中...',
         uploading: 'アップロード中...',
+        submitting: '送信中...',
         appName: 'FindConstructionBids',
         error: 'エラー'
       },
@@ -525,6 +528,7 @@ const resources = {
         cancel: '取消',
         loading: '加载中...',
         uploading: '上传中...',
+        submitting: '提交中...',
         appName: 'FindConstructionBids',
         error: '错误'
       },

@@ -79,6 +79,28 @@ const resources = {
         areYouAbsolutelySure: 'Are you absolutely sure?',
         deactivateWarning: 'Your account will be deactivated and you won\'t be able to access it until you contact support to reactivate it.',
         deleteWarning: 'This action cannot be undone. This will permanently delete your account and remove all your data from our servers.'
+      },
+      rfp: {
+        title: 'Title',
+        enterTitle: 'Enter RFP title',
+        description: 'Description',
+        enterDescription: 'Enter RFP description',
+        walkthroughDate: 'Walkthrough Date',
+        rfiDate: 'RFI Date',
+        deadline: 'Deadline',
+        minimumBudget: 'Minimum Budget',
+        enterMinimumBudget: 'Enter minimum budget',
+        jobLocation: 'Job Location',
+        enterJobLocation: 'Enter job location',
+        certificationGoals: 'Certification Goals (Optional)',
+        enterCertificationGoals: 'Enter any certification requirements or goals...',
+        portfolioLink: 'Portfolio Link (Optional)',
+        submitRfp: 'Submit RFP',
+        creating: 'Creating...',
+        boosting: 'Boosting...',
+        boostVisibility: 'Boost for Visibility',
+        rfpCreated: 'RFP Created',
+        rfpCreatedSuccess: 'Your RFP has been successfully created'
       }
     }
   },

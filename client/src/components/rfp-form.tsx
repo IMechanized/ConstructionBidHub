@@ -31,6 +31,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertRfpSchema } from "@shared/schema";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 interface RfpFormProps {
   onSuccess?: () => void;
@@ -39,17 +42,26 @@ interface RfpFormProps {
 
 export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+
+  // Set language from user preference
+  useEffect(() => {
+    if (user?.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
 
   // Initialize form with validation schema and default values
   const form = useForm({
     resolver: zodResolver(
       insertRfpSchema.extend({
-        title: insertRfpSchema.shape.title.min(1, "Title is required"),
-        description: insertRfpSchema.shape.description.min(1, "Description is required"),
-        jobLocation: insertRfpSchema.shape.jobLocation.min(1, "Job location is required"),
-        walkthroughDate: insertRfpSchema.shape.walkthroughDate.min(1, "Walkthrough date is required"),
-        rfiDate: insertRfpSchema.shape.rfiDate.min(1, "RFI date is required"),
-        deadline: insertRfpSchema.shape.deadline.min(1, "Deadline is required"),
+        title: insertRfpSchema.shape.title.min(1, t('validation.titleRequired')),
+        description: insertRfpSchema.shape.description.min(1, t('validation.descriptionRequired')),
+        jobLocation: insertRfpSchema.shape.jobLocation.min(1, t('validation.jobLocationRequired')),
+        walkthroughDate: insertRfpSchema.shape.walkthroughDate.min(1, t('validation.walkthroughDateRequired')),
+        rfiDate: insertRfpSchema.shape.rfiDate.min(1, t('validation.rfiDateRequired')),
+        deadline: insertRfpSchema.shape.deadline.min(1, t('validation.deadlineRequired')),
       })
     ),
     defaultValues: {
@@ -83,14 +95,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
       form.reset();
       toast({
-        title: "RFP Created",
-        description: "Your RFP has been successfully created",
+        title: t('rfp.rfpCreated'),
+        description: t('rfp.rfpCreatedSuccess'),
       });
       onSuccess?.();
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: error.message,
         variant: "destructive",
       });
@@ -115,11 +127,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>{t('rfp.title')}</FormLabel>
               <FormControl>
                 <Input 
                   data-testid="title-input"
-                  placeholder="Enter RFP title"
+                  placeholder={t('rfp.enterTitle')}
                   {...field} 
                 />
               </FormControl>
@@ -134,11 +146,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t('rfp.description')}</FormLabel>
               <FormControl>
                 <Textarea 
                   data-testid="description-input"
-                  placeholder="Enter RFP description"
+                  placeholder={t('rfp.enterDescription')}
                   {...field} 
                 />
               </FormControl>
@@ -154,7 +166,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             name="walkthroughDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Walkthrough Date</FormLabel>
+                <FormLabel>{t('rfp.walkthroughDate')}</FormLabel>
                 <FormControl>
                   <Input 
                     data-testid="walkthrough-date-input"
@@ -172,7 +184,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             name="rfiDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>RFI Date</FormLabel>
+                <FormLabel>{t('rfp.rfiDate')}</FormLabel>
                 <FormControl>
                   <Input 
                     data-testid="rfi-date-input"
@@ -192,7 +204,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="deadline"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Deadline</FormLabel>
+              <FormLabel>{t('rfp.deadline')}</FormLabel>
               <FormControl>
                 <Input 
                   data-testid="deadline-input"
@@ -211,12 +223,12 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="budgetMin"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Minimum Budget</FormLabel>
+              <FormLabel>{t('rfp.minimumBudget')}</FormLabel>
               <FormControl>
                 <Input
                   data-testid="budget-input"
                   type="number"
-                  placeholder="Enter minimum budget"
+                  placeholder={t('rfp.enterMinimumBudget')}
                   {...field}
                   onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                 />
@@ -232,11 +244,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="jobLocation"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Job Location</FormLabel>
+              <FormLabel>{t('rfp.jobLocation')}</FormLabel>
               <FormControl>
                 <Input 
                   data-testid="location-input"
-                  placeholder="Enter job location"
+                  placeholder={t('rfp.enterJobLocation')}
                   {...field}
                 />
               </FormControl>
@@ -251,11 +263,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="certificationGoals"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Certification Goals (Optional)</FormLabel>
+              <FormLabel>{t('rfp.certificationGoals')}</FormLabel>
               <FormControl>
                 <Textarea 
                   data-testid="certification-input"
-                  placeholder="Enter any certification requirements or goals..."
+                  placeholder={t('rfp.enterCertificationGoals')}
                   {...field}
                 />
               </FormControl>
@@ -270,7 +282,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           name="portfolioLink"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Portfolio Link (Optional)</FormLabel>
+              <FormLabel>{t('rfp.portfolioLink')}</FormLabel>
               <FormControl>
                 <Input 
                   data-testid="portfolio-input"
@@ -295,7 +307,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             }}
             data-testid="cancel-button"
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
@@ -306,10 +318,10 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             {createRfpMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                {t('rfp.creating')}
               </>
             ) : (
-              "Submit RFP"
+              t('rfp.submitRfp')
             )}
           </Button>
           <Button
@@ -321,10 +333,10 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             {createRfpMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Boosting...
+                {t('rfp.boosting')}
               </>
             ) : (
-              "Boost for Visibility"
+              t('rfp.boostVisibility')
             )}
           </Button>
         </div>

@@ -1,0 +1,10 @@
+/* Hide the default close button of the mobile sheet */
+.mobile-sheet > [class*="DialogClose"],
+.mobile-sheet > [data-radix-dialog-close] {
+  display: none !important;
+}
+
+/* Make the close button match the design of the theme toggle */
+.mobile-sheet .custom-close-button {
+  margin-left: 0.5rem;
+}

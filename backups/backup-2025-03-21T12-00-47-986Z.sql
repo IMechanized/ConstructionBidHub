@@ -508,6 +508,28 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 149	backup-2025-03-20T17-46-30-254Z.sql	success	\N	2025-03-20 17:46:48.928007
 150	backup-2025-03-20T18-12-25-733Z.sql	success	\N	2025-03-20 18:12:44.740786
 151	backup-2025-03-20T18-42-35-120Z.sql	success	\N	2025-03-20 18:42:44.648307
+152	backup-2025-03-20T19-13-21-765Z.sql	success	\N	2025-03-20 19:13:30.796803
+153	backup-2025-03-20T19-14-27-446Z.sql	success	\N	2025-03-20 19:14:31.214341
+154	backup-2025-03-20T19-24-16-864Z.sql	success	\N	2025-03-20 19:24:21.325923
+155	backup-2025-03-20T19-25-38-241Z.sql	success	\N	2025-03-20 19:25:42.780879
+156	backup-2025-03-20T19-29-46-085Z.sql	success	\N	2025-03-20 19:29:54.939496
+157	backup-2025-03-20T20-14-44-400Z.sql	success	\N	2025-03-20 20:14:57.327109
+158	backup-2025-03-20T20-37-18-595Z.sql	success	\N	2025-03-20 20:37:31.429544
+159	backup-2025-03-20T21-37-13-294Z.sql	success	\N	2025-03-20 21:37:27.315646
+160	backup-2025-03-20T22-07-25-446Z.sql	success	\N	2025-03-20 22:07:38.164567
+161	backup-2025-03-20T22-30-08-080Z.sql	success	\N	2025-03-20 22:30:21.651645
+162	backup-2025-03-20T23-54-41-811Z.sql	success	\N	2025-03-20 23:54:53.135364
+163	backup-2025-03-21T01-44-30-738Z.sql	success	\N	2025-03-21 01:44:40.257075
+164	backup-2025-03-21T02-14-47-138Z.sql	success	\N	2025-03-21 02:15:06.96931
+165	backup-2025-03-21T03-57-27-695Z.sql	success	\N	2025-03-21 03:57:38.51639
+166	backup-2025-03-21T04-25-17-213Z.sql	success	\N	2025-03-21 04:25:29.342757
+167	backup-2025-03-21T06-31-31-359Z.sql	success	\N	2025-03-21 06:31:40.121495
+168	backup-2025-03-21T08-14-45-668Z.sql	success	\N	2025-03-21 08:14:58.089521
+169	backup-2025-03-21T09-12-28-118Z.sql	success	\N	2025-03-21 09:12:40.141429
+170	backup-2025-03-21T10-43-13-966Z.sql	success	\N	2025-03-21 10:43:23.375
+171	backup-2025-03-21T11-03-55-873Z.sql	success	\N	2025-03-21 11:04:08.40248
+172	backup-2025-03-21T11-51-03-499Z.sql	success	\N	2025-03-21 11:51:12.332729
+173	backup-2025-03-21T11-54-54-715Z.sql	success	\N	2025-03-21 11:55:05.32362
 \.
 
 
@@ -916,7 +938,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 151, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 173, true);
 
 
 --

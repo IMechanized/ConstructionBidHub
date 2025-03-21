@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import {
   Menu,
   FileText,
@@ -14,10 +14,12 @@ import {
   Star,
   Clock,
   Layout,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import "./mobile-dashboard-styles.css";
 
 interface MobileDashboardNavProps {
   currentPath: string;
@@ -97,15 +99,21 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
             <span className="text-sm">Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh]">
+        <SheetContent side="bottom" className="h-[85vh] mobile-sheet">
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between py-4 px-2 border-b">
               <Link href="/" className="flex items-center gap-2">
                 <Building className="h-6 w-6" />
                 <span className="font-semibold text-lg">FindConstructionBids</span>
               </Link>
-              <div className="pr-8">
+              <div className="flex items-center gap-3">
                 <ThemeToggle variant="ghost" />
+                <SheetClose asChild>
+                  <Button variant="ghost" size="icon" className="w-9 h-9">
+                    <X className="h-[1.2rem] w-[1.2rem]" />
+                    <span className="sr-only">Close</span>
+                  </Button>
+                </SheetClose>
               </div>
             </div>
 

@@ -5,13 +5,11 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 
 // Available language options
 const LANGUAGES = [
@@ -77,14 +75,10 @@ export default function LanguagePage() {
     },
   });
 
-  // Handle language change
-  const handleLanguageChange = (value: string) => {
+  // Handle language change and save immediately
+  const handleLanguageSelect = (value: string) => {
     setSelectedLanguage(value);
-  };
-
-  // Handle language save
-  const handleLanguageSave = () => {
-    updateLanguageMutation.mutate(selectedLanguage);
+    updateLanguageMutation.mutate(value);
   };
 
   return (
@@ -108,42 +102,33 @@ export default function LanguagePage() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="language-select" className="text-lg">
-                      Language
-                    </Label>
-                    <Select 
-                      value={selectedLanguage} 
-                      onValueChange={handleLanguageChange}
-                    >
-                      <SelectTrigger id="language-select" className="w-full h-12 text-lg">
-                        <SelectValue placeholder="Select Language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LANGUAGES.map((lang) => (
-                          <SelectItem key={lang.value} value={lang.value}>
-                            {lang.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <h3 className="text-lg font-semibold">Click on a language to select it:</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {LANGUAGES.map((lang) => {
+                      const isActive = selectedLanguage === lang.value;
+                      return (
+                        <Button
+                          key={lang.value}
+                          variant={isActive ? "default" : "outline"}
+                          size="lg"
+                          className={`h-16 text-lg justify-between ${isActive ? 'bg-primary text-primary-foreground' : ''}`}
+                          onClick={() => handleLanguageSelect(lang.value)}
+                          disabled={updateLanguageMutation.isPending}
+                        >
+                          <span>{lang.label}</span>
+                          {isActive && <Check className="h-5 w-5 ml-2" />}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleLanguageSave}
-                  disabled={updateLanguageMutation.isPending}
-                  className="w-full h-12 text-lg"
-                >
-                  {updateLanguageMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Language Preference"
-                  )}
-                </Button>
+                {updateLanguageMutation.isPending && (
+                  <div className="flex justify-center items-center py-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2 text-lg">Saving language preference...</span>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

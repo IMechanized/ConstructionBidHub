@@ -104,7 +104,9 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
                 <Building className="h-6 w-6" />
                 <span className="font-semibold text-lg">FindConstructionBids</span>
               </Link>
-              <ThemeToggle variant="ghost" />
+              <div className="pr-8">
+                <ThemeToggle variant="ghost" />
+              </div>
             </div>
 
             <nav className="flex-1 overflow-y-auto py-4">

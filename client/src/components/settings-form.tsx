@@ -16,6 +16,7 @@ import { Upload, Loader2, Trash2 } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useTranslation } from "react-i18next";
 
+// Available options for form select fields
 const TRADE_OPTIONS = [
   "General Contractor",
   "Electrical",
@@ -55,6 +56,7 @@ const LANGUAGES = [
   { value: "ar", label: "العربية" },
 ];
 
+// Settings form validation schema
 const settingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   contact: z.string().min(1, "Contact name is required"),
@@ -86,6 +88,7 @@ export default function SettingsForm() {
     }
   }, [user?.language, i18n]);
 
+  // Initialize form with user data
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -103,6 +106,7 @@ export default function SettingsForm() {
     },
   });
 
+  // Update user settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: SettingsFormValues) => {
       const res = await apiRequest("POST", "/api/user/settings", data);
@@ -124,6 +128,7 @@ export default function SettingsForm() {
     },
   });
 
+  // Handle logo file upload
   const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -136,6 +141,7 @@ export default function SettingsForm() {
     }
   };
 
+  // Handle logo removal
   const handleRemoveLogo = () => {
     setLogoPreview(null);
     form.setValue('logo', null);
@@ -144,6 +150,7 @@ export default function SettingsForm() {
     }
   };
 
+  // Form submission handler
   const onSubmit = async (data: SettingsFormValues) => {
     try {
       let logoUrl = data.logo;
@@ -169,6 +176,7 @@ export default function SettingsForm() {
     }
   };
 
+  // Account deactivation mutation
   const deactivateAccountMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/user/deactivate", {});
@@ -183,6 +191,7 @@ export default function SettingsForm() {
     },
   });
 
+  // Account deletion mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("DELETE", "/api/user", {});
@@ -197,6 +206,7 @@ export default function SettingsForm() {
     },
   });
 
+  // Render the settings form
   return (
     <div className="space-y-6">
       <div>
@@ -206,6 +216,7 @@ export default function SettingsForm() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4"
           >
+            {/* Company Name Field */}
             <FormField
               control={form.control}
               name="companyName"
@@ -213,13 +224,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.companyName')}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Your company name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Language Selection Field */}
             <FormField 
               control={form.control}
               name="language"
@@ -248,6 +260,7 @@ export default function SettingsForm() {
               )}
             />
 
+            {/* Trade Field */}
             <FormField 
               control={form.control}
               name="trade"
@@ -276,6 +289,7 @@ export default function SettingsForm() {
               )}
             />
 
+            {/* Contact Name Field */}
             <FormField
               control={form.control}
               name="contact"
@@ -283,13 +297,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.contactName')}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Primary contact person" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Telephone Field */}
             <FormField
               control={form.control}
               name="telephone"
@@ -297,13 +312,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.telephone')}</FormLabel>
                   <FormControl>
-                    <Input {...field} type="tel" />
+                    <Input placeholder="Office telephone" type="tel" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Cell Phone Field */}
             <FormField
               control={form.control}
               name="cell"
@@ -311,13 +327,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.cellPhone')}</FormLabel>
                   <FormControl>
-                    <Input {...field} type="tel" />
+                    <Input placeholder="Mobile number" type="tel" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Business Email Field */}
             <FormField
               control={form.control}
               name="businessEmail"
@@ -325,13 +342,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.businessEmail')}</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" />
+                    <Input placeholder="company@example.com" type="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Certification Name Field */}
             <FormField
               control={form.control}
               name="certificationName"
@@ -339,13 +357,14 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.certificationName')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder={t('settings.certificationPlaceholder')} />
+                    <Input placeholder={t('settings.certificationPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Company Logo Field */}
             <FormField
               control={form.control}
               name="logo"
@@ -406,7 +425,7 @@ export default function SettingsForm() {
               )}
             />
 
-
+            {/* Minority-Owned Business Field */}
             <FormField
               control={form.control}
               name="isMinorityOwned"
@@ -427,6 +446,7 @@ export default function SettingsForm() {
               )}
             />
 
+            {/* Minority Group Field - only shows if isMinorityOwned is checked */}
             {form.watch("isMinorityOwned") && (
               <FormField
                 control={form.control}
@@ -457,6 +477,7 @@ export default function SettingsForm() {
               />
             )}
 
+            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full"
@@ -475,9 +496,11 @@ export default function SettingsForm() {
         </Form>
       </div>
 
+      {/* Danger Zone Section */}
       <div className="border-t pt-6">
         <h2 className="text-lg font-semibold text-destructive mb-4">{t('settings.dangerZone')}</h2>
         <div className="space-y-4">
+          {/* Deactivate Account Dialog */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="w-full">
@@ -503,6 +526,7 @@ export default function SettingsForm() {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* Delete Account Dialog */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="w-full">

@@ -1,13 +1,60 @@
+import { useState, useEffect } from "react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import SettingsForm from "@/components/settings-form";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
-import LanguageSelector from "@/components/language-selector";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Globe } from "lucide-react";
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Español" },
+  { value: "fr", label: "Français" },
+  { value: "de", label: "Deutsch" },
+  { value: "zh", label: "中文" },
+  { value: "ja", label: "日本語" },
+  { value: "ru", label: "Русский" },
+  { value: "ar", label: "العربية" },
+];
 
 export default function SettingsPage() {
   const [location] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || "en");
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user?.language) {
+      setSelectedLanguage(user.language);
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
+
+  const handleLanguageChange = async (value: string) => {
+    setSelectedLanguage(value);
+    i18n.changeLanguage(value);
+    
+    try {
+      await apiRequest("POST", "/api/user/settings", { language: value });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: t('settings.languageUpdated'),
+        description: t('settings.languageUpdateSuccess'),
+      });
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: t('settings.languageUpdateError'),
+        variant: "destructive",
+      });
+    }
+  };
   
   const breadcrumbItems = [
     {
@@ -30,9 +77,36 @@ export default function SettingsPage() {
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-3xl font-bold mb-8">{t('settings.organizationSettings')}</h1>
             
-            {/* Language preferences */}
+            {/* Inline Language Selector */}
             <div className="mb-8">
-              <LanguageSelector />
+              <Card className="bg-card border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    {t('settings.language')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('settings.languageDescription')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Select
+                    value={selectedLanguage}
+                    onValueChange={handleLanguageChange}
+                  >
+                    <SelectTrigger className="w-full md:w-[280px] bg-background">
+                      <SelectValue placeholder={t('settings.selectLanguage')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
             </div>
             
             {/* Organization settings form */}

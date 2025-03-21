@@ -40,52 +40,52 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   const navItems = [
     {
-      label: "My RFPs",
+      label: t('sidebar.myRfps'),
       href: "/dashboard",
       icon: FileText,
     },
     {
-      label: "Featured RFPs",
+      label: t('sidebar.featuredRfps'),
       href: "/dashboard/featured",
       icon: Star,
     },
     {
-      label: "New RFPs",
+      label: t('sidebar.newRfps'),
       href: "/dashboard/new",
       icon: Clock,
     },
     {
-      label: "All RFPs",
+      label: t('sidebar.allRfps'),
       href: "/dashboard/all",
       icon: Layout,
     },
     {
-      label: "My RFIs",
+      label: t('sidebar.myRfis'),
       href: "/dashboard/rfis",
       icon: MessageSquare,
     },
     {
-      label: "Reports",
+      label: t('sidebar.reports'),
       href: "/dashboard/reports",
       icon: FileBarChart,
     },
     {
-      label: "Analytics",
+      label: t('sidebar.analytics'),
       href: "/dashboard/analytics",
       icon: BarChart3,
     },
     {
-      label: "Employees",
+      label: t('sidebar.employees'),
       href: "/dashboard/employees",
       icon: Users,
     },
     {
-      label: "Settings",
+      label: t('sidebar.settings'),
       href: "/dashboard/settings",
       icon: Settings,
     },
     {
-      label: "Support",
+      label: t('sidebar.support'),
       href: "/dashboard/support",
       icon: HelpCircle,
     },
@@ -96,7 +96,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       <div className="flex items-center justify-between py-4 px-2 border-b">
         <Link href="/" className="flex items-center gap-2">
           <Building className="h-6 w-6" />
-          <span className="font-semibold text-lg">FindConstructionBids</span>
+          <span className="font-semibold text-lg">{t('common.appName')}</span>
         </Link>
         <ThemeToggle variant="ghost" />
       </div>
@@ -137,7 +137,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           className="w-full justify-start mt-2"
           onClick={() => logoutMutation.mutate()}
         >
-          Logout
+          {t('auth.logout')}
         </Button>
       </div>
     </div>

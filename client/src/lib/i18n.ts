@@ -10,7 +10,49 @@ const resources = {
         save: 'Save Changes',
         cancel: 'Cancel',
         loading: 'Loading...',
-        uploading: 'Uploading...'
+        uploading: 'Uploading...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: 'Login',
+        logout: 'Logout',
+        register: 'Register',
+        email: 'Email',
+        password: 'Password',
+        forgotPassword: 'Forgot password?',
+        rememberMe: 'Remember me',
+        noAccount: 'Don\'t have an account?',
+        haveAccount: 'Already have an account?',
+        createAccount: 'Create an account',
+        loginError: 'Invalid email or password'
+      },
+      dashboard: {
+        dashboard: 'Dashboard',
+        myRfps: 'My RFPs',
+        createRfp: 'Create RFP',
+        createNewRfp: 'Create New RFP',
+        searchRfps: 'Search RFPs...',
+        sortBy: 'Sort by...',
+        filterByLocation: 'Filter by location',
+        allLocations: 'All Locations',
+        sortOptions: {
+          default: 'Default',
+          priceLowHigh: 'Price: Low to High',
+          priceHighLow: 'Price: High to Low',
+          deadline: 'Deadline'
+        }
+      },
+      sidebar: {
+        myRfps: 'My RFPs',
+        featuredRfps: 'Featured RFPs',
+        newRfps: 'New RFPs',
+        allRfps: 'All RFPs',
+        myRfis: 'My RFIs',
+        reports: 'Reports',
+        analytics: 'Analytics',
+        employees: 'Employees',
+        settings: 'Settings',
+        support: 'Support'
       },
       settings: {
         organizationSettings: 'Organization Settings',
@@ -46,7 +88,49 @@ const resources = {
         save: 'Guardar Cambios',
         cancel: 'Cancelar',
         loading: 'Cargando...',
-        uploading: 'Subiendo...'
+        uploading: 'Subiendo...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: 'Iniciar Sesión',
+        logout: 'Cerrar Sesión',
+        register: 'Registrarse',
+        email: 'Correo Electrónico',
+        password: 'Contraseña',
+        forgotPassword: '¿Olvidó su contraseña?',
+        rememberMe: 'Recuérdame',
+        noAccount: '¿No tiene una cuenta?',
+        haveAccount: '¿Ya tiene una cuenta?',
+        createAccount: 'Crear una cuenta',
+        loginError: 'Correo electrónico o contraseña incorrectos'
+      },
+      dashboard: {
+        dashboard: 'Panel',
+        myRfps: 'Mis RFPs',
+        createRfp: 'Crear RFP',
+        createNewRfp: 'Crear Nuevo RFP',
+        searchRfps: 'Buscar RFPs...',
+        sortBy: 'Ordenar por...',
+        filterByLocation: 'Filtrar por ubicación',
+        allLocations: 'Todas las Ubicaciones',
+        sortOptions: {
+          default: 'Predeterminado',
+          priceLowHigh: 'Precio: Bajo a Alto',
+          priceHighLow: 'Precio: Alto a Bajo',
+          deadline: 'Fecha Límite'
+        }
+      },
+      sidebar: {
+        myRfps: 'Mis RFPs',
+        featuredRfps: 'RFPs Destacados',
+        newRfps: 'Nuevos RFPs',
+        allRfps: 'Todos los RFPs',
+        myRfis: 'Mis RFIs',
+        reports: 'Informes',
+        analytics: 'Analíticas',
+        employees: 'Empleados',
+        settings: 'Configuración',
+        support: 'Soporte'
       },
       settings: {
         organizationSettings: 'Configuración de la Organización',
@@ -82,7 +166,49 @@ const resources = {
         save: 'Enregistrer les Modifications',
         cancel: 'Annuler',
         loading: 'Chargement...',
-        uploading: 'Téléchargement...'
+        uploading: 'Téléchargement...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: 'Connexion',
+        logout: 'Déconnexion',
+        register: 'S\'inscrire',
+        email: 'Email',
+        password: 'Mot de passe',
+        forgotPassword: 'Mot de passe oublié?',
+        rememberMe: 'Se souvenir de moi',
+        noAccount: 'Vous n\'avez pas de compte?',
+        haveAccount: 'Vous avez déjà un compte?',
+        createAccount: 'Créer un compte',
+        loginError: 'Email ou mot de passe invalide'
+      },
+      dashboard: {
+        dashboard: 'Tableau de Bord',
+        myRfps: 'Mes RFPs',
+        createRfp: 'Créer RFP',
+        createNewRfp: 'Créer Nouveau RFP',
+        searchRfps: 'Rechercher RFPs...',
+        sortBy: 'Trier par...',
+        filterByLocation: 'Filtrer par lieu',
+        allLocations: 'Tous les Lieux',
+        sortOptions: {
+          default: 'Par défaut',
+          priceLowHigh: 'Prix: Bas à Élevé',
+          priceHighLow: 'Prix: Élevé à Bas',
+          deadline: 'Date Limite'
+        }
+      },
+      sidebar: {
+        myRfps: 'Mes RFPs',
+        featuredRfps: 'RFPs en Vedette',
+        newRfps: 'Nouveaux RFPs',
+        allRfps: 'Tous les RFPs',
+        myRfis: 'Mes RFIs',
+        reports: 'Rapports',
+        analytics: 'Analytiques',
+        employees: 'Employés',
+        settings: 'Paramètres',
+        support: 'Support'
       },
       settings: {
         organizationSettings: 'Paramètres de l\'Organisation',
@@ -118,7 +244,49 @@ const resources = {
         save: 'Änderungen Speichern',
         cancel: 'Abbrechen',
         loading: 'Wird geladen...',
-        uploading: 'Wird hochgeladen...'
+        uploading: 'Wird hochgeladen...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: 'Anmelden',
+        logout: 'Abmelden',
+        register: 'Registrieren',
+        email: 'E-Mail',
+        password: 'Passwort',
+        forgotPassword: 'Passwort vergessen?',
+        rememberMe: 'Angemeldet bleiben',
+        noAccount: 'Noch kein Konto?',
+        haveAccount: 'Bereits ein Konto?',
+        createAccount: 'Konto erstellen',
+        loginError: 'Ungültige E-Mail oder Passwort'
+      },
+      dashboard: {
+        dashboard: 'Dashboard',
+        myRfps: 'Meine RFPs',
+        createRfp: 'RFP erstellen',
+        createNewRfp: 'Neues RFP erstellen',
+        searchRfps: 'RFPs suchen...',
+        sortBy: 'Sortieren nach...',
+        filterByLocation: 'Nach Standort filtern',
+        allLocations: 'Alle Standorte',
+        sortOptions: {
+          default: 'Standard',
+          priceLowHigh: 'Preis: Niedrig zu Hoch',
+          priceHighLow: 'Preis: Hoch zu Niedrig',
+          deadline: 'Frist'
+        }
+      },
+      sidebar: {
+        myRfps: 'Meine RFPs',
+        featuredRfps: 'Ausgewählte RFPs',
+        newRfps: 'Neue RFPs',
+        allRfps: 'Alle RFPs',
+        myRfis: 'Meine RFIs',
+        reports: 'Berichte',
+        analytics: 'Analytik',
+        employees: 'Mitarbeiter',
+        settings: 'Einstellungen',
+        support: 'Support'
       },
       settings: {
         organizationSettings: 'Organisationseinstellungen',
@@ -154,7 +322,49 @@ const resources = {
         save: '変更を保存',
         cancel: 'キャンセル',
         loading: '読み込み中...',
-        uploading: 'アップロード中...'
+        uploading: 'アップロード中...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: 'ログイン',
+        logout: 'ログアウト',
+        register: '登録',
+        email: 'メールアドレス',
+        password: 'パスワード',
+        forgotPassword: 'パスワードをお忘れですか？',
+        rememberMe: 'ログイン情報を保存',
+        noAccount: 'アカウントをお持ちでないですか？',
+        haveAccount: 'すでにアカウントをお持ちですか？',
+        createAccount: 'アカウントを作成',
+        loginError: 'メールアドレスまたはパスワードが無効です'
+      },
+      dashboard: {
+        dashboard: 'ダッシュボード',
+        myRfps: '私のRFP',
+        createRfp: 'RFP作成',
+        createNewRfp: '新規RFP作成',
+        searchRfps: 'RFPを検索...',
+        sortBy: '並び替え...',
+        filterByLocation: '場所でフィルター',
+        allLocations: 'すべての場所',
+        sortOptions: {
+          default: 'デフォルト',
+          priceLowHigh: '価格：安い順',
+          priceHighLow: '価格：高い順',
+          deadline: '締切日'
+        }
+      },
+      sidebar: {
+        myRfps: '私のRFP',
+        featuredRfps: '注目のRFP',
+        newRfps: '新しいRFP',
+        allRfps: 'すべてのRFP',
+        myRfis: '私のRFI',
+        reports: 'レポート',
+        analytics: '分析',
+        employees: '従業員',
+        settings: '設定',
+        support: 'サポート'
       },
       settings: {
         organizationSettings: '組織設定',
@@ -190,7 +400,49 @@ const resources = {
         save: '保存更改',
         cancel: '取消',
         loading: '加载中...',
-        uploading: '上传中...'
+        uploading: '上传中...',
+        appName: 'FindConstructionBids'
+      },
+      auth: {
+        login: '登录',
+        logout: '退出登录',
+        register: '注册',
+        email: '电子邮箱',
+        password: '密码',
+        forgotPassword: '忘记密码？',
+        rememberMe: '记住我',
+        noAccount: '没有账户？',
+        haveAccount: '已有账户？',
+        createAccount: '创建账户',
+        loginError: '邮箱或密码无效'
+      },
+      dashboard: {
+        dashboard: '仪表板',
+        myRfps: '我的RFP',
+        createRfp: '创建RFP',
+        createNewRfp: '创建新RFP',
+        searchRfps: '搜索RFP...',
+        sortBy: '排序方式...',
+        filterByLocation: '按位置筛选',
+        allLocations: '所有位置',
+        sortOptions: {
+          default: '默认',
+          priceLowHigh: '价格：从低到高',
+          priceHighLow: '价格：从高到低',
+          deadline: '截止日期'
+        }
+      },
+      sidebar: {
+        myRfps: '我的RFP',
+        featuredRfps: '精选RFP',
+        newRfps: '新RFP',
+        allRfps: '所有RFP',
+        myRfis: '我的RFI',
+        reports: '报告',
+        analytics: '分析',
+        employees: '员工',
+        settings: '设置',
+        support: '支持'
       },
       settings: {
         organizationSettings: '组织设置',

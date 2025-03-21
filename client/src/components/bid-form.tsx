@@ -8,16 +8,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
-
-const rfiSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  message: z.string().min(1, "Please enter your question or message"),
-});
-
-type RfiFormData = z.infer<typeof rfiSchema>;
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 export default function RfiForm({ rfpId }: { rfpId: number }) {
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  
+  // Set language from user preference
+  useEffect(() => {
+    if (user?.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
+
+  // Schema with translated validation messages
+  const rfiSchema = z.object({
+    email: z.string().email(t('validation.validEmail')),
+    message: z.string().min(1, t('validation.messageRequired')),
+  });
+
+  type RfiFormData = z.infer<typeof rfiSchema>;
   const form = useForm<RfiFormData>({
     resolver: zodResolver(rfiSchema),
     defaultValues: {
@@ -34,13 +47,13 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
     onSuccess: () => {
       form.reset();
       toast({
-        title: "Request Sent",
-        description: "Your request for information has been submitted successfully",
+        title: t('rfi.requestSent'),
+        description: t('rfi.requestSuccessful'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: error.message,
         variant: "destructive",
       });
@@ -58,11 +71,11 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>{t('rfi.emailAddress')}</FormLabel>
               <FormControl>
                 <Input 
                   type="email" 
-                  placeholder="Enter your email address"
+                  placeholder={t('rfi.enterEmail')}
                   {...field}
                 />
               </FormControl>
@@ -76,11 +89,11 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
           name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Question/Message</FormLabel>
+              <FormLabel>{t('rfi.questionMessage')}</FormLabel>
               <FormControl>
                 <Textarea 
                   {...field} 
-                  placeholder="Enter your questions or request for additional information..." 
+                  placeholder={t('rfi.enterQuestion')} 
                 />
               </FormControl>
               <FormMessage />
@@ -93,7 +106,7 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
           className="w-full"
           disabled={submitRfiMutation.isPending}
         >
-          Submit Request
+          {submitRfiMutation.isPending ? t('common.submitting') : t('rfi.submitRequest')}
         </Button>
       </form>
     </Form>

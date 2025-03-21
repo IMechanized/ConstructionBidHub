@@ -20,7 +20,9 @@ const resources = {
         jobLocationRequired: 'Job location is required',
         walkthroughDateRequired: 'Walkthrough date is required',
         rfiDateRequired: 'RFI date is required',
-        deadlineRequired: 'Deadline is required'
+        deadlineRequired: 'Deadline is required',
+        validEmail: 'Please enter a valid email address',
+        messageRequired: 'Please enter your question or message'
       },
       auth: {
         login: 'Login',

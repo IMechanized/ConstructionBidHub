@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import SettingsForm from "@/components/settings-form";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
-import LanguageSelector from "@/components/language-selector";
 
 export default function SettingsPage() {
   const [location] = useLocation();
@@ -30,10 +29,7 @@ export default function SettingsPage() {
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-3xl font-bold mb-8">{t('settings.organizationSettings')}</h1>
             
-            {/* Use the dedicated LanguageSelector component */}
-            <LanguageSelector />
-            
-            {/* Organization settings form */}
+            {/* Organization settings form with all fields including language preference */}
             <div className="bg-card rounded-lg border shadow-sm p-6">
               <SettingsForm />
             </div>

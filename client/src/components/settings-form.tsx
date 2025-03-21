@@ -99,7 +99,6 @@ export default function SettingsForm() {
       minorityGroup: user?.minorityGroup || "",
       certificationName: user?.certificationName || "",
       logo: user?.logo || undefined,
-      // language is now managed by the LanguageSelector component
       language: user?.language || "en",
     },
   });
@@ -221,7 +220,7 @@ export default function SettingsForm() {
               )}
             />
 
-{/* Language field moved to separate LanguageSelector component */}
+{/* Language field for user interface language preference */}
 
             <FormField 
               control={form.control}
@@ -381,7 +380,33 @@ export default function SettingsForm() {
               )}
             />
 
-{/* Language field is now in the separate LanguageSelector component */}
+            <FormField 
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('settings.language')}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('settings.selectLanguage')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}

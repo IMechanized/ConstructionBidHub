@@ -11,7 +11,16 @@ const resources = {
         cancel: 'Cancel',
         loading: 'Loading...',
         uploading: 'Uploading...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: 'Error'
+      },
+      validation: {
+        titleRequired: 'Title is required',
+        descriptionRequired: 'Description is required',
+        jobLocationRequired: 'Job location is required',
+        walkthroughDateRequired: 'Walkthrough date is required',
+        rfiDateRequired: 'RFI date is required',
+        deadlineRequired: 'Deadline is required'
       },
       auth: {
         login: 'Login',
@@ -111,7 +120,16 @@ const resources = {
         cancel: 'Cancelar',
         loading: 'Cargando...',
         uploading: 'Subiendo...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: 'Error'
+      },
+      validation: {
+        titleRequired: 'El título es obligatorio',
+        descriptionRequired: 'La descripción es obligatoria',
+        jobLocationRequired: 'La ubicación del trabajo es obligatoria',
+        walkthroughDateRequired: 'La fecha de visita es obligatoria',
+        rfiDateRequired: 'La fecha de RFI es obligatoria',
+        deadlineRequired: 'La fecha límite es obligatoria'
       },
       auth: {
         login: 'Iniciar Sesión',
@@ -189,7 +207,16 @@ const resources = {
         cancel: 'Annuler',
         loading: 'Chargement...',
         uploading: 'Téléchargement...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: 'Erreur'
+      },
+      validation: {
+        titleRequired: 'Le titre est requis',
+        descriptionRequired: 'La description est requise',
+        jobLocationRequired: 'L\'emplacement du travail est requis',
+        walkthroughDateRequired: 'La date de visite est requise',
+        rfiDateRequired: 'La date de RFI est requise',
+        deadlineRequired: 'La date limite est requise'
       },
       auth: {
         login: 'Connexion',
@@ -267,7 +294,16 @@ const resources = {
         cancel: 'Abbrechen',
         loading: 'Wird geladen...',
         uploading: 'Wird hochgeladen...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: 'Fehler'
+      },
+      validation: {
+        titleRequired: 'Titel ist erforderlich',
+        descriptionRequired: 'Beschreibung ist erforderlich',
+        jobLocationRequired: 'Arbeitsort ist erforderlich',
+        walkthroughDateRequired: 'Begehungsdatum ist erforderlich',
+        rfiDateRequired: 'RFI-Datum ist erforderlich',
+        deadlineRequired: 'Frist ist erforderlich'
       },
       auth: {
         login: 'Anmelden',
@@ -345,7 +381,16 @@ const resources = {
         cancel: 'キャンセル',
         loading: '読み込み中...',
         uploading: 'アップロード中...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: 'エラー'
+      },
+      validation: {
+        titleRequired: 'タイトルは必須です',
+        descriptionRequired: '説明は必須です',
+        jobLocationRequired: '作業場所は必須です',
+        walkthroughDateRequired: '現場視察日は必須です',
+        rfiDateRequired: 'RFI日付は必須です',
+        deadlineRequired: '締切日は必須です'
       },
       auth: {
         login: 'ログイン',
@@ -423,7 +468,16 @@ const resources = {
         cancel: '取消',
         loading: '加载中...',
         uploading: '上传中...',
-        appName: 'FindConstructionBids'
+        appName: 'FindConstructionBids',
+        error: '错误'
+      },
+      validation: {
+        titleRequired: '标题是必填项',
+        descriptionRequired: '描述是必填项',
+        jobLocationRequired: '工作地点是必填项',
+        walkthroughDateRequired: '现场查看日期是必填项',
+        rfiDateRequired: 'RFI日期是必填项',
+        deadlineRequired: '截止日期是必填项'
       },
       auth: {
         login: '登录',

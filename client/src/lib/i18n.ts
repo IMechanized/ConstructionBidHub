@@ -132,6 +132,7 @@ const resources = {
         cancel: 'Cancelar',
         loading: 'Cargando...',
         uploading: 'Subiendo...',
+        submitting: 'Enviando...',
         appName: 'FindConstructionBids',
         error: 'Error'
       },
@@ -337,7 +338,9 @@ const resources = {
         jobLocationRequired: 'Arbeitsort ist erforderlich',
         walkthroughDateRequired: 'Begehungsdatum ist erforderlich',
         rfiDateRequired: 'RFI-Datum ist erforderlich',
-        deadlineRequired: 'Frist ist erforderlich'
+        deadlineRequired: 'Frist ist erforderlich',
+        validEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+        messageRequired: 'Bitte geben Sie Ihre Frage oder Nachricht ein'
       },
       auth: {
         login: 'Anmelden',
@@ -405,6 +408,15 @@ const resources = {
         areYouAbsolutelySure: 'Sind Sie absolut sicher?',
         deactivateWarning: 'Ihr Konto wird deaktiviert und Sie können nicht darauf zugreifen, bis Sie den Support kontaktieren, um es zu reaktivieren.',
         deleteWarning: 'Diese Aktion kann nicht rückgängig gemacht werden. Sie löscht Ihr Konto dauerhaft und entfernt alle Ihre Daten von unseren Servern.'
+      },
+      rfi: {
+        emailAddress: 'E-Mail-Adresse',
+        enterEmail: 'Geben Sie Ihre E-Mail-Adresse ein',
+        questionMessage: 'Frage/Nachricht',
+        enterQuestion: 'Geben Sie Ihre Fragen oder Anfrage für zusätzliche Informationen ein...',
+        submitRequest: 'Anfrage einreichen',
+        requestSent: 'Anfrage gesendet',
+        requestSuccessful: 'Ihre Informationsanfrage wurde erfolgreich eingereicht'
       }
     }
   },
@@ -424,7 +436,9 @@ const resources = {
         jobLocationRequired: '作業場所は必須です',
         walkthroughDateRequired: '現場視察日は必須です',
         rfiDateRequired: 'RFI日付は必須です',
-        deadlineRequired: '締切日は必須です'
+        deadlineRequired: '締切日は必須です',
+        validEmail: '有効なメールアドレスを入力してください',
+        messageRequired: '質問またはメッセージを入力してください'
       },
       auth: {
         login: 'ログイン',
@@ -492,6 +506,15 @@ const resources = {
         areYouAbsolutelySure: '絶対に確信していますか？',
         deactivateWarning: 'アカウントは無効化され、サポートに連絡して再有効化するまでアクセスできなくなります。',
         deleteWarning: 'この操作は元に戻せません。アカウントが完全に削除され、すべてのデータが当社のサーバーから削除されます。'
+      },
+      rfi: {
+        emailAddress: 'メールアドレス',
+        enterEmail: 'メールアドレスを入力してください',
+        questionMessage: '質問・メッセージ',
+        enterQuestion: '質問や追加情報のリクエストを入力してください...',
+        submitRequest: 'リクエストを送信',
+        requestSent: 'リクエスト送信済み',
+        requestSuccessful: '情報リクエストが正常に送信されました'
       }
     }
   },
@@ -511,7 +534,9 @@ const resources = {
         jobLocationRequired: '工作地点是必填项',
         walkthroughDateRequired: '现场查看日期是必填项',
         rfiDateRequired: 'RFI日期是必填项',
-        deadlineRequired: '截止日期是必填项'
+        deadlineRequired: '截止日期是必填项',
+        validEmail: '请输入有效的电子邮箱地址',
+        messageRequired: '请输入您的问题或消息'
       },
       auth: {
         login: '登录',
@@ -579,6 +604,15 @@ const resources = {
         areYouAbsolutelySure: '您绝对确定吗？',
         deactivateWarning: '您的账户将被停用，您将无法访问它，直到您联系支持以重新激活它。',
         deleteWarning: '此操作无法撤销。这将永久删除您的账户并从我们的服务器上删除所有数据。'
+      },
+      rfi: {
+        emailAddress: '电子邮箱地址',
+        enterEmail: '请输入您的电子邮箱地址',
+        questionMessage: '问题/信息',
+        enterQuestion: '请输入您的问题或需要的其他信息...',
+        submitRequest: '提交请求',
+        requestSent: '请求已发送',
+        requestSuccessful: '您的信息请求已成功提交'
       }
     }
   }

@@ -231,20 +231,20 @@ export default function SettingsForm() {
               )}
             />
 
-            {/* Language Selection Field */}
+            {/* Language Selection Field - with explicit styling */}
             <FormField 
               control={form.control}
               name="language"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('settings.language')}</FormLabel>
+                <FormItem className="w-full mb-4 border-2 border-primary p-4 rounded-md">
+                  <FormLabel className="text-lg font-bold">{t('settings.language') || 'Language'}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('settings.selectLanguage')} />
+                      <SelectTrigger className="h-10 bg-background">
+                        <SelectValue placeholder={t('settings.selectLanguage') || 'Select Language'} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

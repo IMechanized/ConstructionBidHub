@@ -12,7 +12,8 @@ const resources = {
         loading: 'Loading...',
         uploading: 'Uploading...',
         appName: 'FindConstructionBids',
-        error: 'Error'
+        error: 'Error',
+        submitting: 'Submitting...'
       },
       validation: {
         titleRequired: 'Title is required',
@@ -112,6 +113,15 @@ const resources = {
         boostVisibility: 'Boost for Visibility',
         rfpCreated: 'RFP Created',
         rfpCreatedSuccess: 'Your RFP has been successfully created'
+      },
+      rfi: {
+        emailAddress: 'Email Address',
+        enterEmail: 'Enter your email address',
+        questionMessage: 'Question/Message',
+        enterQuestion: 'Enter your questions or request for additional information...',
+        submitRequest: 'Submit Request',
+        requestSent: 'Request Sent',
+        requestSuccessful: 'Your request for information has been submitted successfully'
       }
     }
   },
@@ -131,7 +141,9 @@ const resources = {
         jobLocationRequired: 'La ubicación del trabajo es obligatoria',
         walkthroughDateRequired: 'La fecha de visita es obligatoria',
         rfiDateRequired: 'La fecha de RFI es obligatoria',
-        deadlineRequired: 'La fecha límite es obligatoria'
+        deadlineRequired: 'La fecha límite es obligatoria',
+        validEmail: 'Por favor, introduzca una dirección de correo electrónico válida',
+        messageRequired: 'Por favor, introduzca su pregunta o mensaje'
       },
       auth: {
         login: 'Iniciar Sesión',
@@ -199,6 +211,15 @@ const resources = {
         areYouAbsolutelySure: '¿Está absolutamente seguro?',
         deactivateWarning: 'Su cuenta será desactivada y no podrá acceder a ella hasta que contacte con soporte para reactivarla.',
         deleteWarning: 'Esta acción no se puede deshacer. Eliminará permanentemente su cuenta y eliminará todos sus datos de nuestros servidores.'
+      },
+      rfi: {
+        emailAddress: 'Dirección de Correo Electrónico',
+        enterEmail: 'Introduzca su dirección de correo electrónico',
+        questionMessage: 'Pregunta/Mensaje',
+        enterQuestion: 'Introduzca sus preguntas o solicitud de información adicional...',
+        submitRequest: 'Enviar Solicitud',
+        requestSent: 'Solicitud Enviada',
+        requestSuccessful: 'Su solicitud de información ha sido enviada con éxito'
       }
     }
   },
@@ -218,7 +239,9 @@ const resources = {
         jobLocationRequired: 'L\'emplacement du travail est requis',
         walkthroughDateRequired: 'La date de visite est requise',
         rfiDateRequired: 'La date de RFI est requise',
-        deadlineRequired: 'La date limite est requise'
+        deadlineRequired: 'La date limite est requise',
+        validEmail: 'Veuillez entrer une adresse e-mail valide',
+        messageRequired: 'Veuillez entrer votre question ou message'
       },
       auth: {
         login: 'Connexion',
@@ -286,6 +309,15 @@ const resources = {
         areYouAbsolutelySure: 'Êtes-vous absolument sûr?',
         deactivateWarning: 'Votre compte sera désactivé et vous ne pourrez pas y accéder jusqu\'à ce que vous contactiez le support pour le réactiver.',
         deleteWarning: 'Cette action ne peut pas être annulée. Elle supprimera définitivement votre compte et toutes vos données de nos serveurs.'
+      },
+      rfi: {
+        emailAddress: 'Adresse Email',
+        enterEmail: 'Entrez votre adresse email',
+        questionMessage: 'Question/Message',
+        enterQuestion: 'Entrez vos questions ou demande d\'informations supplémentaires...',
+        submitRequest: 'Soumettre la Demande',
+        requestSent: 'Demande Envoyée',
+        requestSuccessful: 'Votre demande d\'information a été soumise avec succès'
       }
     }
   },

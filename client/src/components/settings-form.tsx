@@ -102,7 +102,6 @@ export default function SettingsForm() {
       minorityGroup: user?.minorityGroup || "",
       certificationName: user?.certificationName || "",
       logo: user?.logo || undefined,
-      language: user?.language || "en",
     },
   });
 

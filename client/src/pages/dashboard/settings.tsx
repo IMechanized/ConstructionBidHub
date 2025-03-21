@@ -1,15 +1,9 @@
-import { useState, useEffect } from "react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import SettingsForm from "@/components/settings-form";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { Globe } from "lucide-react";
+import LanguageSelector from "@/components/language-selector";
 
 const LANGUAGES = [
   { value: "en", label: "English" },

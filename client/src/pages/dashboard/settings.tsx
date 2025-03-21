@@ -77,36 +77,35 @@ export default function SettingsPage() {
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-3xl font-bold mb-8">{t('settings.organizationSettings')}</h1>
             
-            {/* Inline Language Selector */}
-            <div className="mb-8">
-              <Card className="bg-card border shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Globe className="h-5 w-5" />
-                    {t('settings.language')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('settings.languageDescription')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Select
-                    value={selectedLanguage}
-                    onValueChange={handleLanguageChange}
-                  >
-                    <SelectTrigger className="w-full md:w-[280px] bg-background">
-                      <SelectValue placeholder={t('settings.selectLanguage')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGES.map((lang) => (
-                        <SelectItem key={lang.value} value={lang.value}>
-                          {lang.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
+            {/* TEST ELEMENT - Should always be visible */}
+            <div className="p-6 bg-destructive text-destructive-foreground mb-8 text-center text-xl font-bold">
+              Language selector should appear here
+            </div>
+            
+            {/* Simplified Language Selector */}
+            <div className="mb-8 p-6 bg-card border shadow-sm rounded-lg">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                {t('settings.language')}
+              </h2>
+              <p className="mb-4 text-muted-foreground">
+                {t('settings.languageDescription')}
+              </p>
+              <Select
+                value={selectedLanguage}
+                onValueChange={handleLanguageChange}
+              >
+                <SelectTrigger className="w-full md:w-[280px] bg-background">
+                  <SelectValue placeholder={t('settings.selectLanguage')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Organization settings form */}

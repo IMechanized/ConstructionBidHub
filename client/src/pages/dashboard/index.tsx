@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,6 +15,7 @@ import { RfpCard } from "@/components/rfp-card";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { useTranslation } from "react-i18next";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [location] = useLocation();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
@@ -29,9 +31,16 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
+  // Set language from user preference
+  useEffect(() => {
+    if (user?.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
+
   const breadcrumbItems = [
     {
-      label: "Dashboard",
+      label: t('dashboard.dashboard'),
       href: "/dashboard",
     },
   ];
@@ -101,16 +110,16 @@ export default function Dashboard() {
 
             <div className="space-y-6 mt-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold">My RFPs</h2>
+                <h2 className="text-2xl font-bold">{t('dashboard.myRfps')}</h2>
                 <Button onClick={() => setIsCreateModalOpen(true)}>
-                  Create RFP
+                  {t('dashboard.createRfp')}
                 </Button>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Input
-                    placeholder="Search RFPs..."
+                    placeholder={t('dashboard.searchRfps')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full"
@@ -120,13 +129,13 @@ export default function Dashboard() {
                 <div className="flex flex-row sm:flex-col md:flex-row gap-2">
                   <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
                     <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Sort by..." />
+                      <SelectValue placeholder={t('dashboard.sortBy')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Default</SelectItem>
-                      <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                      <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                      <SelectItem value="deadline">Deadline</SelectItem>
+                      <SelectItem value="none">{t('dashboard.sortOptions.default')}</SelectItem>
+                      <SelectItem value="priceAsc">{t('dashboard.sortOptions.priceLowHigh')}</SelectItem>
+                      <SelectItem value="priceDesc">{t('dashboard.sortOptions.priceHighLow')}</SelectItem>
+                      <SelectItem value="deadline">{t('dashboard.sortOptions.deadline')}</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -135,10 +144,10 @@ export default function Dashboard() {
                     onValueChange={setLocationFilter}
                   >
                     <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Filter by location" />
+                      <SelectValue placeholder={t('dashboard.filterByLocation')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Locations</SelectItem>
+                      <SelectItem value="all">{t('dashboard.allLocations')}</SelectItem>
                       {locations.map((location) => (
                         <SelectItem key={location} value={location}>
                           {location}
@@ -202,7 +211,7 @@ export default function Dashboard() {
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto">
           <DialogHeader>
-            <DialogTitle>Create New RFP</DialogTitle>
+            <DialogTitle>{t('dashboard.createNewRfp')}</DialogTitle>
           </DialogHeader>
           <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
         </DialogContent>

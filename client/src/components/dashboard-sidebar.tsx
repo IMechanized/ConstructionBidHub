@@ -19,6 +19,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -27,6 +29,14 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const { user, logoutMutation } = useAuth();
   const isMobile = useIsMobile();
+  const { t, i18n } = useTranslation();
+  
+  // Set language from user preference
+  useEffect(() => {
+    if (user?.language) {
+      i18n.changeLanguage(user.language);
+    }
+  }, [user?.language, i18n]);
 
   const navItems = [
     {

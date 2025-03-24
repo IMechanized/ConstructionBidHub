@@ -563,6 +563,17 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 203	backup-2025-03-21T18-57-25-402Z.sql	success	\N	2025-03-21 18:57:31.378322
 204	backup-2025-03-21T18-58-53-655Z.sql	success	\N	2025-03-21 18:59:00.191474
 205	backup-2025-03-21T19-03-25-266Z.sql	success	\N	2025-03-21 19:03:32.748239
+206	backup-2025-03-21T19-05-04-527Z.sql	success	\N	2025-03-21 19:05:11.476417
+207	backup-2025-03-21T19-08-54-744Z.sql	success	\N	2025-03-21 19:09:03.971241
+208	backup-2025-03-21T19-15-24-198Z.sql	success	\N	2025-03-21 19:15:29.407646
+209	backup-2025-03-21T19-20-36-969Z.sql	success	\N	2025-03-21 19:20:45.446294
+210	backup-2025-03-21T19-23-48-208Z.sql	success	\N	2025-03-21 19:23:57.10366
+211	backup-2025-03-21T19-27-13-665Z.sql	success	\N	2025-03-21 19:27:18.014492
+212	backup-2025-03-21T19-31-51-308Z.sql	success	\N	2025-03-21 19:32:00.095984
+213	backup-2025-03-21T19-41-07-985Z.sql	success	\N	2025-03-21 19:41:12.869277
+214	backup-2025-03-21T19-44-35-036Z.sql	success	\N	2025-03-21 19:44:43.515211
+215	backup-2025-03-21T19-45-11-181Z.sql	success	\N	2025-03-21 19:45:14.763985
+216	backup-2025-03-21T19-48-34-731Z.sql	success	\N	2025-03-21 19:48:38.646833
 \.
 
 
@@ -921,6 +932,7 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 --
 
 COPY public.users (id, email, password, company_name, contact, telephone, cell, business_email, is_minority_owned, minority_group, trade, certification_name, logo, onboarding_complete, status, language) FROM stdin;
+1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	HVAC	d3	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	es
 2	sandy@mail.com	a08ebc7bc6f2ff994f611f230aef49501493fd810df880add2b90f6714bf2ac23311067f4b50d9f6179601fd930103539bfa26c2202ff7a1c392e39076d05811.765e4c508f4ec4e02c7ef7211ae1a532	Sandy	Sandy	0702466523	0115704062	sandy@mail.com	f		Concrete	Concrete and contruction	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740568651/construction-bids/prg9ustde7vn2ulyqsds.png	t	active	en
 3	Adolph30@hotmail.com	fcd466ecf4f1e8caa9d36229f620f288b982010ccea5875a73d5a6fd3543d6ffde09c37880a2ef5a5c3046268212f4a12bf0c49028714bc57cf51ebf2bfe3bc1.70c752c53c9b2741980d0f698ed7a5e8	Nicolas, Graham and Rempel	Dr. Luke Bode III	(848) 692-6498 x7589	(890) 708-8218 x833	Claire.Kohler57@gmail.com	t	Hispanic	Painting	Energy Star Partner	\N	t	active	en
 4	Joana_Jaskolski73@yahoo.com	bdc500e5ebffb6db8851ca5c230d6a021cad3be6384716483f4ea27ca37f07c4ac1ed28b3728dfa82d715cf417dfcdc02e040e7e4b7dc87276970cc96fe02b80.f5f5a23ce9f4d3995c5ae8ede23d5526	Nikolaus - Rutherford	Danny Stokes	372.447.7504	(927) 923-7279 x43228	Mozelle.Harris35@yahoo.com	t	Hispanic	Roofing	EPA Lead-Safe	\N	t	active	en
@@ -940,7 +952,6 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 18	Erik88@yahoo.com	4ca696351fe5923db6e08dace8d8f0d3cc4e9929d2f1a9ad8e3cdfff806e72bace110a1ff4b0e89298f737ada500bf9ec2f7c0780b248634cc7d17a97d136793.fe7e726c47275257884339c1ef00edd6	Reinger - Tillman	Viola Krajcik	413-603-5288 x1057	737-997-4200 x27090	Carley19@yahoo.com	f	\N	Carpentry	Master Electrician	\N	t	active	en
 19	Kaylah_Wisoky23@yahoo.com	2f2ed91d10bde653345f1dc3d9243c6be557c9ed3e9b1afa078b23f54a93334923f73fc0787d5db6908189575ad4dffaab912474485b752f173f6b4a0ebfc6e8.27afecacf716dc30ed7e2d26a4efb18e	Gutmann, Hills and Bartoletti	Lucy Nikolaus	395.608.7865 x48206	1-534-705-0568 x3305	Lennie.Reilly@gmail.com	f	\N	Carpentry	\N	\N	t	active	en
 20	Reina3@yahoo.com	569b3315cd451d4ae3fe6b6052b586037f0ac22780fd5d70c94afd9a522b0f9464d0cb582c25a31970d0799b2329a2449392a036d9c066c5015d073b42679eea.903f74da91c09a0935bd1d4f9cf63824	Casper Group	Gertrude Fadel	(521) 929-2987 x79002	(354) 208-7381 x519	Gilda_Boyer@gmail.com	f	Black	Plumbing	Master Plumber	\N	t	active	en
-1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	Plumbing	d3	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	es
 21	Wilford21@gmail.com	64a040e0d8bfd08505e0ee0671a7d178135d69d34291207cfb0823b40cb73bd06cc9a460d3f31cee95e6607af3534fcead63f2ed8aaf829b1501cf043bbf2125.2cb90a625afad970f72c615fe8341c1d	Ullrich Inc	Oscar Olson	906.481.4627 x4985	1-757-895-8708 x891	Gage39@hotmail.com	f	\N	HVAC	Master Electrician	\N	t	active	en
 22	Rodrigo_Daugherty43@yahoo.com	2d20af6993c15dffa3b86ef1f9c12a2badeba4471b54e25e0c039d48e9b41ba068eb21a3ebbc2780af9fbf50e2e82264eb819222ace86a3c6c495dab93a2c2ed.c21a6d456fed155dc7c3f697c2fcf061	Bergstrom LLC	Kim Erdman	812.239.0272 x86701	474.424.8177 x517	Hillary98@hotmail.com	f	Black	Masonry	LEED Certified	\N	t	active	en
 23	Elisha1@gmail.com	169d627ea8df9ea442abcce27179a570bb37f7164dbdaea3f74407683ebb36282a2045346a6856f84c0ce7d8a915142ca32c52d465f503294b2cf5b5be2c8040.f31c320c6b6929c9620dc8a16f9b5aaf	Cummings LLC	Maria Gibson	252.220.7534 x46509	545-600-2475 x24472	Mariah29@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en
@@ -971,7 +982,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 205, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 216, true);
 
 
 --

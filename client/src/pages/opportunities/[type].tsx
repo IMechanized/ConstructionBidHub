@@ -5,9 +5,11 @@ import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, ArrowUpDown } from "lucide-react";
+import { Loader2, Search, ArrowUpDown, WifiOff } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { Link } from "wouter";
+import { useOffline, handleOfflineFetch } from "@/hooks/use-offline";
+import { OfflineBanner, OfflineIndicator } from "@/components/offline-status";
 import {
   Select,
   SelectContent,
@@ -26,9 +28,12 @@ export default function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
   const [locationFilter, setLocationFilter] = useState("all"); // Changed from empty string to "all"
-
-  const { data: rfps, isLoading } = useQuery<Rfp[]>({
+  const { isOffline } = useOffline();
+  
+  const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
+    staleTime: isOffline ? Infinity : 300000, // 5 minutes (use cached data indefinitely when offline)
+    retry: isOffline ? false : 3, // Don't retry when offline
   });
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
@@ -90,7 +95,11 @@ export default function OpportunitiesPage() {
           <h1 className="text-3xl font-bold">
             {type === "featured" ? "Featured Opportunities" : "New Opportunities"}
           </h1>
+          <OfflineIndicator />
         </div>
+        
+        {/* Display the offline banner when offline */}
+        <OfflineBanner />
 
         <div className="mb-8 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -142,6 +151,25 @@ export default function OpportunitiesPage() {
           <div className="flex justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center p-8 space-y-4 border rounded-lg bg-background">
+            {isOffline ? (
+              <>
+                <WifiOff className="h-12 w-12 text-muted-foreground" />
+                <h3 className="text-lg font-medium">Limited data available offline</h3>
+                <p className="text-center text-muted-foreground max-w-md">
+                  You're viewing cached data while offline. Some content may be unavailable until you reconnect.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-muted-foreground">
+                  Unable to load opportunities. Please try again later.
+                </p>
+                <Button onClick={() => window.location.reload()}>Retry</Button>
+              </>
+            )}
+          </div>
         ) : displayedRfps.length > 0 ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,7 +198,7 @@ export default function OpportunitiesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === totalPages || isOffline} // Disable in offline mode
                 >
                   Next
                 </Button>
@@ -179,7 +207,10 @@ export default function OpportunitiesPage() {
           </>
         ) : (
           <p className="text-center text-muted-foreground">
-            No opportunities found matching your criteria.
+            {isOffline 
+              ? "Limited data available while offline. Some opportunities may not be displayed."
+              : "No opportunities found matching your criteria."
+            }
           </p>
         )}
       </main>

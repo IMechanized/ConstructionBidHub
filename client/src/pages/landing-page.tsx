@@ -9,6 +9,7 @@ import { RfpCard } from "@/components/rfp-card";
 import { Loader2 } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { OfflineIndicator } from "@/components/offline-status";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 

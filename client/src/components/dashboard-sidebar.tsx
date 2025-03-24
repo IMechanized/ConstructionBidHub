@@ -21,6 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
+import { OfflineIndicator } from "@/components/offline-status";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -98,7 +99,10 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <Building className="h-6 w-6" />
           <span className="font-semibold text-lg">{t('common.appName')}</span>
         </Link>
-        <ThemeToggle variant="ghost" />
+        <div className="flex items-center gap-2">
+          <OfflineIndicator />
+          <ThemeToggle variant="ghost" />
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">

@@ -90,21 +90,9 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
-      // Set a default callback for offline errors
-      onError: (error) => {
-        if (error instanceof OfflineError) {
-          console.warn('Query failed because device is offline');
-        }
-      },
     },
     mutations: {
       retry: false,
-      // Set a default callback for offline errors
-      onError: (error) => {
-        if (error instanceof OfflineError) {
-          console.warn('Mutation failed because device is offline');
-        }
-      },
     },
   },
 });

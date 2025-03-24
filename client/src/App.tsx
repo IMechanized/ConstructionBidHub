@@ -27,6 +27,7 @@ import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
+import { OfflineStatus } from "@/components/offline-status";
 
 // Import i18n configuration
 import "./lib/i18n";
@@ -92,6 +93,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Router />
+            <OfflineStatus />
             <PwaInstallDialog />
           </AuthProvider>
         </QueryClientProvider>

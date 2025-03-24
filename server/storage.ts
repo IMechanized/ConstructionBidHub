@@ -136,6 +136,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getBoostedAnalytics(userId: number): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
     const today = new Date().toISOString().split('T')[0];
+    console.log(`getBoostedAnalytics: Getting analytics for user ID ${userId} for date ${today}`);
 
     // Get only the featured RFPs created by this user
     const featuredRfps = await db
@@ -147,6 +148,13 @@ export class DatabaseStorage implements IStorage {
           eq(rfps.organizationId, userId)
         )
       );
+    
+    console.log(`getBoostedAnalytics: Found ${featuredRfps.length} featured RFPs for this user`);
+    
+    // Log detailed RFP info
+    featuredRfps.forEach(rfp => {
+      console.log(`RFP ID: ${rfp.id}, Title: ${rfp.title}, OrganizationId: ${rfp.organizationId}`);
+    });
 
     // For each featured RFP, get or create an analytics record
     const analyticsPromises = featuredRfps.map(async (rfp) => {
@@ -160,6 +168,8 @@ export class DatabaseStorage implements IStorage {
             eq(rfpAnalytics.date, today)
           )
         );
+
+      console.log(`Processing RFP ${rfp.id}: ${existingAnalytics ? 'Analytics exist' : 'Creating new analytics'}`);
 
       if (existingAnalytics) {
         // Return existing analytics with RFP data
@@ -179,13 +189,18 @@ export class DatabaseStorage implements IStorage {
           })
           .returning();
         
+        console.log(`Created new analytics for RFP ${rfp.id}`);
+        
         // Return new analytics with RFP data
         return { ...newAnalytics, rfp };
       }
     });
 
     // Wait for all analytics records to be fetched or created
-    return Promise.all(analyticsPromises);
+    const results = await Promise.all(analyticsPromises);
+    console.log(`getBoostedAnalytics: Returning ${results.length} analytics records`);
+    
+    return results;
   }
 
   /**

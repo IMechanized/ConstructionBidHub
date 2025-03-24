@@ -281,8 +281,20 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
       const user = req.user!;
+      console.log('Fetching analytics for user:', user.id, user.email, user.companyName);
+      
       const analytics = await storage.getBoostedAnalytics(user.id);
-      res.json(analytics);
+      console.log(`Found ${analytics.length} analytics records for user ${user.id}`);
+      
+      // Additional check to ensure we only return RFPs owned by the user
+      const filteredAnalytics = analytics.filter(item => item.rfp.organizationId === user.id);
+      console.log(`After filtering, ${filteredAnalytics.length} records remain`);
+      
+      if (filteredAnalytics.length !== analytics.length) {
+        console.warn(`WARNING: Filtered out ${analytics.length - filteredAnalytics.length} records not owned by user ${user.id}`);
+      }
+      
+      res.json(filteredAnalytics);
     } catch (error) {
       console.error('Error fetching boosted analytics:', error);
       res.status(500).json({ message: "Failed to fetch analytics" });

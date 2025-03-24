@@ -280,7 +280,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/analytics/boosted", async (req, res) => {
     try {
       requireAuth(req);
-      const analytics = await storage.getBoostedAnalytics();
+      const user = req.user!;
+      const analytics = await storage.getBoostedAnalytics(user.id);
       res.json(analytics);
     } catch (error) {
       console.error('Error fetching boosted analytics:', error);
@@ -446,6 +447,11 @@ export function registerRoutes(app: Express): Server {
       const rfpId = Number(req.params.rfpId);
       const rfiId = Number(req.params.rfiId);
       const { status } = req.body;
+      
+      // Validate status is one of the allowed values
+      if (status !== "pending" && status !== "responded") {
+        return res.status(400).json({ message: "Invalid status value. Must be 'pending' or 'responded'" });
+      }
 
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(rfpId);

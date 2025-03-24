@@ -44,7 +44,7 @@ export interface IStorage {
   sessionStore: Store;
 
   // Analytics Operations
-  getBoostedAnalytics(): Promise<(RfpAnalytics & { rfp: Rfp })[]>;
+  getBoostedAnalytics(userId: number): Promise<(RfpAnalytics & { rfp: Rfp })[]>;
   trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession>;
   getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
@@ -53,6 +53,7 @@ export interface IStorage {
   createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi>;
   getRfisByRfp(rfpId: number): Promise<Rfi[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
+  updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
 }
 
 /**
@@ -133,14 +134,19 @@ export class DatabaseStorage implements IStorage {
   /**
    * Analytics Operations
    */
-  async getBoostedAnalytics(): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
+  async getBoostedAnalytics(userId: number): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
     const today = new Date().toISOString().split('T')[0];
 
-    // First, get all featured RFPs
+    // Get only the featured RFPs created by this user
     const featuredRfps = await db
       .select()
       .from(rfps)
-      .where(eq(rfps.featured, true));
+      .where(
+        and(
+          eq(rfps.featured, true),
+          eq(rfps.organizationId, userId)
+        )
+      );
 
     // For each featured RFP, get or create an analytics record
     const analyticsPromises = featuredRfps.map(async (rfp) => {
@@ -266,6 +272,16 @@ export class DatabaseStorage implements IStorage {
       .from(rfis)
       .where(eq(rfis.email, email))
       .orderBy(desc(rfis.createdAt));
+  }
+  
+  async updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi> {
+    const [updatedRfi] = await db
+      .update(rfis)
+      .set({ status })
+      .where(eq(rfis.id, id))
+      .returning();
+    if (!updatedRfi) throw new Error("RFI not found");
+    return updatedRfi;
   }
 
   async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {

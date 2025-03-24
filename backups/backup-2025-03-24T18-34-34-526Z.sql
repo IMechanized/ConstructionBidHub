@@ -583,6 +583,17 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 223	backup-2025-03-24T17-07-09-571Z.sql	success	\N	2025-03-24 17:07:14.185759
 224	backup-2025-03-24T17-09-33-672Z.sql	success	\N	2025-03-24 17:09:39.842769
 225	backup-2025-03-24T17-12-35-903Z.sql	success	\N	2025-03-24 17:12:44.385917
+226	backup-2025-03-24T17-15-27-146Z.sql	success	\N	2025-03-24 17:15:34.170638
+227	backup-2025-03-24T17-17-36-499Z.sql	success	\N	2025-03-24 17:17:43.170402
+228	backup-2025-03-24T17-19-15-496Z.sql	success	\N	2025-03-24 17:19:21.713621
+229	backup-2025-03-24T17-20-48-503Z.sql	success	\N	2025-03-24 17:20:55.826769
+230	backup-2025-03-24T17-22-21-641Z.sql	success	\N	2025-03-24 17:22:28.085672
+231	backup-2025-03-24T17-23-09-642Z.sql	success	\N	2025-03-24 17:23:14.198794
+232	backup-2025-03-24T17-23-08-094Z.sql	success	\N	2025-03-24 17:23:25.597659
+233	backup-2025-03-24T17-29-19-037Z.sql	success	\N	2025-03-24 17:29:33.121963
+234	backup-2025-03-24T17-29-37-553Z.sql	success	\N	2025-03-24 17:29:59.175583
+235	backup-2025-03-24T18-32-43-431Z.sql	success	\N	2025-03-24 18:32:47.908188
+236	backup-2025-03-24T18-32-56-831Z.sql	success	\N	2025-03-24 18:33:00.899785
 \.
 
 
@@ -991,7 +1002,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 225, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 236, true);
 
 
 --

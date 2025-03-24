@@ -136,22 +136,50 @@ export class DatabaseStorage implements IStorage {
   async getBoostedAnalytics(): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
     const today = new Date().toISOString().split('T')[0];
 
-    // Get analytics for featured RFPs with their details
-    const results = await db
-      .select({
-        analytics: rfpAnalytics,
-        rfp: rfps,
-      })
-      .from(rfpAnalytics)
-      .innerJoin(rfps, eq(rfpAnalytics.rfpId, rfps.id))
-      .where(
-        and(
-          eq(rfps.featured, true),
-          eq(rfpAnalytics.date, today)
-        )
-      );
+    // First, get all featured RFPs
+    const featuredRfps = await db
+      .select()
+      .from(rfps)
+      .where(eq(rfps.featured, true));
 
-    return results.map(r => ({ ...r.analytics, rfp: r.rfp }));
+    // For each featured RFP, get or create an analytics record
+    const analyticsPromises = featuredRfps.map(async (rfp) => {
+      // Check if analytics exist for today
+      const [existingAnalytics] = await db
+        .select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfp.id),
+            eq(rfpAnalytics.date, today)
+          )
+        );
+
+      if (existingAnalytics) {
+        // Return existing analytics with RFP data
+        return { ...existingAnalytics, rfp };
+      } else {
+        // Create new analytics record with default values
+        const [newAnalytics] = await db
+          .insert(rfpAnalytics)
+          .values({
+            rfpId: rfp.id,
+            date: today,
+            totalViews: 0,
+            uniqueViews: 0,
+            averageViewTime: 0,
+            totalBids: 0,
+            clickThroughRate: 0,
+          })
+          .returning();
+        
+        // Return new analytics with RFP data
+        return { ...newAnalytics, rfp };
+      }
+    });
+
+    // Wait for all analytics records to be fetched or created
+    return Promise.all(analyticsPromises);
   }
 
   /**

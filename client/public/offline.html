@@ -3,146 +3,220 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You are offline - FindConstructionBids</title>
-  <meta name="theme-color" content="#0284c7">
-  <link rel="manifest" href="/manifest.json">
+  <title>You're Offline - FindConstructionBids</title>
   <style>
     :root {
-      --primary: #0284c7;
-      --secondary: #64748b;
-      --background: #f8fafc;
-      --foreground: #0f172a;
-      --card: #ffffff;
-      --border: #e2e8f0;
+      --color-primary: #0ea5e9;
+      --color-destructive: #ef4444;
+      --color-muted: #71717a;
+      --color-background: #fafafa;
+      --color-card: #ffffff;
+      --color-card-foreground: #020817;
+      --color-border: #e4e4e7;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      --radius: 0.5rem;
     }
-    
+
+    /* Dark mode detection */
     @media (prefers-color-scheme: dark) {
       :root {
-        --primary: #0284c7;
-        --secondary: #94a3b8;
-        --background: #0f172a;
-        --foreground: #e2e8f0;
-        --card: #1e293b;
-        --border: #334155;
+        --color-background: #020817;
+        --color-card: #1e293b;
+        --color-card-foreground: #f8fafc;
+        --color-muted: #a1a1aa;
+        --color-border: #334155;
       }
     }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--background);
-      color: var(--foreground);
+
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--color-background);
+      color: var(--color-card-foreground);
       display: flex;
-      flex-direction: column;
       min-height: 100vh;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 640px;
+      width: 100%;
       text-align: center;
     }
-    
-    .container {
-      background-color: var(--card);
-      border-radius: 8px;
-      border: 1px solid var(--border);
+
+    .offline-card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
       padding: 2rem;
-      margin: 2rem;
-      max-width: 600px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 2rem;
     }
-    
+
+    .icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      color: var(--color-destructive);
+    }
+
     h1 {
-      color: var(--primary);
+      font-size: 1.875rem;
+      font-weight: 700;
       margin-bottom: 1rem;
     }
-    
-    .icon {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 1.5rem;
-    }
-    
-    .wifi-off {
-      stroke: var(--primary);
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    
-    .message {
+
+    p {
+      font-size: 1.125rem;
+      color: var(--color-muted);
       margin-bottom: 1.5rem;
       line-height: 1.5;
     }
-    
-    .button {
-      background-color: var(--primary);
+
+    button {
+      background-color: var(--color-primary);
       color: white;
       border: none;
-      border-radius: 4px;
       padding: 0.75rem 1.5rem;
       font-size: 1rem;
-      cursor: pointer;
       font-weight: 500;
-      transition: background-color 0.2s;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: opacity 0.15s ease;
     }
-    
-    .button:hover {
-      background-color: #026da7;
+
+    button:hover {
+      opacity: 0.9;
     }
-    
-    .status {
+
+    .cached-pages-section {
+      margin-top: 2rem;
+    }
+
+    .cached-pages {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
       margin-top: 1rem;
+    }
+
+    .cached-link {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 1rem;
+      border-radius: var(--radius);
+      color: var(--color-card-foreground);
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .cached-link:hover {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      color: var(--color-muted);
       font-size: 0.875rem;
-      color: var(--secondary);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path class="wifi-off" d="M1 1L23 23M16.72 11.06C17.5 11.49 18.18 12.07 18.73 12.76M5.26 12.76C5.82 12.07 6.5 11.49 7.28 11.06M9.17 15.82C10.15 15.04 11.5 15.04 12.47 15.82M12 19H12.01M8.53 16.11C9.55 15.13 11.45 15.13 12.47 16.11" />
-    </svg>
-    
-    <h1>You are offline</h1>
-    
-    <p class="message">
-      It looks like you've lost your internet connection. Some features of FindConstructionBids may be unavailable until you're back online.
-    </p>
-    
-    <button class="button" id="reloadButton">Try Again</button>
-    
-    <p class="status" id="connectionStatus">
-      Checking connection...
-    </p>
+    <div class="offline-card">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a16 16 0 0 1 6.38-2.94"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      </svg>
+      <h1>You're Offline</h1>
+      <p>It looks like you don't have an internet connection right now. Some features may be limited until you're back online.</p>
+      <button id="reload-btn">Try Again</button>
+    </div>
+
+    <div class="cached-pages-section">
+      <h2>Available pages while offline:</h2>
+      <div id="cached-pages" class="cached-pages hidden">
+        <!-- Will be populated by JavaScript based on cached URLs -->
+      </div>
+      <p id="no-cached-message">No pages are currently available offline.</p>
+    </div>
+
+    <div class="footer">
+      <p>FindConstructionBids &copy; 2025</p>
+    </div>
   </div>
-  
+
   <script>
-    // Handle reload button
-    document.getElementById('reloadButton').addEventListener('click', function() {
+    // Reload the page when the user clicks the retry button
+    document.getElementById('reload-btn').addEventListener('click', function() {
       window.location.reload();
     });
-    
-    // Update connection status
-    function updateConnectionStatus() {
-      const statusElement = document.getElementById('connectionStatus');
-      if (navigator.onLine) {
-        statusElement.textContent = 'Your internet connection has been restored! Reloading...';
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        statusElement.textContent = 'Still offline. Please check your connection.';
-      }
+
+    // Check if the Cache API is available
+    if ('caches' in window) {
+      // Try to get a list of cached URLs
+      caches.open('fcb-pages-cache').then(function(cache) {
+        return cache.keys();
+      }).then(function(requests) {
+        const cachedPagesDiv = document.getElementById('cached-pages');
+        const noCachedMessage = document.getElementById('no-cached-message');
+        
+        if (requests.length > 0) {
+          // Show the cached pages section
+          cachedPagesDiv.classList.remove('hidden');
+          noCachedMessage.classList.add('hidden');
+          
+          // Create links for each cached URL
+          requests.forEach(function(request) {
+            // Extract path from URL
+            const url = new URL(request.url);
+            let path = url.pathname;
+            
+            // Skip service worker and manifest files
+            if (path.includes('sw.js') || path.includes('manifest.json') || path.includes('offline.html')) {
+              return;
+            }
+            
+            // Format the display name
+            let displayName = 'Home';
+            if (path !== '/') {
+              // Remove leading slash and capitalize
+              displayName = path.substring(1).replace(/\//g, ' / ');
+              displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+            }
+            
+            // Create link element
+            const link = document.createElement('a');
+            link.href = path;
+            link.className = 'cached-link';
+            link.textContent = displayName;
+            
+            cachedPagesDiv.appendChild(link);
+          });
+        }
+      }).catch(function(error) {
+        console.error('Failed to retrieve cached pages:', error);
+      });
     }
-    
-    // Check connection status periodically
-    setInterval(updateConnectionStatus, 5000);
-    updateConnectionStatus();
-    
-    // Listen for online/offline events
-    window.addEventListener('online', updateConnectionStatus);
-    window.addEventListener('offline', updateConnectionStatus);
   </script>
 </body>
 </html>

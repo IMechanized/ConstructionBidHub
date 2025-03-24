@@ -1,11 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-
-class OfflineError extends Error {
-  constructor(message = "You are currently offline") {
-    super(message);
-    this.name = "OfflineError";
-  }
-}
+import { OfflineError } from "@/hooks/use-offline";
 
 // Check if the browser is online
 const isOnline = () => {

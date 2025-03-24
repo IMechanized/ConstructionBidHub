@@ -592,6 +592,13 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 232	backup-2025-03-24T17-23-08-094Z.sql	success	\N	2025-03-24 17:23:25.597659
 233	backup-2025-03-24T17-29-19-037Z.sql	success	\N	2025-03-24 17:29:33.121963
 234	backup-2025-03-24T17-29-37-553Z.sql	success	\N	2025-03-24 17:29:59.175583
+235	backup-2025-03-24T18-32-43-431Z.sql	success	\N	2025-03-24 18:32:47.908188
+236	backup-2025-03-24T18-32-56-831Z.sql	success	\N	2025-03-24 18:33:00.899785
+237	backup-2025-03-24T18-34-34-526Z.sql	success	\N	2025-03-24 18:34:38.249034
+238	backup-2025-03-24T18-39-27-129Z.sql	success	\N	2025-03-24 18:39:35.632615
+239	backup-2025-03-24T18-39-51-694Z.sql	success	\N	2025-03-24 18:39:57.4854
+240	backup-2025-03-24T18-45-06-295Z.sql	success	\N	2025-03-24 18:45:10.922259
+241	backup-2025-03-24T18-53-32-091Z.sql	success	\N	2025-03-24 18:53:36.374917
 \.
 
 
@@ -790,6 +797,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 180	12	mech@mail.com	Information	2025-03-18 13:01:26.476262	pending
 181	1	mechanizedsolutionsinc@gmail.com	Test RFI message	2025-03-18 13:25:56.846584	pending
 182	5	mechanizedsolutionsinc@gmail.com	More testing	2025-03-18 13:28:32.768448	pending
+183	1	sandy@mail.com	Bid.	2025-03-24 18:47:17.877738	pending
 \.
 
 
@@ -798,6 +806,67 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 --
 
 COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_view_time, total_bids, click_through_rate) FROM stdin;
+1	5	2025-03-24	0	0	0	0	0
+2	3	2025-03-24	0	0	0	0	0
+3	6	2025-03-24	0	0	0	0	0
+4	16	2025-03-24	0	0	0	0	0
+5	10	2025-03-24	0	0	0	0	0
+6	1	2025-03-24	0	0	0	0	0
+7	11	2025-03-24	0	0	0	0	0
+8	13	2025-03-24	0	0	0	0	0
+9	12	2025-03-24	0	0	0	0	0
+10	8	2025-03-24	0	0	0	0	0
+11	25	2025-03-24	0	0	0	0	0
+12	18	2025-03-24	0	0	0	0	0
+13	23	2025-03-24	0	0	0	0	0
+14	22	2025-03-24	0	0	0	0	0
+15	28	2025-03-24	0	0	0	0	0
+16	32	2025-03-24	0	0	0	0	0
+17	31	2025-03-24	0	0	0	0	0
+18	29	2025-03-24	0	0	0	0	0
+19	33	2025-03-24	0	0	0	0	0
+20	34	2025-03-24	0	0	0	0	0
+21	35	2025-03-24	0	0	0	0	0
+22	40	2025-03-24	0	0	0	0	0
+23	36	2025-03-24	0	0	0	0	0
+24	54	2025-03-24	0	0	0	0	0
+25	41	2025-03-24	0	0	0	0	0
+26	46	2025-03-24	0	0	0	0	0
+27	44	2025-03-24	0	0	0	0	0
+28	50	2025-03-24	0	0	0	0	0
+29	51	2025-03-24	0	0	0	0	0
+30	37	2025-03-24	0	0	0	0	0
+31	58	2025-03-24	0	0	0	0	0
+32	55	2025-03-24	0	0	0	0	0
+33	59	2025-03-24	0	0	0	0	0
+34	69	2025-03-24	0	0	0	0	0
+35	68	2025-03-24	0	0	0	0	0
+36	70	2025-03-24	0	0	0	0	0
+37	82	2025-03-24	0	0	0	0	0
+38	88	2025-03-24	0	0	0	0	0
+39	83	2025-03-24	0	0	0	0	0
+40	84	2025-03-24	0	0	0	0	0
+41	89	2025-03-24	0	0	0	0	0
+42	91	2025-03-24	0	0	0	0	0
+43	90	2025-03-24	0	0	0	0	0
+44	94	2025-03-24	0	0	0	0	0
+45	99	2025-03-24	0	0	0	0	0
+46	98	2025-03-24	0	0	0	0	0
+47	100	2025-03-24	0	0	0	0	0
+48	101	2025-03-24	0	0	0	0	0
+49	102	2025-03-24	0	0	0	0	0
+50	103	2025-03-24	0	0	0	0	0
+51	106	2025-03-24	0	0	0	0	0
+52	107	2025-03-24	0	0	0	0	0
+53	108	2025-03-24	0	0	0	0	0
+54	120	2025-03-24	0	0	0	0	0
+55	109	2025-03-24	0	0	0	0	0
+56	115	2025-03-24	0	0	0	0	0
+57	118	2025-03-24	0	0	0	0	0
+58	116	2025-03-24	0	0	0	0	0
+59	122	2025-03-24	0	0	0	0	0
+60	123	2025-03-24	0	0	0	0	0
+61	128	2025-03-24	0	0	0	0	0
 \.
 
 
@@ -1000,7 +1069,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 234, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 241, true);
 
 
 --
@@ -1014,14 +1083,14 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 182, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 183, true);
 
 
 --
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 1, false);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 61, true);
 
 
 --

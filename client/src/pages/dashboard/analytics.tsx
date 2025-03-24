@@ -222,10 +222,16 @@ export default function AnalyticsDashboard() {
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
-                          <PaginationPrevious
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                          />
+                            className="gap-1 pl-2.5"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            <span>Previous</span>
+                          </Button>
                         </PaginationItem>
                         <PaginationItem className="flex items-center mx-2">
                           <span>
@@ -233,10 +239,16 @@ export default function AnalyticsDashboard() {
                           </span>
                         </PaginationItem>
                         <PaginationItem>
-                          <PaginationNext
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                          />
+                            className="gap-1 pr-2.5"
+                          >
+                            <span>Next</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>

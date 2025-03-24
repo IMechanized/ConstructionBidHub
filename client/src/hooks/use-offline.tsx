@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Hook to detect online/offline status and manage app behavior accordingly
@@ -11,56 +12,46 @@ import { useState, useEffect } from 'react';
 export function useOffline() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [lastOnline, setLastOnline] = useState<Date>(new Date());
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Initial value for lastOnline from localStorage
-    const storedLastOnline = localStorage.getItem('fcb-last-online');
-    if (storedLastOnline) {
-      setLastOnline(new Date(storedLastOnline));
-    }
-
-    // Event listeners for online/offline status
-    const handleOnline = () => {
-      setIsOffline(false);
-      const now = new Date();
-      setLastOnline(now);
-      localStorage.setItem('fcb-last-online', now.toISOString());
-    };
-
+    // Function to handle when the app goes offline
     const handleOffline = () => {
       setIsOffline(true);
+      // Show a toast notification
+      toast({
+        title: "You're offline",
+        description: "Some app features may be limited until you reconnect.",
+        variant: "destructive",
+        duration: 5000,
+      });
     };
 
+    // Function to handle when the app comes back online
+    const handleOnline = () => {
+      setIsOffline(false);
+      // Update the last online timestamp
+      const now = new Date();
+      setLastOnline(now);
+      // Show a toast notification
+      toast({
+        title: "You're back online",
+        description: "All app features are now available.",
+        variant: "default",
+        duration: 3000,
+      });
+    };
+
+    // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check connection periodically (every 30 seconds)
-    const intervalId = setInterval(() => {
-      // Using fetch to make a tiny request to determine if we're actually online
-      // even if navigator.onLine might report true
-      fetch('/api/health', { 
-        method: 'HEAD',
-        // Short timeout to avoid hanging
-        signal: AbortSignal.timeout(3000) 
-      })
-        .then(() => {
-          if (isOffline) {
-            handleOnline();
-          }
-        })
-        .catch(() => {
-          if (!isOffline) {
-            handleOffline();
-          }
-        });
-    }, 30000);
-
+    // Clean up event listeners on unmount
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      clearInterval(intervalId);
     };
-  }, [isOffline]);
+  }, [toast]);
 
   return { isOffline, lastOnline, setLastOnline };
 }
@@ -76,22 +67,37 @@ export async function handleOfflineFetch<T>(
   fetchFn: () => Promise<T>,
   fallbackData?: T
 ): Promise<T> {
-  // Check if we're offline
-  if (!navigator.onLine) {
+  // Check if we are online
+  if (navigator.onLine) {
+    try {
+      // We're online, so try the fetch
+      return await fetchFn();
+    } catch (error) {
+      // If network error and fallback provided, return fallback
+      if (fallbackData !== undefined) {
+        console.warn('Network request failed, using fallback data', error);
+        return fallbackData;
+      }
+      throw error;
+    }
+  } else {
+    // We're offline
     if (fallbackData !== undefined) {
+      console.warn('Offline mode: Using fallback data');
       return fallbackData;
     }
-    throw new Error('You are currently offline');
+    
+    // No fallback, throw a custom offline error
+    throw new OfflineError();
   }
+}
 
-  try {
-    // Try the fetch operation
-    return await fetchFn();
-  } catch (error) {
-    // If we have fallback data, use it when the fetch fails
-    if (fallbackData !== undefined) {
-      return fallbackData;
-    }
-    throw error;
+/**
+ * Custom error class for offline state
+ */
+export class OfflineError extends Error {
+  constructor(message = "You are currently offline") {
+    super(message);
+    this.name = 'OfflineError';
   }
 }

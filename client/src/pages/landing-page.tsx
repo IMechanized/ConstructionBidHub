@@ -9,7 +9,7 @@ import { RfpCard } from "@/components/rfp-card";
 import { Loader2 } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { OfflineIndicator } from "@/components/offline-status";
+import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 
@@ -56,6 +56,11 @@ export default function LandingPage() {
           </div>
         </div>
       </nav>
+
+      {/* Offline Banner - Shows only when offline */}
+      <div className="container mx-auto px-4 mt-4">
+        <OfflineBanner />
+      </div>
 
       {/* Hero Section */}
       <section className="py-12 md:py-20 px-4">

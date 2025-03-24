@@ -44,6 +44,7 @@ export default function LandingPage() {
             <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Support
             </Link>
+            <OfflineIndicator />
             <ThemeToggle size="sm" />
             <Button asChild variant="outline" size="sm" className="md:text-base">
               {user ? (

@@ -9,49 +9,60 @@ import { useState, useEffect } from 'react';
  *   - setLastOnline: Function to update the last online timestamp
  */
 export function useOffline() {
-  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
-  const [lastOnline, setLastOnline] = useState<Date | null>(
-    navigator.onLine ? new Date() : null
-  );
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [lastOnline, setLastOnline] = useState<Date>(new Date());
 
   useEffect(() => {
-    // Initial check for online/offline status
-    const updateOnlineStatus = () => {
-      const online = navigator.onLine;
-      setIsOffline(!online);
-      
-      if (online) {
-        setLastOnline(new Date());
-        // Store the last online time in localStorage for cross-session reference
-        localStorage.setItem('lastOnline', new Date().toISOString());
-      }
-    };
-
-    // Load last online time from localStorage if available
-    const storedLastOnline = localStorage.getItem('lastOnline');
-    if (storedLastOnline && !lastOnline) {
+    // Initial value for lastOnline from localStorage
+    const storedLastOnline = localStorage.getItem('fcb-last-online');
+    if (storedLastOnline) {
       setLastOnline(new Date(storedLastOnline));
     }
 
-    // Add event listeners for online/offline events
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-
-    // Initial status check
-    updateOnlineStatus();
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
+    // Event listeners for online/offline status
+    const handleOnline = () => {
+      setIsOffline(false);
+      const now = new Date();
+      setLastOnline(now);
+      localStorage.setItem('fcb-last-online', now.toISOString());
     };
-  }, [lastOnline]);
 
-  return {
-    isOffline,
-    lastOnline,
-    setLastOnline
-  };
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check connection periodically (every 30 seconds)
+    const intervalId = setInterval(() => {
+      // Using fetch to make a tiny request to determine if we're actually online
+      // even if navigator.onLine might report true
+      fetch('/api/health', { 
+        method: 'HEAD',
+        // Short timeout to avoid hanging
+        signal: AbortSignal.timeout(3000) 
+      })
+        .then(() => {
+          if (isOffline) {
+            handleOnline();
+          }
+        })
+        .catch(() => {
+          if (!isOffline) {
+            handleOffline();
+          }
+        });
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(intervalId);
+    };
+  }, [isOffline]);
+
+  return { isOffline, lastOnline, setLastOnline };
 }
 
 /**
@@ -65,26 +76,22 @@ export async function handleOfflineFetch<T>(
   fetchFn: () => Promise<T>,
   fallbackData?: T
 ): Promise<T> {
+  // Check if we're offline
   if (!navigator.onLine) {
-    // If we have fallback data, return it
-    if (fallbackData !== undefined) {
-      return Promise.resolve(fallbackData);
-    }
-    
-    // Otherwise reject with a custom offline error
-    return Promise.reject(new Error('You are currently offline'));
-  }
-  
-  // We're online, proceed with the original fetch
-  try {
-    return await fetchFn();
-  } catch (error) {
-    // If the fetch fails and we have fallback data, return it
     if (fallbackData !== undefined) {
       return fallbackData;
     }
-    
-    // Otherwise just propagate the error
+    throw new Error('You are currently offline');
+  }
+
+  try {
+    // Try the fetch operation
+    return await fetchFn();
+  } catch (error) {
+    // If we have fallback data, use it when the fetch fails
+    if (fallbackData !== undefined) {
+      return fallbackData;
+    }
     throw error;
   }
 }

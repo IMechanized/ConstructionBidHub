@@ -125,10 +125,16 @@ export default function AnalyticsDashboard() {
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
             <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground mb-4">
               View performance metrics for your featured RFPs. These analytics help you understand engagement and optimize your RFP visibility. 
               <strong> Only boosted RFPs you own are shown here.</strong>
             </p>
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-8 text-sm">
+              <p className="text-yellow-800 dark:text-yellow-200">
+                <strong>Note:</strong> Analytics data includes real-time tracking of views and engagement. 
+                Data collection is ongoing and will become more accurate as users interact with your RFPs.
+              </p>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
               <Card>

@@ -40,27 +40,41 @@ export default function RfpPage() {
   
   // Track view time when user leaves the page or when component unmounts
   useEffect(() => {
+    // Reset view time tracker when the component mounts
+    viewStartTime.current = Date.now();
+    hasTrackedView.current = false;
+    
     // Only track if user is logged in and not the owner of the RFP
-    const shouldTrackView = user && rfp && user.id !== rfp.organizationId && !hasTrackedView.current;
+    const shouldTrackView = user && rfp && user.id !== rfp.organizationId;
+    console.log(`View tracking eligibility check: User: ${user?.id}, RFP Owner: ${rfp?.organizationId}, Should track: ${shouldTrackView}`);
     
     const trackViewDuration = async () => {
-      if (shouldTrackView) {
+      if (shouldTrackView && !hasTrackedView.current) {
         try {
           const duration = Math.floor((Date.now() - viewStartTime.current) / 1000); // Convert to seconds
           
-          // Only track if the user spent at least 5 seconds on the page (to filter out accidental clicks)
-          if (duration >= 5) {
+          // Only track if the user spent at least 3 seconds on the page (to filter out accidental clicks)
+          if (duration >= 3) {
             console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
             
-            const response = await apiRequest('/api/analytics/track-view', {
+            const response = await fetch('/api/analytics/track-view', {
               method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({
                 rfpId: Number(id),
                 duration: duration,
               }),
             });
             
-            if (response.skipped) {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.skipped) {
               console.log('View tracking skipped (owner self-view)');
             } else {
               console.log('View tracking successful');
@@ -75,6 +89,8 @@ export default function RfpPage() {
             }
             
             hasTrackedView.current = true;
+          } else {
+            console.log(`View duration too short: ${duration}s, not tracking`);
           }
         } catch (error) {
           console.error('Failed to track RFP view:', error);

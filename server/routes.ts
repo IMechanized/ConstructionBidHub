@@ -2,7 +2,9 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema } from "@shared/schema";
+import { db } from "./db";
+import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 
@@ -283,18 +285,69 @@ export function registerRoutes(app: Express): Server {
       const user = req.user!;
       console.log('Fetching analytics for user:', user.id, user.email, user.companyName);
       
-      const analytics = await storage.getBoostedAnalytics(user.id);
-      console.log(`Found ${analytics.length} analytics records for user ${user.id}`);
+      // Get user's featured RFPs first to ensure we only process owned RFPs
+      const userFeaturedRfps = await db
+        .select()
+        .from(rfps)
+        .where(
+          and(
+            eq(rfps.featured, true),
+            eq(rfps.organizationId, user.id)
+          )
+        );
       
-      // Additional check to ensure we only return RFPs owned by the user
-      const filteredAnalytics = analytics.filter(item => item.rfp.organizationId === user.id);
-      console.log(`After filtering, ${filteredAnalytics.length} records remain`);
+      console.log(`Found ${userFeaturedRfps.length} featured RFPs for user ${user.id}`);
       
-      if (filteredAnalytics.length !== analytics.length) {
-        console.warn(`WARNING: Filtered out ${analytics.length - filteredAnalytics.length} records not owned by user ${user.id}`);
+      if (userFeaturedRfps.length === 0) {
+        return res.json([]);
       }
       
-      res.json(filteredAnalytics);
+      // Get RFP IDs owned by the user
+      const ownedRfpIds = userFeaturedRfps.map(rfp => rfp.id);
+      console.log('Owned RFP IDs:', ownedRfpIds);
+      
+      // Get analytics only for the user's owned RFPs
+      const today = new Date().toISOString().split('T')[0];
+      const analyticsRecords = await Promise.all(
+        ownedRfpIds.map(async (rfpId) => {
+          // Try to get existing analytics
+          const [existingAnalytics] = await db
+            .select()
+            .from(rfpAnalytics)
+            .where(
+              and(
+                eq(rfpAnalytics.rfpId, rfpId),
+                eq(rfpAnalytics.date, today)
+              )
+            );
+            
+          // Get the RFP details
+          const rfp = userFeaturedRfps.find(r => r.id === rfpId)!;
+          
+          if (existingAnalytics) {
+            return { ...existingAnalytics, rfp };
+          } else {
+            // Create new analytics record with default values
+            const [newAnalytics] = await db
+              .insert(rfpAnalytics)
+              .values({
+                rfpId,
+                date: today,
+                totalViews: 0,
+                uniqueViews: 0,
+                averageViewTime: 0,
+                totalBids: 0,
+                clickThroughRate: 0,
+              })
+              .returning();
+            
+            return { ...newAnalytics, rfp };
+          }
+        })
+      );
+      
+      console.log(`Returning ${analyticsRecords.length} analytics records for user ${user.id}`);
+      res.json(analyticsRecords);
     } catch (error) {
       console.error('Error fetching boosted analytics:', error);
       res.status(500).json({ message: "Failed to fetch analytics" });
@@ -306,9 +359,12 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);
       const { rfpId, duration } = req.body;
       
+      console.log(`Tracking view for RFP ${rfpId} with duration ${duration}s by user ${req.user!.id}`);
+      
       // Fetch the RFP to verify it exists
       const rfp = await storage.getRfpById(rfpId);
       if (!rfp) {
+        console.error(`RFP ${rfpId} not found`);
         return res.status(404).json({ message: "RFP not found" });
       }
       
@@ -318,9 +374,59 @@ export function registerRoutes(app: Express): Server {
         return res.status(200).json({ skipped: true, message: "Self-view not tracked" });
       }
       
-      // Track the view
-      const viewSession = await storage.trackRfpView(rfpId, req.user!.id, duration);
-      res.json(viewSession);
+      // Insert view session directly to ensure it works
+      const today = new Date().toISOString().split('T')[0];
+      const [viewSession] = await db
+        .insert(rfpViewSessions)
+        .values({
+          rfpId,
+          userId: req.user!.id,
+          viewDate: new Date(),
+          duration,
+        })
+        .returning();
+        
+      console.log(`View session created: ${JSON.stringify(viewSession)}`);
+      
+      // Check if analytics record exists for today
+      const [existingAnalytics] = await db
+        .select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfpId),
+            eq(rfpAnalytics.date, today)
+          )
+        );
+        
+      if (existingAnalytics) {
+        // Update existing analytics
+        console.log(`Updating existing analytics for RFP ${rfpId}`);
+        await db
+          .update(rfpAnalytics)
+          .set({
+            totalViews: existingAnalytics.totalViews + 1,
+            uniqueViews: existingAnalytics.uniqueViews + 1, // Simple increment for now
+            averageViewTime: Math.round(((existingAnalytics.averageViewTime * existingAnalytics.totalViews) + duration) / (existingAnalytics.totalViews + 1)),
+          })
+          .where(eq(rfpAnalytics.id, existingAnalytics.id));
+      } else {
+        // Create new analytics
+        console.log(`Creating new analytics for RFP ${rfpId}`);
+        await db
+          .insert(rfpAnalytics)
+          .values({
+            rfpId,
+            date: today,
+            totalViews: 1,
+            uniqueViews: 1,
+            averageViewTime: duration,
+            totalBids: 0,
+            clickThroughRate: 0,
+          });
+      }
+      
+      res.json({ success: true, viewSession });
     } catch (error) {
       console.error('Error tracking RFP view:', error);
       res.status(500).json({ message: "Failed to track view" });

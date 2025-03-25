@@ -602,6 +602,14 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 242	backup-2025-03-24T18-55-09-296Z.sql	success	\N	2025-03-24 18:55:17.872533
 243	backup-2025-03-25T10-17-09-768Z.sql	success	\N	2025-03-25 10:17:16.267856
 244	backup-2025-03-25T10-22-32-663Z.sql	success	\N	2025-03-25 10:22:37.156472
+245	backup-2025-03-25T10-22-40-414Z.sql	success	\N	2025-03-25 10:22:44.097734
+246	backup-2025-03-25T10-24-10-252Z.sql	success	\N	2025-03-25 10:24:17.475704
+247	backup-2025-03-25T10-28-47-100Z.sql	success	\N	2025-03-25 10:28:52.515657
+248	backup-2025-03-25T10-30-15-472Z.sql	success	\N	2025-03-25 10:30:22.358782
+249	backup-2025-03-25T10-39-33-606Z.sql	success	\N	2025-03-25 10:39:40.056855
+250	backup-2025-03-25T10-43-28-506Z.sql	success	\N	2025-03-25 10:43:32.319535
+251	backup-2025-03-25T10-50-06-429Z.sql	success	\N	2025-03-25 10:50:11.899406
+252	backup-2025-03-25T10-54-09-429Z.sql	success	\N	2025-03-25 10:54:13.189915
 \.
 
 
@@ -801,6 +809,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 181	1	mechanizedsolutionsinc@gmail.com	Test RFI message	2025-03-18 13:25:56.846584	pending
 182	5	mechanizedsolutionsinc@gmail.com	More testing	2025-03-18 13:28:32.768448	pending
 183	1	sandy@mail.com	Bid.	2025-03-24 18:47:17.877738	pending
+184	1	sandy@mail.com	Asking for bid information.	2025-03-25 10:34:22.950184	pending
 \.
 
 
@@ -870,6 +879,10 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 59	122	2025-03-24	0	0	0	0	0
 60	123	2025-03-24	0	0	0	0	0
 61	128	2025-03-24	0	0	0	0	0
+62	70	2025-03-25	0	0	0	0	0
+63	69	2025-03-25	0	0	0	0	0
+64	1	2025-03-25	0	0	0	0	0
+65	68	2025-03-25	0	0	0	0	0
 \.
 
 
@@ -1072,7 +1085,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 244, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 252, true);
 
 
 --
@@ -1086,14 +1099,14 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 183, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
 
 
 --
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 61, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 65, true);
 
 
 --

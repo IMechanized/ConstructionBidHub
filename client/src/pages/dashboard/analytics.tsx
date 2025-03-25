@@ -42,12 +42,32 @@ export default function AnalyticsDashboard() {
   ];
 
   // Ensure we always get fresh data with no caching
-  const { data: analytics, isLoading } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
+  const { data: analytics, isLoading, error } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
     queryKey: ["/api/analytics/boosted"],
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     staleTime: 0, // Ensures data is always considered stale
   });
+  
+  // Add console logs for debugging
+  console.log("Analytics data loaded:", analytics !== undefined);
+  console.log("Analytics data type:", typeof analytics);
+  console.log("Analytics array length:", analytics?.length);
+  console.log("Analytics full data:", analytics);
+  console.log("Analytics loading:", isLoading);
+  console.log("Analytics error:", error);
+  
+  // Force data reload after 1 second for debugging purposes
+  React.useEffect(() => {
+    if (!isLoading && analytics?.length === 0) {
+      console.log("Detected empty analytics, scheduling reload...");
+      const timer = setTimeout(() => {
+        console.log("Performing forced analytics reload");
+        queryClient.invalidateQueries({ queryKey: ["/api/analytics/boosted"] });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, analytics?.length]);
 
   if (isLoading) {
     return (

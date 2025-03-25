@@ -57,21 +57,27 @@ export const getQueryFn: <T>(options: {
     }
 
     try {
+      console.log(`[QueryClient] Fetching:`, queryKey[0]);
       const res = await fetch(queryKey[0] as string, {
         credentials: "include",
       });
+      console.log(`[QueryClient] Response status:`, res.status);
 
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log('[QueryClient] Returning null for 401 response');
         return null;
       }
 
       await throwIfResNotOk(res);
-      return await res.json();
+      const data = await res.json();
+      console.log(`[QueryClient] Response data:`, data);
+      return data;
     } catch (error) {
       // If the error is a network error and we're offline
       if (error instanceof TypeError && !isOnline()) {
         throw new OfflineError();
       }
+      console.error('[QueryClient] Error:', error);
       throw error;
     }
   };

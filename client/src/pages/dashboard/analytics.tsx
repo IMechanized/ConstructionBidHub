@@ -5,6 +5,8 @@ import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
+import { queryClient } from "@/lib/queryClient";
 import {
   Table,
   TableBody,
@@ -19,7 +21,6 @@ import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AnalyticsDashboard() {
@@ -58,7 +59,7 @@ export default function AnalyticsDashboard() {
   console.log("Analytics error:", error);
   
   // Force data reload after 1 second for debugging purposes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isLoading && analytics?.length === 0) {
       console.log("Detected empty analytics, scheduling reload...");
       const timer = setTimeout(() => {

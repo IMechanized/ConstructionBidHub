@@ -138,7 +138,7 @@ export class DatabaseStorage implements IStorage {
     const today = new Date().toISOString().split('T')[0];
     console.log(`getBoostedAnalytics: Getting analytics for user ID ${userId} for date ${today}`);
 
-    // Get only the featured RFPs created by this user
+    // Get only the featured RFPs created by this user - being extra explicit with ownership checks
     const featuredRfps = await db
       .select()
       .from(rfps)
@@ -149,15 +149,22 @@ export class DatabaseStorage implements IStorage {
         )
       );
     
-    console.log(`getBoostedAnalytics: Found ${featuredRfps.length} featured RFPs for this user`);
+    // Extra safety check: only include RFPs that are actually owned by this user
+    const ownedRfps = featuredRfps.filter(rfp => rfp.organizationId === userId);
+    
+    if (ownedRfps.length !== featuredRfps.length) {
+      console.error(`ERROR: Found ${featuredRfps.length - ownedRfps.length} RFPs that matched featured criteria but don't belong to user ${userId}`);
+    }
+    
+    console.log(`getBoostedAnalytics: Found ${ownedRfps.length} featured RFPs for this user`);
     
     // Log detailed RFP info
-    featuredRfps.forEach(rfp => {
+    ownedRfps.forEach(rfp => {
       console.log(`RFP ID: ${rfp.id}, Title: ${rfp.title}, OrganizationId: ${rfp.organizationId}`);
     });
 
-    // For each featured RFP, get or create an analytics record
-    const analyticsPromises = featuredRfps.map(async (rfp) => {
+    // For each featured RFP owned by this user, get or create an analytics record
+    const analyticsPromises = ownedRfps.map(async (rfp) => {
       // Check if analytics exist for today
       const [existingAnalytics] = await db
         .select()

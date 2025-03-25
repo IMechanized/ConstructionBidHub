@@ -305,6 +305,20 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
       const { rfpId, duration } = req.body;
+      
+      // Fetch the RFP to verify it exists
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp) {
+        return res.status(404).json({ message: "RFP not found" });
+      }
+      
+      // Skip tracking if the viewer is the RFP owner (don't count self-views)
+      if (rfp.organizationId === req.user!.id) {
+        console.log(`Skipping self-view tracking for RFP ${rfpId} by owner ${req.user!.id}`);
+        return res.status(200).json({ skipped: true, message: "Self-view not tracked" });
+      }
+      
+      // Track the view
       const viewSession = await storage.trackRfpView(rfpId, req.user!.id, duration);
       res.json(viewSession);
     } catch (error) {

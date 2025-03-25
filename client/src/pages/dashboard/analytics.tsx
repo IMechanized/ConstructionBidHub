@@ -41,8 +41,12 @@ export default function AnalyticsDashboard() {
     },
   ];
 
+  // Ensure we always get fresh data with no caching
   const { data: analytics, isLoading } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
     queryKey: ["/api/analytics/boosted"],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Ensures data is always considered stale
   });
 
   if (isLoading) {

@@ -18,15 +18,17 @@ import { format } from "date-fns";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AnalyticsDashboard() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  const { toast } = useToast();
   
   const breadcrumbItems = [
     {
@@ -197,7 +199,9 @@ export default function AnalyticsDashboard() {
                       <TableHead className="text-center">Avg. View Time</TableHead>
                       <TableHead className="text-center">Total Bids</TableHead>
                       <TableHead className="text-center">CTR</TableHead>
-                      <TableHead>Created</TableHead>
+                      <TableHead>RFP Created</TableHead>
+                      <TableHead>Data From</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -210,7 +214,27 @@ export default function AnalyticsDashboard() {
                         <TableCell className="text-center">{item.totalBids || 0}</TableCell>
                         <TableCell className="text-center">{item.clickThroughRate || 0}%</TableCell>
                         <TableCell>
+                          {format(new Date(item.rfp.createdAt), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
                           {format(new Date(item.date), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="inline-flex items-center gap-1"
+                            onClick={() => {
+                              setLocation(`/rfp/${item.rfp.id}`);
+                              toast({
+                                title: "Viewing RFP",
+                                description: `Opening ${item.rfp.title}`,
+                              });
+                            }}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            View RFP
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

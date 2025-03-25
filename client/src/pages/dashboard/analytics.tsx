@@ -76,9 +76,19 @@ export default function AnalyticsDashboard() {
                     You don't have any featured RFPs yet. Boosting your RFPs makes them more visible to contractors 
                     and provides detailed analytics on views and engagement.
                   </p>
-                  <Button onClick={() => setLocation('/dashboard/rfps')}>
-                    Go to Your RFPs
-                  </Button>
+                  <div className="space-y-4">
+                    <Button onClick={() => setLocation('/dashboard')}>
+                      Go to My RFPs
+                    </Button>
+                    <div className="text-sm text-muted-foreground pt-4">
+                      <strong>How to get analytics:</strong>
+                      <ol className="text-left mt-2 list-decimal pl-5 space-y-1">
+                        <li>Create or edit an RFP</li>
+                        <li>Check the "Featured" option</li>
+                        <li>Analytics will appear here once your featured RFP receives views</li>
+                      </ol>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

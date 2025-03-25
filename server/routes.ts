@@ -402,12 +402,18 @@ export function registerRoutes(app: Express): Server {
       if (existingAnalytics) {
         // Update existing analytics
         console.log(`Updating existing analytics for RFP ${rfpId}`);
+        const totalViews = (existingAnalytics.totalViews || 0) + 1;
+        const uniqueViews = (existingAnalytics.uniqueViews || 0) + 1;
+        const averageViewTime = Math.round(
+          (((existingAnalytics.averageViewTime || 0) * (existingAnalytics.totalViews || 0)) + duration) / totalViews
+        );
+        
         await db
           .update(rfpAnalytics)
           .set({
-            totalViews: existingAnalytics.totalViews + 1,
-            uniqueViews: existingAnalytics.uniqueViews + 1, // Simple increment for now
-            averageViewTime: Math.round(((existingAnalytics.averageViewTime * existingAnalytics.totalViews) + duration) / (existingAnalytics.totalViews + 1)),
+            totalViews,
+            uniqueViews,
+            averageViewTime,
           })
           .where(eq(rfpAnalytics.id, existingAnalytics.id));
       } else {

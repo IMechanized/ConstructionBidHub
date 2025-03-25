@@ -45,5 +45,10 @@ export function usePwaInstall() {
     setIsInstallable(false);
   };
 
-  return { isInstallable, install };
+  const dismiss = () => {
+    // Allow user to dismiss the install prompt without installing
+    setIsInstallable(false);
+  };
+
+  return { isInstallable, install, dismiss };
 }

@@ -44,57 +44,73 @@ export default function RfpPage() {
     viewStartTime.current = Date.now();
     hasTrackedView.current = false;
     
-    // Only track if user is logged in and not the owner of the RFP
-    const shouldTrackView = user && rfp && user.id !== rfp.organizationId;
-    console.log(`View tracking eligibility check: User: ${user?.id}, RFP Owner: ${rfp?.organizationId}, Should track: ${shouldTrackView}`);
+    // Skip tracking if we don't have RFP data or user isn't logged in
+    if (!user || !rfp) {
+      console.log(`View tracking skipped - missing data: User=${!!user}, RFP=${!!rfp}`);
+      return;
+    }
+    
+    // Double-check permission - only track if user is logged in and not the owner of the RFP
+    const shouldTrackView = user.id !== rfp.organizationId;
+    console.log(`View tracking eligibility check: User ID=${user.id}, RFP Owner ID=${rfp.organizationId}, Should track=${shouldTrackView}`);
+    
+    // Skip if user is the owner
+    if (!shouldTrackView) {
+      console.log('View tracking not applicable - user is RFP owner');
+      return;
+    }
     
     const trackViewDuration = async () => {
-      if (shouldTrackView && !hasTrackedView.current) {
-        try {
-          const duration = Math.floor((Date.now() - viewStartTime.current) / 1000); // Convert to seconds
+      if (hasTrackedView.current) {
+        console.log('View already tracked for this session, skipping');
+        return;
+      }
+      
+      try {
+        const duration = Math.floor((Date.now() - viewStartTime.current) / 1000); // Convert to seconds
+        
+        // Only track if the user spent at least 3 seconds on the page (to filter out accidental clicks)
+        if (duration >= 3) {
+          console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
           
-          // Only track if the user spent at least 3 seconds on the page (to filter out accidental clicks)
-          if (duration >= 3) {
-            console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
-            
-            const response = await fetch('/api/analytics/track-view', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                rfpId: Number(id),
-                duration: duration,
-              }),
-            });
-            
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.skipped) {
-              console.log('View tracking skipped (owner self-view)');
-            } else {
-              console.log('View tracking successful');
-              // Invalidate analytics cache if this user generated new analytics
-              // This ensures analytics on Dashboard are up-to-date
-              try {
-                const { queryClient } = await import('@/lib/queryClient');
-                queryClient.invalidateQueries({ queryKey: ['/api/analytics/boosted'] });
-              } catch (err) {
-                console.error('Failed to invalidate analytics cache:', err);
-              }
-            }
-            
-            hasTrackedView.current = true;
-          } else {
-            console.log(`View duration too short: ${duration}s, not tracking`);
+          const response = await fetch('/api/analytics/track-view', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              rfpId: Number(id),
+              duration: duration,
+            }),
+            credentials: 'include', // Important: Include cookies for auth
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        } catch (error) {
-          console.error('Failed to track RFP view:', error);
+          
+          const data = await response.json();
+          
+          if (data.skipped) {
+            console.log('View tracking skipped (owner self-view)');
+          } else {
+            console.log('View tracking successful');
+            // Invalidate analytics cache if this user generated new analytics
+            // This ensures analytics on Dashboard are up-to-date
+            try {
+              const { queryClient } = await import('@/lib/queryClient');
+              queryClient.invalidateQueries({ queryKey: ['/api/analytics/boosted'] });
+            } catch (err) {
+              console.error('Failed to invalidate analytics cache:', err);
+            }
+          }
+          
+          hasTrackedView.current = true;
+        } else {
+          console.log(`View duration too short: ${duration}s, not tracking`);
         }
+      } catch (error) {
+        console.error('Failed to track RFP view:', error);
       }
     };
 
@@ -107,10 +123,17 @@ export default function RfpPage() {
 
     // Add visibility change listener
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Set up tracking to record after 10 seconds on page (even if they don't leave)
+    const trackingTimer = setTimeout(() => {
+      console.log("Performing scheduled view tracking after 10s of engagement");
+      trackViewDuration();
+    }, 10000);
 
     // Cleanup function to track view when component unmounts
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearTimeout(trackingTimer);
       trackViewDuration();
     };
   }, [id, user, rfp]);

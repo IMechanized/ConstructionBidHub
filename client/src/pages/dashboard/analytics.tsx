@@ -48,15 +48,21 @@ export default function AnalyticsDashboard() {
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     staleTime: 0, // Ensures data is always considered stale
+    retry: 2,     // Retry failed requests a couple times
+    refetchInterval: 60000, // Refresh data every minute for real-time updates
   });
   
-  // Add console logs for debugging
-  console.log("Analytics data loaded:", analytics !== undefined);
-  console.log("Analytics data type:", typeof analytics);
-  console.log("Analytics array length:", analytics?.length);
-  console.log("Analytics full data:", analytics);
-  console.log("Analytics loading:", isLoading);
-  console.log("Analytics error:", error);
+  // Log analytics data for troubleshooting
+  useEffect(() => {
+    if (analytics) {
+      console.log(`Analytics data loaded successfully: ${analytics.length} items`);
+      if (analytics.length > 0) {
+        console.log('Sample analytics item:', JSON.stringify(analytics[0]));
+      }
+    } else if (error) {
+      console.error('Error loading analytics:', error);
+    }
+  }, [analytics, error]);
   
   // Force data reload after 1 second for debugging purposes
   useEffect(() => {

@@ -56,6 +56,37 @@ export default function AnalyticsDashboard() {
       </div>
     );
   }
+  
+  // Handle case when there are no analytics to display
+  if (!analytics || analytics.length === 0) {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <DashboardSidebar currentPath={location} />
+        
+        <div className="flex-1 md:ml-[280px]">
+          <main className="w-full min-h-screen pb-16 md:pb-0">
+            <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
+              <BreadcrumbNav items={breadcrumbItems} />
+              <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
+              
+              <div className="flex flex-col items-center justify-center p-8 mt-12 border rounded-lg border-dashed border-muted-foreground">
+                <div className="text-center max-w-md">
+                  <h3 className="text-xl font-semibold mb-2">No Boosted RFPs Found</h3>
+                  <p className="text-muted-foreground mb-6">
+                    You don't have any featured RFPs yet. Boosting your RFPs makes them more visible to contractors 
+                    and provides detailed analytics on views and engagement.
+                  </p>
+                  <Button onClick={() => setLocation('/dashboard/rfps')}>
+                    Go to Your RFPs
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   const totalItems = analytics?.length || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -83,7 +114,11 @@ export default function AnalyticsDashboard() {
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
-            <h1 className="text-3xl font-bold mb-8">Boosted RFPs Analytics</h1>
+            <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
+            <p className="text-muted-foreground mb-8">
+              View performance metrics for your featured RFPs. These analytics help you understand engagement and optimize your RFP visibility. 
+              <strong> Only boosted RFPs you own are shown here.</strong>
+            </p>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
               <Card>
@@ -95,7 +130,10 @@ export default function AnalyticsDashboard() {
                     {analytics?.reduce((sum, item) => sum + (item.totalViews || 0), 0)}
                   </div>
                   <p className="text-muted-foreground text-sm mt-1">
-                    Across all featured RFPs
+                    Total page views across all your boosted RFPs
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-medium">Note:</span> Owner views are not counted
                   </p>
                 </CardContent>
               </Card>
@@ -109,7 +147,10 @@ export default function AnalyticsDashboard() {
                     {analytics?.reduce((sum, item) => sum + (item.uniqueViews || 0), 0)}
                   </div>
                   <p className="text-muted-foreground text-sm mt-1">
-                    Individual users viewing your RFPs
+                    Individual users viewing your boosted RFPs
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Each visitor is counted once per day
                   </p>
                 </CardContent>
               </Card>
@@ -128,6 +169,9 @@ export default function AnalyticsDashboard() {
                   <p className="text-muted-foreground text-sm mt-1">
                     Average time spent viewing each RFP
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Longer view times indicate higher engagement
+                  </p>
                 </CardContent>
               </Card>
 
@@ -140,7 +184,10 @@ export default function AnalyticsDashboard() {
                     {analytics?.reduce((sum, item) => sum + (item.totalBids || 0), 0)}
                   </div>
                   <p className="text-muted-foreground text-sm mt-1">
-                    Bid submissions across all RFPs
+                    Bid submissions across all boosted RFPs
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-medium">CTR:</span> Measures bid submissions as % of views
                   </p>
                 </CardContent>
               </Card>

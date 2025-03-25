@@ -51,13 +51,29 @@ export default function RfpPage() {
           // Only track if the user spent at least 5 seconds on the page (to filter out accidental clicks)
           if (duration >= 5) {
             console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
-            await apiRequest('/api/analytics/track-view', {
+            
+            const response = await apiRequest('/api/analytics/track-view', {
               method: 'POST',
               body: JSON.stringify({
                 rfpId: Number(id),
                 duration: duration,
               }),
             });
+            
+            if (response.skipped) {
+              console.log('View tracking skipped (owner self-view)');
+            } else {
+              console.log('View tracking successful');
+              // Invalidate analytics cache if this user generated new analytics
+              // This ensures analytics on Dashboard are up-to-date
+              try {
+                const { queryClient } = await import('@/lib/queryClient');
+                queryClient.invalidateQueries({ queryKey: ['/api/analytics/boosted'] });
+              } catch (err) {
+                console.error('Failed to invalidate analytics cache:', err);
+              }
+            }
+            
             hasTrackedView.current = true;
           }
         } catch (error) {

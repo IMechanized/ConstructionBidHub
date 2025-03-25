@@ -55,11 +55,6 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
       icon: MessageSquare,
     },
     {
-      label: "RFIs",
-      href: "/dashboard/rfis",
-      icon: MessageSquare,
-    },
-    {
       label: "Reports",
       href: "/dashboard/reports",
       icon: FileBarChart,

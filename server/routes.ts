@@ -283,75 +283,22 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
       const user = req.user!;
-      console.log('Fetching analytics for user:', user.id, user.email, user.companyName);
+      const userId = user.id;
+      console.log(`Fetching analytics for user ID: ${userId}, Email: ${user.email}`);
 
-      // SECURITY FIX: ALWAYS start by getting only RFPs that this user owns
-      // This prevents users from seeing analytics for RFPs they don't own
-      const userRfps = await db
-        .select()
-        .from(rfps)
-        .where(eq(rfps.organizationId, user.id));
+      // Use the storage interface - it has proper security checks built-in
+      // This will only return RFPs that the current user owns
+      const analytics = await storage.getBoostedAnalytics(userId);
       
-      console.log(`User (${user.id}) owns ${userRfps.length} RFPs`);
-        
-      // Filter to featured RFPs only
-      const userFeaturedRfps = userRfps.filter(rfp => rfp.featured === true);
-      console.log(`Found ${userFeaturedRfps.length} featured RFPs for user ${user.id}`);
+      console.log(`Successfully retrieved ${analytics.length} analytics records for user ${userId}`);
       
-      // If no featured RFPs, return empty response
-      if (userFeaturedRfps.length === 0) {
-        console.log(`No featured RFPs for user ${user.id}, returning empty array`);
-        return res.json([]);
-      }
-      
-      // Date for today's analytics
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Process each featured RFP
-      const processedAnalytics = await Promise.all(
-        userFeaturedRfps.map(async (rfp) => {
-          // Get analytics for this RFP (owned by user)
-          console.log(`Processing analytics for RFP ${rfp.id} (owned by user ${user.id})`);
-          let analytics = await db
-            .select()
-            .from(rfpAnalytics)
-            .where(
-              and(
-                eq(rfpAnalytics.rfpId, rfp.id),
-                eq(rfpAnalytics.date, today)
-              )
-            );
-            
-          // If no analytics exist for today, create a new record with zeros
-          if (!analytics || analytics.length === 0) {
-            console.log(`No analytics found, creating new record for RFP ${rfp.id}`);
-            const [newAnalytics] = await db
-              .insert(rfpAnalytics)
-              .values({
-                rfpId: rfp.id,
-                date: today,
-                totalViews: 0,
-                uniqueViews: 0,
-                averageViewTime: 0,
-                totalBids: 0,
-                clickThroughRate: 0,
-              })
-              .returning();
-            
-            return { ...newAnalytics, rfp };
-          } else {
-            // Return existing analytics with RFP data
-            console.log(`Found existing analytics for RFP ${rfp.id}`);
-            return { ...analytics[0], rfp };
-          }
-        })
-      );
-      
-      console.log(`Returning ${processedAnalytics.length} analytics records for user ${user.id}`);
-      res.json(processedAnalytics);
+      // Return the filtered analytics
+      res.json(analytics);
     } catch (error) {
       console.error('Error fetching boosted analytics:', error);
-      res.status(500).json({ message: "Failed to fetch analytics" });
+      res.status(500).json({ 
+        message: "Failed to fetch analytics"
+      });
     }
   });
 

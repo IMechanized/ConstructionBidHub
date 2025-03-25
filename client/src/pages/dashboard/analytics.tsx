@@ -6,7 +6,8 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useEffect } from "react";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import { format } from "date-fns";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AnalyticsDashboard() {
@@ -30,6 +31,8 @@ export default function AnalyticsDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const breadcrumbItems = [
     {
@@ -42,15 +45,42 @@ export default function AnalyticsDashboard() {
     },
   ];
 
+  // Make sure we have the user ID for analytics queries
+  const userId = user?.id;
+
   // Ensure we always get fresh data with no caching
-  const { data: analytics, isLoading, error } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
-    queryKey: ["/api/analytics/boosted"],
+  const { data: analytics, isLoading, error, refetch } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
+    queryKey: ["/api/analytics/boosted", userId],
+    enabled: !!userId, // Only run the query when we have a user ID
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     staleTime: 0, // Ensures data is always considered stale
     retry: 2,     // Retry failed requests a couple times
     refetchInterval: 60000, // Refresh data every minute for real-time updates
   });
+  
+  // Function to manually refresh analytics data
+  const refreshAnalytics = async () => {
+    if (!userId || isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Analytics Refreshed",
+        description: "Latest data has been loaded",
+      });
+    } catch (err) {
+      console.error("Failed to refresh analytics:", err);
+      toast({
+        title: "Refresh Failed",
+        description: "Could not load updated analytics",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   // Log analytics data for troubleshooting
   useEffect(() => {
@@ -151,11 +181,24 @@ export default function AnalyticsDashboard() {
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
-            <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
-            <p className="text-muted-foreground mb-4">
-              View performance metrics for your featured RFPs. These analytics help you understand engagement and optimize your RFP visibility. 
-              <strong> Only boosted RFPs you own are shown here.</strong>
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
+                <p className="text-muted-foreground">
+                  View performance metrics for your featured RFPs. These analytics help you understand engagement and optimize your RFP visibility. 
+                  <strong> Only boosted RFPs you own are shown here.</strong>
+                </p>
+              </div>
+              <Button 
+                onClick={refreshAnalytics} 
+                disabled={isRefreshing} 
+                className="self-start flex items-center gap-2"
+                variant="outline"
+              >
+                <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Analytics'}
+              </Button>
+            </div>
             <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-8 text-sm">
               <p className="text-yellow-800 dark:text-yellow-200">
                 <strong>Note:</strong> Analytics data includes real-time tracking of views and engagement. 

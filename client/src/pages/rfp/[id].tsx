@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Rfp } from "@shared/schema";
@@ -18,12 +18,15 @@ import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
 import { Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
+import { apiRequest } from "@/lib/queryClient";
 
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const viewStartTime = useRef<number>(Date.now());
+  const hasTrackedView = useRef<boolean>(false);
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {
@@ -34,6 +37,51 @@ export default function RfpPage() {
   }>({
     queryKey: [`/api/rfps/${id}`],
   });
+  
+  // Track view time when user leaves the page or when component unmounts
+  useEffect(() => {
+    // Only track if user is logged in and not the owner of the RFP
+    const shouldTrackView = user && rfp && user.id !== rfp.organizationId && !hasTrackedView.current;
+    
+    const trackViewDuration = async () => {
+      if (shouldTrackView) {
+        try {
+          const duration = Math.floor((Date.now() - viewStartTime.current) / 1000); // Convert to seconds
+          
+          // Only track if the user spent at least 5 seconds on the page (to filter out accidental clicks)
+          if (duration >= 5) {
+            console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
+            await apiRequest('/api/analytics/track-view', {
+              method: 'POST',
+              body: JSON.stringify({
+                rfpId: Number(id),
+                duration: duration,
+              }),
+            });
+            hasTrackedView.current = true;
+          }
+        } catch (error) {
+          console.error('Failed to track RFP view:', error);
+        }
+      }
+    };
+
+    // Track view when page visibility changes (user switches tabs or minimizes window)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        trackViewDuration();
+      }
+    };
+
+    // Add visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function to track view when component unmounts
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      trackViewDuration();
+    };
+  }, [id, user, rfp]);
 
   const handleDownload = () => {
     const element = document.getElementById('rfp-content');

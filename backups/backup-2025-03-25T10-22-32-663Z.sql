@@ -595,6 +595,12 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 235	backup-2025-03-24T18-32-43-431Z.sql	success	\N	2025-03-24 18:32:47.908188
 236	backup-2025-03-24T18-32-56-831Z.sql	success	\N	2025-03-24 18:33:00.899785
 237	backup-2025-03-24T18-34-34-526Z.sql	success	\N	2025-03-24 18:34:38.249034
+238	backup-2025-03-24T18-39-27-129Z.sql	success	\N	2025-03-24 18:39:35.632615
+239	backup-2025-03-24T18-39-51-694Z.sql	success	\N	2025-03-24 18:39:57.4854
+240	backup-2025-03-24T18-45-06-295Z.sql	success	\N	2025-03-24 18:45:10.922259
+241	backup-2025-03-24T18-53-32-091Z.sql	success	\N	2025-03-24 18:53:36.374917
+242	backup-2025-03-24T18-55-09-296Z.sql	success	\N	2025-03-24 18:55:17.872533
+243	backup-2025-03-25T10-17-09-768Z.sql	success	\N	2025-03-25 10:17:16.267856
 \.
 
 
@@ -793,6 +799,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 180	12	mech@mail.com	Information	2025-03-18 13:01:26.476262	pending
 181	1	mechanizedsolutionsinc@gmail.com	Test RFI message	2025-03-18 13:25:56.846584	pending
 182	5	mechanizedsolutionsinc@gmail.com	More testing	2025-03-18 13:28:32.768448	pending
+183	1	sandy@mail.com	Bid.	2025-03-24 18:47:17.877738	pending
 \.
 
 
@@ -1064,7 +1071,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 237, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 243, true);
 
 
 --
@@ -1078,7 +1085,7 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 182, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 183, true);
 
 
 --

@@ -64,7 +64,22 @@ export default function DetailedReportPage() {
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save();
+    // Save current theme state
+    const root = window.document.documentElement;
+    const wasDarkMode = root.classList.contains('dark');
+    
+    // Force light mode for PDF generation
+    root.classList.remove('dark');
+    root.classList.add('light');
+
+    // Generate PDF and then restore original theme
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Restore original theme
+      if (wasDarkMode) {
+        root.classList.remove('light');
+        root.classList.add('dark');
+      }
+    });
   };
 
   if (loadingRfp) {

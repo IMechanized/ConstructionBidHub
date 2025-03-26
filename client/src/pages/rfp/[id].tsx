@@ -154,7 +154,22 @@ export default function RfpPage() {
     if (bidButton) bidButton.style.display = 'none';
     if (downloadButton) downloadButton.style.display = 'none';
 
+    // Save current theme state
+    const root = window.document.documentElement;
+    const wasDarkMode = root.classList.contains('dark');
+    
+    // Force light mode for PDF generation
+    root.classList.remove('dark');
+    root.classList.add('light');
+
+    // Generate PDF and then restore original theme
     html2pdf().set(opt).from(element).save().then(() => {
+      // Restore original theme
+      if (wasDarkMode) {
+        root.classList.remove('light');
+        root.classList.add('dark');
+      }
+      
       // Restore buttons after PDF generation
       if (bidButton) bidButton.style.display = 'block';
       if (downloadButton) downloadButton.style.display = 'block';

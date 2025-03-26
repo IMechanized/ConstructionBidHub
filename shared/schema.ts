@@ -48,6 +48,7 @@ export const rfps = pgTable("rfps", {
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),             // Promoted/featured status
+  featuredAt: timestamp("featured_at"),                    // When the RFP was featured
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

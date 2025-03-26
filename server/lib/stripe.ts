@@ -6,9 +6,7 @@
 import Stripe from 'stripe';
 
 // Initialize Stripe with secret key from env
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2023-10-16', // Use the latest stable API version
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Define featured RFP price (in cents)
 export const FEATURED_RFP_PRICE = 2500; // $25.00
@@ -21,12 +19,14 @@ export const FEATURED_RFP_PRICE = 2500; // $25.00
  */
 export async function createPaymentIntent(metadata: { 
   userId: number, 
-  rfpId?: number 
+  rfpId: number,
+  rfpTitle?: string 
 }): Promise<Stripe.PaymentIntent> {
   return stripe.paymentIntents.create({
     amount: FEATURED_RFP_PRICE,
     currency: 'usd',
     metadata, // Store user and RFP data for reference
+    description: metadata.rfpTitle ? `Featured listing for RFP: ${metadata.rfpTitle}` : 'Featured RFP listing',
     automatic_payment_methods: { 
       enabled: true, // Automatically enables the best payment methods for the customer
     },

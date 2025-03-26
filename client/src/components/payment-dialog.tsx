@@ -4,16 +4,9 @@
  * A modal dialog that contains the payment form for featuring RFPs
  */
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { queryClient } from "@/lib/queryClient";
-import PaymentForm from "./payment-form";
-import { useTranslation } from "react-i18next";
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import PaymentForm from './payment-form';
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -28,32 +21,28 @@ export default function PaymentDialog({
   rfpId,
   onPaymentSuccess,
 }: PaymentDialogProps) {
-  const { t } = useTranslation();
-
-  const handleSuccess = () => {
-    // Invalidate RFP queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
-    if (rfpId) {
-      queryClient.invalidateQueries({ queryKey: ["/api/rfps", rfpId.toString()] });
-    }
-    
-    onPaymentSuccess();
-    onClose();
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('payment.featureYourRfp')}</DialogTitle>
-          <DialogDescription>
-            {t('payment.featureDescription')}
-          </DialogDescription>
+          <DialogTitle>Feature Your RFP</DialogTitle>
         </DialogHeader>
+        
         <div className="py-4">
+          <p className="mb-4">
+            Featuring your RFP will increase its visibility by:
+          </p>
+          
+          <ul className="list-disc pl-5 mb-4 space-y-1">
+            <li>Displaying it at the top of all search results</li>
+            <li>Adding a "Featured" badge for more attention</li>
+            <li>Including it in promotional emails to contractors</li>
+            <li>Receiving priority in mobile notifications</li>
+          </ul>
+          
           <PaymentForm
             rfpId={rfpId}
-            onSuccess={handleSuccess}
+            onSuccess={onPaymentSuccess}
             onCancel={onClose}
           />
         </div>

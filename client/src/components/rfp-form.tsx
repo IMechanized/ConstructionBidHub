@@ -8,7 +8,7 @@
  * - Required field validation
  * - Date field formatting
  * - Optional fields (budget, certifications, portfolio)
- * - Boost option for featured RFPs
+ * - Boost option for featured RFPs with Stripe payment integration
  * 
  * @component
  * @example
@@ -22,7 +22,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,10 +30,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertRfpSchema } from "@shared/schema";
-import { Loader2 } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import PaymentDialog from "./payment-dialog";
+import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
 
 interface RfpFormProps {
   onSuccess?: () => void;
@@ -44,6 +46,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
+  
+  // Fetch the featured RFP price
+  const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
+    queryKey: ['/api/payments/price'],
+    queryFn: getFeaturedRfpPrice,
+  });
 
   // Set language from user preference
   useEffect(() => {
@@ -90,15 +100,16 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
-    onSuccess: () => {
-      // Invalidate cache and reset form
-      queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
-      form.reset();
-      toast({
-        title: t('rfp.rfpCreated'),
-        description: t('rfp.rfpCreatedSuccess'),
-      });
-      onSuccess?.();
+    onSuccess: (newRfp) => {
+      setCreatedRfpId(newRfp.id);
+      
+      // If the RFP should be featured, show payment dialog
+      if (newRfp.featured) {
+        setShowPaymentDialog(true);
+      } else {
+        // Otherwise handle normal success flow
+        finishSubmission();
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -109,9 +120,46 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     },
   });
 
+  // Handle completion after successful submission
+  const finishSubmission = () => {
+    // Invalidate cache and reset form
+    queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
+    form.reset();
+    setCreatedRfpId(null);
+    toast({
+      title: t('rfp.rfpCreated'),
+      description: t('rfp.rfpCreatedSuccess'),
+    });
+    onSuccess?.();
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = () => {
+    toast({
+      title: t('payment.success'),
+      description: t('rfp.featuredSuccess'),
+    });
+    finishSubmission();
+  };
+
   // Form submission handler
   const onSubmit = async (data: any) => {
-    createRfpMutation.mutate(data);
+    // If user is requesting to feature the RFP (from button click)
+    if (data.featured) {
+      // First validate the form
+      const isValid = await form.trigger();
+      if (!isValid) return;
+      
+      // Submit the form values without featured flag first
+      const formValues = form.getValues();
+      createRfpMutation.mutate({
+        ...formValues,
+        featured: false // Initially create as non-featured
+      });
+    } else {
+      // Regular submission
+      createRfpMutation.mutate(data);
+    }
   };
 
   return (
@@ -327,20 +375,31 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           <Button
             type="button"
             onClick={() => form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()}
-            disabled={createRfpMutation.isPending}
+            disabled={createRfpMutation.isPending || isPriceLoading}
             data-testid="boost-button"
           >
-            {createRfpMutation.isPending ? (
+            {createRfpMutation.isPending || isPriceLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {t('rfp.boosting')}
               </>
             ) : (
-              t('rfp.boostVisibility')
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                {t('rfp.boostVisibility')} {formatPrice(featuredPrice)}
+              </>
             )}
           </Button>
         </div>
       </form>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        isOpen={showPaymentDialog}
+        onClose={() => setShowPaymentDialog(false)}
+        rfpId={createdRfpId || undefined}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </Form>
   );
 }

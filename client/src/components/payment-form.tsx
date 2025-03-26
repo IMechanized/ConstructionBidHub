@@ -4,16 +4,14 @@
  * Handles payment processing for featuring RFPs using Stripe Elements
  */
 
-import { useState, useEffect } from 'react';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader } from '@/components/ui/loader';
+import React, { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import stripePromise from '@/lib/stripe';
-import { apiRequest } from '@/lib/queryClient';
-import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
+import { Loader } from './ui/loader';
+import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice } from '@/lib/stripe';
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentFormProps {
   rfpId?: number;
@@ -21,99 +19,94 @@ interface PaymentFormProps {
   onCancel: () => void;
 }
 
-// The inner payment form component that uses the Stripe hooks
 function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
-  const { t } = useTranslation();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async ({ paymentIntentId, rfpId }: { paymentIntentId: string, rfpId: number }) => {
+      return confirmPayment(paymentIntentId, rfpId);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Payment Successful',
+        description: 'Your RFP has been featured successfully!',
+        variant: 'default',
+      });
+      onSuccess();
+    },
+    onError: (error: Error) => {
+      setIsLoading(false);
+      toast({
+        title: 'Payment Confirmation Failed',
+        description: error.message || 'Failed to confirm payment. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !rfpId) {
       return;
     }
 
-    setIsProcessing(true);
-    setError(null);
+    setIsLoading(true);
+    setErrorMessage(null);
 
-    try {
-      // Confirm the payment with Stripe
-      const { error: submitError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.origin, // Used only for redirect-based payments
-        },
-        redirect: 'if_required', // Only redirect if required by the payment method
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      setErrorMessage(error.message || 'An unknown error occurred');
+      setIsLoading(false);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Payment successful, now update the RFP status
+      confirmPaymentMutation.mutate({ 
+        paymentIntentId: paymentIntent.id, 
+        rfpId 
       });
-
-      if (submitError) {
-        setError(submitError.message || 'An error occurred with your payment');
-        setIsProcessing(false);
-        return;
-      }
-
-      if (paymentIntent && paymentIntent.id && paymentIntent.status === 'succeeded') {
-        // Now confirm the payment with our server and update the RFP
-        const response = await apiRequest('POST', '/api/payments/confirm', {
-          paymentIntentId: paymentIntentId || paymentIntent.id,
-          rfpId,
-        });
-
-        if (response.ok) {
-          toast({
-            title: t('payment.success'),
-            description: t('payment.rfpFeatured'),
-          });
-          onSuccess();
-        } else {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to update RFP status');
-        }
-      }
-    } catch (err) {
-      console.error('Payment confirmation error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while processing payment');
-    } finally {
-      setIsProcessing(false);
+    } else {
+      setErrorMessage('Payment status is pending or requires additional action');
+      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertTitle>{t('payment.paymentError')}</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
+    <form onSubmit={handleSubmit}>
       <PaymentElement />
-
+      
+      {errorMessage && (
+        <div className="mt-3 text-red-500 text-sm">{errorMessage}</div>
+      )}
+      
       <div className="flex justify-between mt-6">
         <Button 
           type="button" 
-          variant="outline" 
+          variant="outline"
           onClick={onCancel}
-          disabled={isProcessing}
+          disabled={isLoading}
         >
-          {t('common.cancel')}
+          Cancel
         </Button>
+        
         <Button 
           type="submit" 
-          disabled={!stripe || !elements || isProcessing}
+          disabled={!stripe || isLoading}
         >
-          {isProcessing ? (
+          {isLoading ? (
             <>
-              <Loader className="mr-2 h-4 w-4" />
-              {t('payment.processing')}
+              <Loader size="sm" className="mr-2" />
+              Processing...
             </>
           ) : (
-            t('payment.payNow')
+            'Pay & Feature'
           )}
         </Button>
       </div>
@@ -121,96 +114,70 @@ function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
   );
 }
 
-// Wrapper component that creates the payment intent and renders Stripe Elements
 export default function PaymentForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [price, setPrice] = useState<number>(0);
   const { toast } = useToast();
-  const { t } = useTranslation();
+
+  const createPaymentIntentMutation = useMutation({
+    mutationFn: async (rfpId: number) => {
+      return createPaymentIntent(rfpId);
+    },
+    onSuccess: (data) => {
+      setClientSecret(data.clientSecret);
+      setPrice(data.amount);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Payment Setup Failed',
+        description: error.message || 'Could not initialize payment. Please try again.',
+        variant: 'destructive',
+      });
+      onCancel();
+    }
+  });
 
   useEffect(() => {
-    // Create a payment intent when the component mounts
-    const createIntent = async () => {
-      try {
-        const response = await apiRequest('POST', '/api/payments/create-intent', { rfpId });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to create payment intent');
-        }
-        
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-        setPaymentIntentId(data.paymentIntentId);
-      } catch (err) {
-        console.error('Error creating payment intent:', err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        toast({
-          title: t('payment.error'),
-          description: err instanceof Error ? err.message : t('payment.intentError'),
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (rfpId) {
+      createPaymentIntentMutation.mutate(rfpId);
+    }
+  }, [rfpId]);
 
-    createIntent();
-  }, [rfpId, toast, t]);
-
-  if (isLoading) {
+  if (!clientSecret || createPaymentIntentMutation.isPending) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>{t('payment.preparing')}</CardTitle>
-          <CardDescription>{t('payment.preparingDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-6">
-          <Loader size="lg" />
-        </CardContent>
+      <Card className="p-8 flex justify-center items-center">
+        <Loader size="lg" />
       </Card>
     );
   }
 
-  if (error) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>{t('payment.error')}</CardTitle>
-          <CardDescription>{error}</CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button onClick={onCancel}>{t('common.goBack')}</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
-  // Only render Stripe Elements once we have a client secret
-  if (!clientSecret) {
-    return null;
-  }
+  // Type assertion to avoid type errors with Stripe's API
+  const options = {
+    clientSecret,
+    appearance: {
+      theme: 'stripe' as const,
+    },
+  };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>{t('payment.featuredRfpPayment')}</CardTitle>
-        <CardDescription>{t('payment.featuredRfpDescription')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Elements 
-          stripe={stripePromise} 
-          options={{ clientSecret }}
-        >
-          <StripeCheckoutForm 
-            rfpId={rfpId} 
-            onSuccess={onSuccess} 
-            onCancel={onCancel} 
-          />
-        </Elements>
-      </CardContent>
-    </Card>
+    <div>
+      <div className="mb-6">
+        <div className="flex justify-between mb-2">
+          <span className="font-medium">Featured RFP listing:</span>
+          <span className="font-bold">{formatPrice(price)}</span>
+        </div>
+        <div className="text-sm text-muted-foreground mb-4">
+          Your RFP will be featured for 30 days, after which it will return to normal listing status.
+        </div>
+      </div>
+      
+      <Card>
+        <CardContent className="p-4">
+          <Elements stripe={stripePromise} options={options}>
+            <StripeCheckoutForm rfpId={rfpId} onSuccess={onSuccess} onCancel={onCancel} />
+          </Elements>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -7,6 +7,8 @@ import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchem
 import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
+import { createPaymentIntent, verifyPayment } from './lib/stripe';
+import paymentsRouter from './routes/payments';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -101,6 +103,39 @@ export function registerRoutes(app: Express): Server {
       })
     );
     res.json(rfpsWithOrgs);
+  });
+  
+  // Get featured RFPs
+  app.get("/api/rfps/featured", async (req, res) => {
+    try {
+      const featuredRfps = await storage.getFeaturedRfps();
+      
+      // Add organization details to each RFP
+      const rfpsWithOrgs = await Promise.all(
+        featuredRfps.map(async (rfp) => {
+          if (rfp.organizationId === null) {
+            return {
+              ...rfp,
+              organization: null
+            };
+          }
+          const org = await storage.getUser(rfp.organizationId);
+          return {
+            ...rfp,
+            organization: org ? {
+              id: org.id,
+              companyName: org.companyName,
+              logo: org.logo
+            } : null
+          };
+        })
+      );
+      
+      res.json(rfpsWithOrgs);
+    } catch (error) {
+      console.error('Error fetching featured RFPs:', error);
+      res.status(500).json({ message: "Failed to fetch featured RFPs" });
+    }
   });
 
   app.get("/api/rfps/:id", async (req, res) => {
@@ -555,6 +590,83 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
+
+  // Payment routes
+  app.post("/api/payments/create-payment-intent", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const { rfpId } = req.body;
+      if (!rfpId) {
+        return res.status(400).json({ message: "RFP ID is required" });
+      }
+      
+      // Verify the RFP belongs to the current user
+      const rfp = await storage.getRfpById(Number(rfpId));
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+      }
+      
+      // Create payment intent with Stripe
+      const paymentIntent = await createPaymentIntent({
+        rfpId: String(rfpId),
+        userId: String(req.user!.id),
+        rfpTitle: rfp.title
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        amount: paymentIntent.amount
+      });
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to create payment intent"
+      });
+    }
+  });
+  
+  app.post("/api/payments/confirm-payment", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const { paymentIntentId, rfpId } = req.body;
+      if (!paymentIntentId || !rfpId) {
+        return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
+      }
+      
+      // Verify payment was successful
+      const paymentVerified = await verifyPayment(paymentIntentId);
+      if (!paymentVerified) {
+        return res.status(400).json({ message: "Payment verification failed" });
+      }
+      
+      // Verify the RFP belongs to the current user
+      const rfp = await storage.getRfpById(Number(rfpId));
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+      }
+      
+      // Update RFP to be featured
+      const updatedRfp = await storage.updateRfp(Number(rfpId), { 
+        featured: true
+      });
+      
+      res.json({
+        success: true,
+        message: "Payment confirmed and RFP featured successfully",
+        rfp: updatedRfp
+      });
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to confirm payment"
+      });
+    }
+  });
+
+  // Register the payments router
+  app.use('/api/payments', paymentsRouter);
 
   const httpServer = createServer(app);
   return httpServer;

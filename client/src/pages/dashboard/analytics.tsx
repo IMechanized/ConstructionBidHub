@@ -48,9 +48,12 @@ export default function AnalyticsDashboard() {
   // Make sure we have the user ID for analytics queries
   const userId = user?.id;
 
+  // Use a timestamp to force fresh data and prevent caching issues
+  const [timestamp, setTimestamp] = useState(() => Date.now());
+  
   // Ensure we always get fresh data with no caching
   const { data: analytics, isLoading, error, refetch } = useQuery<(RfpAnalytics & { rfp: Rfp })[]>({
-    queryKey: ["/api/analytics/boosted", userId],
+    queryKey: ["/api/analytics/boosted", userId, timestamp],
     enabled: !!userId, // Only run the query when we have a user ID
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -65,7 +68,15 @@ export default function AnalyticsDashboard() {
     
     setIsRefreshing(true);
     try {
+      // Update timestamp to force cache invalidation
+      setTimestamp(Date.now());
+      
+      // Force invalidate the query cache
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/boosted"] });
+      
+      // Then refetch data
       await refetch();
+      
       toast({
         title: "Analytics Refreshed",
         description: "Latest data has been loaded",

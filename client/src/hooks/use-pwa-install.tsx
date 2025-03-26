@@ -10,7 +10,38 @@ export function usePwaInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
+    // Check if app is already installed
+    const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches 
+                       || window.matchMedia('(display-mode: fullscreen)').matches
+                       || window.matchMedia('(display-mode: minimal-ui)').matches
+                       || (window.navigator as any).standalone === true;
+    
+    if (isAppInstalled) {
+      console.log('PWA already installed, hiding install prompt');
+      setIsInstallable(false);
+      return;
+    }
+    
+    // Re-check on visibility change to detect installation
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const isNowInstalled = window.matchMedia('(display-mode: standalone)').matches 
+                           || window.matchMedia('(display-mode: fullscreen)').matches
+                           || window.matchMedia('(display-mode: minimal-ui)').matches
+                           || (window.navigator as any).standalone === true;
+        
+        if (isNowInstalled && isInstallable) {
+          console.log('App was installed while page was hidden');
+          setIsInstallable(false);
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Handler for the beforeinstallprompt event
     const handler = (e: Event) => {
+      console.log('BeforeInstallPrompt event detected');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Store the event for later use
@@ -22,8 +53,9 @@ export function usePwaInstall() {
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isInstallable]);
 
   const install = async () => {
     if (!deferredPrompt) return;

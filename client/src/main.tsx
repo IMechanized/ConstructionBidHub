@@ -14,19 +14,21 @@ async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
       console.log('Service Worker: Registration starting...');
-      // Force reload of service worker in development
-      if (import.meta.env.DEV) {
-        await navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            console.log('Service Worker: Unregistering old service worker');
-            registration.unregister();
-          }
-        });
-      }
-
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      
+      // Force unregister previous service workers to ensure updates are applied
+      await navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          console.log('Service Worker: Unregistering old service worker');
+          registration.unregister();
+        }
+      });
+      
+      // Add cache buster to ensure we get the most recent version
+      const swVersion = '1.1.0';
+      const registration = await navigator.serviceWorker.register(`/sw.js?v=${swVersion}`, {
         scope: '/',
-        type: 'classic'
+        type: 'classic',
+        updateViaCache: 'none' // Don't use cache for the service worker
       });
 
       if (registration.active) {

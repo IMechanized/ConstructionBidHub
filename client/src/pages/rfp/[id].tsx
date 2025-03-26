@@ -19,7 +19,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
-import { useTheme } from "@/components/theme-provider";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -139,50 +138,8 @@ export default function RfpPage() {
     };
   }, [id, user, rfp]);
 
-  const { theme, setTheme } = useTheme();
-  const [isPrinting, setIsPrinting] = useState(false);
-  
-  const handleDownload = async () => {
-    // Save current theme state
-    const originalTheme = theme;
+  const handleDownload = () => {
     const element = document.getElementById('rfp-content');
-    
-    // Hide buttons before generating PDF
-    const bidButton = document.getElementById('bid-button');
-    const downloadButton = document.getElementById('download-button');
-    if (bidButton) bidButton.style.display = 'none';
-    if (downloadButton) downloadButton.style.display = 'none';
-    
-    // Create a temporary stylesheet to override dark mode styles during printing
-    const styleElement = document.createElement('style');
-    styleElement.innerHTML = `
-      #rfp-content {
-        background-color: white !important;
-        color: black !important;
-      }
-      #rfp-content h1, #rfp-content h2, #rfp-content h3, #rfp-content p, #rfp-content span,
-      #rfp-content strong, #rfp-content div {
-        color: black !important;
-      }
-      #rfp-content a {
-        color: #3b82f6 !important;
-      }
-      #rfp-content hr {
-        border-color: #e5e7eb !important;
-      }
-      #rfp-content .text-muted-foreground {
-        color: #6b7280 !important;
-      }
-    `;
-    
-    // Apply light mode
-    setIsPrinting(true);
-    setTheme('light');
-    document.head.appendChild(styleElement);
-    
-    // Force a re-render to ensure light mode is applied
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
     const opt = {
       margin: 1,
       filename: `${rfp?.title}-rfp.pdf`,
@@ -191,23 +148,27 @@ export default function RfpPage() {
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
+    // Hide buttons before generating PDF
+    const bidButton = document.getElementById('bid-button');
+    const downloadButton = document.getElementById('download-button');
+    if (bidButton) bidButton.style.display = 'none';
+    if (downloadButton) downloadButton.style.display = 'none';
+
+    // Save current theme state
+    const root = window.document.documentElement;
+    const wasDarkMode = root.classList.contains('dark');
+    
+    // Force light mode for PDF generation
+    root.classList.remove('dark');
+    root.classList.add('light');
+
     // Generate PDF and then restore original theme
     html2pdf().set(opt).from(element).save().then(() => {
-      // Cleanup: Remove temporary stylesheet and restore theme
-      document.head.removeChild(styleElement);
-      setTheme(originalTheme);
-      setIsPrinting(false);
-      console.log('PDF generated and theme restored to:', originalTheme);
-      
-      // Restore buttons after PDF generation
-      if (bidButton) bidButton.style.display = 'block';
-      if (downloadButton) downloadButton.style.display = 'block';
-    }).catch(error => {
-      console.error('PDF generation error:', error);
-      // Cleanup on error as well
-      document.head.removeChild(styleElement);
-      setTheme(originalTheme);
-      setIsPrinting(false);
+      // Restore original theme
+      if (wasDarkMode) {
+        root.classList.remove('light');
+        root.classList.add('dark');
+      }
       
       // Restore buttons after PDF generation
       if (bidButton) bidButton.style.display = 'block';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Rfp, Rfi } from "@shared/schema";
@@ -17,7 +17,6 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
-import { useTheme } from "@/components/theme-provider";
 
 export default function DetailedReportPage() {
   const { id } = useParams();
@@ -54,48 +53,9 @@ export default function DetailedReportPage() {
     },
   ];
 
-  const { theme, setTheme } = useTheme();
-  const [isPrinting, setIsPrinting] = useState(false);
-  
   // Function to handle PDF download
-  const handleDownload = async () => {
-    // Save current theme state
-    const originalTheme = theme;
+  const handleDownload = () => {
     const element = document.getElementById('report-content');
-    const container = document.getElementById('report-container');
-    
-    // Create a temporary stylesheet to override dark mode styles during printing
-    const styleElement = document.createElement('style');
-    styleElement.innerHTML = `
-      #report-content {
-        background-color: white !important;
-        color: black !important;
-      }
-      #report-content h1, #report-content h2, #report-content p, #report-content strong {
-        color: black !important;
-      }
-      #report-content .card, #report-content table {
-        background-color: white !important;
-        color: black !important;
-        border-color: #e5e7eb !important;
-      }
-      #report-content th, #report-content td {
-        border-color: #e5e7eb !important;
-        color: black !important;
-      }
-      #report-content span {
-        border-color: #e5e7eb !important;
-      }
-    `;
-    
-    // Apply light mode
-    setIsPrinting(true);
-    setTheme('light');
-    document.head.appendChild(styleElement);
-    
-    // Force a re-render to ensure light mode is applied
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
     const opt = {
       margin: 1,
       filename: `${rfp?.title}-report.pdf`,
@@ -104,19 +64,21 @@ export default function DetailedReportPage() {
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
+    // Save current theme state
+    const root = window.document.documentElement;
+    const wasDarkMode = root.classList.contains('dark');
+    
+    // Force light mode for PDF generation
+    root.classList.remove('dark');
+    root.classList.add('light');
+
     // Generate PDF and then restore original theme
     html2pdf().set(opt).from(element).save().then(() => {
-      // Cleanup: Remove temporary stylesheet and restore theme
-      document.head.removeChild(styleElement);
-      setTheme(originalTheme);
-      setIsPrinting(false);
-      console.log('PDF generated and theme restored to:', originalTheme);
-    }).catch(error => {
-      console.error('PDF generation error:', error);
-      // Cleanup on error as well
-      document.head.removeChild(styleElement);
-      setTheme(originalTheme);
-      setIsPrinting(false);
+      // Restore original theme
+      if (wasDarkMode) {
+        root.classList.remove('light');
+        root.classList.add('dark');
+      }
     });
   };
 

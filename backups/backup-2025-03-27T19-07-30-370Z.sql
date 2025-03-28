@@ -636,6 +636,12 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 275	backup-2025-03-26T19-19-09-369Z.sql	success	\N	2025-03-26 19:19:13.408656
 276	backup-2025-03-26T19-21-15-607Z.sql	success	\N	2025-03-26 19:21:22.225872
 277	backup-2025-03-26T19-24-04-967Z.sql	success	\N	2025-03-26 19:24:10.639573
+278	backup-2025-03-26T19-25-23-582Z.sql	success	\N	2025-03-26 19:25:27.263875
+279	backup-2025-03-26T19-27-03-803Z.sql	success	\N	2025-03-26 19:27:12.430474
+280	backup-2025-03-26T19-28-44-997Z.sql	success	\N	2025-03-26 19:28:49.940052
+281	backup-2025-03-26T19-30-33-670Z.sql	success	\N	2025-03-26 19:30:42.306728
+282	backup-2025-03-26T19-31-45-776Z.sql	success	\N	2025-03-26 19:31:49.590042
+283	backup-2025-03-27T11-24-09-016Z.sql	success	\N	2025-03-27 11:24:14.748868
 \.
 
 
@@ -917,6 +923,10 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 71	6	2025-03-26	1	1	10	0	0
 72	8	2025-03-26	1	1	7	0	0
 73	10	2025-03-26	1	1	4	0	0
+74	1	2025-03-27	0	0	0	0	0
+75	69	2025-03-27	0	0	0	0	0
+76	70	2025-03-27	0	0	0	0	0
+77	68	2025-03-27	0	0	0	0	0
 \.
 
 
@@ -1124,7 +1134,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 277, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 283, true);
 
 
 --
@@ -1145,7 +1155,7 @@ SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 73, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 77, true);
 
 
 --

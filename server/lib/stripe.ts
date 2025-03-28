@@ -18,8 +18,8 @@ export const FEATURED_RFP_PRICE = 2500; // $25.00
  * @returns The payment intent with client secret
  */
 export async function createPaymentIntent(metadata: { 
-  userId: number, 
-  rfpId: number,
+  userId: string, 
+  rfpId: string,
   rfpTitle?: string 
 }): Promise<Stripe.PaymentIntent> {
   return stripe.paymentIntents.create({

@@ -38,8 +38,9 @@ router.post('/create-payment-intent', async (req, res) => {
 
     // Create the payment intent
     const paymentIntent = await createPaymentIntent({
-      rfpId: Number(rfpId),
-      userId: req.user!.id
+      rfpId: String(rfpId),
+      userId: String(req.user!.id),
+      rfpTitle: rfp.title
     });
 
     res.json({

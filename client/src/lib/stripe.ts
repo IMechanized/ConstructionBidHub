@@ -4,8 +4,9 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Initialize Stripe with publishable key 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe with publishable key from environment
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 // Get the payment amount for featuring an RFP
 export async function getFeaturedRfpPrice(): Promise<number> {

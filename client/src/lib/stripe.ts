@@ -5,7 +5,9 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
 // Initialize Stripe with publishable key from environment
+// In development, this is set in .env file, in production it comes from environment variable
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 // Get the payment amount for featuring an RFP

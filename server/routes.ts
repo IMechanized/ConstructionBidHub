@@ -172,13 +172,22 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);
       console.log('RFP creation request received:', req.body);
 
+      // Parse the submitted data
       const data = insertRfpSchema.parse(req.body);
-      console.log('Validated RFP data:', data);
+      
+      // Always ensure featured is false - it can only be set via payment flow
+      const sanitizedData = {
+        ...data,
+        featured: false // Override any featured flag that might be set
+      };
+      
+      console.log('Validated and sanitized RFP data:', sanitizedData);
 
       const rfp = await storage.createRfp({
-        ...data,
+        ...sanitizedData,
         organizationId: req.user!.id,
       });
+      
       console.log('RFP created successfully:', rfp);
       res.status(201).json(rfp);
     } catch (error) {
@@ -647,9 +656,10 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ message: "Unauthorized to feature this RFP" });
       }
       
-      // Update RFP to be featured
+      // Update RFP to be featured with current timestamp
       const updatedRfp = await storage.updateRfp(Number(rfpId), { 
-        featured: true
+        featured: true,
+        featuredAt: new Date() // Set the current timestamp for featured status
       });
       
       res.json({

@@ -306,12 +306,28 @@ export class DatabaseStorage implements IStorage {
     return updatedRfi;
   }
 
+  /**
+   * Update an RFP with the given updates
+   * Special handling for featured status to ensure it's only updated through the payment flow
+   * @param id ID of the RFP to update
+   * @param updates Fields to update
+   * @returns The updated RFP
+   */
   async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {
+    // If updating featured status to true, ensure we set featuredAt timestamp too
+    const updatedValues = { ...updates };
+    
+    // If featuring an RFP, always set the timestamp (even if caller didn't provide it)
+    if (updates.featured === true && !updates.featuredAt) {
+      updatedValues.featuredAt = new Date();
+    }
+
     const [rfp] = await db
       .update(rfps)
-      .set(updates)
+      .set(updatedValues)
       .where(eq(rfps.id, id))
       .returning();
+      
     if (!rfp) throw new Error("RFP not found");
     return rfp;
   }

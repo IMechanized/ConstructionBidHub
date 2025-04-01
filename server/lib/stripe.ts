@@ -6,12 +6,11 @@
 import Stripe from 'stripe';
 
 // Initialize Stripe with secret key from env
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('STRIPE_SECRET_KEY environment variable is not set');
-  throw new Error('Stripe configuration is required for payment processing');
-}
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+if (!stripe) {
+  console.warn('STRIPE_SECRET_KEY environment variable is not set - payment features will be disabled');
+}
 
 // Define featured RFP price (in cents)
 export const FEATURED_RFP_PRICE = 2500; // $25.00

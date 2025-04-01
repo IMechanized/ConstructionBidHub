@@ -96,6 +96,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
         portfolioLink: data.portfolioLink || null,
         certificationGoals: data.certificationGoals || null,
+        // Always set featured to false - we'll update it after payment
+        featured: false
       };
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
@@ -103,8 +105,9 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     onSuccess: (newRfp) => {
       setCreatedRfpId(newRfp.id);
       
-      // If the RFP should be featured, show payment dialog
-      if (newRfp.featured) {
+      // If user clicked the boost button, show payment dialog
+      const wantsFeatured = form.getValues().featured;
+      if (wantsFeatured) {
         setShowPaymentDialog(true);
       } else {
         // Otherwise handle normal success flow

@@ -645,6 +645,19 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 284	backup-2025-03-27T19-07-30-370Z.sql	success	\N	2025-03-27 19:07:34.239532
 285	backup-2025-03-27T19-10-24-948Z.sql	success	\N	2025-03-27 19:10:29.162031
 286	backup-2025-03-28T11-24-09-016Z.sql	success	\N	2025-03-28 11:24:15.141766
+287	backup-2025-03-28T12-47-49-569Z.sql	success	\N	2025-03-28 12:47:55.902705
+288	backup-2025-03-28T12-48-21-228Z.sql	success	\N	2025-03-28 12:48:25.562571
+289	backup-2025-03-28T12-48-53-373Z.sql	success	\N	2025-03-28 12:48:56.709881
+290	backup-2025-03-28T12-49-14-449Z.sql	success	\N	2025-03-28 12:49:17.764839
+291	backup-2025-03-28T14-48-00-606Z.sql	success	\N	2025-03-28 14:48:24.82554
+292	backup-2025-03-29T14-48-00-618Z.sql	success	\N	2025-03-29 14:48:09.239113
+293	backup-2025-03-30T14-48-00-617Z.sql	success	\N	2025-03-30 14:48:08.42096
+294	backup-2025-03-31T14-48-00-618Z.sql	success	\N	2025-03-31 14:48:07.872627
+295	backup-2025-04-01T07-57-27-886Z.sql	success	\N	2025-04-01 07:57:32.447443
+296	backup-2025-04-01T08-01-18-421Z.sql	success	\N	2025-04-01 08:01:24.792991
+297	backup-2025-04-01T08-10-34-100Z.sql	success	\N	2025-04-01 08:10:38.365488
+298	backup-2025-04-01T08-10-53-348Z.sql	success	\N	2025-04-01 08:10:57.058709
+299	backup-2025-04-01T08-16-15-038Z.sql	success	\N	2025-04-01 08:16:18.802424
 \.
 
 
@@ -1081,6 +1094,9 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 127	Expansion of Intuitive tertiary paradigm	Project Overview:\nRetrofit project for Hospital located in New Jules, Nevada.\n\nBackground:\nIpsam certe voco adsum. Carpo celebrer virga credo copia fugiat solium depono. Iure damnatio tutis sonitus vereor delectatio suffoco.\n\nProject Objectives:\n- The sleek and good Car comes with purple LED lighting for smart functionality\n- Our rich-inspired Ball brings a taste of luxury to your flawed lifestyle\n- Experience the pink brilliance of our Fish, perfect for proud environments\n- Discover the ragged new Towels with an exciting mix of Granite ingredients\n- Our polar bear-friendly Pants ensures spotless comfort for your pets\n\nScope of Work:\nDecimus aureus turpis ustilo id timidus confido solium. Altus solum color texo bellicus cauda. Pauper tenuis alias crudelis cupressus adsuesco vilis volubilis.\n\nTechnical Requirements:\n- Aeneus caveo aperiam cupiditate trado temporibus.\n- Uxor curia antiquus provident terebro.\n- Advoco aliquid perferendis expedita cultura suffoco strenuus.\n- Concedo tergiversatio demergo arcus tepidus adiuvo condico utrum cubicularis.\n- Thesis currus barba minus certus pecco.\n- Angelus vulgo ea currus undique utrum vitium truculenter accusator.\n\nRequired Qualifications:\n- Fully-configurable national function\n- Horizontal asynchronous orchestration\n- Fundamental clear-thinking project\n- Sustainable bifurcated generative AI\n\nProject Timeline:\nTamdiu caput adulescens. Tandem chirographum laboriosam.\n\nEvaluation Criteria:\n- Stella synagoga abutor crapula speculum pecus derideo thesis perferendis amor.\n- Qui vergo tenax curatio coadunatio quo acies.\n- Vetus astrum debitis comitatus cogito vulgo a titulus deinde.	2025-03-07 04:53:38.489	2025-11-16 22:47:20.497	2026-04-28 21:38:51.961	1114139	Energy Star Partner	Mireillefield, Connecticut	https://spherical-disadvantage.name	open	33	f	2025-03-06 18:44:01.830415	\N
 128	Upgrade to Ergonomic analyzing installation	Project Overview:\nExpansion project for Government Facility located in Dallasstad, Tennessee.\n\nBackground:\nTaedium quibusdam voveo est comprehendo. Attollo alveus repellat virgo celo. Administratio tamquam denique quia demoror tantillus auctor suasoria.\n\nProject Objectives:\n- New Hat model with 63 GB RAM, 709 GB storage, and concrete features\n- The black Ball combines Comoros aesthetics with Tennessine-based durability\n- New Tuna model with 58 GB RAM, 933 GB storage, and serpentine features\n- Ergonomic Bacon designed with Rubber for diligent performance\n- Stylish Chicken designed to make you stand out with haunting looks\n\nScope of Work:\nVulgus tabella stabilis surculus dedico esse. Civis talio ipsum. Conicio alienus clementia vilicus.\n\nTechnical Requirements:\n- Communis thalassinus triumphus praesentium pecto animi magnam sodalitas.\n- Depromo vir supra civitas crustulum tamisium.\n- Desparatus adnuo adicio agnosco cupressus.\n- Aperiam crux ex patrocinor aeneus.\n- Verbum coma vulticulus coniuratio clamo caritas soleo tenetur.\n- Temeritas adfectus theca tristis nam ullam tristis.\n\nRequired Qualifications:\n- Organized demand-driven capacity\n- Programmable mobile circuit\n- Reduced clear-thinking challenge\n- Immersive fault-tolerant functionalities\n\nProject Timeline:\nCur capillus ducimus excepturi solvo valde. Defaeco venia aestas rem vindico subvenio abutor vespillo decretum coaegresco.\n\nEvaluation Criteria:\n- Thymum voluptatibus vulnero baiulus vinculum confugo accusantium.\n- Appello cunabula adeo volva celo vicissitudo sponte fugit.\n- Vicissitudo tertius consuasor amplus aequus candidus verumtamen velum advoco villa.	2025-03-16 15:11:18.204	2025-09-18 05:56:10.523	2025-10-31 05:23:33.457	4184905	Energy Star Partner, Green Building Professional, Service-Disabled Veteran-Owned Business	Fort Oletamouth, Tennessee	https://urban-pearl.com/	closed	30	t	2025-03-06 18:44:01.868416	\N
 129	Network setup	Network setup for office building.	2025-03-29 22:12:00	2025-03-28 22:12:00	2025-02-05 18:00:00	100000	\N	Kansas	\N	open	2	t	2025-03-27 19:13:37.072887	\N
+130	Bridge building	New walkway across the river.	2025-04-03 10:59:00	2025-04-18 10:59:00	2025-04-24 10:59:00	100000000	\N	London	\N	open	2	t	2025-04-01 07:59:42.44301	\N
+131	New office blocks	New office blocks for Intel semiconductor manufacturing	2025-04-11 11:03:00	2025-04-24 11:03:00	2025-05-07 11:03:00	100000000	\N	Kansas	\N	open	2	t	2025-04-01 08:03:29.549513	\N
+132	Section 8 housing	Development of new blocks to support the government housing initiative.	2025-04-09 11:14:00	2025-04-17 11:14:00	2025-04-23 11:14:00	12000000	\N	Tenessee	\N	open	2	f	2025-04-01 08:15:25.982593	\N
 \.
 
 
@@ -1139,7 +1155,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 286, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 299, true);
 
 
 --
@@ -1174,7 +1190,7 @@ SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 5, true);
 -- Name: rfps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfps_id_seq', 129, true);
+SELECT pg_catalog.setval('public.rfps_id_seq', 132, true);
 
 
 --

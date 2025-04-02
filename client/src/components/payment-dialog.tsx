@@ -13,6 +13,8 @@ interface PaymentDialogProps {
   onClose: () => void;
   rfpId?: number;
   onPaymentSuccess: () => void;
+  // If pendingRfpData is provided, we'll create the RFP first then show payment
+  pendingRfpData?: any;
 }
 
 export default function PaymentDialog({
@@ -20,6 +22,7 @@ export default function PaymentDialog({
   onClose,
   rfpId,
   onPaymentSuccess,
+  pendingRfpData,
 }: PaymentDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -42,6 +45,7 @@ export default function PaymentDialog({
           
           <PaymentForm
             rfpId={rfpId}
+            pendingRfpData={pendingRfpData}
             onSuccess={onPaymentSuccess}
             onCancel={onClose}
           />

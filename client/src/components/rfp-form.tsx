@@ -48,6 +48,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const { t, i18n } = useTranslation();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
+  const [pendingRfpData, setPendingRfpData] = useState<any>(null);
+  const [isBoosting, setIsBoosting] = useState(false);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -96,7 +98,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
         portfolioLink: data.portfolioLink || null,
         certificationGoals: data.certificationGoals || null,
-        // Always set featured to false - we'll update it after payment
+        // Always set featured to false - we'll update it after payment if needed
         featured: false
       };
       const res = await apiRequest("POST", "/api/rfps", formattedData);
@@ -104,17 +106,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     },
     onSuccess: (newRfp) => {
       setCreatedRfpId(newRfp.id);
-      
-      // If user clicked the boost button, show payment dialog
-      const wantsFeatured = form.getValues().featured;
-      if (wantsFeatured) {
-        setShowPaymentDialog(true);
-      } else {
-        // Otherwise handle normal success flow
+      // For regular (non-boosted) RFPs, finish submission right away
+      if (!isBoosting) {
         finishSubmission();
       }
     },
     onError: (error: Error) => {
+      setIsBoosting(false);
       toast({
         title: t('common.error'),
         description: error.message,
@@ -129,6 +127,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
     form.reset();
     setCreatedRfpId(null);
+    setPendingRfpData(null);
+    setIsBoosting(false);
     toast({
       title: t('rfp.rfpCreated'),
       description: t('rfp.rfpCreatedSuccess'),
@@ -138,6 +138,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
 
   // Handle payment success
   const handlePaymentSuccess = () => {
+    setShowPaymentDialog(false);
     toast({
       title: t('payment.success'),
       description: t('rfp.featuredSuccess'),
@@ -147,18 +148,18 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
 
   // Form submission handler
   const onSubmit = async (data: any) => {
-    // If user is requesting to feature the RFP (from button click)
+    // If user is requesting to feature the RFP (from boost button click)
     if (data.featured) {
       // First validate the form
       const isValid = await form.trigger();
       if (!isValid) return;
       
-      // Submit the form values without featured flag first
-      const formValues = form.getValues();
-      createRfpMutation.mutate({
-        ...formValues,
-        featured: false // Initially create as non-featured
-      });
+      // Store form data temporarily but don't submit yet
+      setIsBoosting(true);
+      setPendingRfpData(form.getValues());
+      
+      // First show payment dialog
+      setShowPaymentDialog(true);
     } else {
       // Regular submission
       createRfpMutation.mutate(data);
@@ -399,8 +400,12 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       {/* Payment Dialog */}
       <PaymentDialog
         isOpen={showPaymentDialog}
-        onClose={() => setShowPaymentDialog(false)}
+        onClose={() => {
+          setShowPaymentDialog(false);
+          setIsBoosting(false);
+        }}
         rfpId={createdRfpId || undefined}
+        pendingRfpData={pendingRfpData}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </Form>

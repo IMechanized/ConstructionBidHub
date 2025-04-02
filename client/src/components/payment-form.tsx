@@ -15,11 +15,12 @@ import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 interface PaymentFormProps {
   rfpId?: number;
+  pendingRfpData?: any;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
+function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +52,11 @@ function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !rfpId) {
+    // Get the actual RFP ID (either directly provided or created during payment setup)
+    const actualRfpId = rfpId || (window as any).createdRfpId;
+    
+    if (!stripe || !elements || !actualRfpId) {
+      setErrorMessage('Payment cannot be processed. Missing required information.');
       return;
     }
 
@@ -70,7 +75,7 @@ function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
       // Payment successful, now update the RFP status
       confirmPaymentMutation.mutate({ 
         paymentIntentId: paymentIntent.id, 
-        rfpId 
+        rfpId: actualRfpId 
       });
     } else {
       setErrorMessage('Payment status is pending or requires additional action');
@@ -114,10 +119,51 @@ function StripeCheckoutForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
   );
 }
 
-export default function PaymentForm({ rfpId, onSuccess, onCancel }: PaymentFormProps) {
+export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel }: PaymentFormProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [price, setPrice] = useState<number>(0);
+  const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const { toast } = useToast();
+  
+  // If we have pendingRfpData but no rfpId, we need to create the RFP first
+  const createRfpMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const formattedData = {
+        ...data,
+        budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
+        portfolioLink: data.portfolioLink || null,
+        certificationGoals: data.certificationGoals || null,
+        featured: false // Initially create as non-featured
+      };
+      const res = await fetch("/api/rfps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create RFP");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (newRfp) => {
+      setCreatedRfpId(newRfp.id);
+      // Now that we have the RFP ID, create a payment intent
+      createPaymentIntentMutation.mutate(newRfp.id);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'RFP Creation Failed',
+        description: error.message || 'Could not create RFP. Please try again.',
+        variant: 'destructive',
+      });
+      onCancel();
+    }
+  });
 
   const createPaymentIntentMutation = useMutation({
     mutationFn: async (rfpId: number) => {
@@ -138,10 +184,15 @@ export default function PaymentForm({ rfpId, onSuccess, onCancel }: PaymentFormP
   });
 
   useEffect(() => {
+    // If we have a direct rfpId, use it to create a payment intent
     if (rfpId) {
       createPaymentIntentMutation.mutate(rfpId);
+    } 
+    // Otherwise, if we have pending data and no created rfpId yet, create the RFP first
+    else if (pendingRfpData && !createdRfpId) {
+      createRfpMutation.mutate(pendingRfpData);
     }
-  }, [rfpId]);
+  }, [rfpId, pendingRfpData, createdRfpId]);
 
   if (!clientSecret || createPaymentIntentMutation.isPending) {
     return (
@@ -173,8 +224,16 @@ export default function PaymentForm({ rfpId, onSuccess, onCancel }: PaymentFormP
       
       <Card>
         <CardContent className="p-4">
+          {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
+          {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
+          
           <Elements stripe={stripePromise} options={options}>
-            <StripeCheckoutForm rfpId={rfpId} onSuccess={onSuccess} onCancel={onCancel} />
+            <StripeCheckoutForm 
+              rfpId={rfpId || createdRfpId || undefined} 
+              pendingRfpData={pendingRfpData} 
+              onSuccess={onSuccess} 
+              onCancel={onCancel} 
+            />
           </Elements>
         </CardContent>
       </Card>

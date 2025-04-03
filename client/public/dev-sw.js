@@ -1,50 +1,111 @@
-// Development service worker - does minimal caching to allow hot reloading
-const DEV_CACHE_NAME = 'findconstructionbids-dev-cache';
+// This is a special development-only service worker 
+// to help with refreshing content during development
 
-// Minimal installation that won't interfere with dev server
+// Cache name for development mode
+const CACHE_NAME = 'fcb-dev-cache-v1';
+
+// Install event - sets up a minimal cache
 self.addEventListener('install', (event) => {
-  console.log('DEV Service Worker: Installing');
-  // Skip waiting to take control immediately
-  event.waitUntil(self.skipWaiting());
+  console.log('Development Service Worker: Installing');
+  
+  // Skip waiting to activate immediately
+  self.skipWaiting();
+  
+  // Create a minimal cache for offline support
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/offline.html',
+        '/'
+      ]);
+    })
+  );
 });
 
-// Bypass cache for most requests in development to ensure hot reload works
+// Activate event - clear old caches
+self.addEventListener('activate', (event) => {
+  console.log('Development Service Worker: Activating');
+  
+  // Delete old caches to ensure we don't serve stale content
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((name) => {
+          return name !== CACHE_NAME;
+        }).map((name) => {
+          console.log('Development Service Worker: Clearing old cache:', name);
+          return caches.delete(name);
+        })
+      );
+    }).then(() => {
+      // Claim clients to control all tabs immediately
+      return self.clients.claim();
+    })
+  );
+});
+
+// Special development fetch handler - prioritize network for fresh content
 self.addEventListener('fetch', (event) => {
-  // For API requests, don't cache in development
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request));
+  // For API requests and navigation, always go to network first
+  // This ensures we get fresh content during development
+  if (event.request.url.includes('/api/') || 
+      event.request.mode === 'navigate') {
+    
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // Fallback for offline support
+          if (event.request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+          return new Response(
+            JSON.stringify({ error: 'Network error - offline' }), 
+            { 
+              status: 503,
+              headers: { 'Content-Type': 'application/json' } 
+            }
+          );
+        })
+    );
     return;
   }
   
-  // For everything else, network first with minimal caching
+  // For other resources, try network first then fall back to cache
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        // Clone the response before using it
+        const responseClone = response.clone();
+        
+        // Update the cache with the latest version
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
+        
         return response;
       })
-      .catch((error) => {
-        console.error('DEV Service Worker: Fetch failed:', error);
+      .catch(() => {
         return caches.match(event.request);
       })
   );
 });
 
-// When activated, clear any old caches
-self.addEventListener('activate', (event) => {
-  console.log('DEV Service Worker: Activating');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== DEV_CACHE_NAME) {
-            console.log('DEV Service Worker: Deleting old cache', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
+// Handle messages from clients (e.g., to trigger cache clearing)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    console.log('Development Service Worker: Clearing caches on demand');
+    
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((name) => {
+            console.log('Development Service Worker: Clearing cache:', name);
+            return caches.delete(name);
+          })
+        );
+      })
+    );
+  }
 });
 
-// Log that the service worker is loaded
-console.log('DEV Service Worker: Script loaded');
+console.log('Development Service Worker: Loaded');

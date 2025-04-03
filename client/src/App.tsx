@@ -28,6 +28,7 @@ import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineStatus } from "@/components/offline-status";
+import HotReload from "@/components/hot-reload";
 
 // Import i18n configuration
 import "./lib/i18n";
@@ -95,6 +96,8 @@ function App() {
             <Router />
             <OfflineStatus />
             <PwaInstallDialog />
+            {/* Add hot reload component for development only */}
+            {import.meta.env.DEV && <HotReload />}
           </AuthProvider>
         </QueryClientProvider>
       </ThemeProvider>

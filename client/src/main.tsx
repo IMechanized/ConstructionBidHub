@@ -23,9 +23,16 @@ async function registerServiceWorker() {
         }
       });
       
+      // Determine environment to use the appropriate service worker
+      const isDevelopment = import.meta.env.DEV;
+      console.log(`Environment: ${isDevelopment ? 'Development' : 'Production'}`);
+      
       // Add cache buster to ensure we get the most recent version
       const swVersion = '1.1.0';
-      const registration = await navigator.serviceWorker.register(`/sw.js?v=${swVersion}`, {
+      const swPath = isDevelopment ? '/dev-sw.js' : '/sw.js';
+      
+      // Register the appropriate service worker
+      const registration = await navigator.serviceWorker.register(`${swPath}?v=${swVersion}`, {
         scope: '/',
         type: 'classic',
         updateViaCache: 'none' // Don't use cache for the service worker
@@ -49,6 +56,13 @@ async function registerServiceWorker() {
   } else {
     console.log('Service Worker: Not supported in this browser');
   }
+}
+
+// Enable hot module replacement in development
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    console.log('Hot module replacement active - updated modules will be applied automatically');
+  });
 }
 
 // Start service worker registration after the app has loaded

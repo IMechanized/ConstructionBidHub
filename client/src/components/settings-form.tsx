@@ -12,9 +12,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Loader2, Trash2 } from "lucide-react";
+import { Upload, Loader2, Trash2, X } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useTranslation } from "react-i18next";
+import { CERTIFICATIONS } from "@shared/schema";
+import { getCertificationClasses } from "@/lib/utils";
 
 // Available options for form select fields
 const TRADE_OPTIONS = [
@@ -66,7 +68,7 @@ const settingsSchema = z.object({
   trade: z.string().min(1, "Trade is required"),
   isMinorityOwned: z.boolean(),
   minorityGroup: z.string().optional(),
-  certificationName: z.string().optional(),
+  certificationName: z.array(z.string()).optional(),
   logo: z.any().optional(),
   language: z.string().default("en"),
 });
@@ -100,7 +102,7 @@ export default function SettingsForm() {
       trade: user?.trade || "",
       isMinorityOwned: user?.isMinorityOwned || false,
       minorityGroup: user?.minorityGroup || "",
-      certificationName: user?.certificationName || "",
+      certificationName: Array.isArray(user?.certificationName) ? user.certificationName : [],
       logo: user?.logo || undefined,
       language: user?.language || "en",
     },
@@ -349,16 +351,53 @@ export default function SettingsForm() {
               )}
             />
 
-            {/* Certification Name Field */}
+            {/* Certifications Field */}
             <FormField
               control={form.control}
               name="certificationName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('settings.certificationName')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('settings.certificationPlaceholder')} {...field} />
-                  </FormControl>
+                  <FormLabel>{t('settings.certificationName') || 'Certifications'}</FormLabel>
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(field.value || []).map((cert, index) => (
+                        <div 
+                          key={index} 
+                          className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCertificationClasses(cert, false)}`}
+                        >
+                          <span>{cert}</span>
+                          <X 
+                            className="h-4 w-4 cursor-pointer" 
+                            onClick={() => {
+                              const newValue = [...(field.value || [])];
+                              newValue.splice(index, 1);
+                              field.onChange(newValue);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Select
+                      onValueChange={(value) => {
+                        if (!(field.value || []).includes(value)) {
+                          field.onChange([...(field.value || []), value]);
+                        }
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('settings.selectCertification') || 'Select certification'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CERTIFICATIONS.filter(cert => !(field.value || []).includes(cert)).map((cert) => (
+                          <SelectItem key={cert} value={cert}>
+                            {cert}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

@@ -50,8 +50,8 @@ export interface IStorage {
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
 
   // RFI Operations
-  createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi>;
-  getRfisByRfp(rfpId: number): Promise<Rfi[]>;
+  createRfi(rfi: InsertRfi & { rfpId: number, organizationId?: number }): Promise<Rfi>;
+  getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
 }
@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
   /**
    * RFI Operations
    */
-  async createRfi(rfi: InsertRfi & { rfpId: number }): Promise<Rfi> {
+  async createRfi(rfi: InsertRfi & { rfpId: number, organizationId?: number }): Promise<Rfi> {
     const [newRfi] = await db
       .insert(rfis)
       .values(rfi)
@@ -281,11 +281,17 @@ export class DatabaseStorage implements IStorage {
     return newRfi;
   }
 
-  async getRfisByRfp(rfpId: number): Promise<Rfi[]> {
-    return db
+  async getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]> {
+    const results = await db
       .select()
       .from(rfis)
+      .leftJoin(users, eq(rfis.organizationId, users.id))
       .where(eq(rfis.rfpId, rfpId));
+      
+    return results.map(result => ({
+      ...result.rfis,
+      organization: result.users || undefined
+    }));
   }
 
   async getRfisByEmail(email: string): Promise<Rfi[]> {

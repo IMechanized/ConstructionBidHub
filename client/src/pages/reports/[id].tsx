@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
-import { Rfp, Rfi } from "@shared/schema";
+import { Rfp, Rfi, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -17,6 +17,8 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
+import { Badge } from "@/components/ui/badge";
+import { getCertificationClasses } from "@/lib/utils";
 
 export default function DetailedReportPage() {
   const { id } = useParams();
@@ -27,7 +29,8 @@ export default function DetailedReportPage() {
     queryKey: [`/api/rfps/${id}`],
   });
 
-  const { data: rfis } = useQuery<Rfi[]>({
+  // Enhanced query to get RFIs with associated organization data
+  const { data: rfis } = useQuery<(Rfi & { organization?: User })[]>({
     queryKey: [`/api/rfps/${id}/rfi`],
   });
 
@@ -146,6 +149,7 @@ export default function DetailedReportPage() {
                   <TableRow>
                     <TableHead>Company</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Certifications</TableHead>
                     <TableHead>Submission Date</TableHead>
                     <TableHead>Message</TableHead>
                     <TableHead>Status</TableHead>
@@ -154,8 +158,25 @@ export default function DetailedReportPage() {
                 <TableBody>
                   {rfis?.map((rfi) => (
                     <TableRow key={rfi.id}>
-                      <TableCell>{rfi.companyName || 'N/A'}</TableCell>
-                      <TableCell>{rfi.email}</TableCell>
+                      <TableCell>{rfi.organization?.companyName || 'N/A'}</TableCell>
+                      <TableCell>{rfi.organization?.contact || rfi.email}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {rfi.organization?.certificationName && Array.isArray(rfi.organization.certificationName) && 
+                           rfi.organization.certificationName.map((cert, index) => (
+                            <Badge 
+                              key={index} 
+                              className={getCertificationClasses(cert)}
+                            >
+                              {cert}
+                            </Badge>
+                          ))}
+                          {(!rfi.organization?.certificationName || !Array.isArray(rfi.organization.certificationName) || 
+                            rfi.organization.certificationName.length === 0) && (
+                            <span className="text-xs text-muted-foreground">None</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{format(new Date(rfi.createdAt), "PP")}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{rfi.message}</TableCell>
                       <TableCell>
@@ -171,7 +192,7 @@ export default function DetailedReportPage() {
                   ))}
                   {(!rfis || rfis.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">No bids received yet</TableCell>
+                      <TableCell colSpan={6} className="text-center">No bids received yet</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

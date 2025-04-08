@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { onboardingSchema } from "@shared/schema";
+import { onboardingSchema, CERTIFICATIONS } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, X } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const TRADE_OPTIONS = [
@@ -52,7 +52,7 @@ type FormValues = {
   isMinorityOwned: boolean;
   minorityGroup: string;
   trade: string;
-  certificationName: string;
+  certificationName: string[];
   logo: File | string | null;
 };
 
@@ -81,7 +81,7 @@ export default function OnboardingForm() {
       isMinorityOwned: false,
       minorityGroup: "",
       trade: "",
-      certificationName: "",
+      certificationName: [],
       logo: null,
     },
   });
@@ -286,10 +286,60 @@ export default function OnboardingForm() {
                 name="certificationName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Certification Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g. Professional Constructor Certification" />
-                    </FormControl>
+                    <FormLabel>Certifications</FormLabel>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {field.value.map((cert, index) => (
+                          <div 
+                            key={index} 
+                            className={`px-3 py-1 rounded-full flex items-center gap-1
+                              ${cert === 'Women-owned' ? 'bg-pink-100 text-pink-800' : ''}
+                              ${cert === 'Native American-owned' ? 'bg-orange-100 text-orange-800' : ''}
+                              ${cert === 'Veteran-owned' ? 'bg-blue-100 text-blue-800' : ''}
+                              ${cert === 'Military spouse' ? 'bg-indigo-100 text-indigo-800' : ''}
+                              ${cert === 'LGBTQ-owned' ? 'bg-purple-100 text-purple-800' : ''}
+                              ${cert === 'Rural' ? 'bg-green-100 text-green-800' : ''}
+                              ${cert === 'Minority-owned' ? 'bg-amber-100 text-amber-800' : ''}
+                              ${cert === 'Section 3' ? 'bg-teal-100 text-teal-800' : ''}
+                              ${!['Women-owned', 'Native American-owned', 'Veteran-owned', 'Military spouse', 
+                                'LGBTQ-owned', 'Rural', 'Minority-owned', 'Section 3'].includes(cert) 
+                                ? 'bg-primary/10 text-primary' : ''}
+                            `}
+                          >
+                            <span>{cert}</span>
+                            <X 
+                              className="h-4 w-4 cursor-pointer" 
+                              onClick={() => {
+                                const newValue = [...field.value];
+                                newValue.splice(index, 1);
+                                field.onChange(newValue);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <Select
+                        onValueChange={(value) => {
+                          if (!field.value.includes(value)) {
+                            field.onChange([...field.value, value]);
+                          }
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select certifications" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {CERTIFICATIONS.filter(cert => !field.value.includes(cert)).map((cert) => (
+                            <SelectItem key={cert} value={cert}>
+                              {cert}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Select one or more certifications that apply to your business.</p>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

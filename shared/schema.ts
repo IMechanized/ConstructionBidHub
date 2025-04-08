@@ -7,6 +7,18 @@ import { pgTable, text, serial, integer, boolean, timestamp, date } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// List of available certifications
+export const CERTIFICATIONS = [
+  "Women-owned",
+  "Native American-owned",
+  "Veteran-owned",
+  "Military spouse",
+  "LGBTQ-owned",
+  "Rural",
+  "Minority-owned",
+  "Section 3"
+];
+
 /**
  * Users Table
  * Stores both contractor and government organization profiles
@@ -23,7 +35,7 @@ export const users = pgTable("users", {
   isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),       // Specific minority classification
   trade: text("trade"),                       // Primary trade/industry
-  certificationName: text("certification_name"), // Business certifications
+  certificationName: text("certification_name").array(), // Business certifications
   logo: text("logo"),                         // Company logo URL
   onboardingComplete: boolean("onboarding_complete").default(false),
   status: text("status", { enum: ["active", "deactivated"] }).default("active"),
@@ -103,6 +115,7 @@ export const rfis = pgTable("rfis", {
   message: text("message").notNull(),                      // Question/request
   createdAt: timestamp("created_at").defaultNow().notNull(),
   status: text("status", { enum: ["pending", "responded"] }).default("pending"),
+  organizationId: integer("organization_id").references(() => users.id), // Associated organization
 });
 
 /**
@@ -130,7 +143,7 @@ export const onboardingSchema = z.object({
   isMinorityOwned: z.boolean(),
   minorityGroup: z.string().optional(),
   trade: z.string().min(1, "Trade is required"),
-  certificationName: z.string().optional(),
+  certificationName: z.array(z.string()).optional(),
   logo: z.any().optional(),
 });
 

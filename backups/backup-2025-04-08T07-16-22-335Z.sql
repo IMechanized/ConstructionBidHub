@@ -657,6 +657,42 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 296	backup-2025-04-01T08-01-18-421Z.sql	success	\N	2025-04-01 08:01:24.792991
 297	backup-2025-04-01T08-10-34-100Z.sql	success	\N	2025-04-01 08:10:38.365488
 298	backup-2025-04-01T08-10-53-348Z.sql	success	\N	2025-04-01 08:10:57.058709
+299	backup-2025-04-01T08-16-15-038Z.sql	success	\N	2025-04-01 08:16:18.802424
+300	backup-2025-04-01T08-17-07-695Z.sql	success	\N	2025-04-01 08:17:11.189125
+301	backup-2025-04-01T08-28-58-505Z.sql	success	\N	2025-04-01 08:29:12.229468
+302	backup-2025-04-01T08-30-32-872Z.sql	success	\N	2025-04-01 08:30:52.69774
+303	backup-2025-04-01T17-12-23-945Z.sql	success	\N	2025-04-01 17:12:48.088618
+304	backup-2025-04-02T10-59-45-650Z.sql	success	\N	2025-04-02 10:59:50.360438
+305	backup-2025-04-02T11-06-53-231Z.sql	success	\N	2025-04-02 11:07:00.880444
+306	backup-2025-04-02T11-16-34-039Z.sql	success	\N	2025-04-02 11:16:38.29065
+307	backup-2025-04-02T12-04-18-673Z.sql	success	\N	2025-04-02 12:04:30.42603
+308	backup-2025-04-03T12-04-18-683Z.sql	success	\N	2025-04-03 12:04:24.730605
+309	backup-2025-04-03T19-34-35-292Z.sql	success	\N	2025-04-03 19:34:41.904906
+310	backup-2025-04-03T19-37-46-003Z.sql	success	\N	2025-04-03 19:37:49.9874
+311	backup-2025-04-04T12-04-18-686Z.sql	success	\N	2025-04-04 12:04:24.611338
+312	backup-2025-04-04T17-45-20-440Z.sql	success	\N	2025-04-04 17:45:40.458909
+313	backup-2025-04-04T21-53-48-403Z.sql	success	\N	2025-04-04 21:54:10.965859
+314	backup-2025-04-05T00-28-49-077Z.sql	success	\N	2025-04-05 00:29:05.196213
+315	backup-2025-04-05T08-36-40-167Z.sql	success	\N	2025-04-05 08:36:57.411175
+316	backup-2025-04-05T15-01-40-508Z.sql	success	\N	2025-04-05 15:01:52.629767
+317	backup-2025-04-05T18-28-40-298Z.sql	success	\N	2025-04-05 18:29:06.23405
+318	backup-2025-04-05T18-56-59-593Z.sql	success	\N	2025-04-05 18:57:24.32437
+319	backup-2025-04-05T19-10-29-284Z.sql	success	\N	2025-04-05 19:10:49.010064
+320	backup-2025-04-06T07-18-36-315Z.sql	success	\N	2025-04-06 07:18:39.587225
+321	backup-2025-04-06T07-20-32-065Z.sql	success	\N	2025-04-06 07:20:56.681311
+322	backup-2025-04-06T13-58-36-272Z.sql	success	\N	2025-04-06 13:58:39.390727
+323	backup-2025-04-06T15-32-56-844Z.sql	success	\N	2025-04-06 15:33:20.773052
+324	backup-2025-04-06T16-26-32-487Z.sql	success	\N	2025-04-06 16:26:37.378664
+325	backup-2025-04-06T21-07-55-409Z.sql	success	\N	2025-04-06 21:08:18.308741
+326	backup-2025-04-07T11-33-57-815Z.sql	success	\N	2025-04-07 11:34:21.458726
+327	backup-2025-04-07T11-42-23-981Z.sql	success	\N	2025-04-07 11:42:43.504611
+328	backup-2025-04-07T17-39-38-432Z.sql	success	\N	2025-04-07 17:40:12.030107
+329	backup-2025-04-07T18-38-12-149Z.sql	success	\N	2025-04-07 18:38:33.766209
+330	backup-2025-04-07T18-38-18-935Z.sql	success	\N	2025-04-07 18:38:34.857672
+331	backup-2025-04-07T18-52-37-144Z.sql	success	\N	2025-04-07 18:52:59.885272
+332	backup-2025-04-07T19-53-56-126Z.sql	success	\N	2025-04-07 19:54:14.84069
+333	backup-2025-04-08T02-33-46-003Z.sql	success	\N	2025-04-08 02:34:01.475624
+334	backup-2025-04-08T07-06-18-841Z.sql	success	\N	2025-04-08 07:06:38.267464
 \.
 
 
@@ -943,6 +979,16 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 76	70	2025-03-27	0	0	0	0	0
 77	68	2025-03-27	0	0	0	0	0
 78	129	2025-03-27	0	0	0	0	0
+79	1	2025-04-03	0	0	0	0	0
+80	68	2025-04-03	0	0	0	0	0
+81	69	2025-04-03	0	0	0	0	0
+82	70	2025-04-03	0	0	0	0	0
+83	133	2025-04-03	0	0	0	0	0
+84	1	2025-04-06	0	0	0	0	0
+85	69	2025-04-06	0	0	0	0	0
+86	70	2025-04-06	0	0	0	0	0
+87	133	2025-04-06	0	0	0	0	0
+88	68	2025-04-06	0	0	0	0	0
 \.
 
 
@@ -1096,6 +1142,14 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 130	Bridge building	New walkway across the river.	2025-04-03 10:59:00	2025-04-18 10:59:00	2025-04-24 10:59:00	100000000	\N	London	\N	open	2	t	2025-04-01 07:59:42.44301	\N
 131	New office blocks	New office blocks for Intel semiconductor manufacturing	2025-04-11 11:03:00	2025-04-24 11:03:00	2025-05-07 11:03:00	100000000	\N	Kansas	\N	open	2	t	2025-04-01 08:03:29.549513	\N
 132	Section 8 housing	Development of new blocks to support the government housing initiative.	2025-04-09 11:14:00	2025-04-17 11:14:00	2025-04-23 11:14:00	12000000	\N	Tenessee	\N	open	2	f	2025-04-01 08:15:25.982593	\N
+133	Affordable housing development	Development for social housing project	2025-04-10 11:00:00	2025-04-16 12:00:00	2025-04-24 00:00:00	120000000	\N	Minnesota	\N	open	1	t	2025-04-01 08:32:19.532756	\N
+134	New port	The construction of a new port	2025-04-17 12:00:00	2025-04-23 13:00:00	2025-05-02 23:59:00	100000000	\N	New Amsterdam	\N	open	1	f	2025-04-01 08:58:15.821738	\N
+135	New school block	New school block for school district expansion project	2025-04-10 12:00:00	2025-04-16 12:00:00	2025-04-24 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 11:13:08.055041	\N
+136	New school block	School blocks for washington state district.	2025-04-10 12:00:00	2025-04-11 12:00:00	2025-04-28 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 12:14:35.815584	\N
+137	Airport	New Airport	2025-04-12 12:00:00	2025-04-20 12:00:00	2025-04-25 23:59:00	12000000	\N	New York	\N	open	1	f	2025-04-06 16:30:00.103619	\N
+138	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:32:17.629188	\N
+139	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:36:22.929998	\N
+140	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:37:32.29851	\N
 \.
 
 
@@ -1154,7 +1208,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 298, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 334, true);
 
 
 --
@@ -1175,7 +1229,7 @@ SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 78, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 88, true);
 
 
 --
@@ -1189,7 +1243,7 @@ SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 5, true);
 -- Name: rfps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfps_id_seq', 132, true);
+SELECT pg_catalog.setval('public.rfps_id_seq', 140, true);
 
 
 --

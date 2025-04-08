@@ -447,11 +447,12 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "RFP not found" });
       }
 
-      // Use the authenticated user's email instead of form data
+      // Use the authenticated user's email and ID
       const rfi = await storage.createRfi({
         ...data,
         email: req.user!.email,  // Use authenticated user's email
         rfpId: Number(req.params.id),
+        organizationId: req.user!.id, // Include the organization ID
       });
 
       res.status(201).json({ 
@@ -469,20 +470,9 @@ export function registerRoutes(app: Express): Server {
   // Get RFIs for specific RFP
   app.get("/api/rfps/:id/rfi", async (req, res) => {
     try {
+      // Get RFIs with organization data in a single query
       const rfis = await storage.getRfisByRfp(Number(req.params.id));
-
-      // Get user information for each RFI
-      const rfisWithUserInfo = await Promise.all(
-        rfis.map(async (rfi) => {
-          const user = await storage.getUserByUsername(rfi.email);
-          return {
-            ...rfi,
-            companyName: user?.companyName || 'N/A'
-          };
-        })
-      );
-
-      res.json(rfisWithUserInfo);
+      res.json(rfis);
     } catch (error) {
       console.error('Error fetching RFIs for RFP:', error);
       res.status(500).json({ message: "Failed to fetch RFIs" });

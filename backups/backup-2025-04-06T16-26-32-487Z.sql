@@ -654,6 +654,34 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 293	backup-2025-03-30T14-48-00-617Z.sql	success	\N	2025-03-30 14:48:08.42096
 294	backup-2025-03-31T14-48-00-618Z.sql	success	\N	2025-03-31 14:48:07.872627
 295	backup-2025-04-01T07-57-27-886Z.sql	success	\N	2025-04-01 07:57:32.447443
+296	backup-2025-04-01T08-01-18-421Z.sql	success	\N	2025-04-01 08:01:24.792991
+297	backup-2025-04-01T08-10-34-100Z.sql	success	\N	2025-04-01 08:10:38.365488
+298	backup-2025-04-01T08-10-53-348Z.sql	success	\N	2025-04-01 08:10:57.058709
+299	backup-2025-04-01T08-16-15-038Z.sql	success	\N	2025-04-01 08:16:18.802424
+300	backup-2025-04-01T08-17-07-695Z.sql	success	\N	2025-04-01 08:17:11.189125
+301	backup-2025-04-01T08-28-58-505Z.sql	success	\N	2025-04-01 08:29:12.229468
+302	backup-2025-04-01T08-30-32-872Z.sql	success	\N	2025-04-01 08:30:52.69774
+303	backup-2025-04-01T17-12-23-945Z.sql	success	\N	2025-04-01 17:12:48.088618
+304	backup-2025-04-02T10-59-45-650Z.sql	success	\N	2025-04-02 10:59:50.360438
+305	backup-2025-04-02T11-06-53-231Z.sql	success	\N	2025-04-02 11:07:00.880444
+306	backup-2025-04-02T11-16-34-039Z.sql	success	\N	2025-04-02 11:16:38.29065
+307	backup-2025-04-02T12-04-18-673Z.sql	success	\N	2025-04-02 12:04:30.42603
+308	backup-2025-04-03T12-04-18-683Z.sql	success	\N	2025-04-03 12:04:24.730605
+309	backup-2025-04-03T19-34-35-292Z.sql	success	\N	2025-04-03 19:34:41.904906
+310	backup-2025-04-03T19-37-46-003Z.sql	success	\N	2025-04-03 19:37:49.9874
+311	backup-2025-04-04T12-04-18-686Z.sql	success	\N	2025-04-04 12:04:24.611338
+312	backup-2025-04-04T17-45-20-440Z.sql	success	\N	2025-04-04 17:45:40.458909
+313	backup-2025-04-04T21-53-48-403Z.sql	success	\N	2025-04-04 21:54:10.965859
+314	backup-2025-04-05T00-28-49-077Z.sql	success	\N	2025-04-05 00:29:05.196213
+315	backup-2025-04-05T08-36-40-167Z.sql	success	\N	2025-04-05 08:36:57.411175
+316	backup-2025-04-05T15-01-40-508Z.sql	success	\N	2025-04-05 15:01:52.629767
+317	backup-2025-04-05T18-28-40-298Z.sql	success	\N	2025-04-05 18:29:06.23405
+318	backup-2025-04-05T18-56-59-593Z.sql	success	\N	2025-04-05 18:57:24.32437
+319	backup-2025-04-05T19-10-29-284Z.sql	success	\N	2025-04-05 19:10:49.010064
+320	backup-2025-04-06T07-18-36-315Z.sql	success	\N	2025-04-06 07:18:39.587225
+321	backup-2025-04-06T07-20-32-065Z.sql	success	\N	2025-04-06 07:20:56.681311
+322	backup-2025-04-06T13-58-36-272Z.sql	success	\N	2025-04-06 13:58:39.390727
+323	backup-2025-04-06T15-32-56-844Z.sql	success	\N	2025-04-06 15:33:20.773052
 \.
 
 
@@ -940,6 +968,16 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 76	70	2025-03-27	0	0	0	0	0
 77	68	2025-03-27	0	0	0	0	0
 78	129	2025-03-27	0	0	0	0	0
+79	1	2025-04-03	0	0	0	0	0
+80	68	2025-04-03	0	0	0	0	0
+81	69	2025-04-03	0	0	0	0	0
+82	70	2025-04-03	0	0	0	0	0
+83	133	2025-04-03	0	0	0	0	0
+84	1	2025-04-06	0	0	0	0	0
+85	69	2025-04-06	0	0	0	0	0
+86	70	2025-04-06	0	0	0	0	0
+87	133	2025-04-06	0	0	0	0	0
+88	68	2025-04-06	0	0	0	0	0
 \.
 
 
@@ -1091,6 +1129,12 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 128	Upgrade to Ergonomic analyzing installation	Project Overview:\nExpansion project for Government Facility located in Dallasstad, Tennessee.\n\nBackground:\nTaedium quibusdam voveo est comprehendo. Attollo alveus repellat virgo celo. Administratio tamquam denique quia demoror tantillus auctor suasoria.\n\nProject Objectives:\n- New Hat model with 63 GB RAM, 709 GB storage, and concrete features\n- The black Ball combines Comoros aesthetics with Tennessine-based durability\n- New Tuna model with 58 GB RAM, 933 GB storage, and serpentine features\n- Ergonomic Bacon designed with Rubber for diligent performance\n- Stylish Chicken designed to make you stand out with haunting looks\n\nScope of Work:\nVulgus tabella stabilis surculus dedico esse. Civis talio ipsum. Conicio alienus clementia vilicus.\n\nTechnical Requirements:\n- Communis thalassinus triumphus praesentium pecto animi magnam sodalitas.\n- Depromo vir supra civitas crustulum tamisium.\n- Desparatus adnuo adicio agnosco cupressus.\n- Aperiam crux ex patrocinor aeneus.\n- Verbum coma vulticulus coniuratio clamo caritas soleo tenetur.\n- Temeritas adfectus theca tristis nam ullam tristis.\n\nRequired Qualifications:\n- Organized demand-driven capacity\n- Programmable mobile circuit\n- Reduced clear-thinking challenge\n- Immersive fault-tolerant functionalities\n\nProject Timeline:\nCur capillus ducimus excepturi solvo valde. Defaeco venia aestas rem vindico subvenio abutor vespillo decretum coaegresco.\n\nEvaluation Criteria:\n- Thymum voluptatibus vulnero baiulus vinculum confugo accusantium.\n- Appello cunabula adeo volva celo vicissitudo sponte fugit.\n- Vicissitudo tertius consuasor amplus aequus candidus verumtamen velum advoco villa.	2025-03-16 15:11:18.204	2025-09-18 05:56:10.523	2025-10-31 05:23:33.457	4184905	Energy Star Partner, Green Building Professional, Service-Disabled Veteran-Owned Business	Fort Oletamouth, Tennessee	https://urban-pearl.com/	closed	30	t	2025-03-06 18:44:01.868416	\N
 129	Network setup	Network setup for office building.	2025-03-29 22:12:00	2025-03-28 22:12:00	2025-02-05 18:00:00	100000	\N	Kansas	\N	open	2	t	2025-03-27 19:13:37.072887	\N
 130	Bridge building	New walkway across the river.	2025-04-03 10:59:00	2025-04-18 10:59:00	2025-04-24 10:59:00	100000000	\N	London	\N	open	2	t	2025-04-01 07:59:42.44301	\N
+131	New office blocks	New office blocks for Intel semiconductor manufacturing	2025-04-11 11:03:00	2025-04-24 11:03:00	2025-05-07 11:03:00	100000000	\N	Kansas	\N	open	2	t	2025-04-01 08:03:29.549513	\N
+132	Section 8 housing	Development of new blocks to support the government housing initiative.	2025-04-09 11:14:00	2025-04-17 11:14:00	2025-04-23 11:14:00	12000000	\N	Tenessee	\N	open	2	f	2025-04-01 08:15:25.982593	\N
+133	Affordable housing development	Development for social housing project	2025-04-10 11:00:00	2025-04-16 12:00:00	2025-04-24 00:00:00	120000000	\N	Minnesota	\N	open	1	t	2025-04-01 08:32:19.532756	\N
+134	New port	The construction of a new port	2025-04-17 12:00:00	2025-04-23 13:00:00	2025-05-02 23:59:00	100000000	\N	New Amsterdam	\N	open	1	f	2025-04-01 08:58:15.821738	\N
+135	New school block	New school block for school district expansion project	2025-04-10 12:00:00	2025-04-16 12:00:00	2025-04-24 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 11:13:08.055041	\N
+136	New school block	School blocks for washington state district.	2025-04-10 12:00:00	2025-04-11 12:00:00	2025-04-28 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 12:14:35.815584	\N
 \.
 
 
@@ -1149,7 +1193,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 295, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 323, true);
 
 
 --
@@ -1170,7 +1214,7 @@ SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 78, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 88, true);
 
 
 --
@@ -1184,7 +1228,7 @@ SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 5, true);
 -- Name: rfps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfps_id_seq', 130, true);
+SELECT pg_catalog.setval('public.rfps_id_seq', 136, true);
 
 
 --

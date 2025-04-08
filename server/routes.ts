@@ -447,12 +447,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "RFP not found" });
       }
 
-      // Use the authenticated user's email and ID
+      // Use the authenticated user's email
       const rfi = await storage.createRfi({
         ...data,
         email: req.user!.email,  // Use authenticated user's email
         rfpId: Number(req.params.id),
-        organizationId: req.user!.id, // Include the organization ID
       });
 
       res.status(201).json({ 

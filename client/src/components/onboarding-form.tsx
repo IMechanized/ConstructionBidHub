@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { Upload, Loader2, X } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { getCertificationClasses } from "@/lib/utils";
 
 const TRADE_OPTIONS = [
   "General Contractor",
@@ -292,19 +293,7 @@ export default function OnboardingForm() {
                         {field.value.map((cert, index) => (
                           <div 
                             key={index} 
-                            className={`px-3 py-1 rounded-full flex items-center gap-1
-                              ${cert === 'Women-owned' ? 'bg-pink-100 text-pink-800' : ''}
-                              ${cert === 'Native American-owned' ? 'bg-orange-100 text-orange-800' : ''}
-                              ${cert === 'Veteran-owned' ? 'bg-blue-100 text-blue-800' : ''}
-                              ${cert === 'Military spouse' ? 'bg-indigo-100 text-indigo-800' : ''}
-                              ${cert === 'LGBTQ-owned' ? 'bg-purple-100 text-purple-800' : ''}
-                              ${cert === 'Rural' ? 'bg-green-100 text-green-800' : ''}
-                              ${cert === 'Minority-owned' ? 'bg-amber-100 text-amber-800' : ''}
-                              ${cert === 'Section 3' ? 'bg-teal-100 text-teal-800' : ''}
-                              ${!['Women-owned', 'Native American-owned', 'Veteran-owned', 'Military spouse', 
-                                'LGBTQ-owned', 'Rural', 'Minority-owned', 'Section 3'].includes(cert) 
-                                ? 'bg-primary/10 text-primary' : ''}
-                            `}
+                            className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCertificationClasses(cert, false)}`}
                           >
                             <span>{cert}</span>
                             <X 

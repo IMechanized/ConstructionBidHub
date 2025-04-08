@@ -115,7 +115,8 @@ export const rfis = pgTable("rfis", {
   message: text("message").notNull(),                      // Question/request
   createdAt: timestamp("created_at").defaultNow().notNull(),
   status: text("status", { enum: ["pending", "responded"] }).default("pending"),
-  organizationId: integer("organization_id").references(() => users.id), // Associated organization
+  // Note: organizationId field exists in the TypeScript schema but not in the actual database
+  // If you need to add this field to the database, run a migration
 });
 
 /**

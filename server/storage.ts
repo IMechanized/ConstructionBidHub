@@ -274,24 +274,38 @@ export class DatabaseStorage implements IStorage {
    * RFI Operations
    */
   async createRfi(rfi: InsertRfi & { rfpId: number, organizationId?: number }): Promise<Rfi> {
+    // Remove organizationId before inserting since it doesn't exist in the database schema
+    const { organizationId, ...rfiData } = rfi;
+    
     const [newRfi] = await db
       .insert(rfis)
-      .values(rfi)
+      .values(rfiData)
       .returning();
     return newRfi;
   }
 
   async getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]> {
+    // Get RFIs first
     const results = await db
       .select()
       .from(rfis)
-      .leftJoin(users, eq(rfis.organizationId, users.id))
       .where(eq(rfis.rfpId, rfpId));
-      
-    return results.map(result => ({
-      ...result.rfis,
-      organization: result.users || undefined
+    
+    // Then for each RFI, try to look up the organization by email
+    const rfisWithOrg = await Promise.all(results.map(async (rfi) => {
+      const [organization] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, rfi.email))
+        .limit(1);
+        
+      return {
+        ...rfi,
+        organization: organization || undefined
+      };
     }));
+    
+    return rfisWithOrg;
   }
 
   async getRfisByEmail(email: string): Promise<Rfi[]> {

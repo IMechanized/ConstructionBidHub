@@ -349,7 +349,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         />
 
         {/* Form Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end sm:gap-4">
           <Button
             type="button"
             variant="outline"
@@ -358,6 +358,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               onCancel?.();
             }}
             data-testid="cancel-button"
+            className="w-full sm:w-auto"
           >
             {t('common.cancel')}
           </Button>
@@ -366,6 +367,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             variant="outline"
             disabled={createRfpMutation.isPending}
             data-testid="submit-button"
+            className="w-full sm:w-auto"
           >
             {createRfpMutation.isPending ? (
               <>
@@ -381,6 +383,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             onClick={() => form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()}
             disabled={createRfpMutation.isPending || isPriceLoading}
             data-testid="boost-button"
+            className="w-full sm:w-auto"
           >
             {createRfpMutation.isPending || isPriceLoading ? (
               <>
@@ -390,7 +393,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             ) : (
               <>
                 <Zap className="mr-2 h-4 w-4" />
-                {t('rfp.boostVisibility')} {formatPrice(featuredPrice)}
+                <span className="whitespace-nowrap">{t('rfp.boostVisibility')} {formatPrice(featuredPrice)}</span>
               </>
             )}
           </Button>

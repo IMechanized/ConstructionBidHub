@@ -32,7 +32,7 @@ export default function PaymentDialog({
           <DialogTitle>Feature Your RFP</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[70vh] pr-4">
+        <ScrollArea className="max-h-[70vh] px-2">
           <div className="py-4">
             <p className="mb-4">
               Featuring your RFP will increase its visibility by:

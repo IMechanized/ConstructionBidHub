@@ -213,7 +213,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>{t('dashboard.createNewRfp')}</DialogTitle>
           </DialogHeader>
-          <div className="overflow-y-auto pr-4 max-h-[70vh]">
+          <div className="overflow-y-auto px-2 max-h-[70vh] pb-4">
             <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
           </div>
         </DialogContent>

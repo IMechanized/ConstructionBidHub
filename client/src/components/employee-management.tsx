@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { ScrollableForm } from "@/components/ui/scrollable-form";
 
 export default function EmployeeManagement() {
   const { user } = useAuth();
@@ -83,10 +84,11 @@ export default function EmployeeManagement() {
         <CardContent className="p-6">
           <h2 className="text-lg font-semibold mb-4">Invite Employee</h2>
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit((data) => createEmployeeMutation.mutate(data))}
-              className="space-y-4"
-            >
+            <ScrollableForm maxHeight="50vh">
+              <form
+                onSubmit={form.handleSubmit((data) => createEmployeeMutation.mutate(data))}
+                className="space-y-4"
+              >
               <FormField
                 control={form.control}
                 name="email"
@@ -125,6 +127,7 @@ export default function EmployeeManagement() {
                 Send Invitation
               </Button>
             </form>
+            </ScrollableForm>
           </Form>
         </CardContent>
       </Card>

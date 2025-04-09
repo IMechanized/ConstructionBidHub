@@ -36,6 +36,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
+import { ScrollableForm } from "@/components/ui/scrollable-form";
 
 interface RfpFormProps {
   onSuccess?: () => void;
@@ -168,11 +169,12 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
 
   return (
     <Form {...form}>
-      <form 
-        className="space-y-6"
-        onSubmit={form.handleSubmit(onSubmit)}
-        data-testid="rfp-form"
-      >
+      <ScrollableForm>
+        <form 
+          className="space-y-6"
+          onSubmit={form.handleSubmit(onSubmit)}
+          data-testid="rfp-form"
+        >
         {/* Title Field */}
         <FormField
           control={form.control}
@@ -396,6 +398,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           </Button>
         </div>
       </form>
+      </ScrollableForm>
 
       {/* Payment Dialog */}
       <PaymentDialog

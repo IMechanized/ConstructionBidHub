@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Upload, Loader2, X } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getCertificationClasses } from "@/lib/utils";
+import { ScrollableForm } from "@/components/ui/scrollable-form";
 
 const TRADE_OPTIONS = [
   "General Contractor",
@@ -193,11 +194,12 @@ export default function OnboardingForm() {
         <CardContent className="pt-6">
           <h2 className="text-2xl font-bold mb-6">Complete Your Profile</h2>
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-4"
-              encType="multipart/form-data"
-            >
+            <ScrollableForm maxHeight="70vh">
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4"
+                encType="multipart/form-data"
+              >
               <FormField
                 control={form.control}
                 name="trade"
@@ -455,6 +457,7 @@ export default function OnboardingForm() {
                 </Button>
               </div>
             </form>
+            </ScrollableForm>
           </Form>
         </CardContent>
       </Card>

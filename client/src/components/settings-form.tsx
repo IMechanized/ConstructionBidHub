@@ -17,7 +17,6 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATIONS } from "@shared/schema";
 import { getCertificationClasses } from "@/lib/utils";
-import { ScrollableForm } from "@/components/ui/scrollable-form";
 
 // Available options for form select fields
 const TRADE_OPTIONS = [
@@ -215,11 +214,10 @@ export default function SettingsForm() {
       <div>
         <h2 className="text-lg font-semibold mb-4">{t('settings.organizationSettings')}</h2>
         <Form {...form}>
-          <ScrollableForm maxHeight="70vh">
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
             {/* Company Name Field */}
             <FormField
               control={form.control}
@@ -534,7 +532,6 @@ export default function SettingsForm() {
               )}
             </Button>
           </form>
-          </ScrollableForm>
         </Form>
       </div>
 

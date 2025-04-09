@@ -11,7 +11,6 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
-import { ScrollableForm } from "@/components/ui/scrollable-form";
 
 export default function RfiForm({ rfpId }: { rfpId: number }) {
   const { toast } = useToast();
@@ -63,11 +62,10 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
 
   return (
     <Form {...form}>
-      <ScrollableForm maxHeight="60vh">
-        <form
-          onSubmit={form.handleSubmit((data) => submitRfiMutation.mutate(data))}
-          className="space-y-4"
-        >
+      <form
+        onSubmit={form.handleSubmit((data) => submitRfiMutation.mutate(data))}
+        className="space-y-4"
+      >
         <FormField
           control={form.control}
           name="email"
@@ -111,7 +109,6 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
           {submitRfiMutation.isPending ? t('common.submitting') : t('rfi.submitRequest')}
         </Button>
       </form>
-      </ScrollableForm>
     </Form>
   );
 }

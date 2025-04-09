@@ -84,8 +84,10 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <PaymentElement />
+    <form onSubmit={handleSubmit} className="max-h-full overflow-y-auto">
+      <div className="max-h-[300px] overflow-y-auto pr-3">
+        <PaymentElement />
+      </div>
       
       {errorMessage && (
         <div className="mt-3 text-red-500 text-sm">{errorMessage}</div>

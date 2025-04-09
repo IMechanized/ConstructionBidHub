@@ -209,11 +209,13 @@ export default function Dashboard() {
       </div>
 
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{t('dashboard.createNewRfp')}</DialogTitle>
           </DialogHeader>
-          <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
+          <div className="overflow-y-auto pr-4 max-h-[70vh]">
+            <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

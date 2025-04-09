@@ -7,6 +7,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import PaymentForm from './payment-form';
+import { ScrollArea } from './ui/scroll-area';
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -26,30 +27,32 @@ export default function PaymentDialog({
 }: PaymentDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Feature Your RFP</DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
-          <p className="mb-4">
-            Featuring your RFP will increase its visibility by:
-          </p>
-          
-          <ul className="list-disc pl-5 mb-4 space-y-1">
-            <li>Displaying it at the top of all search results</li>
-            <li>Adding a "Featured" badge for more attention</li>
-            <li>Including it in promotional emails to contractors</li>
-            <li>Receiving priority in mobile notifications</li>
-          </ul>
-          
-          <PaymentForm
-            rfpId={rfpId}
-            pendingRfpData={pendingRfpData}
-            onSuccess={onPaymentSuccess}
-            onCancel={onClose}
-          />
-        </div>
+        <ScrollArea className="max-h-[70vh] pr-4">
+          <div className="py-4">
+            <p className="mb-4">
+              Featuring your RFP will increase its visibility by:
+            </p>
+            
+            <ul className="list-disc pl-5 mb-4 space-y-1">
+              <li>Displaying it at the top of all search results</li>
+              <li>Adding a "Featured" badge for more attention</li>
+              <li>Including it in promotional emails to contractors</li>
+              <li>Receiving priority in mobile notifications</li>
+            </ul>
+            
+            <PaymentForm
+              rfpId={rfpId}
+              pendingRfpData={pendingRfpData}
+              onSuccess={onPaymentSuccess}
+              onCancel={onClose}
+            />
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

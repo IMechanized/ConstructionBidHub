@@ -40,6 +40,11 @@ export const users = pgTable("users", {
   onboardingComplete: boolean("onboarding_complete").default(false),
   status: text("status", { enum: ["active", "deactivated"] }).default("active"),
   language: text("language").default("en"),    // User language preference
+  emailVerified: boolean("email_verified").default(false), // Whether email is verified
+  verificationToken: text("verification_token"), // Email verification token
+  verificationTokenExpiry: timestamp("verification_token_expiry"), // When the verification token expires
+  resetToken: text("reset_token"),            // Password reset token
+  resetTokenExpiry: timestamp("reset_token_expiry"), // When the reset token expires
 });
 
 /**

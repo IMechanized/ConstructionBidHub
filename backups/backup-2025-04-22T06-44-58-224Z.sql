@@ -682,6 +682,116 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 321	backup-2025-04-06T07-20-32-065Z.sql	success	\N	2025-04-06 07:20:56.681311
 322	backup-2025-04-06T13-58-36-272Z.sql	success	\N	2025-04-06 13:58:39.390727
 323	backup-2025-04-06T15-32-56-844Z.sql	success	\N	2025-04-06 15:33:20.773052
+324	backup-2025-04-06T16-26-32-487Z.sql	success	\N	2025-04-06 16:26:37.378664
+325	backup-2025-04-06T21-07-55-409Z.sql	success	\N	2025-04-06 21:08:18.308741
+326	backup-2025-04-07T11-33-57-815Z.sql	success	\N	2025-04-07 11:34:21.458726
+327	backup-2025-04-07T11-42-23-981Z.sql	success	\N	2025-04-07 11:42:43.504611
+328	backup-2025-04-07T17-39-38-432Z.sql	success	\N	2025-04-07 17:40:12.030107
+329	backup-2025-04-07T18-38-12-149Z.sql	success	\N	2025-04-07 18:38:33.766209
+330	backup-2025-04-07T18-38-18-935Z.sql	success	\N	2025-04-07 18:38:34.857672
+331	backup-2025-04-07T18-52-37-144Z.sql	success	\N	2025-04-07 18:52:59.885272
+332	backup-2025-04-07T19-53-56-126Z.sql	success	\N	2025-04-07 19:54:14.84069
+333	backup-2025-04-08T02-33-46-003Z.sql	success	\N	2025-04-08 02:34:01.475624
+334	backup-2025-04-08T07-06-18-841Z.sql	success	\N	2025-04-08 07:06:38.267464
+335	backup-2025-04-08T07-16-22-335Z.sql	success	\N	2025-04-08 07:16:26.509745
+336	backup-2025-04-08T07-23-32-670Z.sql	success	\N	2025-04-08 07:23:36.226449
+337	backup-2025-04-08T07-25-12-195Z.sql	success	\N	2025-04-08 07:25:15.775578
+338	backup-2025-04-08T07-29-13-828Z.sql	success	\N	2025-04-08 07:29:17.501075
+339	backup-2025-04-08T07-37-03-767Z.sql	success	\N	2025-04-08 07:37:28.637806
+340	backup-2025-04-08T08-00-30-434Z.sql	success	\N	2025-04-08 08:00:41.058261
+341	backup-2025-04-08T10-28-32-951Z.sql	success	\N	2025-04-08 10:28:40.867459
+342	backup-2025-04-08T11-48-14-616Z.sql	success	\N	2025-04-08 11:48:31.746656
+343	backup-2025-04-08T12-34-36-861Z.sql	success	\N	2025-04-08 12:34:51.088623
+344	backup-2025-04-08T13-03-18-615Z.sql	success	\N	2025-04-08 13:03:39.871483
+345	backup-2025-04-08T13-43-08-310Z.sql	success	\N	2025-04-08 13:43:26.434756
+346	backup-2025-04-08T14-09-17-441Z.sql	success	\N	2025-04-08 14:09:41.880729
+347	backup-2025-04-08T14-46-17-301Z.sql	success	\N	2025-04-08 14:46:34.833504
+348	backup-2025-04-08T15-02-19-682Z.sql	success	\N	2025-04-08 15:02:40.101499
+349	backup-2025-04-08T16-00-20-103Z.sql	success	\N	2025-04-08 16:00:31.431121
+350	backup-2025-04-08T16-09-53-584Z.sql	success	\N	2025-04-08 16:10:23.426005
+351	backup-2025-04-08T17-53-14-435Z.sql	success	\N	2025-04-08 17:53:39.171752
+352	backup-2025-04-08T18-17-13-761Z.sql	success	\N	2025-04-08 18:17:36.769151
+353	backup-2025-04-08T18-42-44-207Z.sql	success	\N	2025-04-08 18:43:07.683049
+354	backup-2025-04-08T19-15-09-052Z.sql	success	\N	2025-04-08 19:15:39.717261
+355	backup-2025-04-08T20-08-12-449Z.sql	success	\N	2025-04-08 20:08:31.874925
+356	backup-2025-04-09T01-28-53-037Z.sql	success	\N	2025-04-09 01:29:15.216629
+357	backup-2025-04-09T03-57-44-261Z.sql	success	\N	2025-04-09 03:57:54.688178
+358	backup-2025-04-09T04-18-41-905Z.sql	success	\N	2025-04-09 04:18:55.03754
+359	backup-2025-04-09T04-58-08-455Z.sql	success	\N	2025-04-09 04:58:31.557848
+360	backup-2025-04-09T05-53-47-828Z.sql	success	\N	2025-04-09 05:54:08.649475
+361	backup-2025-04-09T06-28-43-967Z.sql	success	\N	2025-04-09 06:28:48.146385
+362	backup-2025-04-09T10-10-05-981Z.sql	success	\N	2025-04-09 10:10:10.388489
+363	backup-2025-04-09T10-17-47-888Z.sql	success	\N	2025-04-09 10:17:52.307516
+364	backup-2025-04-09T10-33-42-616Z.sql	success	\N	2025-04-09 10:33:53.151169
+365	backup-2025-04-09T14-46-19-146Z.sql	success	\N	2025-04-09 14:46:39.976814
+366	backup-2025-04-09T15-28-34-555Z.sql	success	\N	2025-04-09 15:28:58.266012
+367	backup-2025-04-09T18-25-53-847Z.sql	success	\N	2025-04-09 18:26:10.368795
+368	backup-2025-04-09T20-07-00-631Z.sql	success	\N	2025-04-09 20:07:22.775264
+369	backup-2025-04-10T00-32-51-569Z.sql	success	\N	2025-04-10 00:33:00.471179
+370	backup-2025-04-10T02-03-29-279Z.sql	success	\N	2025-04-10 02:03:53.223201
+371	backup-2025-04-10T02-08-59-730Z.sql	success	\N	2025-04-10 02:09:12.58516
+372	backup-2025-04-10T07-09-10-415Z.sql	success	\N	2025-04-10 07:09:36.362098
+373	backup-2025-04-10T10-27-30-830Z.sql	success	\N	2025-04-10 10:27:53.154538
+374	backup-2025-04-10T10-45-47-332Z.sql	success	\N	2025-04-10 10:45:58.063126
+375	backup-2025-04-10T10-47-52-631Z.sql	success	\N	2025-04-10 10:48:15.5522
+376	backup-2025-04-10T14-09-56-282Z.sql	success	\N	2025-04-10 14:10:26.821085
+377	backup-2025-04-10T15-36-35-972Z.sql	success	\N	2025-04-10 15:36:56.093574
+378	backup-2025-04-10T16-29-24-361Z.sql	success	\N	2025-04-10 16:29:54.475562
+379	backup-2025-04-10T17-44-52-183Z.sql	success	\N	2025-04-10 17:45:15.176509
+380	backup-2025-04-10T17-52-06-688Z.sql	success	\N	2025-04-10 17:52:27.216789
+381	backup-2025-04-10T18-03-41-577Z.sql	success	\N	2025-04-10 18:04:07.143953
+382	backup-2025-04-10T18-53-23-425Z.sql	success	\N	2025-04-10 18:53:46.157934
+383	backup-2025-04-10T20-09-49-109Z.sql	success	\N	2025-04-10 20:10:14.943985
+384	backup-2025-04-10T20-38-33-437Z.sql	success	\N	2025-04-10 20:39:02.9653
+385	backup-2025-04-10T21-07-56-991Z.sql	success	\N	2025-04-10 21:08:20.026831
+386	backup-2025-04-11T13-27-46-902Z.sql	success	\N	2025-04-11 13:28:12.340577
+387	backup-2025-04-11T14-47-55-308Z.sql	success	\N	2025-04-11 14:48:22.041825
+388	backup-2025-04-11T15-08-00-549Z.sql	success	\N	2025-04-11 15:08:23.110695
+389	backup-2025-04-11T15-39-54-975Z.sql	success	\N	2025-04-11 15:40:24.147084
+390	backup-2025-04-11T17-42-16-967Z.sql	success	\N	2025-04-11 17:42:38.098016
+391	backup-2025-04-11T17-57-48-068Z.sql	success	\N	2025-04-11 17:58:08.202933
+392	backup-2025-04-11T20-04-56-923Z.sql	success	\N	2025-04-11 20:05:26.410334
+393	backup-2025-04-11T21-11-18-279Z.sql	success	\N	2025-04-11 21:11:40.842741
+394	backup-2025-04-11T22-08-55-339Z.sql	success	\N	2025-04-11 22:09:19.219393
+395	backup-2025-04-12T06-19-35-070Z.sql	success	\N	2025-04-12 06:20:05.318268
+396	backup-2025-04-12T08-22-16-932Z.sql	success	\N	2025-04-12 08:22:41.08657
+397	backup-2025-04-12T09-53-03-903Z.sql	success	\N	2025-04-12 09:53:30.435057
+398	backup-2025-04-12T12-22-04-509Z.sql	success	\N	2025-04-12 12:22:19.732163
+399	backup-2025-04-12T13-14-41-091Z.sql	success	\N	2025-04-12 13:15:12.253767
+400	backup-2025-04-12T13-27-13-802Z.sql	success	\N	2025-04-12 13:27:22.820701
+401	backup-2025-04-12T14-09-06-065Z.sql	success	\N	2025-04-12 14:09:29.370965
+402	backup-2025-04-12T14-52-32-910Z.sql	success	\N	2025-04-12 14:52:57.44273
+403	backup-2025-04-12T15-49-26-997Z.sql	success	\N	2025-04-12 15:49:51.470875
+404	backup-2025-04-12T17-58-48-427Z.sql	success	\N	2025-04-12 17:59:10.851674
+405	backup-2025-04-12T18-47-38-013Z.sql	success	\N	2025-04-12 18:47:47.382719
+406	backup-2025-04-12T18-59-15-016Z.sql	success	\N	2025-04-12 18:59:50.092349
+407	backup-2025-04-12T21-45-59-653Z.sql	success	\N	2025-04-12 21:46:20.976685
+408	backup-2025-04-15T13-17-01-490Z.sql	success	\N	2025-04-15 13:17:10.521766
+409	backup-2025-04-15T14-08-36-179Z.sql	success	\N	2025-04-15 14:08:58.408466
+410	backup-2025-04-15T14-44-05-798Z.sql	success	\N	2025-04-15 14:44:31.353933
+411	backup-2025-04-15T15-23-56-585Z.sql	success	\N	2025-04-15 15:24:21.646643
+412	backup-2025-04-15T15-59-11-286Z.sql	success	\N	2025-04-15 15:59:40.390579
+413	backup-2025-04-15T20-47-42-486Z.sql	success	\N	2025-04-15 20:48:01.213951
+414	backup-2025-04-15T21-33-53-637Z.sql	success	\N	2025-04-15 21:34:16.789996
+415	backup-2025-04-15T22-04-05-856Z.sql	success	\N	2025-04-15 22:04:30.006492
+416	backup-2025-04-15T23-01-59-083Z.sql	success	\N	2025-04-15 23:02:21.734021
+417	backup-2025-04-15T23-38-15-603Z.sql	success	\N	2025-04-15 23:38:32.470759
+418	backup-2025-04-16T01-25-10-359Z.sql	success	\N	2025-04-16 01:25:42.583523
+419	backup-2025-04-16T03-34-04-296Z.sql	success	\N	2025-04-16 03:34:31.226572
+420	backup-2025-04-16T08-35-15-386Z.sql	success	\N	2025-04-16 08:35:39.434906
+421	backup-2025-04-16T09-17-10-604Z.sql	success	\N	2025-04-16 09:17:23.53354
+422	backup-2025-04-16T12-36-17-490Z.sql	success	\N	2025-04-16 12:36:44.027986
+423	backup-2025-04-16T13-19-26-387Z.sql	success	\N	2025-04-16 13:19:50.923178
+424	backup-2025-04-16T13-47-16-473Z.sql	success	\N	2025-04-16 13:47:39.427654
+425	backup-2025-04-16T14-13-45-769Z.sql	success	\N	2025-04-16 14:14:13.107806
+426	backup-2025-04-16T15-57-12-122Z.sql	success	\N	2025-04-16 15:57:40.183613
+427	backup-2025-04-16T16-34-18-008Z.sql	success	\N	2025-04-16 16:34:41.247263
+428	backup-2025-04-16T19-17-19-003Z.sql	success	\N	2025-04-16 19:17:30.038669
+429	backup-2025-04-16T19-34-59-970Z.sql	success	\N	2025-04-16 19:35:44.388036
+430	backup-2025-04-16T21-14-42-662Z.sql	success	\N	2025-04-16 21:15:06.910811
+431	backup-2025-04-16T22-18-30-297Z.sql	success	\N	2025-04-16 22:18:42.455365
+432	backup-2025-04-16T22-53-29-725Z.sql	success	\N	2025-04-16 22:53:55.646093
+433	backup-2025-04-22T06-17-43-922Z.sql	success	\N	2025-04-22 06:18:12.103209
 \.
 
 
@@ -882,6 +992,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 182	5	mechanizedsolutionsinc@gmail.com	More testing	2025-03-18 13:28:32.768448	pending
 183	1	sandy@mail.com	Bid.	2025-03-24 18:47:17.877738	pending
 184	1	sandy@mail.com	Asking for bid information.	2025-03-25 10:34:22.950184	pending
+185	131	mechanizedsolutionsinc@gmail.com	Requesting further details on this listing.	2025-04-08 07:33:18.529747	pending
 \.
 
 
@@ -978,6 +1089,14 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 86	70	2025-04-06	0	0	0	0	0
 87	133	2025-04-06	0	0	0	0	0
 88	68	2025-04-06	0	0	0	0	0
+90	68	2025-04-08	0	0	0	0	0
+91	69	2025-04-08	0	0	0	0	0
+92	133	2025-04-08	0	0	0	0	0
+93	70	2025-04-08	0	0	0	0	0
+89	1	2025-04-08	1	1	10	0	0
+94	131	2025-04-08	2	2	10	0	0
+95	130	2025-04-08	0	0	0	0	0
+96	129	2025-04-08	0	0	0	0	0
 \.
 
 
@@ -991,6 +1110,9 @@ COPY public.rfp_view_sessions (id, rfp_id, user_id, view_date, duration, convert
 3	6	2	2025-03-26 10:39:30.348	10	f
 4	8	2	2025-03-26 10:40:10.031	7	f
 5	10	1	2025-03-26 11:03:27.923	4	f
+6	1	2	2025-04-08 07:20:32.314	10	f
+7	131	1	2025-04-08 07:27:47.107	10	f
+8	131	1	2025-04-08 07:33:01.842	10	f
 \.
 
 
@@ -1135,6 +1257,13 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 134	New port	The construction of a new port	2025-04-17 12:00:00	2025-04-23 13:00:00	2025-05-02 23:59:00	100000000	\N	New Amsterdam	\N	open	1	f	2025-04-01 08:58:15.821738	\N
 135	New school block	New school block for school district expansion project	2025-04-10 12:00:00	2025-04-16 12:00:00	2025-04-24 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 11:13:08.055041	\N
 136	New school block	School blocks for washington state district.	2025-04-10 12:00:00	2025-04-11 12:00:00	2025-04-28 23:59:00	100000000	\N	Washington State	\N	open	1	f	2025-04-02 12:14:35.815584	\N
+137	Airport	New Airport	2025-04-12 12:00:00	2025-04-20 12:00:00	2025-04-25 23:59:00	12000000	\N	New York	\N	open	1	f	2025-04-06 16:30:00.103619	\N
+138	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:32:17.629188	\N
+139	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:36:22.929998	\N
+140	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:37:32.29851	\N
+141	Construction	Construction of road	2025-04-17 13:18:00	2025-04-25 13:19:00	2025-04-30 13:19:00	100000	\N	New York	\N	open	2	f	2025-04-09 10:19:20.378596	\N
+142	Construction	Construction of road	2025-04-17 13:18:00	2025-04-25 13:19:00	2025-04-30 13:19:00	100000	\N	New York	\N	open	2	f	2025-04-09 10:22:08.855456	\N
+143	Construction	Construction of road.	2025-04-17 13:26:00	2025-04-24 13:26:00	2025-04-30 13:26:00	12000000	\N	New York	\N	open	2	f	2025-04-09 10:27:08.209274	\N
 \.
 
 
@@ -1143,7 +1272,7 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 --
 
 COPY public.users (id, email, password, company_name, contact, telephone, cell, business_email, is_minority_owned, minority_group, trade, certification_name, logo, onboarding_complete, status, language) FROM stdin;
-2	sandy@mail.com	a08ebc7bc6f2ff994f611f230aef49501493fd810df880add2b90f6714bf2ac23311067f4b50d9f6179601fd930103539bfa26c2202ff7a1c392e39076d05811.765e4c508f4ec4e02c7ef7211ae1a532	Sandy	Sandy	0702466523	0115704062	sandy@mail.com	f		Concrete	Concrete and contruction	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740568651/construction-bids/prg9ustde7vn2ulyqsds.png	t	active	en
+1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	HVAC	{"Veteran-owned","Rural","Minority-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	en
 3	Adolph30@hotmail.com	fcd466ecf4f1e8caa9d36229f620f288b982010ccea5875a73d5a6fd3543d6ffde09c37880a2ef5a5c3046268212f4a12bf0c49028714bc57cf51ebf2bfe3bc1.70c752c53c9b2741980d0f698ed7a5e8	Nicolas, Graham and Rempel	Dr. Luke Bode III	(848) 692-6498 x7589	(890) 708-8218 x833	Claire.Kohler57@gmail.com	t	Hispanic	Painting	Energy Star Partner	\N	t	active	en
 4	Joana_Jaskolski73@yahoo.com	bdc500e5ebffb6db8851ca5c230d6a021cad3be6384716483f4ea27ca37f07c4ac1ed28b3728dfa82d715cf417dfcdc02e040e7e4b7dc87276970cc96fe02b80.f5f5a23ce9f4d3995c5ae8ede23d5526	Nikolaus - Rutherford	Danny Stokes	372.447.7504	(927) 923-7279 x43228	Mozelle.Harris35@yahoo.com	t	Hispanic	Roofing	EPA Lead-Safe	\N	t	active	en
 5	Gerda33@yahoo.com	764fa11e25c593e1f9facf3e1944a0a45b27e9bf806956532fd155aebdd632e979279074c52b2b84469922504aafea6ae8a3b835dc64d72e1e0c1ea79cc00b69.f4e378249197140880cca68abd3a2e49	Johnson - Fahey	Kelvin Gislason	238.848.6944 x293	(212) 462-3219 x11649	Meda.Hamill@gmail.com	f	Asian	Interior Design	LEED Certified	\N	t	active	en
@@ -1162,7 +1291,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 18	Erik88@yahoo.com	4ca696351fe5923db6e08dace8d8f0d3cc4e9929d2f1a9ad8e3cdfff806e72bace110a1ff4b0e89298f737ada500bf9ec2f7c0780b248634cc7d17a97d136793.fe7e726c47275257884339c1ef00edd6	Reinger - Tillman	Viola Krajcik	413-603-5288 x1057	737-997-4200 x27090	Carley19@yahoo.com	f	\N	Carpentry	Master Electrician	\N	t	active	en
 19	Kaylah_Wisoky23@yahoo.com	2f2ed91d10bde653345f1dc3d9243c6be557c9ed3e9b1afa078b23f54a93334923f73fc0787d5db6908189575ad4dffaab912474485b752f173f6b4a0ebfc6e8.27afecacf716dc30ed7e2d26a4efb18e	Gutmann, Hills and Bartoletti	Lucy Nikolaus	395.608.7865 x48206	1-534-705-0568 x3305	Lennie.Reilly@gmail.com	f	\N	Carpentry	\N	\N	t	active	en
 20	Reina3@yahoo.com	569b3315cd451d4ae3fe6b6052b586037f0ac22780fd5d70c94afd9a522b0f9464d0cb582c25a31970d0799b2329a2449392a036d9c066c5015d073b42679eea.903f74da91c09a0935bd1d4f9cf63824	Casper Group	Gertrude Fadel	(521) 929-2987 x79002	(354) 208-7381 x519	Gilda_Boyer@gmail.com	f	Black	Plumbing	Master Plumber	\N	t	active	en
-1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	HVAC	d3	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	en
+2	sandy@mail.com	a08ebc7bc6f2ff994f611f230aef49501493fd810df880add2b90f6714bf2ac23311067f4b50d9f6179601fd930103539bfa26c2202ff7a1c392e39076d05811.765e4c508f4ec4e02c7ef7211ae1a532	Sandy	Sandy	0702466523	0115704062	sandy@mail.com	f		Concrete	{"Rural","Veteran-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740568651/construction-bids/prg9ustde7vn2ulyqsds.png	t	active	en
 21	Wilford21@gmail.com	64a040e0d8bfd08505e0ee0671a7d178135d69d34291207cfb0823b40cb73bd06cc9a460d3f31cee95e6607af3534fcead63f2ed8aaf829b1501cf043bbf2125.2cb90a625afad970f72c615fe8341c1d	Ullrich Inc	Oscar Olson	906.481.4627 x4985	1-757-895-8708 x891	Gage39@hotmail.com	f	\N	HVAC	Master Electrician	\N	t	active	en
 22	Rodrigo_Daugherty43@yahoo.com	2d20af6993c15dffa3b86ef1f9c12a2badeba4471b54e25e0c039d48e9b41ba068eb21a3ebbc2780af9fbf50e2e82264eb819222ace86a3c6c495dab93a2c2ed.c21a6d456fed155dc7c3f697c2fcf061	Bergstrom LLC	Kim Erdman	812.239.0272 x86701	474.424.8177 x517	Hillary98@hotmail.com	f	Black	Masonry	LEED Certified	\N	t	active	en
 23	Elisha1@gmail.com	169d627ea8df9ea442abcce27179a570bb37f7164dbdaea3f74407683ebb36282a2045346a6856f84c0ce7d8a915142ca32c52d465f503294b2cf5b5be2c8040.f31c320c6b6929c9620dc8a16f9b5aaf	Cummings LLC	Maria Gibson	252.220.7534 x46509	545-600-2475 x24472	Mariah29@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en
@@ -1186,6 +1315,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 41	Terrence.Lemke@yahoo.com	3e7c2f6b65817566a481525663c52a320dd4e685037394c7b8d64f5a1eadcac3c1a8e3903cdc4689fdf248aa8bca4d7b8abe36bc2cd1c7b8f4ea1116121f1598.a7e4dd7c2592b0b924da01a0eb0b88e4	Weimann Inc	Lila Howell	1-747-223-8743 x782	(710) 260-3880 x6410	Maiya.Witting-Kreiger@gmail.com	t	\N	Roofing	LEED Certified	\N	t	active	en
 42	Rosina57@hotmail.com	cdd505cd41e073da9a715a2c3094b77b4f211348cfe7d7ad9546b059574518c7575c1e66af4151cbce67c2401e1c017726e8e28981fb2da13b974cad95792f92.0a7c03abd1369e1c82ef98b8fb618622	Baumbach, Borer and Lesch	Noah Leffler	358.258.4122 x45680	297-544-7887 x14959	Dante_Goyette-Tremblay@hotmail.com	f	Hispanic	General Contractor	Women-Owned Business Enterprise (WBE)	\N	t	active	en
 43	sandler@mail.com	7bdc7d9fb9eebaa7650bcb9d82a10d7fc571e18ebf2cbd4356b2e61dd5671c08cf1ead6663ff57b1417022248f7ba3cbf2e52c05caf2685608008631cd6fb26e.6ca7d5d556bb6ab43a160eb802b80000	Sandler	Sandler	0123456789	0123456789	sandler@mail.com	f		Carpentry	Sa1	https://res.cloudinary.com/dhyavdc7k/image/upload/v1741943059/construction-bids/xmxq80ugiasoey3kfynp.png	t	active	en
+44	construction@mail.com	78ecf6a79ca9dba68d2ca8d575de4be0ffa5169fc22827c8a5ce7b6778d6a70d65ea80ba0cc8c0bce4e301928f21646a9fbb8c1f49a888f05751f9610b00ce3a.4aa6065365c234adef8e3816d68b6d1c	EliteConstruction	\N	\N	\N	\N	f	\N	\N	\N	\N	f	active	en
 \.
 
 
@@ -1193,7 +1323,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 323, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 433, true);
 
 
 --
@@ -1207,35 +1337,35 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 185, true);
 
 
 --
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 88, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 96, true);
 
 
 --
 -- Name: rfp_view_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 5, true);
+SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 8, true);
 
 
 --
 -- Name: rfps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfps_id_seq', 136, true);
+SELECT pg_catalog.setval('public.rfps_id_seq', 143, true);
 
 
 --
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 43, true);
+SELECT pg_catalog.setval('public.users_id_seq', 44, true);
 
 
 --

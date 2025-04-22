@@ -25,6 +25,9 @@ import EmployeesPage from "@/pages/dashboard/employees";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
+import VerifyEmailPage from "@/pages/verify-email-page";
+import ForgotPasswordPage from "@/pages/forgot-password-page";
+import ResetPasswordPage from "@/pages/reset-password-page";
 import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineStatus } from "@/components/offline-status";
@@ -82,6 +85,9 @@ function Router() {
         <ProtectedRoute path="/reports/:id" component={() => <DetailedReportPage />} />
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route component={NotFound} />
     </Switch>
   );

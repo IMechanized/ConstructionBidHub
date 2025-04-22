@@ -99,7 +99,6 @@ export default function ResetPasswordPage() {
         toast({
           title: "Password reset successful",
           description: "Your password has been successfully reset",
-          variant: "success",
         });
       } else {
         const errorData = await response.json();

@@ -7,6 +7,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { cn } from "@/lib/utils";
 
 interface BreadcrumbItemType {
   label: string;
@@ -15,13 +16,14 @@ interface BreadcrumbItemType {
 
 interface BreadcrumbNavProps {
   items: BreadcrumbItemType[];
+  className?: string;
 }
 
-export function BreadcrumbNav({ items }: BreadcrumbNavProps) {
+export function BreadcrumbNav({ items, className }: BreadcrumbNavProps) {
   const [location] = useLocation();
 
   return (
-    <Breadcrumb className="mb-6">
+    <Breadcrumb className={cn("mb-6", className)}>
       <BreadcrumbList>
         {items.map((item, index) => (
           <BreadcrumbItem key={item.href}>

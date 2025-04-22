@@ -102,6 +102,17 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+                    <div className="flex justify-between items-center mb-4">
+                      <div></div> {/* Empty div for flexbox alignment */}
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto text-sm"
+                        type="button"
+                        onClick={() => navigate("/forgot-password")}
+                      >
+                        Forgot password?
+                      </Button>
+                    </div>
                     <Button 
                       type="submit" 
                       className="w-full"

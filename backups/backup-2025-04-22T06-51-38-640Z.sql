@@ -277,7 +277,12 @@ CREATE TABLE public.users (
     logo text,
     onboarding_complete boolean DEFAULT false,
     status text DEFAULT 'active'::text,
-    language text DEFAULT 'en'::text
+    language text DEFAULT 'en'::text,
+    email_verified boolean DEFAULT false,
+    verification_token text,
+    verification_token_expiry timestamp without time zone,
+    reset_token text,
+    reset_token_expiry timestamp without time zone
 );
 
 
@@ -694,6 +699,106 @@ COPY public.backup_logs (id, filename, status, error, created_at) FROM stdin;
 333	backup-2025-04-08T02-33-46-003Z.sql	success	\N	2025-04-08 02:34:01.475624
 334	backup-2025-04-08T07-06-18-841Z.sql	success	\N	2025-04-08 07:06:38.267464
 335	backup-2025-04-08T07-16-22-335Z.sql	success	\N	2025-04-08 07:16:26.509745
+336	backup-2025-04-08T07-23-32-670Z.sql	success	\N	2025-04-08 07:23:36.226449
+337	backup-2025-04-08T07-25-12-195Z.sql	success	\N	2025-04-08 07:25:15.775578
+338	backup-2025-04-08T07-29-13-828Z.sql	success	\N	2025-04-08 07:29:17.501075
+339	backup-2025-04-08T07-37-03-767Z.sql	success	\N	2025-04-08 07:37:28.637806
+340	backup-2025-04-08T08-00-30-434Z.sql	success	\N	2025-04-08 08:00:41.058261
+341	backup-2025-04-08T10-28-32-951Z.sql	success	\N	2025-04-08 10:28:40.867459
+342	backup-2025-04-08T11-48-14-616Z.sql	success	\N	2025-04-08 11:48:31.746656
+343	backup-2025-04-08T12-34-36-861Z.sql	success	\N	2025-04-08 12:34:51.088623
+344	backup-2025-04-08T13-03-18-615Z.sql	success	\N	2025-04-08 13:03:39.871483
+345	backup-2025-04-08T13-43-08-310Z.sql	success	\N	2025-04-08 13:43:26.434756
+346	backup-2025-04-08T14-09-17-441Z.sql	success	\N	2025-04-08 14:09:41.880729
+347	backup-2025-04-08T14-46-17-301Z.sql	success	\N	2025-04-08 14:46:34.833504
+348	backup-2025-04-08T15-02-19-682Z.sql	success	\N	2025-04-08 15:02:40.101499
+349	backup-2025-04-08T16-00-20-103Z.sql	success	\N	2025-04-08 16:00:31.431121
+350	backup-2025-04-08T16-09-53-584Z.sql	success	\N	2025-04-08 16:10:23.426005
+351	backup-2025-04-08T17-53-14-435Z.sql	success	\N	2025-04-08 17:53:39.171752
+352	backup-2025-04-08T18-17-13-761Z.sql	success	\N	2025-04-08 18:17:36.769151
+353	backup-2025-04-08T18-42-44-207Z.sql	success	\N	2025-04-08 18:43:07.683049
+354	backup-2025-04-08T19-15-09-052Z.sql	success	\N	2025-04-08 19:15:39.717261
+355	backup-2025-04-08T20-08-12-449Z.sql	success	\N	2025-04-08 20:08:31.874925
+356	backup-2025-04-09T01-28-53-037Z.sql	success	\N	2025-04-09 01:29:15.216629
+357	backup-2025-04-09T03-57-44-261Z.sql	success	\N	2025-04-09 03:57:54.688178
+358	backup-2025-04-09T04-18-41-905Z.sql	success	\N	2025-04-09 04:18:55.03754
+359	backup-2025-04-09T04-58-08-455Z.sql	success	\N	2025-04-09 04:58:31.557848
+360	backup-2025-04-09T05-53-47-828Z.sql	success	\N	2025-04-09 05:54:08.649475
+361	backup-2025-04-09T06-28-43-967Z.sql	success	\N	2025-04-09 06:28:48.146385
+362	backup-2025-04-09T10-10-05-981Z.sql	success	\N	2025-04-09 10:10:10.388489
+363	backup-2025-04-09T10-17-47-888Z.sql	success	\N	2025-04-09 10:17:52.307516
+364	backup-2025-04-09T10-33-42-616Z.sql	success	\N	2025-04-09 10:33:53.151169
+365	backup-2025-04-09T14-46-19-146Z.sql	success	\N	2025-04-09 14:46:39.976814
+366	backup-2025-04-09T15-28-34-555Z.sql	success	\N	2025-04-09 15:28:58.266012
+367	backup-2025-04-09T18-25-53-847Z.sql	success	\N	2025-04-09 18:26:10.368795
+368	backup-2025-04-09T20-07-00-631Z.sql	success	\N	2025-04-09 20:07:22.775264
+369	backup-2025-04-10T00-32-51-569Z.sql	success	\N	2025-04-10 00:33:00.471179
+370	backup-2025-04-10T02-03-29-279Z.sql	success	\N	2025-04-10 02:03:53.223201
+371	backup-2025-04-10T02-08-59-730Z.sql	success	\N	2025-04-10 02:09:12.58516
+372	backup-2025-04-10T07-09-10-415Z.sql	success	\N	2025-04-10 07:09:36.362098
+373	backup-2025-04-10T10-27-30-830Z.sql	success	\N	2025-04-10 10:27:53.154538
+374	backup-2025-04-10T10-45-47-332Z.sql	success	\N	2025-04-10 10:45:58.063126
+375	backup-2025-04-10T10-47-52-631Z.sql	success	\N	2025-04-10 10:48:15.5522
+376	backup-2025-04-10T14-09-56-282Z.sql	success	\N	2025-04-10 14:10:26.821085
+377	backup-2025-04-10T15-36-35-972Z.sql	success	\N	2025-04-10 15:36:56.093574
+378	backup-2025-04-10T16-29-24-361Z.sql	success	\N	2025-04-10 16:29:54.475562
+379	backup-2025-04-10T17-44-52-183Z.sql	success	\N	2025-04-10 17:45:15.176509
+380	backup-2025-04-10T17-52-06-688Z.sql	success	\N	2025-04-10 17:52:27.216789
+381	backup-2025-04-10T18-03-41-577Z.sql	success	\N	2025-04-10 18:04:07.143953
+382	backup-2025-04-10T18-53-23-425Z.sql	success	\N	2025-04-10 18:53:46.157934
+383	backup-2025-04-10T20-09-49-109Z.sql	success	\N	2025-04-10 20:10:14.943985
+384	backup-2025-04-10T20-38-33-437Z.sql	success	\N	2025-04-10 20:39:02.9653
+385	backup-2025-04-10T21-07-56-991Z.sql	success	\N	2025-04-10 21:08:20.026831
+386	backup-2025-04-11T13-27-46-902Z.sql	success	\N	2025-04-11 13:28:12.340577
+387	backup-2025-04-11T14-47-55-308Z.sql	success	\N	2025-04-11 14:48:22.041825
+388	backup-2025-04-11T15-08-00-549Z.sql	success	\N	2025-04-11 15:08:23.110695
+389	backup-2025-04-11T15-39-54-975Z.sql	success	\N	2025-04-11 15:40:24.147084
+390	backup-2025-04-11T17-42-16-967Z.sql	success	\N	2025-04-11 17:42:38.098016
+391	backup-2025-04-11T17-57-48-068Z.sql	success	\N	2025-04-11 17:58:08.202933
+392	backup-2025-04-11T20-04-56-923Z.sql	success	\N	2025-04-11 20:05:26.410334
+393	backup-2025-04-11T21-11-18-279Z.sql	success	\N	2025-04-11 21:11:40.842741
+394	backup-2025-04-11T22-08-55-339Z.sql	success	\N	2025-04-11 22:09:19.219393
+395	backup-2025-04-12T06-19-35-070Z.sql	success	\N	2025-04-12 06:20:05.318268
+396	backup-2025-04-12T08-22-16-932Z.sql	success	\N	2025-04-12 08:22:41.08657
+397	backup-2025-04-12T09-53-03-903Z.sql	success	\N	2025-04-12 09:53:30.435057
+398	backup-2025-04-12T12-22-04-509Z.sql	success	\N	2025-04-12 12:22:19.732163
+399	backup-2025-04-12T13-14-41-091Z.sql	success	\N	2025-04-12 13:15:12.253767
+400	backup-2025-04-12T13-27-13-802Z.sql	success	\N	2025-04-12 13:27:22.820701
+401	backup-2025-04-12T14-09-06-065Z.sql	success	\N	2025-04-12 14:09:29.370965
+402	backup-2025-04-12T14-52-32-910Z.sql	success	\N	2025-04-12 14:52:57.44273
+403	backup-2025-04-12T15-49-26-997Z.sql	success	\N	2025-04-12 15:49:51.470875
+404	backup-2025-04-12T17-58-48-427Z.sql	success	\N	2025-04-12 17:59:10.851674
+405	backup-2025-04-12T18-47-38-013Z.sql	success	\N	2025-04-12 18:47:47.382719
+406	backup-2025-04-12T18-59-15-016Z.sql	success	\N	2025-04-12 18:59:50.092349
+407	backup-2025-04-12T21-45-59-653Z.sql	success	\N	2025-04-12 21:46:20.976685
+408	backup-2025-04-15T13-17-01-490Z.sql	success	\N	2025-04-15 13:17:10.521766
+409	backup-2025-04-15T14-08-36-179Z.sql	success	\N	2025-04-15 14:08:58.408466
+410	backup-2025-04-15T14-44-05-798Z.sql	success	\N	2025-04-15 14:44:31.353933
+411	backup-2025-04-15T15-23-56-585Z.sql	success	\N	2025-04-15 15:24:21.646643
+412	backup-2025-04-15T15-59-11-286Z.sql	success	\N	2025-04-15 15:59:40.390579
+413	backup-2025-04-15T20-47-42-486Z.sql	success	\N	2025-04-15 20:48:01.213951
+414	backup-2025-04-15T21-33-53-637Z.sql	success	\N	2025-04-15 21:34:16.789996
+415	backup-2025-04-15T22-04-05-856Z.sql	success	\N	2025-04-15 22:04:30.006492
+416	backup-2025-04-15T23-01-59-083Z.sql	success	\N	2025-04-15 23:02:21.734021
+417	backup-2025-04-15T23-38-15-603Z.sql	success	\N	2025-04-15 23:38:32.470759
+418	backup-2025-04-16T01-25-10-359Z.sql	success	\N	2025-04-16 01:25:42.583523
+419	backup-2025-04-16T03-34-04-296Z.sql	success	\N	2025-04-16 03:34:31.226572
+420	backup-2025-04-16T08-35-15-386Z.sql	success	\N	2025-04-16 08:35:39.434906
+421	backup-2025-04-16T09-17-10-604Z.sql	success	\N	2025-04-16 09:17:23.53354
+422	backup-2025-04-16T12-36-17-490Z.sql	success	\N	2025-04-16 12:36:44.027986
+423	backup-2025-04-16T13-19-26-387Z.sql	success	\N	2025-04-16 13:19:50.923178
+424	backup-2025-04-16T13-47-16-473Z.sql	success	\N	2025-04-16 13:47:39.427654
+425	backup-2025-04-16T14-13-45-769Z.sql	success	\N	2025-04-16 14:14:13.107806
+426	backup-2025-04-16T15-57-12-122Z.sql	success	\N	2025-04-16 15:57:40.183613
+427	backup-2025-04-16T16-34-18-008Z.sql	success	\N	2025-04-16 16:34:41.247263
+428	backup-2025-04-16T19-17-19-003Z.sql	success	\N	2025-04-16 19:17:30.038669
+429	backup-2025-04-16T19-34-59-970Z.sql	success	\N	2025-04-16 19:35:44.388036
+430	backup-2025-04-16T21-14-42-662Z.sql	success	\N	2025-04-16 21:15:06.910811
+431	backup-2025-04-16T22-18-30-297Z.sql	success	\N	2025-04-16 22:18:42.455365
+432	backup-2025-04-16T22-53-29-725Z.sql	success	\N	2025-04-16 22:53:55.646093
+433	backup-2025-04-22T06-17-43-922Z.sql	success	\N	2025-04-22 06:18:12.103209
+434	backup-2025-04-22T06-44-58-224Z.sql	success	\N	2025-04-22 06:45:03.010536
+435	backup-2025-04-22T06-48-39-453Z.sql	success	\N	2025-04-22 06:48:45.363619
 \.
 
 
@@ -894,6 +999,7 @@ COPY public.rfis (id, rfp_id, email, message, created_at, status) FROM stdin;
 182	5	mechanizedsolutionsinc@gmail.com	More testing	2025-03-18 13:28:32.768448	pending
 183	1	sandy@mail.com	Bid.	2025-03-24 18:47:17.877738	pending
 184	1	sandy@mail.com	Asking for bid information.	2025-03-25 10:34:22.950184	pending
+185	131	mechanizedsolutionsinc@gmail.com	Requesting further details on this listing.	2025-04-08 07:33:18.529747	pending
 \.
 
 
@@ -995,6 +1101,9 @@ COPY public.rfp_analytics (id, rfp_id, date, total_views, unique_views, average_
 92	133	2025-04-08	0	0	0	0	0
 93	70	2025-04-08	0	0	0	0	0
 89	1	2025-04-08	1	1	10	0	0
+94	131	2025-04-08	2	2	10	0	0
+95	130	2025-04-08	0	0	0	0	0
+96	129	2025-04-08	0	0	0	0	0
 \.
 
 
@@ -1009,6 +1118,8 @@ COPY public.rfp_view_sessions (id, rfp_id, user_id, view_date, duration, convert
 4	8	2	2025-03-26 10:40:10.031	7	f
 5	10	1	2025-03-26 11:03:27.923	4	f
 6	1	2	2025-04-08 07:20:32.314	10	f
+7	131	1	2025-04-08 07:27:47.107	10	f
+8	131	1	2025-04-08 07:33:01.842	10	f
 \.
 
 
@@ -1157,6 +1268,9 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 138	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:32:17.629188	\N
 139	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:36:22.929998	\N
 140	Airport	New International airport	2025-04-20 12:00:00	2025-04-25 12:00:00	2025-04-28 23:59:00	1200000	\N	New York	\N	open	1	f	2025-04-06 16:37:32.29851	\N
+141	Construction	Construction of road	2025-04-17 13:18:00	2025-04-25 13:19:00	2025-04-30 13:19:00	100000	\N	New York	\N	open	2	f	2025-04-09 10:19:20.378596	\N
+142	Construction	Construction of road	2025-04-17 13:18:00	2025-04-25 13:19:00	2025-04-30 13:19:00	100000	\N	New York	\N	open	2	f	2025-04-09 10:22:08.855456	\N
+143	Construction	Construction of road.	2025-04-17 13:26:00	2025-04-24 13:26:00	2025-04-30 13:26:00	12000000	\N	New York	\N	open	2	f	2025-04-09 10:27:08.209274	\N
 \.
 
 
@@ -1164,50 +1278,51 @@ COPY public.rfps (id, title, description, walkthrough_date, rfi_date, deadline, 
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
-COPY public.users (id, email, password, company_name, contact, telephone, cell, business_email, is_minority_owned, minority_group, trade, certification_name, logo, onboarding_complete, status, language) FROM stdin;
-1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	HVAC	{"Veteran-owned","Rural","Minority-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	en
-3	Adolph30@hotmail.com	fcd466ecf4f1e8caa9d36229f620f288b982010ccea5875a73d5a6fd3543d6ffde09c37880a2ef5a5c3046268212f4a12bf0c49028714bc57cf51ebf2bfe3bc1.70c752c53c9b2741980d0f698ed7a5e8	Nicolas, Graham and Rempel	Dr. Luke Bode III	(848) 692-6498 x7589	(890) 708-8218 x833	Claire.Kohler57@gmail.com	t	Hispanic	Painting	Energy Star Partner	\N	t	active	en
-4	Joana_Jaskolski73@yahoo.com	bdc500e5ebffb6db8851ca5c230d6a021cad3be6384716483f4ea27ca37f07c4ac1ed28b3728dfa82d715cf417dfcdc02e040e7e4b7dc87276970cc96fe02b80.f5f5a23ce9f4d3995c5ae8ede23d5526	Nikolaus - Rutherford	Danny Stokes	372.447.7504	(927) 923-7279 x43228	Mozelle.Harris35@yahoo.com	t	Hispanic	Roofing	EPA Lead-Safe	\N	t	active	en
-5	Gerda33@yahoo.com	764fa11e25c593e1f9facf3e1944a0a45b27e9bf806956532fd155aebdd632e979279074c52b2b84469922504aafea6ae8a3b835dc64d72e1e0c1ea79cc00b69.f4e378249197140880cca68abd3a2e49	Johnson - Fahey	Kelvin Gislason	238.848.6944 x293	(212) 462-3219 x11649	Meda.Hamill@gmail.com	f	Asian	Interior Design	LEED Certified	\N	t	active	en
-6	Dillan_Hessel@yahoo.com	f6c61bdde0250a5bc657e82ef67c3581096ebbbc66c05afc26e4a7271fb3fd8a4284d5317980b373267eaecce369250a87ada49ee47d19046faba4ba3861f4e6.fd5f0b01b37db90c1f3ba96fa1d8086c	Schultz - Pfeffer	Frank Fahey	(273) 576-6559 x083	430-903-5399 x90785	Adriel66@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en
-7	Ethyl1@gmail.com	3734ede460e1e971962711796ad6de93dfad5f99337e0b63e2b69717faf1493ffb1a7eda1d42ed3fc994fa2778d286ae676cf15bf56e81e3addb66b1be81868a.51de7c7959b925046dd7ce6e46330d68	Turner - Grady	Rachael Nikolaus	708.777.0278	(643) 500-1997 x928	Elmo18@yahoo.com	t	Hispanic	Interior Design	EPA Lead-Safe	\N	t	active	en
-8	Sid_Hettinger@yahoo.com	9bd03d6539cb648df5832d5a72cc2556375c060bb245d6b946f39092d9956dccb77c0db0c6d09e8d42cb60c2b5371901c96e58d9237de20968fa14aba5ca8ac5.0be1ab5e635f729bcf1b871f2624b6cd	Weissnat, Schmeler and Larson	Nicholas Durgan	1-373-733-9034 x271	695-528-7484 x26498	Chase_Corwin9@gmail.com	f	Native American	General Contractor	\N	\N	t	active	en
-9	Tristian.Bednar61@yahoo.com	25c765922121fd97973e63168d19542bb546cac9075ff559e5058aaf3cb8b63ca8d56e840e3dd3d66c5dea455a2bb178e1d4ad2b31400993c1214715aceaf2a3.f41cd446bfe3a42a2bce662605734331	Kihn, Hickle and Ledner	Juana Howell	319.502.0290 x3923	1-406-758-8430 x4557	Andy38@yahoo.com	f	\N	Roofing	Green Building Professional	\N	t	active	en
-10	Lois66@gmail.com	12b30c02f37bcd6fc5daad6eafa2b41edfe2c2d98c0389d909f14cc30ec3826c595d67c5be2fc9d7440590702551372873c1f178e5c3dbf08d22b57d7be1998a.67528e116f2af823ef39999a824cd34e	Roberts Inc	Lorraine Buckridge	932-919-5865 x605	528-974-5580 x8192	Chauncey.Monahan@gmail.com	t	\N	Landscaping	Master Plumber	\N	t	active	en
-11	Darrion.Stanton13@hotmail.com	543a14e9fd36c976470b28fd767b966b5fc47d19758daafa4d3a7bddee1586fc58c95c9d6c634f9ea9dc5e3866b5e842415be2b40b710a0ad844d4f6ec5a8a22.bb287f697914bd5d46b7503a173c5c0f	Robel and Sons	Clifton Bayer	370.955.4633 x8448	(561) 838-7154 x77949	Immanuel.Abshire@hotmail.com	f	Black	HVAC	\N	\N	t	active	en
-12	Camila.Satterfield@gmail.com	98a7e01c509f1205c2032feeac75f7ce55b778435b8aca8172fbafc1852bb5e21395ad455b48279cfc87cf11e1ef67a2ddaf69575fa1c5a5cfa1f11625639b37.283a9a723fb6842c4c4f4ebc4c6633ed	Mraz, Gislason and Paucek	Jenny Thompson	371-601-6367	1-828-586-7283 x85972	Herta_Bogisich@hotmail.com	f	Hispanic	Painting	LEED Certified	\N	t	active	en
-13	Kayla_Bernhard97@yahoo.com	0ad5c1c9b1264f7dd46d223e44bddc619b509fb8e2da8cf9e7cec2c65f56fbf75202b812f17126f735ce96b2ae3ad8fd249fd87b68d11577c441d5553c3c85e8.7416a13c9106da429872703c04cdcd0e	Collier Group	Wilma Hayes DVM	843-425-2025 x3122	692-678-4057 x20532	Miguel.Bradtke@gmail.com	t	\N	Masonry	LEED Certified	\N	t	active	en
-14	Annetta_Sawayn23@gmail.com	08913f3a0b3f0c8788f8f4ac580993cac363e7ea47cbed29d22b0d583985021d7386161bfb7fdba8671c619886adfc8090de356ec51f3b321bbe9fca35e344b0.c1c56e51f8711009f50b5cc36979a9ea	Waelchi LLC	Sonia Herman	647-570-9886	816-602-9447 x80839	Janet.Hansen20@hotmail.com	f	Native American	Electrical	EPA Lead-Safe	\N	t	active	en
-15	Davon.Dicki87@hotmail.com	6917efa79b453b26be7bf036e4b585a6568a6a3926ac19cab0d44122274cfa7b7817cea16deaeb83c517653869fa58783186b2b91ca35449953c2e27a9cfe285.3dcd5f0b0ad696f989d4e221cf86ef80	Davis - Breitenberg	Sherri Goodwin	847.357.3381 x5607	1-300-437-9795 x46428	Alexys70@hotmail.com	f	Asian	General Contractor	Green Building Professional	\N	t	active	en
-16	Fidel26@hotmail.com	be8b9e5da56626050a7f3e71b2b9cb59ffa16ba7e1ab5266200befbef3be7807a9bba2e9dedef165f88f37dae54160fd6df3489ea81e1a0cec125fe6fdf85504.65ace5706a38184d668139b961d4e2f1	Klocko - Bernier	Conrad Marquardt	1-475-709-4238	516-969-6017 x06353	Burnice.Vandervort@yahoo.com	t	Asian	Plumbing	Master Electrician	\N	t	active	en
-17	Genevieve78@yahoo.com	dea6c9feb3e9107a135801df270e993fd88911f3f85c406285ab4c009119c1b16bf8f7528c16dcd199b318fe68400056689d5eb2d1edb3e36cde713a160ef281.8a48967aeebc5c5479635c2b0d6e26e6	Watsica Group	Dr. Maria Okuneva	(346) 283-7748	706.725.6249	Beryl92@yahoo.com	t	Hispanic	HVAC	EPA Lead-Safe	\N	t	active	en
-18	Erik88@yahoo.com	4ca696351fe5923db6e08dace8d8f0d3cc4e9929d2f1a9ad8e3cdfff806e72bace110a1ff4b0e89298f737ada500bf9ec2f7c0780b248634cc7d17a97d136793.fe7e726c47275257884339c1ef00edd6	Reinger - Tillman	Viola Krajcik	413-603-5288 x1057	737-997-4200 x27090	Carley19@yahoo.com	f	\N	Carpentry	Master Electrician	\N	t	active	en
-19	Kaylah_Wisoky23@yahoo.com	2f2ed91d10bde653345f1dc3d9243c6be557c9ed3e9b1afa078b23f54a93334923f73fc0787d5db6908189575ad4dffaab912474485b752f173f6b4a0ebfc6e8.27afecacf716dc30ed7e2d26a4efb18e	Gutmann, Hills and Bartoletti	Lucy Nikolaus	395.608.7865 x48206	1-534-705-0568 x3305	Lennie.Reilly@gmail.com	f	\N	Carpentry	\N	\N	t	active	en
-20	Reina3@yahoo.com	569b3315cd451d4ae3fe6b6052b586037f0ac22780fd5d70c94afd9a522b0f9464d0cb582c25a31970d0799b2329a2449392a036d9c066c5015d073b42679eea.903f74da91c09a0935bd1d4f9cf63824	Casper Group	Gertrude Fadel	(521) 929-2987 x79002	(354) 208-7381 x519	Gilda_Boyer@gmail.com	f	Black	Plumbing	Master Plumber	\N	t	active	en
-2	sandy@mail.com	a08ebc7bc6f2ff994f611f230aef49501493fd810df880add2b90f6714bf2ac23311067f4b50d9f6179601fd930103539bfa26c2202ff7a1c392e39076d05811.765e4c508f4ec4e02c7ef7211ae1a532	Sandy	Sandy	0702466523	0115704062	sandy@mail.com	f		Concrete	{"Rural","Veteran-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740568651/construction-bids/prg9ustde7vn2ulyqsds.png	t	active	en
-21	Wilford21@gmail.com	64a040e0d8bfd08505e0ee0671a7d178135d69d34291207cfb0823b40cb73bd06cc9a460d3f31cee95e6607af3534fcead63f2ed8aaf829b1501cf043bbf2125.2cb90a625afad970f72c615fe8341c1d	Ullrich Inc	Oscar Olson	906.481.4627 x4985	1-757-895-8708 x891	Gage39@hotmail.com	f	\N	HVAC	Master Electrician	\N	t	active	en
-22	Rodrigo_Daugherty43@yahoo.com	2d20af6993c15dffa3b86ef1f9c12a2badeba4471b54e25e0c039d48e9b41ba068eb21a3ebbc2780af9fbf50e2e82264eb819222ace86a3c6c495dab93a2c2ed.c21a6d456fed155dc7c3f697c2fcf061	Bergstrom LLC	Kim Erdman	812.239.0272 x86701	474.424.8177 x517	Hillary98@hotmail.com	f	Black	Masonry	LEED Certified	\N	t	active	en
-23	Elisha1@gmail.com	169d627ea8df9ea442abcce27179a570bb37f7164dbdaea3f74407683ebb36282a2045346a6856f84c0ce7d8a915142ca32c52d465f503294b2cf5b5be2c8040.f31c320c6b6929c9620dc8a16f9b5aaf	Cummings LLC	Maria Gibson	252.220.7534 x46509	545-600-2475 x24472	Mariah29@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en
-24	Jadon.Nienow95@gmail.com	598dfe8cd776035041ebf8120376fe971f58c6e95635aeea68a554e9626ce59015885fb6bbd82e8bbaabbff1da2b52e78166d636cfc76322da5e102e8a463fde.ebf17c94d91ad448c2d52dbd13b959b5	Schowalter, Howell and Jakubowski	Jonathan Huels MD	528.359.2807	608.916.3566 x77325	Wilfrid_Towne@gmail.com	f	Hispanic	Plumbing	OSHA 30	\N	t	active	en
-25	Ilene71@yahoo.com	5e643345b0b2088f0b0a450ee102573e52a08ed51fb4c367b46c0597de30f7095115ae850c8fae8b630e9172a398dc07ba25e248acc72b787939eea8787a35f9.eae198747547127b38b989cb2076dbd9	Okuneva - Davis	Dr. Sonya Krajcik	(489) 591-3924 x512	1-269-509-7581	Lucie.Rutherford@gmail.com	f	\N	Electrical	Master Electrician	\N	t	active	en
-26	Beverly_Ratke@hotmail.com	44863591fd13a8527bbcb524bea1b350c920363d8deacc7891a0f78333a3b0158ae0306b8974b9a3b16066fa57e1b6b88c262c3e02e1b41b61589ec3e6def405.d4b405073f30a22802eebd41f43158fa	Deckow - Frami	Arnold Friesen	1-842-626-3299 x439	1-670-996-4454 x60157	Lea.Brown90@hotmail.com	t	Black	Interior Design	Women-Owned Business Enterprise (WBE)	\N	t	active	en
-27	Webster.Smitham13@hotmail.com	eaf38e94d0a0cf0affee79e9a1793bd9740f9d9128167a4c352ad0020230ff58457fed2ffe691182715bdbf1ce03dbda3f2cd02d8aa804f71afce62cf3a4f5bf.439be21c040c14e45dffd50c73bec3b8	Hermann LLC	Douglas McLaughlin	(975) 655-4094 x4508	(405) 957-5025	Chelsie.Stoltenberg@yahoo.com	t	\N	Landscaping	OSHA 30	\N	t	active	en
-28	Gabriella.Roob@hotmail.com	eb967e0c231c5e6d23357eac524cdb7a93cb3fd44d035bc121c08e22384849e4051b1f67f6ed95e269c00de43eca8d4c866be65d3ed9a38a714639cda6aacb42.6d09b0e037c996bba3f3a9668b8f248f	Wiza - Volkman	Leslie Crooks Jr.	269.923.9724	(229) 702-5118 x1548	Einar22@hotmail.com	t	Black	Plumbing	EPA Lead-Safe	\N	t	active	en
-29	Lorenzo.Schoen@yahoo.com	f2c912832d67fa18b1d75047e97624fb859b10d6089d85650b1eec62568de67a3485630bd1537dcdf6fdfabb2fb3947f1529db35b39acbaf85d8e4c711d5f4ef.3aba6844737e709dbf24a8186ff9d01e	Jenkins and Sons	Rudolph McClure	(829) 730-5055 x734	339-211-8040	Adeline.Beier@yahoo.com	t	Hispanic	Plumbing	Service-Disabled Veteran-Owned Business	\N	t	active	en
-30	Shanon.Ortiz@gmail.com	f0ef126d4602db9ef70c08cdc054c1dd1002893f6d9fd124c8e4cbe38643373dc8cf07fd259c1aef7bd8a494ba3c5fd12b931725a3b806a7368a45367b20ba25.9aa4655601a2fb5639112f461a5b2a7b	Wolff LLC	Jan Brakus	300-308-5014 x5672	(723) 730-6825 x997	Jessika.Bayer@yahoo.com	f	Hispanic	Roofing	Green Building Professional	\N	t	active	en
-31	Emil.Collins@yahoo.com	b2201470ca750c9440fba46cd81adc7eeb86c4ba550991e086c5ea55e42b3febfe452e07b9204e9ef76cd7f6b2be70c90f2c13e30fd336049c1a8ac7a9387fab.b21936c469bc86b74a61b8306dfb83c3	Jenkins - Robel	Al Crooks	1-723-593-0522 x102	1-297-939-6547 x1303	Mikayla.Schmitt@gmail.com	f	Black	Painting	Master Electrician	\N	t	active	en
-32	Jackeline.Simonis17@hotmail.com	1057ab15fc6bf952b166c25fa03c02ceca668683ce9c90537981001d9bf6fd1eaa7b84a526f72f906652f84d0f464cf20649d41827b09372b13775f51897d75e.7784bb37f9c07f0a9fe336e8c87ef7ae	Mann LLC	Olga Johns	665.606.0651 x162	(584) 776-8134 x903	Claude.Dibbert18@yahoo.com	t	Asian	Plumbing	Master Electrician	\N	t	active	en
-33	Winston.Deckow@gmail.com	e794bc1797d71522f1e57f3300b04685a25a86c6f3dc0ea542128b2d07c6ed6bdc9a52b5c17be9d93048b094d4de28d55f42ec5ce03bb37d94ce546c59fb3d22.7998da64e6555f41048a0191386f24a4	Grant, Stark and Grant	Edna Bradtke	(532) 354-9247 x6560	534-210-7443	Stacey65@yahoo.com	t	\N	Interior Design	OSHA 30	\N	t	active	en
-34	Ethyl.Lesch@yahoo.com	dbdc91dc72583308507f7f40ea41e85daf577384f906dc8cc2b9396bb8edd0b34e12b35946855320d56adc037e1ae14d33681bba7da5a49c22358dd450c3b114.32a880c01a4c9cb4fc8ae8cc169f5b4f	Kiehn - Kulas	Jeff Morar	(764) 265-7548	1-939-884-7403 x65601	Opal_Bruen@hotmail.com	t	\N	Landscaping	Energy Star Partner	\N	t	active	en
-35	Jaron.Fisher@gmail.com	0909a1eb396111723111e643164bd041ac64d9e5d927862af3102649633e160568b795ea966554aa29b6e91266957efc236c621543a148fe9fdc6f5a14d33831.3245ee6b7d039930156cf8d1a0e765d0	Wiza - Miller	Sonya Gutmann	1-284-442-7182 x39202	603.691.7261 x562	Mazie.Gerhold64@gmail.com	t	Asian	General Contractor	OSHA 30	\N	t	active	en
-36	Freeda.Hirthe50@hotmail.com	a418378f913e95191a5db0a8237254c26ee706358fc17f439a10ad2519dc4143f318f0de7c656271edf000028ebc5c8ead3b97601d67598a10931caf0d28e232.dd79795e1aa737ee4908ce473cf7e3e8	Macejkovic - Thompson	Mr. Roosevelt Bednar	762.987.6311 x961	(851) 736-7011	Rozella.Carroll@hotmail.com	t	Asian	Painting	Minority-Owned Business Enterprise (MBE)	\N	t	active	en
-37	Mireille_Hegmann@hotmail.com	39f750de697b83cd2d4ccff44989e376f6ff6f5c43d1eb75cc6a0a769eee35d4d4469978d0b43acdff3bda881d25251238370c059cc927c325e9c9b0a54e4cd4.7959caf116ee7a4edf9db5ade287742c	Ledner - Spinka	Sonya Little	(834) 693-4489 x321	(845) 333-2043	Rodger35@yahoo.com	t	Hispanic	Carpentry	Women-Owned Business Enterprise (WBE)	\N	t	active	en
-38	Shakira.Rath7@gmail.com	3a275c24e32f9fc4e95853dd5dff8537bdd0bf55b733058df714296c32a8ec578c8316fe4a8c57e6c77db001b29b0fe4e6991aae4f503ede3ae6ac3305f81965.a42d1812f952d5d5cdbe3027ab9cb4cf	Nicolas LLC	Dwayne Macejkovic	344.375.1922	1-847-999-0856 x7758	Tiffany_Bogan@gmail.com	f	Black	Masonry	Women-Owned Business Enterprise (WBE)	\N	t	active	en
-39	Theo_Gerlach61@gmail.com	c262914dfbc9ecf4ac2379b9ac1b7045c7687ccc43ad0ef2c05a07164cf32e7444072c0952738375173b3000d5c0074958fdd64f2207c5cd06226523cece7d7f.b1177dc66a8957bab171cdfd71f8c380	Tremblay - Hauck	Harry Altenwerth	277.541.9016 x7133	(973) 418-2401 x30134	Christiana_Cremin72@hotmail.com	f	Black	HVAC	\N	\N	t	active	en
-40	Frida68@yahoo.com	610b11fe251af4d3925bead50e1c8ad3ea0a4a3cc7e11695f151586680e5af630f8121ee910d0b7215307c9b4d2dd392162c6809c835316810d61a540854056a.5a0afd5f536cfc7b196ea6f44bed83b2	Johns Group	Archie Homenick	886.477.4569 x280	983-784-8179 x7291	Gerhard93@yahoo.com	f	Hispanic	HVAC	EPA Lead-Safe	\N	t	active	en
-41	Terrence.Lemke@yahoo.com	3e7c2f6b65817566a481525663c52a320dd4e685037394c7b8d64f5a1eadcac3c1a8e3903cdc4689fdf248aa8bca4d7b8abe36bc2cd1c7b8f4ea1116121f1598.a7e4dd7c2592b0b924da01a0eb0b88e4	Weimann Inc	Lila Howell	1-747-223-8743 x782	(710) 260-3880 x6410	Maiya.Witting-Kreiger@gmail.com	t	\N	Roofing	LEED Certified	\N	t	active	en
-42	Rosina57@hotmail.com	cdd505cd41e073da9a715a2c3094b77b4f211348cfe7d7ad9546b059574518c7575c1e66af4151cbce67c2401e1c017726e8e28981fb2da13b974cad95792f92.0a7c03abd1369e1c82ef98b8fb618622	Baumbach, Borer and Lesch	Noah Leffler	358.258.4122 x45680	297-544-7887 x14959	Dante_Goyette-Tremblay@hotmail.com	f	Hispanic	General Contractor	Women-Owned Business Enterprise (WBE)	\N	t	active	en
-43	sandler@mail.com	7bdc7d9fb9eebaa7650bcb9d82a10d7fc571e18ebf2cbd4356b2e61dd5671c08cf1ead6663ff57b1417022248f7ba3cbf2e52c05caf2685608008631cd6fb26e.6ca7d5d556bb6ab43a160eb802b80000	Sandler	Sandler	0123456789	0123456789	sandler@mail.com	f		Carpentry	Sa1	https://res.cloudinary.com/dhyavdc7k/image/upload/v1741943059/construction-bids/xmxq80ugiasoey3kfynp.png	t	active	en
+COPY public.users (id, email, password, company_name, contact, telephone, cell, business_email, is_minority_owned, minority_group, trade, certification_name, logo, onboarding_complete, status, language, email_verified, verification_token, verification_token_expiry, reset_token, reset_token_expiry) FROM stdin;
+1	mechanizedsolutionsinc@gmail.com	3b9b450aa54205378fab4626af851b5e456efde6b8d5d199afe59ac9efae7eede9cdbba268febac1e5ea96aac8b9e604f0997c7b96bc12f09df6dea54e07ed8f.57645cbf68248b066f97d68d9e832d53	Mechanized	Shaun Mwangi	0702466523	0115704062	mechanizedsolutionsinc@gmail.com	t	African American	HVAC	{"Veteran-owned","Rural","Minority-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740509855/construction-bids/oxolwloqldtp1oifeczx.jpg	t	active	en	f	\N	\N	\N	\N
+3	Adolph30@hotmail.com	fcd466ecf4f1e8caa9d36229f620f288b982010ccea5875a73d5a6fd3543d6ffde09c37880a2ef5a5c3046268212f4a12bf0c49028714bc57cf51ebf2bfe3bc1.70c752c53c9b2741980d0f698ed7a5e8	Nicolas, Graham and Rempel	Dr. Luke Bode III	(848) 692-6498 x7589	(890) 708-8218 x833	Claire.Kohler57@gmail.com	t	Hispanic	Painting	Energy Star Partner	\N	t	active	en	f	\N	\N	\N	\N
+4	Joana_Jaskolski73@yahoo.com	bdc500e5ebffb6db8851ca5c230d6a021cad3be6384716483f4ea27ca37f07c4ac1ed28b3728dfa82d715cf417dfcdc02e040e7e4b7dc87276970cc96fe02b80.f5f5a23ce9f4d3995c5ae8ede23d5526	Nikolaus - Rutherford	Danny Stokes	372.447.7504	(927) 923-7279 x43228	Mozelle.Harris35@yahoo.com	t	Hispanic	Roofing	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+5	Gerda33@yahoo.com	764fa11e25c593e1f9facf3e1944a0a45b27e9bf806956532fd155aebdd632e979279074c52b2b84469922504aafea6ae8a3b835dc64d72e1e0c1ea79cc00b69.f4e378249197140880cca68abd3a2e49	Johnson - Fahey	Kelvin Gislason	238.848.6944 x293	(212) 462-3219 x11649	Meda.Hamill@gmail.com	f	Asian	Interior Design	LEED Certified	\N	t	active	en	f	\N	\N	\N	\N
+6	Dillan_Hessel@yahoo.com	f6c61bdde0250a5bc657e82ef67c3581096ebbbc66c05afc26e4a7271fb3fd8a4284d5317980b373267eaecce369250a87ada49ee47d19046faba4ba3861f4e6.fd5f0b01b37db90c1f3ba96fa1d8086c	Schultz - Pfeffer	Frank Fahey	(273) 576-6559 x083	430-903-5399 x90785	Adriel66@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en	f	\N	\N	\N	\N
+7	Ethyl1@gmail.com	3734ede460e1e971962711796ad6de93dfad5f99337e0b63e2b69717faf1493ffb1a7eda1d42ed3fc994fa2778d286ae676cf15bf56e81e3addb66b1be81868a.51de7c7959b925046dd7ce6e46330d68	Turner - Grady	Rachael Nikolaus	708.777.0278	(643) 500-1997 x928	Elmo18@yahoo.com	t	Hispanic	Interior Design	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+8	Sid_Hettinger@yahoo.com	9bd03d6539cb648df5832d5a72cc2556375c060bb245d6b946f39092d9956dccb77c0db0c6d09e8d42cb60c2b5371901c96e58d9237de20968fa14aba5ca8ac5.0be1ab5e635f729bcf1b871f2624b6cd	Weissnat, Schmeler and Larson	Nicholas Durgan	1-373-733-9034 x271	695-528-7484 x26498	Chase_Corwin9@gmail.com	f	Native American	General Contractor	\N	\N	t	active	en	f	\N	\N	\N	\N
+9	Tristian.Bednar61@yahoo.com	25c765922121fd97973e63168d19542bb546cac9075ff559e5058aaf3cb8b63ca8d56e840e3dd3d66c5dea455a2bb178e1d4ad2b31400993c1214715aceaf2a3.f41cd446bfe3a42a2bce662605734331	Kihn, Hickle and Ledner	Juana Howell	319.502.0290 x3923	1-406-758-8430 x4557	Andy38@yahoo.com	f	\N	Roofing	Green Building Professional	\N	t	active	en	f	\N	\N	\N	\N
+10	Lois66@gmail.com	12b30c02f37bcd6fc5daad6eafa2b41edfe2c2d98c0389d909f14cc30ec3826c595d67c5be2fc9d7440590702551372873c1f178e5c3dbf08d22b57d7be1998a.67528e116f2af823ef39999a824cd34e	Roberts Inc	Lorraine Buckridge	932-919-5865 x605	528-974-5580 x8192	Chauncey.Monahan@gmail.com	t	\N	Landscaping	Master Plumber	\N	t	active	en	f	\N	\N	\N	\N
+11	Darrion.Stanton13@hotmail.com	543a14e9fd36c976470b28fd767b966b5fc47d19758daafa4d3a7bddee1586fc58c95c9d6c634f9ea9dc5e3866b5e842415be2b40b710a0ad844d4f6ec5a8a22.bb287f697914bd5d46b7503a173c5c0f	Robel and Sons	Clifton Bayer	370.955.4633 x8448	(561) 838-7154 x77949	Immanuel.Abshire@hotmail.com	f	Black	HVAC	\N	\N	t	active	en	f	\N	\N	\N	\N
+12	Camila.Satterfield@gmail.com	98a7e01c509f1205c2032feeac75f7ce55b778435b8aca8172fbafc1852bb5e21395ad455b48279cfc87cf11e1ef67a2ddaf69575fa1c5a5cfa1f11625639b37.283a9a723fb6842c4c4f4ebc4c6633ed	Mraz, Gislason and Paucek	Jenny Thompson	371-601-6367	1-828-586-7283 x85972	Herta_Bogisich@hotmail.com	f	Hispanic	Painting	LEED Certified	\N	t	active	en	f	\N	\N	\N	\N
+13	Kayla_Bernhard97@yahoo.com	0ad5c1c9b1264f7dd46d223e44bddc619b509fb8e2da8cf9e7cec2c65f56fbf75202b812f17126f735ce96b2ae3ad8fd249fd87b68d11577c441d5553c3c85e8.7416a13c9106da429872703c04cdcd0e	Collier Group	Wilma Hayes DVM	843-425-2025 x3122	692-678-4057 x20532	Miguel.Bradtke@gmail.com	t	\N	Masonry	LEED Certified	\N	t	active	en	f	\N	\N	\N	\N
+14	Annetta_Sawayn23@gmail.com	08913f3a0b3f0c8788f8f4ac580993cac363e7ea47cbed29d22b0d583985021d7386161bfb7fdba8671c619886adfc8090de356ec51f3b321bbe9fca35e344b0.c1c56e51f8711009f50b5cc36979a9ea	Waelchi LLC	Sonia Herman	647-570-9886	816-602-9447 x80839	Janet.Hansen20@hotmail.com	f	Native American	Electrical	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+15	Davon.Dicki87@hotmail.com	6917efa79b453b26be7bf036e4b585a6568a6a3926ac19cab0d44122274cfa7b7817cea16deaeb83c517653869fa58783186b2b91ca35449953c2e27a9cfe285.3dcd5f0b0ad696f989d4e221cf86ef80	Davis - Breitenberg	Sherri Goodwin	847.357.3381 x5607	1-300-437-9795 x46428	Alexys70@hotmail.com	f	Asian	General Contractor	Green Building Professional	\N	t	active	en	f	\N	\N	\N	\N
+16	Fidel26@hotmail.com	be8b9e5da56626050a7f3e71b2b9cb59ffa16ba7e1ab5266200befbef3be7807a9bba2e9dedef165f88f37dae54160fd6df3489ea81e1a0cec125fe6fdf85504.65ace5706a38184d668139b961d4e2f1	Klocko - Bernier	Conrad Marquardt	1-475-709-4238	516-969-6017 x06353	Burnice.Vandervort@yahoo.com	t	Asian	Plumbing	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+17	Genevieve78@yahoo.com	dea6c9feb3e9107a135801df270e993fd88911f3f85c406285ab4c009119c1b16bf8f7528c16dcd199b318fe68400056689d5eb2d1edb3e36cde713a160ef281.8a48967aeebc5c5479635c2b0d6e26e6	Watsica Group	Dr. Maria Okuneva	(346) 283-7748	706.725.6249	Beryl92@yahoo.com	t	Hispanic	HVAC	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+18	Erik88@yahoo.com	4ca696351fe5923db6e08dace8d8f0d3cc4e9929d2f1a9ad8e3cdfff806e72bace110a1ff4b0e89298f737ada500bf9ec2f7c0780b248634cc7d17a97d136793.fe7e726c47275257884339c1ef00edd6	Reinger - Tillman	Viola Krajcik	413-603-5288 x1057	737-997-4200 x27090	Carley19@yahoo.com	f	\N	Carpentry	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+19	Kaylah_Wisoky23@yahoo.com	2f2ed91d10bde653345f1dc3d9243c6be557c9ed3e9b1afa078b23f54a93334923f73fc0787d5db6908189575ad4dffaab912474485b752f173f6b4a0ebfc6e8.27afecacf716dc30ed7e2d26a4efb18e	Gutmann, Hills and Bartoletti	Lucy Nikolaus	395.608.7865 x48206	1-534-705-0568 x3305	Lennie.Reilly@gmail.com	f	\N	Carpentry	\N	\N	t	active	en	f	\N	\N	\N	\N
+20	Reina3@yahoo.com	569b3315cd451d4ae3fe6b6052b586037f0ac22780fd5d70c94afd9a522b0f9464d0cb582c25a31970d0799b2329a2449392a036d9c066c5015d073b42679eea.903f74da91c09a0935bd1d4f9cf63824	Casper Group	Gertrude Fadel	(521) 929-2987 x79002	(354) 208-7381 x519	Gilda_Boyer@gmail.com	f	Black	Plumbing	Master Plumber	\N	t	active	en	f	\N	\N	\N	\N
+2	sandy@mail.com	a08ebc7bc6f2ff994f611f230aef49501493fd810df880add2b90f6714bf2ac23311067f4b50d9f6179601fd930103539bfa26c2202ff7a1c392e39076d05811.765e4c508f4ec4e02c7ef7211ae1a532	Sandy	Sandy	0702466523	0115704062	sandy@mail.com	f		Concrete	{"Rural","Veteran-owned"}	https://res.cloudinary.com/dhyavdc7k/image/upload/v1740568651/construction-bids/prg9ustde7vn2ulyqsds.png	t	active	en	f	\N	\N	\N	\N
+21	Wilford21@gmail.com	64a040e0d8bfd08505e0ee0671a7d178135d69d34291207cfb0823b40cb73bd06cc9a460d3f31cee95e6607af3534fcead63f2ed8aaf829b1501cf043bbf2125.2cb90a625afad970f72c615fe8341c1d	Ullrich Inc	Oscar Olson	906.481.4627 x4985	1-757-895-8708 x891	Gage39@hotmail.com	f	\N	HVAC	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+22	Rodrigo_Daugherty43@yahoo.com	2d20af6993c15dffa3b86ef1f9c12a2badeba4471b54e25e0c039d48e9b41ba068eb21a3ebbc2780af9fbf50e2e82264eb819222ace86a3c6c495dab93a2c2ed.c21a6d456fed155dc7c3f697c2fcf061	Bergstrom LLC	Kim Erdman	812.239.0272 x86701	474.424.8177 x517	Hillary98@hotmail.com	f	Black	Masonry	LEED Certified	\N	t	active	en	f	\N	\N	\N	\N
+23	Elisha1@gmail.com	169d627ea8df9ea442abcce27179a570bb37f7164dbdaea3f74407683ebb36282a2045346a6856f84c0ce7d8a915142ca32c52d465f503294b2cf5b5be2c8040.f31c320c6b6929c9620dc8a16f9b5aaf	Cummings LLC	Maria Gibson	252.220.7534 x46509	545-600-2475 x24472	Mariah29@hotmail.com	t	Native American	Masonry	Green Building Professional	\N	t	active	en	f	\N	\N	\N	\N
+24	Jadon.Nienow95@gmail.com	598dfe8cd776035041ebf8120376fe971f58c6e95635aeea68a554e9626ce59015885fb6bbd82e8bbaabbff1da2b52e78166d636cfc76322da5e102e8a463fde.ebf17c94d91ad448c2d52dbd13b959b5	Schowalter, Howell and Jakubowski	Jonathan Huels MD	528.359.2807	608.916.3566 x77325	Wilfrid_Towne@gmail.com	f	Hispanic	Plumbing	OSHA 30	\N	t	active	en	f	\N	\N	\N	\N
+25	Ilene71@yahoo.com	5e643345b0b2088f0b0a450ee102573e52a08ed51fb4c367b46c0597de30f7095115ae850c8fae8b630e9172a398dc07ba25e248acc72b787939eea8787a35f9.eae198747547127b38b989cb2076dbd9	Okuneva - Davis	Dr. Sonya Krajcik	(489) 591-3924 x512	1-269-509-7581	Lucie.Rutherford@gmail.com	f	\N	Electrical	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+26	Beverly_Ratke@hotmail.com	44863591fd13a8527bbcb524bea1b350c920363d8deacc7891a0f78333a3b0158ae0306b8974b9a3b16066fa57e1b6b88c262c3e02e1b41b61589ec3e6def405.d4b405073f30a22802eebd41f43158fa	Deckow - Frami	Arnold Friesen	1-842-626-3299 x439	1-670-996-4454 x60157	Lea.Brown90@hotmail.com	t	Black	Interior Design	Women-Owned Business Enterprise (WBE)	\N	t	active	en	f	\N	\N	\N	\N
+27	Webster.Smitham13@hotmail.com	eaf38e94d0a0cf0affee79e9a1793bd9740f9d9128167a4c352ad0020230ff58457fed2ffe691182715bdbf1ce03dbda3f2cd02d8aa804f71afce62cf3a4f5bf.439be21c040c14e45dffd50c73bec3b8	Hermann LLC	Douglas McLaughlin	(975) 655-4094 x4508	(405) 957-5025	Chelsie.Stoltenberg@yahoo.com	t	\N	Landscaping	OSHA 30	\N	t	active	en	f	\N	\N	\N	\N
+28	Gabriella.Roob@hotmail.com	eb967e0c231c5e6d23357eac524cdb7a93cb3fd44d035bc121c08e22384849e4051b1f67f6ed95e269c00de43eca8d4c866be65d3ed9a38a714639cda6aacb42.6d09b0e037c996bba3f3a9668b8f248f	Wiza - Volkman	Leslie Crooks Jr.	269.923.9724	(229) 702-5118 x1548	Einar22@hotmail.com	t	Black	Plumbing	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+29	Lorenzo.Schoen@yahoo.com	f2c912832d67fa18b1d75047e97624fb859b10d6089d85650b1eec62568de67a3485630bd1537dcdf6fdfabb2fb3947f1529db35b39acbaf85d8e4c711d5f4ef.3aba6844737e709dbf24a8186ff9d01e	Jenkins and Sons	Rudolph McClure	(829) 730-5055 x734	339-211-8040	Adeline.Beier@yahoo.com	t	Hispanic	Plumbing	Service-Disabled Veteran-Owned Business	\N	t	active	en	f	\N	\N	\N	\N
+30	Shanon.Ortiz@gmail.com	f0ef126d4602db9ef70c08cdc054c1dd1002893f6d9fd124c8e4cbe38643373dc8cf07fd259c1aef7bd8a494ba3c5fd12b931725a3b806a7368a45367b20ba25.9aa4655601a2fb5639112f461a5b2a7b	Wolff LLC	Jan Brakus	300-308-5014 x5672	(723) 730-6825 x997	Jessika.Bayer@yahoo.com	f	Hispanic	Roofing	Green Building Professional	\N	t	active	en	f	\N	\N	\N	\N
+31	Emil.Collins@yahoo.com	b2201470ca750c9440fba46cd81adc7eeb86c4ba550991e086c5ea55e42b3febfe452e07b9204e9ef76cd7f6b2be70c90f2c13e30fd336049c1a8ac7a9387fab.b21936c469bc86b74a61b8306dfb83c3	Jenkins - Robel	Al Crooks	1-723-593-0522 x102	1-297-939-6547 x1303	Mikayla.Schmitt@gmail.com	f	Black	Painting	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+32	Jackeline.Simonis17@hotmail.com	1057ab15fc6bf952b166c25fa03c02ceca668683ce9c90537981001d9bf6fd1eaa7b84a526f72f906652f84d0f464cf20649d41827b09372b13775f51897d75e.7784bb37f9c07f0a9fe336e8c87ef7ae	Mann LLC	Olga Johns	665.606.0651 x162	(584) 776-8134 x903	Claude.Dibbert18@yahoo.com	t	Asian	Plumbing	Master Electrician	\N	t	active	en	f	\N	\N	\N	\N
+33	Winston.Deckow@gmail.com	e794bc1797d71522f1e57f3300b04685a25a86c6f3dc0ea542128b2d07c6ed6bdc9a52b5c17be9d93048b094d4de28d55f42ec5ce03bb37d94ce546c59fb3d22.7998da64e6555f41048a0191386f24a4	Grant, Stark and Grant	Edna Bradtke	(532) 354-9247 x6560	534-210-7443	Stacey65@yahoo.com	t	\N	Interior Design	OSHA 30	\N	t	active	en	f	\N	\N	\N	\N
+34	Ethyl.Lesch@yahoo.com	dbdc91dc72583308507f7f40ea41e85daf577384f906dc8cc2b9396bb8edd0b34e12b35946855320d56adc037e1ae14d33681bba7da5a49c22358dd450c3b114.32a880c01a4c9cb4fc8ae8cc169f5b4f	Kiehn - Kulas	Jeff Morar	(764) 265-7548	1-939-884-7403 x65601	Opal_Bruen@hotmail.com	t	\N	Landscaping	Energy Star Partner	\N	t	active	en	f	\N	\N	\N	\N
+35	Jaron.Fisher@gmail.com	0909a1eb396111723111e643164bd041ac64d9e5d927862af3102649633e160568b795ea966554aa29b6e91266957efc236c621543a148fe9fdc6f5a14d33831.3245ee6b7d039930156cf8d1a0e765d0	Wiza - Miller	Sonya Gutmann	1-284-442-7182 x39202	603.691.7261 x562	Mazie.Gerhold64@gmail.com	t	Asian	General Contractor	OSHA 30	\N	t	active	en	f	\N	\N	\N	\N
+36	Freeda.Hirthe50@hotmail.com	a418378f913e95191a5db0a8237254c26ee706358fc17f439a10ad2519dc4143f318f0de7c656271edf000028ebc5c8ead3b97601d67598a10931caf0d28e232.dd79795e1aa737ee4908ce473cf7e3e8	Macejkovic - Thompson	Mr. Roosevelt Bednar	762.987.6311 x961	(851) 736-7011	Rozella.Carroll@hotmail.com	t	Asian	Painting	Minority-Owned Business Enterprise (MBE)	\N	t	active	en	f	\N	\N	\N	\N
+37	Mireille_Hegmann@hotmail.com	39f750de697b83cd2d4ccff44989e376f6ff6f5c43d1eb75cc6a0a769eee35d4d4469978d0b43acdff3bda881d25251238370c059cc927c325e9c9b0a54e4cd4.7959caf116ee7a4edf9db5ade287742c	Ledner - Spinka	Sonya Little	(834) 693-4489 x321	(845) 333-2043	Rodger35@yahoo.com	t	Hispanic	Carpentry	Women-Owned Business Enterprise (WBE)	\N	t	active	en	f	\N	\N	\N	\N
+38	Shakira.Rath7@gmail.com	3a275c24e32f9fc4e95853dd5dff8537bdd0bf55b733058df714296c32a8ec578c8316fe4a8c57e6c77db001b29b0fe4e6991aae4f503ede3ae6ac3305f81965.a42d1812f952d5d5cdbe3027ab9cb4cf	Nicolas LLC	Dwayne Macejkovic	344.375.1922	1-847-999-0856 x7758	Tiffany_Bogan@gmail.com	f	Black	Masonry	Women-Owned Business Enterprise (WBE)	\N	t	active	en	f	\N	\N	\N	\N
+39	Theo_Gerlach61@gmail.com	c262914dfbc9ecf4ac2379b9ac1b7045c7687ccc43ad0ef2c05a07164cf32e7444072c0952738375173b3000d5c0074958fdd64f2207c5cd06226523cece7d7f.b1177dc66a8957bab171cdfd71f8c380	Tremblay - Hauck	Harry Altenwerth	277.541.9016 x7133	(973) 418-2401 x30134	Christiana_Cremin72@hotmail.com	f	Black	HVAC	\N	\N	t	active	en	f	\N	\N	\N	\N
+40	Frida68@yahoo.com	610b11fe251af4d3925bead50e1c8ad3ea0a4a3cc7e11695f151586680e5af630f8121ee910d0b7215307c9b4d2dd392162c6809c835316810d61a540854056a.5a0afd5f536cfc7b196ea6f44bed83b2	Johns Group	Archie Homenick	886.477.4569 x280	983-784-8179 x7291	Gerhard93@yahoo.com	f	Hispanic	HVAC	EPA Lead-Safe	\N	t	active	en	f	\N	\N	\N	\N
+41	Terrence.Lemke@yahoo.com	3e7c2f6b65817566a481525663c52a320dd4e685037394c7b8d64f5a1eadcac3c1a8e3903cdc4689fdf248aa8bca4d7b8abe36bc2cd1c7b8f4ea1116121f1598.a7e4dd7c2592b0b924da01a0eb0b88e4	Weimann Inc	Lila Howell	1-747-223-8743 x782	(710) 260-3880 x6410	Maiya.Witting-Kreiger@gmail.com	t	\N	Roofing	LEED Certified	\N	t	active	en	f	\N	\N	\N	\N
+42	Rosina57@hotmail.com	cdd505cd41e073da9a715a2c3094b77b4f211348cfe7d7ad9546b059574518c7575c1e66af4151cbce67c2401e1c017726e8e28981fb2da13b974cad95792f92.0a7c03abd1369e1c82ef98b8fb618622	Baumbach, Borer and Lesch	Noah Leffler	358.258.4122 x45680	297-544-7887 x14959	Dante_Goyette-Tremblay@hotmail.com	f	Hispanic	General Contractor	Women-Owned Business Enterprise (WBE)	\N	t	active	en	f	\N	\N	\N	\N
+43	sandler@mail.com	7bdc7d9fb9eebaa7650bcb9d82a10d7fc571e18ebf2cbd4356b2e61dd5671c08cf1ead6663ff57b1417022248f7ba3cbf2e52c05caf2685608008631cd6fb26e.6ca7d5d556bb6ab43a160eb802b80000	Sandler	Sandler	0123456789	0123456789	sandler@mail.com	f		Carpentry	Sa1	https://res.cloudinary.com/dhyavdc7k/image/upload/v1741943059/construction-bids/xmxq80ugiasoey3kfynp.png	t	active	en	f	\N	\N	\N	\N
+44	construction@mail.com	78ecf6a79ca9dba68d2ca8d575de4be0ffa5169fc22827c8a5ce7b6778d6a70d65ea80ba0cc8c0bce4e301928f21646a9fbb8c1f49a888f05751f9610b00ce3a.4aa6065365c234adef8e3816d68b6d1c	EliteConstruction	\N	\N	\N	\N	f	\N	\N	\N	\N	f	active	en	f	\N	\N	\N	\N
 \.
 
 
@@ -1215,7 +1330,7 @@ COPY public.users (id, email, password, company_name, contact, telephone, cell, 
 -- Name: backup_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.backup_logs_id_seq', 335, true);
+SELECT pg_catalog.setval('public.backup_logs_id_seq', 435, true);
 
 
 --
@@ -1229,35 +1344,35 @@ SELECT pg_catalog.setval('public.employees_id_seq', 1, false);
 -- Name: rfis_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfis_id_seq', 184, true);
+SELECT pg_catalog.setval('public.rfis_id_seq', 185, true);
 
 
 --
 -- Name: rfp_analytics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 93, true);
+SELECT pg_catalog.setval('public.rfp_analytics_id_seq', 96, true);
 
 
 --
 -- Name: rfp_view_sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 6, true);
+SELECT pg_catalog.setval('public.rfp_view_sessions_id_seq', 8, true);
 
 
 --
 -- Name: rfps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.rfps_id_seq', 140, true);
+SELECT pg_catalog.setval('public.rfps_id_seq', 143, true);
 
 
 --
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 43, true);
+SELECT pg_catalog.setval('public.users_id_seq', 44, true);
 
 
 --

@@ -106,7 +106,7 @@ export default function AuthPage() {
                       <div></div> {/* Empty div for flexbox alignment */}
                       <Button 
                         variant="link" 
-                        className="p-0 h-auto text-sm"
+                        className="p-0 h-auto text-sm text-primary dark:text-white"
                         type="button"
                         onClick={() => navigate("/forgot-password")}
                       >

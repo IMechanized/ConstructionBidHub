@@ -96,7 +96,7 @@ function Router() {
 function App() {
   return (
     <HelmetProvider>
-      <ThemeProvider defaultTheme="system" storageKey="fcb-theme">
+      <ThemeProvider defaultTheme="light" storageKey="fcb-theme">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Router />

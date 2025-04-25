@@ -64,11 +64,12 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
       href: "/dashboard/analytics",
       icon: BarChart3,
     },
-    {
-      label: "Employees",
-      href: "/dashboard/employees",
-      icon: Users,
-    },
+    // Employees link temporarily removed as requested
+    // {
+    //   label: "Employees",
+    //   href: "/dashboard/employees",
+    //   icon: Users,
+    // },
     {
       label: "Settings",
       href: "/dashboard/settings",

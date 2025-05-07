@@ -1,7 +1,14 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
+const getDatabaseUrl = () => {
+  if (process.env.NODE_ENV === 'test') {
+    return process.env.TEST_DATABASE_URL;
+  }
+  return process.env.DATABASE_URL;
+};
+
+if (!getDatabaseUrl()) {
+  throw new Error("Database URL not found for current environment");
 }
 
 export default defineConfig({
@@ -9,6 +16,6 @@ export default defineConfig({
   schema: "./shared/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: getDatabaseUrl(),
   },
 });

@@ -1,60 +1,81 @@
 // This file is specifically for Vercel serverless deployments
-// It serves as the API route entry point and also handles static file serving
+// It serves as the API route entry point to handle API requests
 
-import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express, { type Request, Response, NextFunction } from 'express';
 import { registerRoutes } from '../server/routes';
+import { setupAuth } from '../server/auth';
+import session from 'express-session';
+import { storage } from '../server/storage';
+import crypto from 'crypto';
 
-// Get dirname in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Initialize express app
+// Create Express app instance
 const app = express();
+
+// Apply basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Register all API routes
+// Set up session middleware
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+app.use(
+  session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      sameSite: 'lax'
+    }
+  })
+);
+
+// Set up authentication
+setupAuth(app);
+
+// Logger middleware for API requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      console.log(logLine);
+    }
+  });
+
+  next();
+});
+
+// Register API routes
 registerRoutes(app);
 
 // Error handling middleware
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
   console.error(`[Error] ${status} - ${message}`);
   res.status(status).json({ message });
 });
 
-// Determine the static files directory - optimized for Vercel's file structure
-const findStaticDir = () => {
-  const possiblePaths = [
-    path.join(__dirname, '../dist/public'),
-    path.join(__dirname, '../public'),
-    path.join(process.cwd(), 'dist/public'),
-    path.join(process.cwd(), 'public')
-  ];
-
-  for (const dir of possiblePaths) {
-    if (fs.existsSync(dir) && fs.existsSync(path.join(dir, 'index.html'))) {
-      console.log(`Using static directory: ${dir}`);
-      return dir;
-    }
-  }
-
-  // Fall back to a reasonable default if nothing is found
-  console.warn('No valid static directory found, using default');
-  return path.join(process.cwd(), 'dist/public');
-};
-
-// Serve static files if they exist
-const staticDir = findStaticDir();
-app.use(express.static(staticDir));
-
-// For all other routes, serve the index.html file
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'));
-});
-
+// Export handler for Vercel serverless
 export default app;

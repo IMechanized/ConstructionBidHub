@@ -14,22 +14,23 @@ This guide provides detailed instructions for deploying the FindConstructionBids
 
 1. Set up a PostgreSQL database with Neon or any other PostgreSQL provider
 2. Make note of your database connection string
+3. Ensure your database provider supports serverless connections (Neon is recommended)
 
 ### 2. Prepare Your Repository
 
 1. Push your code to a GitHub repository
-2. Make sure all changes in this project are committed
+2. Ensure all critical files are in place:
+   - `vercel.json` - Contains deployment configuration
+   - `api/index.ts` - API routes handler
+   - `index.ts` - Static content handler
 
 ### 3. Import Project in Vercel
 
 1. Log in to your Vercel account
 2. Click "Add New..." and select "Project"
 3. Import your GitHub repository
-4. Configure the project:
-   - Framework Preset: Select "Other"
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Development Command: `npm run dev`
+4. **Important**: Vercel will automatically detect the configuration from `vercel.json`
+5. If asked for build settings, you can leave them as detected from the config file
 
 ### 4. Configure Environment Variables
 
@@ -38,9 +39,13 @@ Add the following environment variables in the Vercel project settings:
 ```
 DATABASE_URL=postgresql://user:password@hostname:port/database
 NODE_ENV=production
+SESSION_SECRET=your-secure-random-string
 ```
 
-Add any other required environment variables from your `.env.example` file.
+Add any other required environment variables from your `.env.example` file, such as:
+- Stripe API keys (if using payments)
+- Email service credentials
+- Any other third-party service credentials
 
 ### 5. Deploy
 
@@ -48,42 +53,73 @@ Add any other required environment variables from your `.env.example` file.
 2. Vercel will build and deploy your application
 3. Once deployment is complete, you can access your application at the provided URL
 
-## Troubleshooting Vercel Deployment
+### 6. Verify Deployment
 
-If you encounter issues during deployment, check the following:
+After deployment, verify these key areas:
+1. Check that the main app loads correctly (UI and static assets)
+2. Test API endpoints (e.g., `/api/health`)
+3. Verify database connectivity
+4. Check authentication flows
 
-1. **Database Connection Issues**:
-   - Ensure your DATABASE_URL is correct
-   - Check if the database allows connections from Vercel's IP ranges
-   - Verify that the database user has appropriate permissions
+## Structure of Our Vercel Deployment
 
-2. **Build Errors**:
-   - Check the build logs in Vercel for specific error messages
-   - Ensure all dependencies are correctly listed in package.json
+The application uses a dual-handler approach:
 
-3. **Runtime Errors**:
-   - Check the function logs in Vercel for runtime errors
-   - You may need to adjust the serverless function timeout if your application requires more time to initialize
+1. **API Handler** (`api/index.ts`):
+   - Handles all API routes (`/api/*`)
+   - Manages database connections
+   - Handles authentication and sessions
 
-## Important Notes
+2. **Static Content Handler** (`index.ts`):
+   - Serves the built frontend application
+   - Handles client-side routing
+   - Falls back to serving index.html for SPA routing
 
-1. **Serverless Limitations**: 
-   - Vercel functions have execution time limits (typically 10-60 seconds)
-   - Connections to databases may experience cold starts
-   - Background jobs won't persist indefinitely
+This separation ensures optimal performance in the serverless environment.
 
-2. **Database Performance**:
-   - Use connection pooling if available
-   - Consider using Neon's serverless driver for better performance
+## Troubleshooting Common Issues
 
-3. **Environment Variables**:
-   - All sensitive information should be stored as environment variables
-   - Never commit sensitive values to your repository
+### 404 Errors on Page Load
+
+If you encounter 404 errors when accessing the application:
+
+1. Check the Function Logs in the Vercel dashboard
+2. Verify that both handlers (API and static) are deployed correctly
+3. Ensure the routes in `vercel.json` are correctly configured
+4. Check that the build process completed successfully
+
+### Database Connection Issues
+
+If you encounter database connectivity problems:
+
+1. Verify your `DATABASE_URL` environment variable
+2. Check if the serverless connection is configured correctly
+3. Ensure your database provider allows connections from Vercel's IP ranges
+4. Increase the function timeout if you experience cold start issues
+
+### Building Issues
+
+If the build process fails:
+
+1. Check the build logs for specific error messages
+2. Ensure all dependencies are correctly listed in package.json
+3. Verify that your build command (`npm run build`) works locally
+4. Consider using a newer Node.js version in Vercel settings
+
+## Performance Optimization
+
+For optimal performance on Vercel:
+
+1. Keep serverless functions small and focused
+2. Minimize cold start times by reducing dependencies
+3. Utilize edge caching for static assets
+4. Consider using Vercel's Edge Functions for latency-sensitive operations
 
 ## Monitoring and Logging
 
-Vercel provides built-in monitoring and logging. You can view logs by:
+Vercel provides built-in monitoring and logging:
 
-1. Going to your project in the Vercel dashboard
-2. Clicking on a deployment
-3. Navigating to "Functions" and selecting a function to view its logs
+1. Use the Vercel dashboard to view function logs
+2. Set up alerts for deployment failures
+3. Monitor function execution times
+4. Consider integrating additional monitoring tools like Sentry

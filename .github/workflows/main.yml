@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -9,31 +9,63 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Type check
-      run: npm run typecheck
-      env:
-        CI: true
-
-    - name: Run tests
-      run: npx vitest run
-      env:
-        CI: true
-
-    - name: Build
-      run: npm run build
-      env:
-        CI: true
-        NODE_ENV: production
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run type check
+        run: npm run check
+        
+      - name: Run tests
+        run: npm test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+          NODE_ENV: test
+  
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+          
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+        
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

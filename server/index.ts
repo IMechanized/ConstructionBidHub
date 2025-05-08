@@ -16,6 +16,9 @@ app.use(express.urlencoded({ extended: false }));
 // Disable HMR overlay through environment variable
 process.env.VITE_DISABLE_HMR_OVERLAY = "true";
 
+// Check if we're in a serverless environment (Vercel)
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -48,8 +51,9 @@ app.use((req, res, next) => {
 
 const startServer = async (): Promise<void> => {
   try {
-    const PORT = 5000;
-    const HOST = "0.0.0.0";
+    // Get port from environment or use default
+    const PORT = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+    const HOST = process.env.HOST || "0.0.0.0";
 
     log(`Starting server setup on port ${PORT}...`);
 
@@ -73,13 +77,23 @@ const startServer = async (): Promise<void> => {
       await setupVite(app, server);
     }
 
-    // Start backup scheduler
-    try {
-      startBackupScheduler();
-      log('Automated backup scheduler started successfully');
-    } catch (error) {
-      console.error('Failed to start backup scheduler:', error);
-      // Continue server startup even if backup scheduler fails
+    // Only start backup scheduler in non-serverless environments
+    if (!isServerless) {
+      try {
+        startBackupScheduler();
+        log('Automated backup scheduler started successfully');
+      } catch (error) {
+        console.error('Failed to start backup scheduler:', error);
+        // Continue server startup even if backup scheduler fails
+      }
+    } else {
+      log('Skipping backup scheduler in serverless environment');
+    }
+
+    // In serverless environments, we don't need to listen to a port
+    if (isServerless) {
+      log('Running in serverless mode - skipping port binding');
+      return;
     }
 
     // Check if port is in use before attempting to listen
@@ -118,3 +132,6 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 })();
+
+// Export app for serverless environments 
+export default app;

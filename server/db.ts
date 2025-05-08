@@ -4,7 +4,9 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 
 // Configure WebSocket for Neon serverless driver
-neonConfig.webSocketConstructor = ws;
+if (ws) {
+  neonConfig.webSocketConstructor = ws;
+}
 
 // Get environment-specific database URL
 const getDatabaseUrl = () => {
@@ -21,11 +23,15 @@ const getDatabaseUrl = () => {
   return process.env.DATABASE_URL;
 };
 
-// Create connection pool with optimized settings
+// Different pool settings for serverless vs traditional deployment
+const isServerlessEnv = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+// Create connection pool with environment-specific optimized settings
 export const pool = new Pool({ 
   connectionString: getDatabaseUrl(),
-  max: 10, // Reduce max connections for faster startup
-  idleTimeoutMillis: 30000, // 30 seconds idle timeout
+  // Serverless environments need fewer connections with shorter timeouts
+  max: isServerlessEnv ? 1 : 10,
+  idleTimeoutMillis: isServerlessEnv ? 10000 : 30000, // shorter idle timeout in serverless
   connectionTimeoutMillis: 5000, // 5 seconds connection timeout
 });
 

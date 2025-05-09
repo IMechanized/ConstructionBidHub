@@ -5,15 +5,17 @@
       "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["server/**/*", "shared/**/*"],
-        "maxLambdaSize": "50mb"
+        "includeFiles": ["server/**/*.ts", "shared/**/*.ts"],
+        "maxLambdaSize": "50mb",
+        "nodeVersion": "20.x"
       }
     },
     {
       "src": "index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["dist/public/**"]
+        "includeFiles": ["dist/public/**"],
+        "nodeVersion": "20.x"
       }
     },
     {

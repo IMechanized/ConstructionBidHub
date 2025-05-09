@@ -2,8 +2,8 @@
 // It serves as the API route entry point to handle API requests
 
 import express, { type Request, Response, NextFunction } from 'express';
-// Import registerRoutes from the index file specifically to avoid directory import error
-import { registerRoutes } from '../server/routes/index';
+// Import directly from the main routes file to avoid module resolution issues
+import { registerRoutes } from '../server/routes.ts';
 import { setupAuth } from '../server/auth';
 import session from 'express-session';
 import { storage } from '../server/storage';

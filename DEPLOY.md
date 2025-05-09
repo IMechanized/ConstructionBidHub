@@ -88,27 +88,47 @@ If you encounter 404 errors when accessing the application:
 3. Ensure the routes in `vercel.json` are correctly configured
 4. Check that the build process completed successfully
 
-### ERR_UNSUPPORTED_DIR_IMPORT Error
+### Module Resolution Errors in Vercel
 
-If you encounter this error in the Vercel deployment:
+When deploying to Vercel, you might encounter one of these errors:
+
+#### 1. ERR_UNSUPPORTED_DIR_IMPORT Error
 
 ```
 Error [ERR_UNSUPPORTED_DIR_IMPORT]: Directory import '/var/task/server/routes' is not supported resolving ES modules imported from /var/task/api/index.js
 ```
 
-This happens because Node.js ES modules don't support directory imports. We've already fixed this by:
+This happens because Node.js ES modules don't support directory imports.
 
-1. Creating an index.ts file in the server/routes directory that re-exports the necessary functions
-2. Updating imports to use explicit file paths with `/index` suffix:
-   ```typescript
-   // Change this:
-   import { registerRoutes } from '../server/routes';
-   
-   // To this:
-   import { registerRoutes } from '../server/routes/index';
-   ```
+#### 2. ERR_MODULE_NOT_FOUND Error
 
-If you see similar errors with other directories, apply the same pattern.
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/routes/index' imported from /var/task/api/index.js
+```
+
+This happens because Vercel's Node.js environment has trouble resolving TypeScript files without explicit extensions.
+
+### Solution
+
+The most reliable solution is to import files with explicit file extensions:
+
+```typescript
+// Change this:
+import { registerRoutes } from '../server/routes';
+// Or this:
+import { registerRoutes } from '../server/routes/index';
+
+// To this (with explicit extension):
+import { registerRoutes } from '../server/routes.ts';
+```
+
+Also make sure your vercel.json is configured to include all TypeScript files:
+
+```json
+"includeFiles": ["server/**/*.ts", "shared/**/*.ts"]
+```
+
+If you see similar errors with other imports, follow the same pattern of using explicit file extensions.
 
 ### Database Connection Issues
 

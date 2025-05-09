@@ -1,32 +1,133 @@
 // This file serves as a direct entrypoint for Vercel
-// It avoids directory imports by directly including everything needed
+// Standalone implementation specifically for serverless deployment
+// All necessary code is included directly to avoid import issues
 
-// Import directly from specific files, not directories
 import express from 'express';
 import { createServer } from 'http';
 import session from 'express-session';
 import crypto from 'crypto';
+import { promisify } from "util";
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { eq } from 'drizzle-orm';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle, eq } from 'drizzle-orm/neon-serverless';
+import { pgTable, text, integer, boolean, timestamp, serial, doublePrecision, date } from 'drizzle-orm/pg-core';
+import createMemoryStore from 'memorystore';
+import ws from 'ws';
 
-// Import required modules (without extensions - they'll be resolved by Node.js)
-import { users } from './shared/schema';
-import { db } from './server/db';
-import { storage } from './server/storage';
-
-// Setup hash function for password comparison
-const scryptAsync = promisify(scrypt);
-
-// Define comparePasswords function inline since it's not being exported properly
-async function comparePasswords(supplied, stored) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64));
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+// Configure WebSocket for Neon serverless driver if available
+if (ws) {
+  neonConfig.webSocketConstructor = ws;
 }
+
+// Initialize memory store for session
+const MemoryStore = createMemoryStore(session);
+const sessionStore = new MemoryStore({ checkPeriod: 86400000 }); // 24 hours
+
+// Initialize database connection
+const getDatabaseUrl = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+  return process.env.DATABASE_URL;
+};
+
+// Create connection pool optimized for serverless
+const pool = new Pool({ 
+  connectionString: getDatabaseUrl(),
+  max: 1, // Serverless environments need fewer connections
+  idleTimeoutMillis: 10000, // shorter idle timeout in serverless
+  connectionTimeoutMillis: 5000, // 5 seconds connection timeout
+});
+
+// Define simplified schema for critical tables
+const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  password: text("password"),
+  companyName: text("company_name").notNull(),
+  role: text("role", { enum: ["contractor", "government"] }).notNull().default("contractor"),
+  logo: text("logo"),
+  status: text("status", { enum: ["active", "inactive", "unverified", "deactivated"] }).default("active"),
+  emailVerified: boolean("email_verified").default(false),
+  verificationToken: text("verification_token"),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+const rfps = pgTable("rfps", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  walkthroughDate: timestamp("walkthrough_date").notNull(),
+  rfiDate: timestamp("rfi_date").notNull(),
+  deadline: timestamp("deadline").notNull(),
+  jobLocation: text("job_location").notNull(),
+  budgetMin: integer("budget_min"),
+  certificationGoals: text("certification_goals"),
+  portfolioLink: text("portfolio_link"),
+  organizationId: integer("organization_id").references(() => users.id),
+  featured: boolean("featured").default(false),
+  featuredAt: timestamp("featured_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Initialize Drizzle ORM
+const db = drizzle(pool);
+
+// Password utilities
+const scryptAsync = crypto.scrypt ? promisify(crypto.scrypt) : null;
+
+async function comparePasswords(supplied, stored) {
+  if (!stored || !supplied) return false;
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = await scryptAsync(supplied, salt, 64);
+    return crypto.timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
+}
+
+// Create a simplified storage implementation
+const storage = {
+  sessionStore,
+  
+  async getUser(id) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return undefined;
+    }
+  },
+  
+  async getUserByUsername(email) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error("Error getting user by username:", error);
+      return undefined;
+    }
+  },
+  
+  async getRfps() {
+    try {
+      return await db.select().from(rfps);
+    } catch (error) {
+      console.error("Error getting RFPs:", error);
+      return [];
+    }
+  }
+};
 
 // Create Express app instance
 const app = express();
@@ -131,12 +232,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register all routes from our bundle
-registerAllRoutes(app);
+// We're implementing routes directly in this file
+// No need to register external routes
 
-// Health check endpoint - direct implementation as backup
+// Health check endpoints - direct implementations
 app.get('/api/health-check', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Primary health endpoint used by client
+app.get('/api/health', (req, res) => {
+  try {
+    res.json({ 
+      status: 'healthy', 
+      serverStartTime: Date.now()
+    });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      error: errorMessage,
+      serverStartTime: Date.now()
+    });
+  }
 });
 
 // API routes for RFPs - direct implementation as backup

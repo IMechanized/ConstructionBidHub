@@ -63,19 +63,20 @@ After deployment, verify these key areas:
 
 ## Structure of Our Vercel Deployment
 
-The application uses a dual-handler approach:
+The application uses a self-contained serverless approach:
 
-1. **API Handler** (`api/index.ts`):
-   - Handles all API routes (`/api/*`)
-   - Manages database connections
-   - Handles authentication and sessions
+1. **Serverless Entry Point** (`entrypoint.js`):
+   - Contains the entire server implementation in a single file
+   - Handles database connections and authentication
+   - Serves API endpoints directly
+   - Acts as a static file server for the built frontend
+   - Provides fallback for SPA client-side routing
+   
+2. **API Gateway** (`api/index.ts`):
+   - Simply imports and re-exports the main entrypoint.js application
+   - Provides the routing entry point for the Vercel serverless environment
 
-2. **Static Content Handler** (`index.ts`):
-   - Serves the built frontend application
-   - Handles client-side routing
-   - Falls back to serving index.html for SPA routing
-
-This separation ensures optimal performance in the serverless environment.
+This self-contained approach eliminates module resolution issues in Vercel's serverless environment and ensures reliable deployment.
 
 ## Troubleshooting Common Issues
 
@@ -116,57 +117,93 @@ TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for /var/ta
 
 This happens when you try to import TypeScript files directly in a production environment where only compiled JavaScript is available.
 
-### Solution
+### Solution: Our Self-Contained Approach
 
-The correct approach is to use clean imports without file extensions:
+After experiencing various module resolution issues in Vercel's serverless environment, we've adopted a more reliable approach:
+
+#### Self-Contained Entrypoint
+
+We've created a completely self-contained `entrypoint.js` file that:
+
+1. Defines all necessary schema directly in the file
+2. Implements all authentication logic inline
+3. Contains all required API routes
+4. Handles static file serving
+5. Avoids all imports of TypeScript files
+
+```javascript
+// Example of our self-contained approach
+import express from 'express';
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+
+// Define schema inline
+const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  // other fields...
+});
+
+// Define functions inline
+async function comparePasswords(supplied, stored) {
+  // Implementation...
+}
+
+// Initialize Express app with direct route definitions
+const app = express();
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'healthy', serverStartTime: Date.now() });
+});
+
+// Additional routes...
+
+export default app;
+```
+
+#### API Gateway Pattern
+
+The `api/index.ts` file simply imports and re-exports the entrypoint app:
+
+```typescript
+// api/index.ts
+import app from '../entrypoint';
+export default app;
+```
+
+This approach completely eliminates module resolution issues while retaining all functionality.
+
+#### Alternative Approaches
+
+If you prefer not to use the self-contained approach, you can try these other methods:
+
+1. **Bundle File Approach**: Create a bundle file that explicitly imports and re-exports all needed components.
+
+```javascript
+// Example bundle file
+import healthRouter from './routes/health';
+import paymentsRouter from './routes/payments';
+
+export function registerAllRoutes(app) {
+  app.use('/api/health', healthRouter);
+  app.use('/api/payments', paymentsRouter);
+  return app;
+}
+```
+
+2. **Clean Imports Without Extensions**: Use imports without file extensions.
 
 ```typescript
 // Correct approach - no extension
 import { registerRoutes } from '../server/routes';
 ```
 
-Do NOT use explicit file extensions:
-
-```typescript
-// INCORRECT - will fail in production
-import { registerRoutes } from '../server/routes.ts';
-```
-
-For directory imports, you need to create an `index.ts` file in that directory that exports the necessary functions. Then import from the directory directly.
-
-Also make sure your vercel.json is configured to include all files needed:
+3. **Configuration Setup**: Make sure your vercel.json includes all necessary files:
 
 ```json
 "includeFiles": ["server/**/*", "shared/**/*"]
 ```
 
-For the specific ERR_UNSUPPORTED_DIR_IMPORT error, the most reliable solution is to avoid directory imports entirely by using a bundle file approach. We've created a `server/routes-bundle.js` that explicitly imports each route file individually and then exports them as a package.
-
-```javascript
-// Example from routes-bundle.js
-import healthRouter from './routes/health';
-import paymentsRouter from './routes/payments';
-import rfpRouter from './routes/rfp';
-
-export function registerAllRoutes(app) {
-  app.use('/api/health', healthRouter);
-  app.use('/api/payments', paymentsRouter);
-  app.use('/api/rfp', rfpRouter);
-  
-  return app;
-}
-```
-
-Then in your main entry point, you can simply do:
-
-```javascript
-import { registerAllRoutes } from './server/routes-bundle';
-
-// Register all routes
-registerAllRoutes(app);
-```
-
-This avoids the directory import issue completely while still maintaining a clean organization.
+4. **Index Files for Directories**: Create index.ts files in directories to export combined functionality.
 
 ### Database Connection Issues
 

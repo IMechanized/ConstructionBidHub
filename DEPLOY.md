@@ -128,7 +128,21 @@ Also make sure your vercel.json is configured to include all TypeScript files:
 "includeFiles": ["server/**/*.ts", "shared/**/*.ts"]
 ```
 
-If you see similar errors with other imports, follow the same pattern of using explicit file extensions.
+#### Automated Fix
+
+We've included a helper script `fix-vercel-imports.sh` that can automatically add `.ts` extensions to your import statements:
+
+```bash
+# Make it executable (if needed)
+chmod +x fix-vercel-imports.sh
+
+# Run the script
+./fix-vercel-imports.sh
+```
+
+The script will scan your TypeScript files and add the `.ts` extension to local imports. After running it, you should check the files manually to ensure correctness.
+
+If you continue to see similar errors with other imports, you'll need to keep updating them with explicit file extensions.
 
 ### Database Connection Issues
 

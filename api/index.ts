@@ -4,9 +4,9 @@
 import express, { type Request, Response, NextFunction } from 'express';
 // Import directly from the main routes file to avoid module resolution issues
 import { registerRoutes } from '../server/routes.ts';
-import { setupAuth } from '../server/auth';
+import { setupAuth } from '../server/auth.ts';
 import session from 'express-session';
-import { storage } from '../server/storage';
+import { storage } from '../server/storage.ts';
 import crypto from 'crypto';
 
 // Create Express app instance

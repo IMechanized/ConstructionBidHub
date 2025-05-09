@@ -7,8 +7,8 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 // Import server-side handlers for API fallback
-// Use explicit file extension to avoid module resolution issues in serverless environments
-import apiHandler from './api/index.ts';
+// Don't use file extensions with imports
+import apiHandler from './api/index';
 
 // Set up ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);

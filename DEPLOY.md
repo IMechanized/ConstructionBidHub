@@ -106,43 +106,41 @@ This happens because Node.js ES modules don't support directory imports.
 Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/server/routes/index' imported from /var/task/api/index.js
 ```
 
-This happens because Vercel's Node.js environment has trouble resolving TypeScript files without explicit extensions.
+This happens because Vercel's Node.js environment has trouble finding certain modules in serverless environments.
+
+#### 3. ERR_UNKNOWN_FILE_EXTENSION Error
+
+```
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for /var/task/server/routes.ts
+```
+
+This happens when you try to import TypeScript files directly in a production environment where only compiled JavaScript is available.
 
 ### Solution
 
-The most reliable solution is to import files with explicit file extensions:
+The correct approach is to use clean imports without file extensions:
 
 ```typescript
-// Change this:
+// Correct approach - no extension
 import { registerRoutes } from '../server/routes';
-// Or this:
-import { registerRoutes } from '../server/routes/index';
+```
 
-// To this (with explicit extension):
+Do NOT use explicit file extensions:
+
+```typescript
+// INCORRECT - will fail in production
 import { registerRoutes } from '../server/routes.ts';
 ```
 
-Also make sure your vercel.json is configured to include all TypeScript files:
+For directory imports, you need to create an `index.ts` file in that directory that exports the necessary functions. Then import from the directory directly.
+
+Also make sure your vercel.json is configured to include all files needed:
 
 ```json
-"includeFiles": ["server/**/*.ts", "shared/**/*.ts"]
+"includeFiles": ["server/**/*", "shared/**/*"]
 ```
 
-#### Automated Fix
-
-We've included a helper script `fix-vercel-imports.sh` that can automatically add `.ts` extensions to your import statements:
-
-```bash
-# Make it executable (if needed)
-chmod +x fix-vercel-imports.sh
-
-# Run the script
-./fix-vercel-imports.sh
-```
-
-The script will scan your TypeScript files and add the `.ts` extension to local imports. After running it, you should check the files manually to ensure correctness.
-
-If you continue to see similar errors with other imports, you'll need to keep updating them with explicit file extensions.
+For the specific ERR_UNSUPPORTED_DIR_IMPORT error, make sure each directory you import from has an index.ts file that re-exports the necessary components.
 
 ### Database Connection Issues
 

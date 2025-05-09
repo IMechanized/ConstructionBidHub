@@ -2,11 +2,11 @@
 // It serves as the API route entry point to handle API requests
 
 import express, { type Request, Response, NextFunction } from 'express';
-// Import directly from the main routes file to avoid module resolution issues
-import { registerRoutes } from '../server/routes.ts';
-import { setupAuth } from '../server/auth.ts';
+// When importing local modules, don't use file extensions at all
+import { registerRoutes } from '../server/routes';
+import { setupAuth } from '../server/auth';
 import session from 'express-session';
-import { storage } from '../server/storage.ts';
+import { storage } from '../server/storage';
 import crypto from 'crypto';
 
 // Create Express app instance

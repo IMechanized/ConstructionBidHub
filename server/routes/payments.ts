@@ -2,8 +2,8 @@
  * Payment routes for RFP featuring
  */
 import express from 'express';
-import { storage } from '../storage';
-import { createPaymentIntent, verifyPayment, getPaymentIntent, FEATURED_RFP_PRICE } from '../lib/stripe';
+import { storage } from '../storage.js';
+import { createPaymentIntent, verifyPayment, getPaymentIntent, FEATURED_RFP_PRICE } from '../lib/stripe.js';
 
 const router = express.Router();
 

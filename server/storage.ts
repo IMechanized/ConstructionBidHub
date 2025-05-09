@@ -3,13 +3,12 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession } from "@shared/schema";
-import { db } from "./db";
+import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi } from "../shared/schema.js";
+import { db } from "./db.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
-import { rfis, type Rfi, type InsertRfi } from "@shared/schema";
 
 // Initialize memory store for session management
 const MemoryStore = createMemoryStore(session);

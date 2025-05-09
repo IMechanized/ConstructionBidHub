@@ -1,14 +1,14 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
-import { storage } from "./storage";
-import { db } from "./db";
-import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "@shared/schema";
+import { setupAuth } from "./auth.js";
+import { storage } from "./storage.js";
+import { db } from "./db.js";
+import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
-import { createPaymentIntent, verifyPayment } from './lib/stripe';
-import paymentsRouter from './routes/payments';
+import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
+import paymentsRouter from './routes/payments.js';
 
 // Configure Cloudinary
 cloudinary.config({

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import redis from '../lib/redis';
+import redis from '../lib/redis.js';
 
 const router = Router();
 

@@ -8,13 +8,13 @@ import session from 'express-session';
 import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { comparePasswords } from './server/auth';
-import { db } from './server/db';
-import { users } from './shared/schema';
+import { comparePasswords } from './server/auth.js';
+import { db } from './server/db.js';
+import { users } from './shared/schema.js';
 import { eq } from 'drizzle-orm';
-import { storage } from './server/storage';
+import { storage } from './server/storage.js';
 // Import routes from our bundled route file 
-import { registerAllRoutes } from './server/routes-bundle';
+import { registerAllRoutes } from './server/routes-bundle.js';
 
 // Create Express app instance
 const app = express();

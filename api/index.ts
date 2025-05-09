@@ -2,11 +2,11 @@
 // It serves as the API route entry point to handle API requests
 
 import express, { type Request, Response, NextFunction } from 'express';
-// When importing local modules, don't use file extensions at all
-import { registerRoutes } from '../server/routes';
-import { setupAuth } from '../server/auth';
+// When importing local modules in ESM, we need to use file extensions
+import { registerRoutes } from '../server/routes.js';
+import { setupAuth } from '../server/auth.js';
 import session from 'express-session';
-import { storage } from '../server/storage';
+import { storage } from '../server/storage.js';
 import crypto from 'crypto';
 
 // Create Express app instance

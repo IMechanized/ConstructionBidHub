@@ -4,10 +4,10 @@ import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser, passwordResetSchema } from "@shared/schema";
-import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email";
-import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens";
+import { storage } from "./storage.js";
+import { User as SelectUser, passwordResetSchema } from "../shared/schema.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
+import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
 
 declare global {
   namespace Express {

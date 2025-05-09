@@ -1,8 +1,8 @@
 // This file bundles all routes in a way that avoids directory imports in serverless environments
 // Import all route modules directly
-import healthRouter from './routes/health';
-import paymentsRouter from './routes/payments';
-import rfpRouter from './routes/rfp';
+import healthRouter from './routes/health.js';
+import paymentsRouter from './routes/payments.js';
+import rfpRouter from './routes/rfp.js';
 
 // Export them as a bundle
 export const routes = {

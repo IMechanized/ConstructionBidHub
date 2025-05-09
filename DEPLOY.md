@@ -140,7 +140,33 @@ Also make sure your vercel.json is configured to include all files needed:
 "includeFiles": ["server/**/*", "shared/**/*"]
 ```
 
-For the specific ERR_UNSUPPORTED_DIR_IMPORT error, make sure each directory you import from has an index.ts file that re-exports the necessary components.
+For the specific ERR_UNSUPPORTED_DIR_IMPORT error, the most reliable solution is to avoid directory imports entirely by using a bundle file approach. We've created a `server/routes-bundle.js` that explicitly imports each route file individually and then exports them as a package.
+
+```javascript
+// Example from routes-bundle.js
+import healthRouter from './routes/health';
+import paymentsRouter from './routes/payments';
+import rfpRouter from './routes/rfp';
+
+export function registerAllRoutes(app) {
+  app.use('/api/health', healthRouter);
+  app.use('/api/payments', paymentsRouter);
+  app.use('/api/rfp', rfpRouter);
+  
+  return app;
+}
+```
+
+Then in your main entry point, you can simply do:
+
+```javascript
+import { registerAllRoutes } from './server/routes-bundle';
+
+// Register all routes
+registerAllRoutes(app);
+```
+
+This avoids the directory import issue completely while still maintaining a clean organization.
 
 ### Database Connection Issues
 

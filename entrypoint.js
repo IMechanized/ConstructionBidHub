@@ -13,6 +13,8 @@ import { db } from './server/db';
 import { users } from './shared/schema';
 import { eq } from 'drizzle-orm';
 import { storage } from './server/storage';
+// Import routes from our bundled route file 
+import { registerAllRoutes } from './server/routes-bundle';
 
 // Create Express app instance
 const app = express();
@@ -117,12 +119,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Register all routes from our bundle
+registerAllRoutes(app);
+
+// Health check endpoint - direct implementation as backup
+app.get('/api/health-check', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes for RFPs
+// API routes for RFPs - direct implementation as backup
 app.get("/api/rfps", async (req, res) => {
   try {
     const rfps = await storage.getRfps();

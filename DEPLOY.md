@@ -88,6 +88,28 @@ If you encounter 404 errors when accessing the application:
 3. Ensure the routes in `vercel.json` are correctly configured
 4. Check that the build process completed successfully
 
+### ERR_UNSUPPORTED_DIR_IMPORT Error
+
+If you encounter this error in the Vercel deployment:
+
+```
+Error [ERR_UNSUPPORTED_DIR_IMPORT]: Directory import '/var/task/server/routes' is not supported resolving ES modules imported from /var/task/api/index.js
+```
+
+This happens because Node.js ES modules don't support directory imports. We've already fixed this by:
+
+1. Creating an index.ts file in the server/routes directory that re-exports the necessary functions
+2. Updating imports to use explicit file paths with `/index` suffix:
+   ```typescript
+   // Change this:
+   import { registerRoutes } from '../server/routes';
+   
+   // To this:
+   import { registerRoutes } from '../server/routes/index';
+   ```
+
+If you see similar errors with other directories, apply the same pattern.
+
 ### Database Connection Issues
 
 If you encounter database connectivity problems:

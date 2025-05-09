@@ -6,6 +6,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+// Import server-side handlers for API fallback
+import apiHandler from './api/index';
 
 // Set up ESM __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);

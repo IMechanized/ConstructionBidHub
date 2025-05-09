@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { cacheMiddleware, clearCache } from '../middleware/cache';
-import { db } from '../db';
-import { rfps } from '@shared/schema';
+import { cacheMiddleware, clearCache } from '../middleware/cache.js';
+import { db } from '../db.js';
+import { rfps } from '../../shared/schema.js';
 
 const router = Router();
 

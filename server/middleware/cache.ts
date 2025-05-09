@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import redis, { DEFAULT_CACHE_TTL, createCacheKey } from '../lib/redis';
+import redis, { DEFAULT_CACHE_TTL, createCacheKey } from '../lib/redis.js';
 
 interface CacheOptions {
   ttl?: number;

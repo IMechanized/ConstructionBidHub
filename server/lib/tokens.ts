@@ -2,7 +2,7 @@
  * Token utilities for email verification and password reset
  */
 import { randomBytes } from "crypto";
-import { storage } from "../storage";
+import { storage } from "../storage.js";
 
 // Constants for token expiration
 const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds

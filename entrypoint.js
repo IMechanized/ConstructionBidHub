@@ -15,6 +15,8 @@ import { eq } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, doublePrecision, date } from 'drizzle-orm/pg-core';
 import createMemoryStore from 'memorystore';
 import ws from 'ws';
+import path from 'path';
+import fs from 'fs';
 
 // Configure WebSocket for Neon serverless driver if available
 if (ws) {
@@ -333,8 +335,6 @@ app.use((err, _req, res, _next) => {
 });
 
 // Handle static files
-const path = require('path');
-const fs = require('fs');
 
 // Serve static files from dist/public 
 const staticDir = path.join(process.cwd(), 'dist/public');

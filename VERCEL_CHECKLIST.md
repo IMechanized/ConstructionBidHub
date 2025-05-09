@@ -3,6 +3,9 @@
 ## Fixed Issues
 - ✅ Fixed critical import error in entrypoint.js
   - The `eq` operator is now correctly imported from 'drizzle-orm' instead of 'drizzle-orm/neon-serverless'
+- ✅ Fixed ES Module issues in entrypoint.js
+  - Changed CommonJS `require()` to ES Module imports
+  - Moved all imports to the top of the file
 
 ## Required Environment Variables
 Before deploying to Vercel, make sure to set these environment variables in the Vercel project settings:

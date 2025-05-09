@@ -2,22 +2,12 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.ts",
+      "src": "entrypoint.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": ["server/**/*", "shared/**/*"],
         "maxLambdaSize": "50mb",
-        "nodeVersion": "20.x",
-        "bundle": true
-      }
-    },
-    {
-      "src": "index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/public/**"],
-        "nodeVersion": "20.x",
-        "bundle": true
+        "nodeVersion": "20.x"
       }
     },
     {
@@ -32,30 +22,14 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.ts"
-    },
-    {
-      "src": "/_next/(.*)",
-      "dest": "/dist/public/_next/$1"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/dist/public/static/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/dist/public/favicon.ico"
-    },
-    {
-      "src": "/(.*\\.[a-z0-9]{1,})",
-      "dest": "/dist/public/$1"
+      "dest": "/entrypoint.js"
     },
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.ts"
+      "dest": "/entrypoint.js"
     }
   ],
   "env": {

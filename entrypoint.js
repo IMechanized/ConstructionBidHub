@@ -8,13 +8,25 @@ import session from 'express-session';
 import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { comparePasswords } from './server/auth.js';
-import { db } from './server/db.js';
-import { users } from './shared/schema.js';
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 import { eq } from 'drizzle-orm';
-import { storage } from './server/storage.js';
-// Import routes from our bundled route file 
-import { registerAllRoutes } from './server/routes-bundle.js';
+
+// Import required modules (without extensions - they'll be resolved by Node.js)
+import { users } from './shared/schema';
+import { db } from './server/db';
+import { storage } from './server/storage';
+
+// Setup hash function for password comparison
+const scryptAsync = promisify(scrypt);
+
+// Define comparePasswords function inline since it's not being exported properly
+async function comparePasswords(supplied, stored) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64));
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
 
 // Create Express app instance
 const app = express();

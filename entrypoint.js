@@ -23,9 +23,8 @@ if (ws) {
   neonConfig.webSocketConstructor = ws;
 }
 
-// Initialize memory store for session
-const MemoryStore = createMemoryStore(session);
-const sessionStore = new MemoryStore({ checkPeriod: 86400000 }); // 24 hours
+// Initialize memory store for session - will be configured in the storage object
+// to ensure consistent usage throughout the application
 
 // Initialize database connection
 const getDatabaseUrl = () => {
@@ -140,8 +139,6 @@ async function comparePasswords(supplied, stored) {
 
 // Create a simplified storage implementation
 const storage = {
-  sessionStore,
-  
   async getUser(id) {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -291,9 +288,11 @@ const storage = {
   
   // Add a session store property to avoid errors
   get sessionStore() {
-    // Return a minimal compatible session store
-    return new (SessionStore(session))({
-      pool: pool
+    // Create a memory store instead of PostgreSQL session store for simplicity
+    // This prevents errors when the session tries to access the database
+    const MemoryStore = createMemoryStore(session);
+    return new MemoryStore({
+      checkPeriod: 86400000 // 24 hours (in milliseconds)
     });
   }
 };

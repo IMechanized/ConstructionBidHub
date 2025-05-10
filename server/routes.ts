@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
+import path from "path";
 import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
@@ -33,6 +34,11 @@ function requireAuth(req: Request) {
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+  
+  // Serve test login page
+  app.get('/test-login', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'test-login.html'));
+  });
 
   // File upload endpoint
   app.post("/api/upload", upload.single('file'), async (req, res) => {

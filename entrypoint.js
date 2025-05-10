@@ -967,18 +967,46 @@ app.get("/api/rfis", async (req, res) => {
   try {
     const { email } = req.query;
     
+    // Add debug logging
+    console.log('GET /api/rfis - Auth status:', req.isAuthenticated());
+    console.log('GET /api/rfis - User:', req.user);
+    
     if (email) {
       const rfis = await storage.getRfisByEmail(email);
       return res.json(rfis);
     }
     
-    // If no email is provided and user is logged in, return all their RFIs
-    if (req.user) {
-      const rfis = await storage.getRfisByEmail(req.user.email);
-      return res.json(rfis);
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      console.log('User not authenticated, returning 401');
+      return res.status(401).json({ message: "Authentication required" });
     }
     
-    res.status(401).json({ error: "Unauthorized" });
+    const user = req.user;
+    console.log('Fetching RFIs for email:', user.email);
+    
+    const userRfis = await storage.getRfisByEmail(user.email);
+    console.log('Found RFIs:', userRfis.length);
+    
+    // Fetch RFP details for each RFI
+    const rfisWithRfp = await Promise.all(
+      userRfis.map(async (rfi) => {
+        if (rfi.rfpId === null) {
+          return {
+            ...rfi,
+            rfp: null
+          };
+        }
+        const rfp = await storage.getRfpById(rfi.rfpId);
+        return {
+          ...rfi,
+          rfp
+        };
+      })
+    );
+    
+    console.log('Sending response with', rfisWithRfp.length, 'RFIs');
+    res.json(rfisWithRfp);
   } catch (error) {
     console.error("Error getting RFIs:", error);
     res.status(500).json({ error: "Failed to fetch RFIs" });
@@ -1008,15 +1036,31 @@ app.get("/api/analytics/rfp/:id", async (req, res) => {
 
 app.get("/api/analytics/boosted", async (req, res) => {
   try {
+    // Add debug logging
+    console.log(`GET /api/analytics/boosted - Auth status:`, req.isAuthenticated());
+    console.log(`GET /api/analytics/boosted - User:`, req.user);
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
     
-    const analytics = await storage.getBoostedAnalytics(req.user.id);
+    const user = req.user;
+    const userId = user.id;
+    console.log(`Fetching analytics for user ID: ${userId}, Email: ${user.email}`);
+    
+    // Use the storage interface - it has proper security checks built-in
+    // This will only return RFPs that the current user owns
+    const analytics = await storage.getBoostedAnalytics(userId);
+    
+    console.log(`Successfully retrieved ${analytics.length} analytics records for user ${userId}`);
+    
+    // Return the filtered analytics
     res.json(analytics);
   } catch (error) {
-    console.error("Error getting boosted analytics:", error);
-    res.status(500).json({ error: "Failed to fetch boosted analytics" });
+    console.error('Error fetching boosted analytics:', error);
+    res.status(500).json({ 
+      message: "Failed to fetch analytics"
+    });
   }
 });
 

@@ -89,14 +89,11 @@ const rfps = pgTable("rfps", {
 const rfis = pgTable("rfis", {
   id: serial("id").primaryKey(),
   rfpId: integer("rfp_id").references(() => rfps.id),
-  organizationId: integer("organization_id").references(() => users.id),
-  name: text("name").notNull(),
-  companyName: text("company_name").notNull(),
+  // Note: organizationId does not exist in the actual database schema
   email: text("email").notNull(),
-  question: text("question").notNull(),
-  response: text("response"),
+  message: text("message").notNull(),
   status: text("status").default("pending"),
-  createdAt: timestamp("created_at"),
+  createdAt: timestamp("created_at")
 });
 
 // RFP Analytics table
@@ -180,28 +177,8 @@ const storage = {
   
   async getRfisByRfp(rfpId) {
     try {
-      const results = await db.select().from(rfis).where(eq(rfis.rfpId, rfpId));
-      
-      // Get organization details for each RFI if available
-      const rfisWithOrgs = await Promise.all(
-        results.map(async (rfi) => {
-          if (!rfi.organizationId) {
-            return { ...rfi, organization: null };
-          }
-          
-          const org = await this.getUser(rfi.organizationId);
-          return {
-            ...rfi,
-            organization: org ? {
-              id: org.id,
-              companyName: org.companyName,
-              logo: org.logo
-            } : null
-          };
-        })
-      );
-      
-      return rfisWithOrgs;
+      // Simply return the RFIs associated with this RFP
+      return await db.select().from(rfis).where(eq(rfis.rfpId, rfpId));
     } catch (error) {
       console.error("Error getting RFIs by RFP:", error);
       return [];
@@ -212,11 +189,8 @@ const storage = {
     try {
       const [newRfi] = await db.insert(rfis).values({
         rfpId: rfiData.rfpId,
-        organizationId: rfiData.organizationId || null,
-        name: rfiData.name,
-        companyName: rfiData.companyName,
         email: rfiData.email,
-        question: rfiData.question,
+        message: rfiData.message || rfiData.question,
         status: "pending"
       }).returning();
       
@@ -402,6 +376,21 @@ app.use((req, res, next) => {
 
 // We're implementing routes directly in this file
 // No need to register external routes
+
+// Authentication helper function (middleware) 
+function requireAuth(req, res, next) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log("[Auth] Unauthorized access attempt to " + req.originalUrl);
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+}
+
+// Simple function to handle errors
+function handleError(res, error, message = "An error occurred") {
+  console.error(message + ":", error);
+  res.status(500).json({ error: message });
+}
 
 // Health check endpoints - direct implementations
 app.get('/api/health-check', (req, res) => {

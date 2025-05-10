@@ -964,29 +964,23 @@ app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
 });
 
 app.get("/api/rfis", async (req, res) => {
+  // Check if user is authenticated first, before anything else
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/rfis');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
     const { email } = req.query;
     
-    // Add debug logging
-    console.log('GET /api/rfis - Auth status:', req.isAuthenticated());
-    console.log('GET /api/rfis - User:', req.user);
-    
+    // Process query parameter if provided
     if (email) {
       const rfis = await storage.getRfisByEmail(email);
       return res.json(rfis);
     }
     
-    // Check if user is authenticated
-    if (!req.isAuthenticated()) {
-      console.log('User not authenticated, returning 401');
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const user = req.user;
-    console.log('Fetching RFIs for email:', user.email);
-    
-    const userRfis = await storage.getRfisByEmail(user.email);
-    console.log('Found RFIs:', userRfis.length);
+    // Using authenticated user's email
+    const userRfis = await storage.getRfisByEmail(req.user.email);
     
     // Fetch RFP details for each RFI
     const rfisWithRfp = await Promise.all(
@@ -1005,7 +999,6 @@ app.get("/api/rfis", async (req, res) => {
       })
     );
     
-    console.log('Sending response with', rfisWithRfp.length, 'RFIs');
     res.json(rfisWithRfp);
   } catch (error) {
     console.error("Error getting RFIs:", error);
@@ -1015,11 +1008,13 @@ app.get("/api/rfis", async (req, res) => {
 
 // Analytics routes
 app.get("/api/analytics/rfp/:id", async (req, res) => {
+  // Check if user is authenticated first, before anything else
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/analytics/rfp');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
     const rfpId = parseInt(req.params.id);
     const analytics = await storage.getAnalyticsByRfpId(rfpId);
     
@@ -1035,42 +1030,34 @@ app.get("/api/analytics/rfp/:id", async (req, res) => {
 });
 
 app.get("/api/analytics/boosted", async (req, res) => {
+  // Check if user is authenticated first, before anything else
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/analytics/boosted');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    // Add debug logging
-    console.log(`GET /api/analytics/boosted - Auth status:`, req.isAuthenticated());
-    console.log(`GET /api/analytics/boosted - User:`, req.user);
+    const userId = req.user.id;
+    console.log(`Fetching boosted analytics for user ${userId}`);
     
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const user = req.user;
-    const userId = user.id;
-    console.log(`Fetching analytics for user ID: ${userId}, Email: ${user.email}`);
-    
-    // Use the storage interface - it has proper security checks built-in
-    // This will only return RFPs that the current user owns
     const analytics = await storage.getBoostedAnalytics(userId);
     
-    console.log(`Successfully retrieved ${analytics.length} analytics records for user ${userId}`);
-    
-    // Return the filtered analytics
     res.json(analytics);
   } catch (error) {
-    console.error('Error fetching boosted analytics:', error);
-    res.status(500).json({ 
-      message: "Failed to fetch analytics"
-    });
+    console.error("Error getting boosted analytics:", error);
+    res.status(500).json({ error: "Failed to fetch boosted analytics" });
   }
 });
 
 // Track RFP view duration
 app.post("/api/analytics/track-view", async (req, res) => {
+  // Check if user is authenticated first, before anything else
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/analytics/track-view');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
     const { rfpId, duration } = req.body;
     
     if (!rfpId || typeof duration !== 'number') {
@@ -1102,7 +1089,7 @@ app.post("/api/analytics/track-view", async (req, res) => {
     res.json({ success: true, viewSession });
   } catch (error) {
     console.error('Error tracking RFP view:', error);
-    res.status(500).json({ message: "Failed to track view" });
+    res.status(500).json({ error: "Failed to track view" });
   }
 });
 

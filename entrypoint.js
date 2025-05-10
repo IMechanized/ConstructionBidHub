@@ -689,6 +689,190 @@ app.delete("/api/rfps/:id", async (req, res) => {
   }
 });
 
+// Employee routes
+app.get("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Add getEmployees to storage implementation if missing
+    if (!storage.getEmployees) {
+      return res.status(501).json({ message: "Employee management not implemented" });
+    }
+    
+    const employees = await storage.getEmployees(req.user.id);
+    res.json(employees);
+  } catch (error) {
+    console.error("Error getting employees:", error);
+    res.status(500).json({ error: "Failed to fetch employees" });
+  }
+});
+
+app.post("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Add createEmployee to storage implementation if missing
+    if (!storage.createEmployee) {
+      return res.status(501).json({ message: "Employee creation not implemented" });
+    }
+    
+    const employee = await storage.createEmployee({
+      ...req.body,
+      organizationId: req.user.id,
+    });
+    res.status(201).json(employee);
+  } catch (error) {
+    console.error("Error creating employee:", error);
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  }
+});
+
+app.delete("/api/employees/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employeeId = parseInt(req.params.id);
+    
+    // Add getEmployee to storage implementation if missing
+    if (!storage.getEmployee) {
+      return res.status(501).json({ message: "Employee management not implemented" });
+    }
+    
+    const employee = await storage.getEmployee(employeeId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    
+    if (employee.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only manage your own employees" });
+    }
+    
+    // Add deleteEmployee to storage implementation if missing
+    if (!storage.deleteEmployee) {
+      return res.status(501).json({ message: "Employee deletion not implemented" });
+    }
+    
+    await storage.deleteEmployee(employeeId);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    res.status(500).json({ error: "Failed to delete employee" });
+  }
+});
+
+// User settings routes
+app.post("/api/user/settings", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Add updateUser to storage implementation if missing
+    if (!storage.updateUser) {
+      return res.status(501).json({ message: "User profile updates not implemented" });
+    }
+    
+    const updatedUser = await storage.updateUser(req.user.id, {
+      ...req.body,
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    res.status(400).json({ message: "Failed to update settings" });
+  }
+});
+
+app.post("/api/user/deactivate", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Add updateUser to storage implementation if missing
+    if (!storage.updateUser) {
+      return res.status(501).json({ message: "User management not implemented" });
+    }
+    
+    const updatedUser = await storage.updateUser(req.user.id, {
+      status: "deactivated",
+    });
+    
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.json(updatedUser);
+    });
+  } catch (error) {
+    console.error("Error deactivating account:", error);
+    res.status(400).json({ message: "Failed to deactivate account" });
+  }
+});
+
+app.delete("/api/user", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Add deleteUser to storage implementation if missing
+    if (!storage.deleteUser) {
+      return res.status(501).json({ message: "User deletion not implemented" });
+    }
+    
+    await storage.deleteUser(req.user.id);
+    
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.json({ message: "Account deleted successfully" });
+    });
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    res.status(400).json({ message: "Failed to delete account" });
+  }
+});
+
+// User onboarding endpoint
+app.post("/api/user/onboarding", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Add updateUser to storage implementation if missing
+    if (!storage.updateUser) {
+      return res.status(501).json({ message: "User profile updates not implemented" });
+    }
+    
+    // In a full implementation, we would validate with a schema
+    // For simplicity in entrypoint.js, we'll just proceed with the data
+    
+    const updatedUser = await storage.updateUser(req.user.id, {
+      ...req.body,
+      onboardingComplete: true
+    });
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    res.status(400).json({ 
+      message: error instanceof Error ? error.message : "Failed to complete onboarding" 
+    });
+  }
+});
+
 // RFI routes
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
@@ -703,16 +887,79 @@ app.get("/api/rfps/:id/rfi", async (req, res) => {
 
 app.post("/api/rfps/:id/rfi", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
     const rfpId = parseInt(req.params.id);
+    
+    // Check if the RFP exists
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    // Add createRfi to storage implementation if missing
+    if (!storage.createRfi) {
+      return res.status(501).json({ message: "RFI creation not implemented" });
+    }
+    
     const rfiData = {
       ...req.body,
+      email: req.user.email,  // Use authenticated user's email
       rfpId
     };
     
     const newRfi = await storage.createRfi(rfiData);
-    res.status(201).json(newRfi);
+    res.status(201).json({ 
+      message: "Request for information submitted successfully",
+      rfi: newRfi
+    });
   } catch (error) {
-    handleError(res, error, "Failed to create RFI");
+    console.error("Error creating RFI:", error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create RFI" 
+    });
+  }
+});
+
+// RFI status update endpoint
+app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfpId = parseInt(req.params.rfpId);
+    const rfiId = parseInt(req.params.rfiId);
+    const { status } = req.body;
+    
+    if (!status || !['pending', 'responded'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+    
+    // Check if the RFP exists and belongs to the user
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only update RFIs for your own RFPs" });
+    }
+    
+    // Add updateRfiStatus to storage implementation if missing
+    if (!storage.updateRfiStatus) {
+      return res.status(501).json({ message: "RFI status updates not implemented" });
+    }
+    
+    const updatedRfi = await storage.updateRfiStatus(rfiId, status);
+    res.json(updatedRfi);
+  } catch (error) {
+    console.error("Error updating RFI status:", error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to update RFI status" 
+    });
   }
 });
 
@@ -741,6 +988,10 @@ app.get("/api/rfis", async (req, res) => {
 // Analytics routes
 app.get("/api/analytics/rfp/:id", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
     const rfpId = parseInt(req.params.id);
     const analytics = await storage.getAnalyticsByRfpId(rfpId);
     
@@ -757,8 +1008,8 @@ app.get("/api/analytics/rfp/:id", async (req, res) => {
 
 app.get("/api/analytics/boosted", async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
     }
     
     const analytics = await storage.getBoostedAnalytics(req.user.id);
@@ -766,6 +1017,168 @@ app.get("/api/analytics/boosted", async (req, res) => {
   } catch (error) {
     console.error("Error getting boosted analytics:", error);
     res.status(500).json({ error: "Failed to fetch boosted analytics" });
+  }
+});
+
+// Track RFP view duration
+app.post("/api/analytics/track-view", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const { rfpId, duration } = req.body;
+    
+    if (!rfpId || typeof duration !== 'number') {
+      return res.status(400).json({ message: "Invalid request body" });
+    }
+    
+    console.log(`Tracking view for RFP ${rfpId} with duration ${duration}s by user ${req.user.id}`);
+    
+    // Check if the RFP exists
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp) {
+      console.error(`RFP ${rfpId} not found`);
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    // Skip tracking if the viewer is the RFP owner (don't count self-views)
+    if (rfp.organizationId === req.user.id) {
+      console.log(`Skipping self-view tracking for RFP ${rfpId} by owner ${req.user.id}`);
+      return res.status(200).json({ skipped: true, message: "Self-view not tracked" });
+    }
+    
+    // Add trackRfpView to storage implementation if missing
+    if (!storage.trackRfpView) {
+      return res.status(501).json({ message: "View tracking not implemented" });
+    }
+    
+    const viewSession = await storage.trackRfpView(rfpId, req.user.id, duration);
+    
+    res.json({ success: true, viewSession });
+  } catch (error) {
+    console.error('Error tracking RFP view:', error);
+    res.status(500).json({ message: "Failed to track view" });
+  }
+});
+
+// Payment routes
+const FEATURED_RFP_PRICE = 2500; // $25.00 (in cents)
+
+// Get featured RFP pricing
+app.get('/api/payments/price', (req, res) => {
+  res.json({ price: FEATURED_RFP_PRICE });
+});
+
+// Create payment intent for featuring an RFP
+app.post('/api/payments/create-payment-intent', async (req, res) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { rfpId } = req.body;
+    
+    if (!rfpId) {
+      return res.status(400).json({ message: "RFP ID is required" });
+    }
+
+    // Verify the RFP exists and belongs to this user
+    const rfp = await storage.getRfpById(Number(rfpId));
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only feature your own RFPs" });
+    }
+
+    // In a full implementation, this would create a payment intent with Stripe
+    // For simplicity in entrypoint.js, we'll return a mock client secret
+    
+    const mockPaymentIntent = {
+      id: `pi_${Date.now()}`,
+      client_secret: `pi_${Date.now()}_secret_${Math.random().toString(36).substring(2, 15)}`,
+      amount: FEATURED_RFP_PRICE,
+    };
+
+    res.json({
+      clientSecret: mockPaymentIntent.client_secret,
+      amount: mockPaymentIntent.amount,
+    });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create payment intent"
+    });
+  }
+});
+
+// Confirm payment and update RFP featured status
+app.post('/api/payments/confirm-payment', async (req, res) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { paymentIntentId, rfpId } = req.body;
+    
+    if (!paymentIntentId || !rfpId) {
+      return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
+    }
+
+    // In a full implementation, this would verify the payment with Stripe
+    // For entrypoint.js, we'll just update the RFP
+    
+    // Add updateRfp to storage implementation if missing
+    if (!storage.updateRfp) {
+      return res.status(501).json({ message: "RFP update not implemented" });
+    }
+
+    // Update the RFP to be featured
+    const updatedRfp = await storage.updateRfp(Number(rfpId), {
+      featured: true,
+      featuredAt: new Date()
+    });
+
+    res.json({
+      success: true,
+      rfp: updatedRfp
+    });
+  } catch (error) {
+    console.error('Error confirming payment:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to confirm payment" 
+    });
+  }
+});
+
+// Get payment status
+app.get('/api/payments/status/:paymentIntentId', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { paymentIntentId } = req.params;
+    
+    // In a full implementation, this would get the payment intent from Stripe
+    // For entrypoint.js, we'll just return a mock status
+    
+    res.json({
+      id: paymentIntentId,
+      status: 'succeeded',
+      amount: FEATURED_RFP_PRICE,
+      created: Date.now() / 1000,
+      rfpId: req.query.rfpId || '1'
+    });
+  } catch (error) {
+    console.error('Error fetching payment status:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to fetch payment status"
+    });
   }
 });
 

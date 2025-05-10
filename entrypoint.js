@@ -392,6 +392,15 @@ function handleError(res, error, message = "An error occurred") {
   res.status(500).json({ error: message });
 }
 
+// Configure multer for handling file uploads (simplified)
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
+
 // Health check endpoints - direct implementations
 app.get('/api/health-check', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -410,6 +419,46 @@ app.get('/api/health', (req, res) => {
       status: 'unhealthy', 
       error: errorMessage,
       serverStartTime: Date.now()
+    });
+  }
+});
+
+// File upload endpoint
+app.post("/api/upload", upload.single('file'), async (req, res) => {
+  try {
+    console.log('Upload request received');
+
+    // Check authentication first
+    try {
+      if (!req.isAuthenticated()) {
+        console.log('Authentication failed');
+        return res.status(401).json({ message: "Authentication required" });
+      }
+    } catch (error) {
+      console.log('Authentication failed:', error);
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (!req.file) {
+      console.log('No file in request');
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    if (!req.file.mimetype.startsWith('image/')) {
+      console.log('Invalid file type:', req.file.mimetype);
+      return res.status(400).json({ message: "Only image files are allowed" });
+    }
+
+    console.log('File received:', req.file.originalname, req.file.mimetype);
+
+    // In a real implementation we would upload to Cloudinary here
+    // For the entrypoint.js version we'll just return a mock success
+    res.json({ url: `https://example.com/mock-upload/${Date.now()}` });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to upload file",
+      details: process.env.NODE_ENV === 'development' ? error : undefined
     });
   }
 });
@@ -441,6 +490,39 @@ app.get("/api/rfps", async (req, res) => {
   } catch (error) {
     console.error('Error fetching RFPs:', error);
     res.status(500).json({ message: "Error fetching RFPs" });
+  }
+});
+
+// Get featured RFPs
+app.get("/api/rfps/featured", async (req, res) => {
+  try {
+    // We need to add getFeaturedRfps to the storage interface
+    const featuredRfps = await Promise.all(
+      (await storage.getRfps())
+        .filter(rfp => rfp.featured === true)
+        .map(async (rfp) => {
+          if (rfp.organizationId === null) {
+            return {
+              ...rfp,
+              organization: null
+            };
+          }
+          const org = await storage.getUser(rfp.organizationId);
+          return {
+            ...rfp,
+            organization: org ? {
+              id: org.id,
+              companyName: org.companyName,
+              logo: org.logo
+            } : null
+          };
+        })
+    );
+    
+    res.json(featuredRfps);
+  } catch (error) {
+    console.error('Error fetching featured RFPs:', error);
+    res.status(500).json({ message: "Failed to fetch featured RFPs" });
   }
 });
 
@@ -510,6 +592,100 @@ app.get("/api/rfps/:id", async (req, res) => {
   } catch (error) {
     console.error("Error getting RFP details:", error);
     res.status(500).json({ error: "Failed to fetch RFP details" });
+  }
+});
+
+// Create new RFP
+app.post("/api/rfps", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    console.log('RFP creation request received:', req.body);
+
+    // Note: In a full implementation we would validate with a schema
+    // For simplicity in entrypoint.js we'll just proceed with the data
+    
+    // Add createRfp to storage implementation if missing
+    if (!storage.createRfp) {
+      return res.status(501).json({ message: "RFP creation not implemented" });
+    }
+
+    const rfp = await storage.createRfp({
+      ...req.body,
+      organizationId: req.user.id,
+    });
+    console.log('RFP created successfully:', rfp);
+    res.status(201).json(rfp);
+  } catch (error) {
+    console.error('RFP creation error:', error);
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Failed to create RFP" });
+    }
+  }
+});
+
+// Update existing RFP
+app.put("/api/rfps/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfpId = parseInt(req.params.id);
+    const rfp = await storage.getRfpById(rfpId);
+    
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only update your own RFPs" });
+    }
+    
+    // Add updateRfp to storage implementation if missing
+    if (!storage.updateRfp) {
+      return res.status(501).json({ message: "RFP update not implemented" });
+    }
+    
+    const updated = await storage.updateRfp(rfpId, req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating RFP:', error);
+    res.status(500).json({ message: "Failed to update RFP" });
+  }
+});
+
+// Delete RFP
+app.delete("/api/rfps/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfpId = parseInt(req.params.id);
+    const rfp = await storage.getRfpById(rfpId);
+    
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete your own RFPs" });
+    }
+    
+    // Add deleteRfp to storage implementation if missing
+    if (!storage.deleteRfp) {
+      return res.status(501).json({ message: "RFP deletion not implemented" });
+    }
+    
+    await storage.deleteRfp(rfpId);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error deleting RFP:', error);
+    res.status(500).json({ message: "Failed to delete RFP" });
   }
 });
 

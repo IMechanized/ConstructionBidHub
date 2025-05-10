@@ -17,6 +17,7 @@ import createMemoryStore from 'memorystore';
 import ws from 'ws';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
 
 // Configure WebSocket for Neon serverless driver if available
 if (ws) {
@@ -393,7 +394,6 @@ function handleError(res, error, message = "An error occurred") {
 }
 
 // Configure multer for handling file uploads (simplified)
-const multer = require('multer');
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {

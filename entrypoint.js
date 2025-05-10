@@ -11,7 +11,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, doublePrecision, date } from 'drizzle-orm/pg-core';
 import createMemoryStore from 'memorystore';
 import ws from 'ws';
@@ -86,6 +86,39 @@ const rfps = pgTable("rfps", {
   createdAt: timestamp("created_at"),
 });
 
+// RFIs (Request for Information) table
+const rfis = pgTable("rfis", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  organizationId: integer("organization_id").references(() => users.id),
+  name: text("name").notNull(),
+  companyName: text("company_name").notNull(),
+  email: text("email").notNull(),
+  question: text("question").notNull(),
+  response: text("response"),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at"),
+});
+
+// RFP Analytics table
+const rfpAnalytics = pgTable("rfp_analytics", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  views: integer("views").default(0),
+  uniqueVisitors: integer("unique_visitors").default(0),
+  averageViewTime: integer("average_view_time").default(0),
+  createdAt: timestamp("created_at"),
+});
+
+// RFP View Sessions table
+const rfpViewSessions = pgTable("rfp_view_sessions", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  duration: integer("duration").default(0),
+  createdAt: timestamp("created_at"),
+});
+
 // Initialize Drizzle ORM
 const db = drizzle(pool);
 
@@ -136,6 +169,132 @@ const storage = {
       console.error("Error getting RFPs:", error);
       return [];
     }
+  },
+  
+  async getRfpById(id) {
+    try {
+      const [rfp] = await db.select().from(rfps).where(eq(rfps.id, id));
+      return rfp || null;
+    } catch (error) {
+      console.error("Error getting RFP by ID:", error);
+      return null;
+    }
+  },
+  
+  async getRfisByRfp(rfpId) {
+    try {
+      const results = await db.select().from(rfis).where(eq(rfis.rfpId, rfpId));
+      
+      // Get organization details for each RFI if available
+      const rfisWithOrgs = await Promise.all(
+        results.map(async (rfi) => {
+          if (!rfi.organizationId) {
+            return { ...rfi, organization: null };
+          }
+          
+          const org = await this.getUser(rfi.organizationId);
+          return {
+            ...rfi,
+            organization: org ? {
+              id: org.id,
+              companyName: org.companyName,
+              logo: org.logo
+            } : null
+          };
+        })
+      );
+      
+      return rfisWithOrgs;
+    } catch (error) {
+      console.error("Error getting RFIs by RFP:", error);
+      return [];
+    }
+  },
+  
+  async createRfi(rfiData) {
+    try {
+      const [newRfi] = await db.insert(rfis).values({
+        rfpId: rfiData.rfpId,
+        organizationId: rfiData.organizationId || null,
+        name: rfiData.name,
+        companyName: rfiData.companyName,
+        email: rfiData.email,
+        question: rfiData.question,
+        status: "pending"
+      }).returning();
+      
+      return newRfi;
+    } catch (error) {
+      console.error("Error creating RFI:", error);
+      throw error;
+    }
+  },
+  
+  async getRfisByEmail(email) {
+    try {
+      return await db.select().from(rfis).where(eq(rfis.email, email));
+    } catch (error) {
+      console.error("Error getting RFIs by email:", error);
+      return [];
+    }
+  },
+  
+  async getAnalyticsByRfpId(rfpId) {
+    try {
+      const [analytics] = await db.select().from(rfpAnalytics).where(eq(rfpAnalytics.rfpId, rfpId));
+      
+      if (analytics) {
+        return analytics;
+      }
+      
+      // If no analytics found, create a new entry
+      const [newAnalytics] = await db.insert(rfpAnalytics).values({
+        rfpId,
+        views: 0,
+        uniqueVisitors: 0,
+        averageViewTime: 0
+      }).returning();
+      
+      return newAnalytics;
+    } catch (error) {
+      console.error("Error getting analytics by RFP ID:", error);
+      return null;
+    }
+  },
+  
+  async getBoostedAnalytics(userId) {
+    try {
+      // Get all featured RFPs from this user
+      const featuredRfps = await db.select().from(rfps)
+        .where(and(
+          eq(rfps.organizationId, userId),
+          eq(rfps.featured, true)
+        ));
+      
+      // Get analytics for each featured RFP
+      const analyticsWithRfps = await Promise.all(
+        featuredRfps.map(async (rfp) => {
+          const analytics = await this.getAnalyticsByRfpId(rfp.id);
+          return {
+            ...analytics,
+            rfp
+          };
+        })
+      );
+      
+      return analyticsWithRfps;
+    } catch (error) {
+      console.error("Error getting boosted analytics:", error);
+      return [];
+    }
+  },
+  
+  // Add a session store property to avoid errors
+  get sessionStore() {
+    // Return a minimal compatible session store
+    return new (SessionStore(session))({
+      pool: pool
+    });
   }
 };
 

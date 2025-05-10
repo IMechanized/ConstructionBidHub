@@ -1007,8 +1007,7 @@ app.get("/api/rfis", async (req, res) => {
 
 // Analytics routes
 app.get("/api/analytics/rfp/:id", async (req, res) => {
-  // Check if user is authenticated first, before anything else
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.isAuthenticated()) {
     console.log('[Auth] Unauthorized access attempt to /api/analytics/rfp');
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -1049,8 +1048,7 @@ app.get("/api/analytics/boosted", async (req, res) => {
 
 // Track RFP view duration
 app.post("/api/analytics/track-view", async (req, res) => {
-  // Check if user is authenticated first, before anything else
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.isAuthenticated()) {
     console.log('[Auth] Unauthorized access attempt to /api/analytics/track-view');
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -1101,11 +1099,12 @@ app.get('/api/payments/price', (req, res) => {
 
 // Create payment intent for featuring an RFP
 app.post('/api/payments/create-payment-intent', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/payments/create-payment-intent');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    // Ensure user is authenticated
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
 
     const { rfpId } = req.body;
     
@@ -1146,11 +1145,12 @@ app.post('/api/payments/create-payment-intent', async (req, res) => {
 
 // Confirm payment and update RFP featured status
 app.post('/api/payments/confirm-payment', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/payments/confirm-payment');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    // Ensure user is authenticated
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
 
     const { paymentIntentId, rfpId } = req.body;
     
@@ -1186,10 +1186,12 @@ app.post('/api/payments/confirm-payment', async (req, res) => {
 
 // Get payment status
 app.get('/api/payments/status/:paymentIntentId', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt to /api/payments/status');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
 
     const { paymentIntentId } = req.params;
     

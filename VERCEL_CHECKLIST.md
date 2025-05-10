@@ -6,6 +6,9 @@
 - ✅ Fixed ES Module issues in entrypoint.js
   - Changed CommonJS `require()` to ES Module imports
   - Moved all imports to the top of the file
+- ✅ Fixed database schema errors in entrypoint.js
+  - Made columns optional to accommodate differences in database schema
+  - Removed references to missing columns that caused SQL errors
 
 ## Required Environment Variables
 Before deploying to Vercel, make sure to set these environment variables in the Vercel project settings:
@@ -25,10 +28,27 @@ Before deploying to Vercel, make sure to set these environment variables in the 
 - [ ] CLOUDINARY_API_SECRET - Required for file uploads
 
 ## Deployment Process
+
+### Option 1: Direct Deployment (Using Simplified Schema)
 1. Push the fixed code to your GitHub repository
 2. Create a new project on Vercel and import your GitHub repository
 3. Set all the required environment variables
 4. Deploy the project
+
+### Option 2: With Database Migration (Recommended)
+1. Push the fixed code to your GitHub repository
+2. Set up your PostgreSQL database (Neon is recommended for Vercel)
+3. Run the database migration locally against your production database:
+   ```bash
+   # Set DATABASE_URL to your production database
+   export DATABASE_URL=postgresql://user:password@hostname:port/database
+   
+   # Push schema changes
+   npm run db:push
+   ```
+4. Create a new project on Vercel and import your GitHub repository
+5. Set all the required environment variables
+6. Deploy the project
 
 ## Post-Deployment Verification
 1. Check that the application loads properly
@@ -38,9 +58,27 @@ Before deploying to Vercel, make sure to set these environment variables in the 
 5. Test payment processing (if implemented)
 
 ## Troubleshooting Common Issues
-- If you see 404 errors, check the Vercel dashboard logs and verify the static build output
-- If there are module resolution errors, make sure all imports are correctly structured
-- If database connections fail, verify your DATABASE_URL and ensure your database allows connections from Vercel's IP ranges
+
+### 404 Errors
+- Check the Vercel dashboard logs and verify the static build output
+- Ensure the routes in `vercel.json` are correctly configured
+
+### Module Resolution Errors
+- Make sure all imports are correctly structured (avoid TypeScript file extensions)
+- Check that imports only use ES Module syntax (no CommonJS require)
+
+### Database Errors
+- Verify your DATABASE_URL and ensure your database allows connections from Vercel's IP ranges
+- If you see "column does not exist" errors, you need to run the schema migration (Option 2 above)
+- For critical database issues, you can try direct SQL fixes:
+  ```sql
+  -- Add missing role column if needed
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
+  
+  -- Add missing updated_at column if needed
+  ALTER TABLE rfps ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+  ```
+- Remember to use a database that supports serverless connections (Neon is recommended)
 
 ## Performance Optimizations
 - Consider setting up edge caching for static assets

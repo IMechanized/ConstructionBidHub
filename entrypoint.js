@@ -49,16 +49,17 @@ const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password"),
   companyName: text("company_name").notNull(),
-  role: text("role", { enum: ["contractor", "government"] }).notNull().default("contractor"),
+  // Make role optional since it's causing errors
+  role: text("role"), 
   logo: text("logo"),
-  status: text("status", { enum: ["active", "inactive", "unverified", "deactivated"] }).default("active"),
-  emailVerified: boolean("email_verified").default(false),
+  status: text("status"),
+  emailVerified: boolean("email_verified"),
+  createdAt: timestamp("created_at"),
+  // Other fields are included but made optional for compatibility
   verificationToken: text("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 const rfps = pgTable("rfps", {
@@ -73,10 +74,11 @@ const rfps = pgTable("rfps", {
   certificationGoals: text("certification_goals"),
   portfolioLink: text("portfolio_link"),
   organizationId: integer("organization_id").references(() => users.id),
-  featured: boolean("featured").default(false),
+  featured: boolean("featured"),
   featuredAt: timestamp("featured_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  // Make createdAt optional since it might be there
+  createdAt: timestamp("created_at"),
+  // Remove updatedAt since it's causing errors
 });
 
 // Initialize Drizzle ORM

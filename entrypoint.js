@@ -49,8 +49,7 @@ const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password"),
   companyName: text("company_name").notNull(),
-  // Make role optional since it's causing errors
-  role: text("role"), 
+  // role field is removed as it no longer exists in the database
   logo: text("logo"),
   status: text("status"),
   emailVerified: boolean("email_verified"),

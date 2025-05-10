@@ -72,9 +72,6 @@ Before deploying to Vercel, make sure to set these environment variables in the 
 - If you see "column does not exist" errors, you need to run the schema migration (Option 2 above)
 - For critical database issues, you can try direct SQL fixes:
   ```sql
-  -- Add missing role column if needed
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
-  
   -- Add missing updated_at column if needed
   ALTER TABLE rfps ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
   ```

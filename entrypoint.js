@@ -49,12 +49,19 @@ const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password"),
   companyName: text("company_name").notNull(),
-  // role field is removed as it no longer exists in the database
+  contact: text("contact"),
+  telephone: text("telephone"),
+  cell: text("cell"),
+  businessEmail: text("business_email"),
+  isMinorityOwned: boolean("is_minority_owned"),
+  minorityGroup: text("minority_group"),
+  trade: text("trade"),
+  certificationName: text("certification_name").array(),
   logo: text("logo"),
+  onboardingComplete: boolean("onboarding_complete"),
   status: text("status"),
+  language: text("language"),
   emailVerified: boolean("email_verified"),
-  createdAt: timestamp("created_at"),
-  // Other fields are included but made optional for compatibility
   verificationToken: text("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   resetToken: text("reset_token"),
@@ -68,16 +75,15 @@ const rfps = pgTable("rfps", {
   walkthroughDate: timestamp("walkthrough_date").notNull(),
   rfiDate: timestamp("rfi_date").notNull(),
   deadline: timestamp("deadline").notNull(),
-  jobLocation: text("job_location").notNull(),
   budgetMin: integer("budget_min"),
   certificationGoals: text("certification_goals"),
+  jobLocation: text("job_location").notNull(),
   portfolioLink: text("portfolio_link"),
+  status: text("status"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured"),
   featuredAt: timestamp("featured_at"),
-  // Make createdAt optional since it might be there
   createdAt: timestamp("created_at"),
-  // Remove updatedAt since it's causing errors
 });
 
 // Initialize Drizzle ORM

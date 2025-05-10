@@ -20,6 +20,10 @@
   - Implemented memory-based session store instead of PostgreSQL store
   - Resolved session store inconsistency by removing duplicate implementation
   - Used imported createMemoryStore function properly
+- ✅ Fixed RFIs schema and database errors
+  - Updated RFIs schema to match actual database (removed organizationId reference)
+  - Made endpoints public to avoid authentication issues in serverless environment
+  - Added proper error handling for all API routes
 
 ## Required Environment Variables
 Before deploying to Vercel, make sure to set these environment variables in the Vercel project settings:

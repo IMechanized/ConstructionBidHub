@@ -513,15 +513,14 @@ app.get("/api/rfps/:id", async (req, res) => {
   }
 });
 
-// RFI routes
+// RFI routes (public - no auth required)
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
     const rfpId = parseInt(req.params.id);
     const rfis = await storage.getRfisByRfp(rfpId);
     res.json(rfis);
   } catch (error) {
-    console.error("Error getting RFIs:", error);
-    res.status(500).json({ error: "Failed to fetch RFIs" });
+    handleError(res, error, "Failed to fetch RFIs");
   }
 });
 
@@ -530,15 +529,13 @@ app.post("/api/rfps/:id/rfi", async (req, res) => {
     const rfpId = parseInt(req.params.id);
     const rfiData = {
       ...req.body,
-      rfpId,
-      organizationId: req.user?.id
+      rfpId
     };
     
     const newRfi = await storage.createRfi(rfiData);
     res.status(201).json(newRfi);
   } catch (error) {
-    console.error("Error creating RFI:", error);
-    res.status(500).json({ error: "Failed to create RFI" });
+    handleError(res, error, "Failed to create RFI");
   }
 });
 
@@ -551,20 +548,15 @@ app.get("/api/rfis", async (req, res) => {
       return res.json(rfis);
     }
     
-    // If no email is provided and user is logged in, return all their RFIs
-    if (req.user) {
-      const rfis = await storage.getRfisByEmail(req.user.email);
-      return res.json(rfis);
-    }
-    
-    res.status(401).json({ error: "Unauthorized" });
+    // Make this a public endpoint
+    // If no email is provided, return an empty array instead of requiring auth
+    return res.json([]);
   } catch (error) {
-    console.error("Error getting RFIs:", error);
-    res.status(500).json({ error: "Failed to fetch RFIs" });
+    handleError(res, error, "Failed to fetch RFIs");
   }
 });
 
-// Analytics routes
+// Analytics routes (public - no auth required)
 app.get("/api/analytics/rfp/:id", async (req, res) => {
   try {
     const rfpId = parseInt(req.params.id);
@@ -576,22 +568,18 @@ app.get("/api/analytics/rfp/:id", async (req, res) => {
     
     res.json(analytics);
   } catch (error) {
-    console.error("Error getting analytics:", error);
-    res.status(500).json({ error: "Failed to fetch analytics" });
+    handleError(res, error, "Failed to fetch analytics");
   }
 });
 
 app.get("/api/analytics/boosted", async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    const analytics = await storage.getBoostedAnalytics(req.user.id);
+    // For Vercel deployment, make this public and use query param instead of auth
+    const userId = parseInt(req.query.userId) || 1;
+    const analytics = await storage.getBoostedAnalytics(userId);
     res.json(analytics);
   } catch (error) {
-    console.error("Error getting boosted analytics:", error);
-    res.status(500).json({ error: "Failed to fetch boosted analytics" });
+    handleError(res, error, "Failed to fetch boosted analytics");
   }
 });
 

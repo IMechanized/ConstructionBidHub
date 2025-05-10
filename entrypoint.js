@@ -964,8 +964,7 @@ app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
 });
 
 app.get("/api/rfis", async (req, res) => {
-  // Check if user is authenticated first, before anything else
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.isAuthenticated()) {
     console.log('[Auth] Unauthorized access attempt to /api/rfis');
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -1030,8 +1029,7 @@ app.get("/api/analytics/rfp/:id", async (req, res) => {
 });
 
 app.get("/api/analytics/boosted", async (req, res) => {
-  // Check if user is authenticated first, before anything else
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.isAuthenticated()) {
     console.log('[Auth] Unauthorized access attempt to /api/analytics/boosted');
     return res.status(401).json({ message: "Unauthorized" });
   }

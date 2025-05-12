@@ -1,7 +1,3 @@
-// This file serves as a direct entrypoint for Vercel
-// Standalone implementation specifically for serverless deployment
-// All necessary code is included directly to avoid import issues
-
 import express from 'express';
 import { createServer } from 'http';
 import session from 'express-session';
@@ -175,6 +171,17 @@ const storage = {
       return null;
     }
   },
+
+  async getFeaturedRfps() {
+    try {
+      return await db.select()
+        .from(rfps)
+        .where(eq(rfps.featured, true));
+    } catch (error) {
+      console.error("Error getting featured RFPs:", error);
+      return [];
+    }
+  },
   
   async getRfisByRfp(rfpId) {
     try {
@@ -208,6 +215,20 @@ const storage = {
     } catch (error) {
       console.error("Error getting RFIs by email:", error);
       return [];
+    }
+  },
+
+  async updateRfiStatus(rfiId, status) {
+    try {
+      const [updatedRfi] = await db
+        .update(rfis)
+        .set({ status })
+        .where(eq(rfis.id, rfiId))
+        .returning();
+      return updatedRfi;
+    } catch (error) {
+      console.error("Error updating RFI status:", error);
+      throw error;
     }
   },
   

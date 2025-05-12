@@ -517,9 +517,26 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
 
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
+    // Get RFIs with organization data in a single query
     const rfis = await storage.getRfisByRfp(Number(req.params.id));
-    res.json(rfis);
+    const rfisWithOrgs = await Promise.all(
+      rfis.map(async (rfi) => {
+        const org = await storage.getUser(rfi.email);
+        return {
+          ...rfi,
+          organization: org ? {
+            id: org.id,
+            companyName: org.companyName,
+            logo: org.logo,
+            contact: org.contact,
+            certificationName: org.certificationName
+          } : null
+        };
+      })
+    );
+    res.json(rfisWithOrgs);
   } catch (error) {
+    console.error('Error fetching RFIs for RFP:', error);
     res.status(500).json({ message: "Failed to fetch RFIs" });
   }
 });
@@ -917,7 +934,7 @@ app.post("/api/user/onboarding", requireAuth, async (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ message: "Internal server error" });
+res.status(500).json({ message: "Internal server error" });
 });
 
 // Export for serverless

@@ -292,19 +292,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up session
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'development_secret',
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000
-    }
-  })
-);
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret',
+  resave: false,
+  saveUninitialized: false,
+  store: storage.sessionStore,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+};
+
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+app.use(session(sessionConfig));
 
 // Set up authentication
 app.use(passport.initialize());
@@ -337,20 +342,41 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
+    console.log(`[Auth] Deserializing user: ${id}`);
     const user = await storage.getUser(id);
+    if (!user) {
+      console.log(`[Auth] No user found during deserialization for id: ${id}`);
+      return done(null, false);
+    }
+    console.log(`[Auth] User deserialized successfully: ${id}`);
     done(null, user);
   } catch (error) {
+    console.error(`[Auth] Error during deserialization:`, error);
     done(error);
   }
 });
 
 // Authentication middleware
 function requireAuth(req, res, next) {
+  console.log('[Auth] Checking authentication:', req.isAuthenticated());
   if (!req.isAuthenticated()) {
+    console.log('[Auth] Unauthorized access attempt');
     return res.status(401).json({ message: "Unauthorized" });
   }
+  console.log('[Auth] User authenticated:', req.user.id);
   next();
 }
+
+// Ensure all protected routes use requireAuth
+app.use([
+  '/api/rfps/create',
+  '/api/rfps/edit',
+  '/api/rfps/delete',
+  '/api/rfis',
+  '/api/analytics',
+  '/api/user/settings',
+  '/api/user/onboarding'
+], requireAuth);
 
 // Routes
 app.get('/api/health', (req, res) => {

@@ -517,23 +517,30 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
 
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
-    // Get RFIs with organization data in a single query
+    // First get all RFIs for this RFP
     const rfis = await storage.getRfisByRfp(Number(req.params.id));
+    
+    // Then for each RFI, get the full user data
     const rfisWithOrgs = await Promise.all(
       rfis.map(async (rfi) => {
-        const org = await storage.getUser(rfi.email);
+        const user = await storage.getUserByUsername(rfi.email);
         return {
           ...rfi,
-          organization: org ? {
-            id: org.id,
-            companyName: org.companyName,
-            logo: org.logo,
-            contact: org.contact,
-            certificationName: org.certificationName
+          organization: user ? {
+            id: user.id,
+            companyName: user.companyName,
+            logo: user.logo,
+            contact: user.contact,
+            telephone: user.telephone,
+            cell: user.cell,
+            businessEmail: user.businessEmail,
+            certificationName: user.certificationName || [],
+            trade: user.trade
           } : null
         };
       })
     );
+    
     res.json(rfisWithOrgs);
   } catch (error) {
     console.error('Error fetching RFIs for RFP:', error);

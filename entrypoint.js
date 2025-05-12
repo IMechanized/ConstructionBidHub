@@ -32,6 +32,17 @@ const pool = new Pool({
   max: 1,
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 5000,
+  ssl: {
+    rejectUnauthorized: true,
+  },
+  keepAlive: true,
+  retryDelay: 1000,
+  retryCount: 3
+});
+
+// Add error handler for the pool
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
 });
 
 // Define schema

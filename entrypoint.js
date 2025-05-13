@@ -467,8 +467,14 @@ app.get("/api/rfps/:id", async (req, res) => {
 
 app.post("/api/rfps", requireAuth, async (req, res) => {
   try {
+    console.log('RFP creation request received:', req.body);
+
+    // Convert string dates to Date objects
     const rfp = await storage.createRfp({
       ...req.body,
+      walkthroughDate: new Date(req.body.walkthroughDate),
+      rfiDate: new Date(req.body.rfiDate),
+      deadline: new Date(req.body.deadline),
       organizationId: req.user.id,
     });
     res.status(201).json(rfp);
@@ -530,7 +536,7 @@ app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
     // First get all RFIs for this RFP
     const rfis = await storage.getRfisByRfp(Number(req.params.id));
-    
+
     // Then for each RFI, get the full user data
     const rfisWithOrgs = await Promise.all(
       rfis.map(async (rfi) => {
@@ -551,7 +557,7 @@ app.get("/api/rfps/:id/rfi", async (req, res) => {
         };
       })
     );
-    
+
     res.json(rfisWithOrgs);
   } catch (error) {
     console.error('Error fetching RFIs for RFP:', error);
@@ -699,8 +705,7 @@ app.post("/api/upload", requireAuth, upload.single('file'), async (req, res) => 
 
     // Mock successful upload
     res.json({ url: `https://example.com/mock-upload/${Date.now()}` });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to upload file" });
+  } catch (error) {    res.status(500).json({ message: "Failed to upload file" });
   }
 });
 

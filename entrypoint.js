@@ -865,21 +865,31 @@ app.post("/api/logout", (req, res) => {
 });
 
 // User settings routes
-app.post("/api/user/settings", requireAuth, async (req, res) => {
-    try {
-        // Add updateUser to storage implementation if missing
-        if (!storage.updateUser) {
-            return res.status(501).json({ message: "User profile updates not implemented" });
-        }
-
-        const updatedUser = await storage.updateUser(req.user.id, {
-            ...req.body,
-        });
-        res.json(updatedUser);
-    } catch (error) {
-        console.error("Error updating user settings:", error);
-        res.status(400).json({ message: "Failed to update settings" });
+app.post("/api/user/settings", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
     }
+
+    const updatedUser = await storage.updateUser(req.user.id, {
+      ...req.body,
+      companyName: req.body.companyName,
+      contact: req.body.contact,
+      telephone: req.body.telephone,
+      cell: req.body.cell,
+      businessEmail: req.body.businessEmail,
+      trade: req.body.trade,
+      isMinorityOwned: req.body.isMinorityOwned,
+      minorityGroup: req.body.minorityGroup,
+      certificationName: req.body.certificationName,
+      logo: req.body.logo,
+      language: req.body.language
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    res.status(400).json({ message: "Failed to update settings" });
+  }
 });
 
 app.post("/api/user/deactivate", requireAuth, async (req, res) => {

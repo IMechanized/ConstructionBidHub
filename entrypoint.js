@@ -131,6 +131,35 @@ const storage = {
     }
   },
 
+  async updateUser(id, updates) {
+    try {
+      const [user] = await db
+        .update(users)
+        .set({
+          ...updates,
+          companyName: updates.companyName,
+          contact: updates.contact,
+          telephone: updates.telephone,
+          cell: updates.cell,
+          businessEmail: updates.businessEmail,
+          trade: updates.trade,
+          isMinorityOwned: updates.isMinorityOwned,
+          minorityGroup: updates.minorityGroup,
+          certificationName: updates.certificationName,
+          logo: updates.logo,
+          language: updates.language
+        })
+        .where(eq(users.id, id))
+        .returning();
+      
+      if (!user) throw new Error("User not found");
+      return user;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
+  },
+
   async getUserByUsername(email) {
     try {
       const [user] = await db.select().from(users).where(eq(users.email, email));

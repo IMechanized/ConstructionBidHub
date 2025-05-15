@@ -768,7 +768,6 @@ app.get('/api/payments/price', (req, res) => {
 // Create payment intent for featuring an RFP
 app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
     try {
-
         const { rfpId } = req.body;
 
         if (!rfpId) {
@@ -785,14 +784,15 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
             return res.status(403).json({ message: "You can only feature your own RFPs" });
         }
 
-        // In a full implementation, this would create a payment intent with Stripe
-        // For simplicity in entrypoint.js, we'll return a mock client secret
-
-        const mockPaymentIntent = {
-            id: `pi_${Date.now()}`,
-            client_secret: `pi_${Date.now()}_secret_${Math.random().toString(36).substring(2, 15)}`,
+        // Create real payment intent with Stripe
+        const paymentIntent = await stripe.paymentIntents.create({
             amount: FEATURED_RFP_PRICE,
-        };
+            currency: 'usd',
+            metadata: {
+                rfpId: String(rfpId),
+                userId: String(req.user.id)
+            }
+        });
 
         res.json({
             clientSecret: mockPaymentIntent.client_secret,
@@ -816,8 +816,12 @@ app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
             return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
         }
 
-        // In a full implementation, this would verify the payment with Stripe
-        // For entrypoint.js, we'll just update the RFP
+        // Verify the payment with Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        
+        if (paymentIntent.status !== 'succeeded') {
+            return res.status(400).json({ message: "Payment has not been completed" });
+        }
 
         // Update the RFP to be featured
         const updatedRfp = await storage.updateRfp(Number(rfpId), {

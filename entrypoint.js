@@ -13,6 +13,14 @@ import ws from 'ws';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import Stripe from 'stripe';
+
+// Initialize Stripe with secret key from env
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+
+if (!stripe) {
+  console.warn('STRIPE_SECRET_KEY environment variable is not set - payment features will be disabled');
+}
 
 // Configure WebSocket for Neon
 if (ws) {

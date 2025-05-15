@@ -23,7 +23,7 @@ const stripeSecretKey = process.env.NODE_ENV === 'production'
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16',
   appInfo: {
-    name: 'Find Construction Bids'
+    name: 'FindConstructionBids'
   }
 }) : null;
 

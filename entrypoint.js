@@ -803,8 +803,8 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
         });
 
         res.json({
-            clientSecret: mockPaymentIntent.client_secret,
-            amount: mockPaymentIntent.amount,
+            clientSecret: paymentIntent.client_secret,
+            amount: paymentIntent.amount,
         });
     } catch (error) {
         console.error('Error creating payment intent:', error);

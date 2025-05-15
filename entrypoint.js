@@ -15,11 +15,20 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
-// Initialize Stripe with secret key from env
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+// Initialize Stripe with appropriate secret key based on mode
+const stripeSecretKey = process.env.NODE_ENV === 'production' 
+  ? process.env.STRIPE_LIVE_SECRET_KEY 
+  : process.env.STRIPE_TEST_SECRET_KEY;
+
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
+  apiVersion: '2023-10-16',
+  appInfo: {
+    name: 'Find Construction Bids'
+  }
+}) : null;
 
 if (!stripe) {
-  console.warn('STRIPE_SECRET_KEY environment variable is not set - payment features will be disabled');
+  console.warn('Stripe secret key not set for current environment - payment features will be disabled');
 }
 
 // Configure WebSocket for Neon

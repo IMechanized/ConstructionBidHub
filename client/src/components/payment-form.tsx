@@ -222,32 +222,6 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
     },
   };
 
-  // Check if Stripe is properly configured
-  const isStripeConfigured = stripeConfig?.isInitialized;
-
-  if (!isStripeConfigured) {
-    return (
-      <Card className="p-6">
-        <div className="text-center">
-          <div className="mb-4 text-amber-500 flex justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium mb-2">Payment System Unavailable</h3>
-          <p className="text-muted-foreground mb-4">
-            The payment system is not currently available. The Stripe API key is missing or invalid.
-          </p>
-          <Button variant="secondary" onClick={onCancel}>
-            Return to RFP Form
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <div>
       {stripeConfig && (

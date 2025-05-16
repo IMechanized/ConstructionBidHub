@@ -7,37 +7,30 @@ import { Elements } from '@stripe/react-stripe-js';
 // Get available publishable keys
 const LIVE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY;
 const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY;
-const GENERIC_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
 // Determine which mode to use based on available keys
 const hasLiveKey = Boolean(LIVE_PUBLISHABLE_KEY);
 const hasTestKey = Boolean(TEST_PUBLISHABLE_KEY);
-const hasGenericKey = Boolean(GENERIC_PUBLISHABLE_KEY);
-const isProduction = import.meta.env.MODE === 'production';
+const hasGenericKey = false; // Removed generic fallback
 
-// Determine the appropriate mode based on available keys
-let mode: 'live' | 'test' = 'test'; // Default to test mode
-
-// If running in production and live key is available, use live mode
-if (isProduction && hasLiveKey) {
+// If both live and test keys are available, prefer live mode
+// If only one set is available, use that one
+let mode: 'live' | 'test';
+if (hasLiveKey) {
   mode = 'live';
-// If running in development and test key is available, use test mode
-} else if (!isProduction && hasTestKey) {
+} else if (hasTestKey) {
   mode = 'test';
-// If only one specific type of key is available, use that mode
-} else if (hasLiveKey && !hasTestKey) {
-  mode = 'live';
-} else if (!hasLiveKey && hasTestKey) {
-  mode = 'test';
+} else {
+  console.error('No Stripe publishable keys provided. Please add either VITE_STRIPE_LIVE_PUBLISHABLE_KEY or VITE_STRIPE_TEST_PUBLISHABLE_KEY');
+  mode = 'test'; // Default to test mode but it won't work without keys
 }
 
-// Select the appropriate key based on mode and availability
+// Select the appropriate key based on mode
 let STRIPE_PUBLISHABLE_KEY: string | undefined;
 if (mode === 'live') {
   STRIPE_PUBLISHABLE_KEY = LIVE_PUBLISHABLE_KEY;
 } else {
-  // In test mode, prefer the explicit test key, but fall back to generic key if needed
-  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY || GENERIC_PUBLISHABLE_KEY;
+  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY;
 }
 
 // Determine if the selected key matches the intended mode

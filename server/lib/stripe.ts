@@ -8,37 +8,28 @@ import Stripe from 'stripe';
 // Get available keys
 const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
 const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY;
-const GENERIC_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
 // Determine which mode to use based on available keys
 const hasLiveKey = Boolean(LIVE_SECRET_KEY);
 const hasTestKey = Boolean(TEST_SECRET_KEY);
-const hasGenericKey = Boolean(GENERIC_SECRET_KEY);
-const isProduction = process.env.NODE_ENV === 'production';
+const hasGenericKey = false; // Removed generic fallback
 
-// Determine the appropriate mode based on available keys
+// If both live and test keys are available, prefer live mode
+// If only one set is available, use that one
 let mode: 'live' | 'test' = 'test'; // Default to test mode
-
-// If running in production and live key is available, use live mode
-if (isProduction && hasLiveKey) {
+if (hasLiveKey) {
   mode = 'live';
-// If running in development and test key is available, use test mode
-} else if (!isProduction && hasTestKey) {
-  mode = 'test';
-// If only one specific type of key is available, use that mode
-} else if (hasLiveKey && !hasTestKey) {
-  mode = 'live';
-} else if (!hasLiveKey && hasTestKey) {
+} else if (hasTestKey) {
   mode = 'test';
 }
+// No keys provided - will log a warning but not throw an error
 
-// Select the appropriate key based on mode and availability
+// Select the appropriate key based on mode
 let stripeSecretKey: string | undefined;
 if (mode === 'live') {
   stripeSecretKey = LIVE_SECRET_KEY;
 } else {
-  // In test mode, prefer the explicit test key, but fall back to generic key if needed
-  stripeSecretKey = TEST_SECRET_KEY || GENERIC_SECRET_KEY;
+  stripeSecretKey = TEST_SECRET_KEY;
 }
 
 // Determine if the selected key matches the intended mode

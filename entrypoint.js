@@ -823,6 +823,15 @@ app.get('/api/payments/price', (req, res) => {
     res.json({ price: FEATURED_RFP_PRICE });
 });
 
+// Get Stripe configuration information
+app.get('/api/payments/config', (req, res) => {
+    res.json({ 
+        isInitialized: Boolean(stripe),
+        mode: mode,
+        keyType: keyType
+    });
+});
+
 // Create payment intent for featuring an RFP
 app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
     try {

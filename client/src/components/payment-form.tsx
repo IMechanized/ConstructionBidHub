@@ -152,6 +152,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formattedData),
+        credentials: "include",
       });
       
       if (!res.ok) {

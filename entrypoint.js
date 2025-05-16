@@ -470,7 +470,10 @@ app.use([
   '/api/rfis',
   '/api/analytics',
   '/api/user/settings',
-  '/api/user/onboarding'
+  '/api/user/onboarding',
+  '/api/payments/create-payment-intent',
+  '/api/payments/confirm-payment',
+  '/api/payments/status'
 ], requireAuth);
 
 // Routes

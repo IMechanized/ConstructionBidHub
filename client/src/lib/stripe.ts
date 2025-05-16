@@ -57,7 +57,9 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY
 // Get the payment amount for featuring an RFP
 export async function getFeaturedRfpPrice(): Promise<number> {
   try {
-    const response = await fetch('/api/payments/price');
+    const response = await fetch('/api/payments/price', {
+      credentials: 'include', // Include cookies for session authentication
+    });
     const data = await response.json();
     return data.price;
   } catch (error) {
@@ -73,7 +75,9 @@ export async function getStripeConfig(): Promise<{
   keyType: 'live' | 'test' | null;
 }> {
   try {
-    const response = await fetch('/api/payments/config');
+    const response = await fetch('/api/payments/config', {
+      credentials: 'include', // Include cookies for session authentication
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch Stripe configuration');
     }
@@ -105,11 +109,13 @@ export async function createPaymentIntent(rfpId: number): Promise<{clientSecret:
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ rfpId }),
+    credentials: 'include', // Include cookies for session authentication
   });
   
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to create payment intent');
+    console.error('Create payment intent error:', response.status, error);
+    throw new Error(error.message || `Failed to create payment intent (${response.status})`);
   }
   
   return response.json();
@@ -123,11 +129,13 @@ export async function confirmPayment(paymentIntentId: string, rfpId: number): Pr
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ paymentIntentId, rfpId }),
+    credentials: 'include', // Include cookies for session authentication
   });
   
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to confirm payment');
+    console.error('Confirm payment error:', response.status, error);
+    throw new Error(error.message || `Failed to confirm payment (${response.status})`);
   }
   
   return response.json();

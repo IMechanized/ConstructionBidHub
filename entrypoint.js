@@ -15,14 +15,30 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
-// Determine environment based on NODE_ENV
+// Get available secret keys
+const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
+const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+
+// Determine which mode to use based on available keys
+// If live keys are available, use live mode
+// If only test keys are available, use test mode
+// If both are available, use NODE_ENV to determine
+const hasLiveKey = Boolean(LIVE_SECRET_KEY);
+const hasTestKey = Boolean(TEST_SECRET_KEY);
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Initialize Stripe with appropriate secret key based on environment
-// First try to use environment-specific keys, then fall back to generic key
-const stripeSecretKey = isProduction
-  ? process.env.STRIPE_LIVE_SECRET_KEY
-  : process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+// Determine the appropriate mode based on available keys
+let mode = 'test'; // Default to test mode
+if (hasLiveKey && (!hasTestKey || isProduction)) {
+  mode = 'live';
+} else {
+  mode = 'test';
+}
+
+// Select the appropriate key based on mode
+const stripeSecretKey = mode === 'live' 
+  ? LIVE_SECRET_KEY 
+  : TEST_SECRET_KEY;
 
 // Create Stripe instance with proper configuration
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
@@ -34,7 +50,7 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
 }) : null;
 
 // Log Stripe configuration status
-console.log(`Stripe mode: ${isProduction ? 'live' : 'test'}`);
+console.log(`Stripe mode: ${mode}`);
 console.log(`Stripe initialized: ${Boolean(stripe)}`);
 console.log(`Key type: ${stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test'}`);
 

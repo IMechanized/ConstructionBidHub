@@ -232,7 +232,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
             </Badge>
           </div>
           {stripeConfig.keyType === 'test' && (
-            <Alert variant="outline" className="mt-2 bg-yellow-50 border-yellow-200">
+            <Alert variant="default" className="mt-2 bg-yellow-50">
               <AlertDescription className="text-xs text-yellow-700">
                 You're in test mode. Use test card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
               </AlertDescription>

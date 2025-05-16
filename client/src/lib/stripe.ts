@@ -4,17 +4,35 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Determine environment
+// Get available publishable keys
+const LIVE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY;
+const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+// Determine which mode to use based on available keys
+// If live keys are available, use live mode
+// If only test keys are available, use test mode
+// If both are available, use MODE to determine
+const hasLiveKey = Boolean(LIVE_PUBLISHABLE_KEY);
+const hasTestKey = Boolean(TEST_PUBLISHABLE_KEY);
 const isProduction = import.meta.env.MODE === 'production';
 
-// Initialize Stripe with appropriate publishable key based on mode
-// If environment-specific keys aren't available, fall back to the generic key
-const STRIPE_PUBLISHABLE_KEY = isProduction
-  ? import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY
-  : import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+// Determine the appropriate mode based on available keys
+let mode: 'live' | 'test' = 'test'; // Default to test mode
+if (hasLiveKey && (!hasTestKey || isProduction)) {
+  mode = 'live';
+} else {
+  mode = 'test';
+}
 
-console.log('Stripe mode:', isProduction ? 'live' : 'test');
+// Select the appropriate key based on mode
+const STRIPE_PUBLISHABLE_KEY = mode === 'live' 
+  ? LIVE_PUBLISHABLE_KEY 
+  : TEST_PUBLISHABLE_KEY;
+
+// Log configuration
+console.log('Stripe client mode:', mode);
 console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
+console.log('Key type:', STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test');
 
 // Create Stripe instance with error handling
 const stripePromise = STRIPE_PUBLISHABLE_KEY 

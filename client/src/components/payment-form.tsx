@@ -130,6 +130,12 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const { toast } = useToast();
   
+  // Get Stripe configuration to show environment information
+  const { data: stripeConfig } = useQuery({ 
+    queryKey: ['stripe-config'],
+    queryFn: getStripeConfig
+  });
+  
   // If we have pendingRfpData but no rfpId, we need to create the RFP first
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -217,6 +223,24 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
 
   return (
     <div>
+      {stripeConfig && (
+        <div className="mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Payment Environment</span>
+            <Badge variant={stripeConfig.keyType === 'live' ? 'default' : 'secondary'}>
+              {stripeConfig.keyType === 'live' ? 'Live' : 'Test'} Mode
+            </Badge>
+          </div>
+          {stripeConfig.keyType === 'test' && (
+            <Alert variant="outline" className="mt-2 bg-yellow-50 border-yellow-200">
+              <AlertDescription className="text-xs text-yellow-700">
+                You're in test mode. Use test card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+      
       <div className="mb-6">
         <div className="flex justify-between mb-2">
           <span className="font-medium">Featured RFP listing:</span>

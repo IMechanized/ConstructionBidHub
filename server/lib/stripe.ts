@@ -5,14 +5,36 @@
 
 import Stripe from 'stripe';
 
-// Get secret key from environment
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+// Get available keys
+const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
+const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY;
 
-// Determine if it's a live or test key based on the key prefix
+// Determine which mode to use based on available keys
+const hasLiveKey = Boolean(LIVE_SECRET_KEY);
+const hasTestKey = Boolean(TEST_SECRET_KEY);
+const hasGenericKey = false; // Removed generic fallback
+
+// If both live and test keys are available, prefer live mode
+// If only one set is available, use that one
+let mode: 'live' | 'test' = 'test'; // Default to test mode
+if (hasLiveKey) {
+  mode = 'live';
+} else if (hasTestKey) {
+  mode = 'test';
+}
+// No keys provided - will log a warning but not throw an error
+
+// Select the appropriate key based on mode
+let stripeSecretKey: string | undefined;
+if (mode === 'live') {
+  stripeSecretKey = LIVE_SECRET_KEY;
+} else {
+  stripeSecretKey = TEST_SECRET_KEY;
+}
+
+// Determine if the selected key matches the intended mode
 const keyType = stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test';
-
-// Set mode based on key type
-const mode: 'live' | 'test' = keyType;
+const keyMatchesMode = mode === keyType;
 
 // Initialize Stripe with appropriate secret key
 const stripe = stripeSecretKey 
@@ -23,6 +45,11 @@ const stripe = stripeSecretKey
 console.log(`Stripe mode: ${mode}`);
 console.log(`Stripe initialized: ${Boolean(stripe)}`);
 console.log(`Key type: ${keyType}`);
+
+// Warn if key type doesn't match intended mode
+if (!keyMatchesMode && stripeSecretKey) {
+  console.warn(`Warning: Stripe key type (${keyType}) doesn't match intended mode (${mode})`);
+}
 
 if (!stripe) {
   console.warn('Stripe secret key not set for current environment - payment features will be disabled');
@@ -98,7 +125,11 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
 export const stripeStatus = {
   isInitialized: Boolean(stripe),
   mode,
-  keyType
+  keyType,
+  keyMatchesMode,
+  hasLiveKey,
+  hasTestKey,
+  hasGenericKey
 };
 
 export default stripe;

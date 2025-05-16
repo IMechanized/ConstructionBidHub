@@ -4,12 +4,16 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Initialize Stripe with appropriate publishable key based on mode
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.MODE === 'production'
-  ? import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY
-  : import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY;
+// Determine environment
+const isProduction = import.meta.env.MODE === 'production';
 
-console.log('Stripe mode:', import.meta.env.MODE === 'production' ? 'live' : 'test');
+// Initialize Stripe with appropriate publishable key based on mode
+// If environment-specific keys aren't available, fall back to the generic key
+const STRIPE_PUBLISHABLE_KEY = isProduction
+  ? import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY
+  : import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+console.log('Stripe mode:', isProduction ? 'live' : 'test');
 console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);

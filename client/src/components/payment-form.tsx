@@ -2,15 +2,18 @@
  * Payment Form Component
  * 
  * Handles payment processing for featuring RFPs using Stripe Elements
+ * Supports both test and live environments based on provided API keys
  */
 
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Loader } from './ui/loader';
-import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice } from '@/lib/stripe';
+import { Alert, AlertDescription } from './ui/alert';
+import { Badge } from './ui/badge';
+import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice, getStripeConfig } from '@/lib/stripe';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentFormProps {

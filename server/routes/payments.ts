@@ -3,13 +3,22 @@
  */
 import express from 'express';
 import { storage } from '../storage.js';
-import { createPaymentIntent, verifyPayment, getPaymentIntent, FEATURED_RFP_PRICE } from '../lib/stripe.js';
+import { createPaymentIntent, verifyPayment, getPaymentIntent, FEATURED_RFP_PRICE, stripeStatus } from '../lib/stripe.js';
 
 const router = express.Router();
 
 // Get the featured listing price
 router.get('/price', (req, res) => {
   res.json({ price: FEATURED_RFP_PRICE });
+});
+
+// Get current Stripe environment information
+router.get('/config', (req, res) => {
+  res.json({ 
+    isInitialized: stripeStatus.isInitialized,
+    mode: stripeStatus.mode,
+    keyType: stripeStatus.keyType
+  });
 });
 
 // Create a payment intent for featuring an RFP

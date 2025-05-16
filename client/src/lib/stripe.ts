@@ -16,7 +16,10 @@ const STRIPE_PUBLISHABLE_KEY = isProduction
 console.log('Stripe mode:', isProduction ? 'live' : 'test');
 console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
 
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+// Create Stripe instance with error handling
+const stripePromise = STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(STRIPE_PUBLISHABLE_KEY) 
+  : Promise.reject(new Error('Stripe publishable key is not available. Please check your environment variables.'));
 
 // Get the payment amount for featuring an RFP
 export async function getFeaturedRfpPrice(): Promise<number> {
@@ -27,6 +30,28 @@ export async function getFeaturedRfpPrice(): Promise<number> {
   } catch (error) {
     console.error('Error fetching featured RFP price:', error);
     return 2500; // Default to $25.00 if API fails
+  }
+}
+
+// Get Stripe configuration information
+export async function getStripeConfig(): Promise<{ 
+  isInitialized: boolean; 
+  mode: 'live' | 'test'; 
+  keyType: 'live' | 'test' | null;
+}> {
+  try {
+    const response = await fetch('/api/payments/config');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Stripe configuration');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching Stripe configuration:', error);
+    return { 
+      isInitialized: false, 
+      mode: 'test', 
+      keyType: null 
+    };
   }
 }
 

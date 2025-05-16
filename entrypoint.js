@@ -15,17 +15,28 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
-// Initialize Stripe with appropriate secret key based on mode
-const stripeSecretKey = process.env.NODE_ENV === 'production' 
-  ? process.env.STRIPE_LIVE_SECRET_KEY 
-  : process.env.STRIPE_TEST_SECRET_KEY;
+// Determine environment based on NODE_ENV
+const isProduction = process.env.NODE_ENV === 'production';
 
+// Initialize Stripe with appropriate secret key based on environment
+// First try to use environment-specific keys, then fall back to generic key
+const stripeSecretKey = isProduction
+  ? process.env.STRIPE_LIVE_SECRET_KEY
+  : process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+
+// Create Stripe instance with proper configuration
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2023-10-16', 
   appInfo: {
-    name: 'FindConstructionBids'
+    name: 'FindConstructionBids',
+    version: '1.0.0'
   }
 }) : null;
+
+// Log Stripe configuration status
+console.log(`Stripe mode: ${isProduction ? 'live' : 'test'}`);
+console.log(`Stripe initialized: ${Boolean(stripe)}`);
+console.log(`Key type: ${stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test'}`);
 
 if (!stripe) {
   console.warn('Stripe secret key not set for current environment - payment features will be disabled');

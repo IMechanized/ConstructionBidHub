@@ -79,10 +79,22 @@ export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.
  * 
  * @param paymentIntentId The ID of the payment intent to verify
  * @returns True if payment succeeded, false otherwise
+ * @throws Error if Stripe is not initialized
  */
 export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized. Please check your API keys.');
+  }
+  
   const paymentIntent = await getPaymentIntent(paymentIntentId);
   return paymentIntent?.status === 'succeeded';
 }
+
+// Export status indicators to help with environment detection
+export const stripeStatus = {
+  isInitialized: Boolean(stripe),
+  mode: isProduction ? 'live' : 'test',
+  keyType: stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test'
+};
 
 export default stripe;

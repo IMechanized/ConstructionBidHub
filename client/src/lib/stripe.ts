@@ -6,33 +6,55 @@ import { Elements } from '@stripe/react-stripe-js';
 
 // Get available publishable keys
 const LIVE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY;
-const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY;
+const GENERIC_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
 // Determine which mode to use based on available keys
-// If live keys are available, use live mode
-// If only test keys are available, use test mode
-// If both are available, use MODE to determine
 const hasLiveKey = Boolean(LIVE_PUBLISHABLE_KEY);
 const hasTestKey = Boolean(TEST_PUBLISHABLE_KEY);
+const hasGenericKey = Boolean(GENERIC_PUBLISHABLE_KEY);
 const isProduction = import.meta.env.MODE === 'production';
 
 // Determine the appropriate mode based on available keys
 let mode: 'live' | 'test' = 'test'; // Default to test mode
-if (hasLiveKey && (!hasTestKey || isProduction)) {
+
+// If running in production and live key is available, use live mode
+if (isProduction && hasLiveKey) {
   mode = 'live';
-} else {
+// If running in development and test key is available, use test mode
+} else if (!isProduction && hasTestKey) {
+  mode = 'test';
+// If only one specific type of key is available, use that mode
+} else if (hasLiveKey && !hasTestKey) {
+  mode = 'live';
+} else if (!hasLiveKey && hasTestKey) {
   mode = 'test';
 }
 
-// Select the appropriate key based on mode
-const STRIPE_PUBLISHABLE_KEY = mode === 'live' 
-  ? LIVE_PUBLISHABLE_KEY 
-  : TEST_PUBLISHABLE_KEY;
+// Select the appropriate key based on mode and availability
+let STRIPE_PUBLISHABLE_KEY: string | undefined;
+if (mode === 'live') {
+  STRIPE_PUBLISHABLE_KEY = LIVE_PUBLISHABLE_KEY;
+} else {
+  // In test mode, prefer the explicit test key, but fall back to generic key if needed
+  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY || GENERIC_PUBLISHABLE_KEY;
+}
+
+// Determine if the selected key matches the intended mode
+const keyType = STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test';
+
+// Determine if the selected key matches the intended mode
+const keyMatchesMode = mode === keyType;
 
 // Log configuration
 console.log('Stripe client mode:', mode);
 console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
-console.log('Key type:', STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test');
+console.log('Key type:', keyType);
+
+// Warn if key type doesn't match intended mode
+if (!keyMatchesMode && STRIPE_PUBLISHABLE_KEY) {
+  console.warn(`Warning: Stripe key type (${keyType}) doesn't match intended mode (${mode})`);
+}
 
 // Create Stripe instance with error handling
 const stripePromise = STRIPE_PUBLISHABLE_KEY 

@@ -133,8 +133,12 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
 // Export status indicators to help with environment detection
 export const stripeStatus = {
   isInitialized: Boolean(stripe),
-  mode: isProduction ? 'live' : 'test',
-  keyType: stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test'
+  mode,
+  keyType,
+  keyMatchesMode,
+  hasLiveKey,
+  hasTestKey,
+  hasGenericKey
 };
 
 export default stripe;

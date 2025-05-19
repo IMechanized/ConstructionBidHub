@@ -239,6 +239,13 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
               </AlertDescription>
             </Alert>
           )}
+          {!stripeConfig.isInitialized && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription className="text-xs">
+                Payment system is not fully configured. This is only a preview of the payment flow.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
       

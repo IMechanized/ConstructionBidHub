@@ -102,7 +102,7 @@ export function formatPrice(cents: number): string {
 }
 
 // Create a payment intent
-export async function createPaymentIntent(rfpId: number): Promise<{clientSecret: string, amount: number}> {
+export async function createPaymentIntent(rfpId: number): Promise<{clientSecret: string, amount: number, isMock?: boolean}> {
   const response = await fetch('/api/payments/create-payment-intent', {
     method: 'POST',
     headers: {

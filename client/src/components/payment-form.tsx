@@ -14,7 +14,6 @@ import { Loader } from './ui/loader';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice, getStripeConfig } from '@/lib/stripe';
-import { apiRequest } from '@/lib/queryClient';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentFormProps {
@@ -147,16 +146,21 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
         certificationGoals: data.certificationGoals || null,
         featured: false // Initially create as non-featured
       };
+      const res = await fetch("/api/rfps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+        credentials: "include",
+      });
       
-      // Make authenticated request to create the RFP
-      const response = await apiRequest("POST", "/api/rfps", formattedData);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!res.ok) {
+        const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create RFP");
       }
       
-      return response.json();
+      return res.json();
     },
     onSuccess: (newRfp) => {
       setCreatedRfpId(newRfp.id);

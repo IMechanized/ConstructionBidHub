@@ -15,24 +15,36 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
-// Get Stripe secret key
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+// Get Stripe secret key from environment variables
+// First look for the most common environment variable names
+const possibleSecretKeys = [
+  process.env.STRIPE_SECRET_KEY,       // Primary key name
+  process.env.STRIPE_SK,               // Short form
+  process.env.STRIPE_API_KEY,          // Another common name
+  process.env.STRIPE_KEY                // Shortest form
+];
+
+// Use the first valid key found
+const stripeSecretKey = possibleSecretKeys.find(key => key && typeof key === 'string' && key.startsWith('sk_'));
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Create Stripe instance with proper configuration
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16', 
-  appInfo: {
-    name: 'FindConstructionBids',
-    version: '1.0.0'
+// Create Stripe instance with proper configuration and error handling
+let stripe = null;
+try {
+  if (stripeSecretKey) {
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+      appInfo: {
+        name: 'FindConstructionBids',
+        version: '1.0.0'
+      }
+    });
+    console.log(`Stripe successfully initialized`);
+  } else {
+    console.warn('Stripe secret key not found in environment variables - payment features will be in mock mode');
   }
-}) : null;
-
-// Log Stripe initialization status
-console.log(`Stripe initialized: ${Boolean(stripe)}`);
-
-if (!stripe) {
-  console.warn('Stripe secret key not set for current environment - payment features will be disabled');
+} catch (error) {
+  console.error(`Failed to initialize Stripe: ${error.message}`);
 }
 
 // Configure WebSocket for Neon
@@ -836,33 +848,58 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
             return res.status(403).json({ message: "You can only feature your own RFPs" });
         }
 
-        // Check if Stripe is initialized
-        if (!stripe) {
-            // In development environment, provide a mock payment for testing
-            if (process.env.NODE_ENV !== 'production') {
-                console.log('Using mock payment intent for development');
+        // Create payment intent
+        let paymentIntent;
+        
+        if (stripe) {
+            try {
+                // Create real payment intent with Stripe
+                paymentIntent = await stripe.paymentIntents.create({
+                    amount: FEATURED_RFP_PRICE,
+                    currency: 'usd',
+                    metadata: {
+                        rfpId: String(rfpId),
+                        userId: String(req.user.id)
+                    },
+                    automatic_payment_methods: {
+                        enabled: true // Allow multiple payment methods
+                    }
+                });
+                console.log(`Created payment intent: ${paymentIntent.id}`);
+            } catch (stripeError) {
+                console.error('Stripe error creating payment intent:', stripeError);
+                
+                // Fallback to mock in development
+                if (!isProduction) {
+                    console.log('Stripe error encountered, using mock payment for development');
+                    return res.json({
+                        clientSecret: 'mock_client_secret_for_development',
+                        amount: FEATURED_RFP_PRICE,
+                        isMock: true
+                    });
+                } else {
+                    return res.status(503).json({
+                        message: "Payment service error: " + stripeError.message,
+                        reason: 'stripe_error'
+                    });
+                }
+            }
+        } else {
+            // If Stripe is not available, provide a mock in development
+            if (!isProduction) {
+                console.log('Using mock payment intent for development (Stripe not available)');
                 return res.json({
                     clientSecret: 'mock_client_secret_for_development',
                     amount: FEATURED_RFP_PRICE,
                     isMock: true
                 });
             } else {
-                return res.status(503).json({ 
+                return res.status(503).json({
                     message: "Payment service is currently unavailable. Stripe is not initialized.",
                     reason: 'stripe_not_initialized'
                 });
             }
         }
-
-        // Create real payment intent with Stripe
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: FEATURED_RFP_PRICE,
-            currency: 'usd',
-            metadata: {
-                rfpId: String(rfpId),
-                userId: String(req.user.id)
-            }
-        });
 
         res.json({
             clientSecret: paymentIntent.client_secret,

@@ -2,7 +2,6 @@
  * Payment Form Component
  * 
  * Handles payment processing for featuring RFPs using Stripe Elements
- * Supports both test and live environments based on provided API keys
  */
 
 import React, { useState, useEffect } from 'react';
@@ -130,7 +129,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const { toast } = useToast();
   
-  // Get Stripe configuration to show environment information
+  // Get Stripe configuration to show initialization status
   const { data: stripeConfig, isError: stripeConfigError } = useQuery({ 
     queryKey: ['stripe-config'],
     queryFn: getStripeConfig,

@@ -813,9 +813,7 @@ app.get('/api/payments/price', (req, res) => {
 // Get Stripe configuration information
 app.get('/api/payments/config', (req, res) => {
     res.json({ 
-        isInitialized: Boolean(stripe),
-        mode: mode,
-        keyType: keyType
+        isInitialized: Boolean(stripe)
     });
 });
 
@@ -846,8 +844,6 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
                 return res.json({
                     clientSecret: 'mock_client_secret_for_development',
                     amount: FEATURED_RFP_PRICE,
-                    mode: 'test',
-                    keyType: 'test',
                     isMock: true
                 });
             } else {
@@ -864,8 +860,7 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
             currency: 'usd',
             metadata: {
                 rfpId: String(rfpId),
-                userId: String(req.user.id),
-                environment: mode
+                userId: String(req.user.id)
             }
         });
 

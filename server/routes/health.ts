@@ -29,4 +29,20 @@ router.get('/api/health', async (req, res) => {
   }
 });
 
+// Authentication status check route (for debugging)
+router.get('/api/auth-status', (req, res) => {
+  res.json({
+    isAuthenticated: req.isAuthenticated?.() || false,
+    user: req.user ? { id: req.user.id } : null,
+    sessionID: req.sessionID || null,
+    environment: process.env.NODE_ENV || 'development',
+    isVercel: Boolean(process.env.VERCEL_URL),
+    vercelUrl: process.env.VERCEL_URL || null,
+    cookieSettings: {
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    }
+  });
+});
+
 export default router;

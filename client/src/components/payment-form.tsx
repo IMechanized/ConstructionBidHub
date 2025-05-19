@@ -31,7 +31,29 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
 
   const confirmPaymentMutation = useMutation({
     mutationFn: async ({ paymentIntentId, rfpId }: { paymentIntentId: string, rfpId: number }) => {
-      return confirmPayment(paymentIntentId, rfpId);
+      try {
+        // Check authentication status before attempting payment confirmation
+        const authResponse = await fetch('/api/auth-status', {
+          credentials: 'include' // Include cookies for session authentication
+        });
+        
+        if (!authResponse.ok) {
+          throw new Error('Could not verify authentication status');
+        }
+        
+        const authStatus = await authResponse.json();
+        
+        if (!authStatus.isAuthenticated) {
+          console.error('Authentication check failed before payment confirmation', authStatus);
+          throw new Error('Your session has expired. Please refresh the page and try again.');
+        }
+        
+        // Proceed with payment confirmation
+        return confirmPayment(paymentIntentId, rfpId);
+      } catch (error) {
+        console.error('Error during payment confirmation process:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -43,9 +65,17 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
     },
     onError: (error: Error) => {
       setIsLoading(false);
+      
+      // Check if it's an authentication error
+      const isAuthError = error.message?.includes('401') || 
+                          error.message?.includes('session') ||
+                          error.message?.includes('expired');
+      
       toast({
         title: 'Payment Confirmation Failed',
-        description: error.message || 'Failed to confirm payment. Please try again.',
+        description: isAuthError 
+          ? 'Your session may have expired. Please refresh the page and try again.'
+          : error.message || 'Failed to confirm payment. Please try again.',
         variant: 'destructive',
       });
     }

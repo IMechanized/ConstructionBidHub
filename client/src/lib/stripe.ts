@@ -4,54 +4,15 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Get available publishable keys with exact variable names
-const LIVE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY;
-const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY;
-const GENERIC_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+// Get Stripe publishable key
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
-// Determine which mode to use based on available keys
-const hasLiveKey = Boolean(LIVE_PUBLISHABLE_KEY);
-const hasTestKey = Boolean(TEST_PUBLISHABLE_KEY);
-const hasGenericKey = Boolean(GENERIC_PUBLISHABLE_KEY);
-
-// If both live and test keys are available, prefer live mode
-// If only one set is available, use that one
-let mode: 'live' | 'test';
-if (hasLiveKey) {
-  mode = 'live';
-} else if (hasTestKey) {
-  mode = 'test';
-} else if (hasGenericKey) {
-  // Try to determine mode from generic key format
-  mode = GENERIC_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test';
-} else {
-  console.error('No Stripe publishable keys provided. Please add either VITE_STRIPE_LIVE_PUBLISHABLE_KEY or VITE_STRIPE_TEST_PUBLISHABLE_KEY');
-  mode = 'test'; // Default to test mode but it won't work without keys
+if (!STRIPE_PUBLISHABLE_KEY) {
+  console.error('No Stripe publishable key provided. Please add VITE_STRIPE_PUBLISHABLE_KEY to your environment variables.');
 }
-
-// Select the appropriate key based on mode
-let STRIPE_PUBLISHABLE_KEY: string | undefined;
-if (mode === 'live') {
-  STRIPE_PUBLISHABLE_KEY = LIVE_PUBLISHABLE_KEY || (GENERIC_PUBLISHABLE_KEY?.startsWith('pk_live') ? GENERIC_PUBLISHABLE_KEY : undefined);
-} else {
-  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY || (GENERIC_PUBLISHABLE_KEY?.startsWith('pk_test') ? GENERIC_PUBLISHABLE_KEY : undefined);
-}
-
-// Determine if the selected key matches the intended mode
-const keyType = STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test';
-
-// Determine if the selected key matches the intended mode
-const keyMatchesMode = mode === keyType;
 
 // Log configuration
-console.log('Stripe client mode:', mode);
 console.log('Stripe key available:', Boolean(STRIPE_PUBLISHABLE_KEY));
-console.log('Key type:', keyType);
-
-// Warn if key type doesn't match intended mode
-if (!keyMatchesMode && STRIPE_PUBLISHABLE_KEY) {
-  console.warn(`Warning: Stripe key type (${keyType}) doesn't match intended mode (${mode})`);
-}
 
 // Create Stripe instance with error handling
 // Use proper typing for the Stripe promise
@@ -75,9 +36,7 @@ export async function getFeaturedRfpPrice(): Promise<number> {
 
 // Get Stripe configuration information
 export async function getStripeConfig(): Promise<{ 
-  isInitialized: boolean; 
-  mode: 'live' | 'test'; 
-  keyType: 'live' | 'test' | null;
+  isInitialized: boolean;
 }> {
   try {
     const response = await fetch('/api/payments/config', {
@@ -90,9 +49,7 @@ export async function getStripeConfig(): Promise<{
   } catch (error) {
     console.error('Error fetching Stripe configuration:', error);
     return { 
-      isInitialized: false, 
-      mode: 'test', 
-      keyType: null 
+      isInitialized: false
     };
   }
 }

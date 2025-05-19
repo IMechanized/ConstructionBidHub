@@ -232,18 +232,16 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
       {stripeConfig && (
         <div className="mb-4">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Payment Environment</span>
-            <Badge variant={stripeConfig.keyType === 'live' ? 'default' : 'secondary'}>
-              {stripeConfig.keyType === 'live' ? 'Live' : 'Test'} Mode
+            <span className="text-sm text-muted-foreground">Payment System</span>
+            <Badge variant="secondary">
+              Ready
             </Badge>
           </div>
-          {stripeConfig.keyType === 'test' && (
-            <Alert variant="default" className="mt-2 bg-yellow-50">
-              <AlertDescription className="text-xs text-yellow-700">
-                You're in test mode. Use test card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
-              </AlertDescription>
-            </Alert>
-          )}
+          <Alert variant="default" className="mt-2 bg-yellow-50">
+            <AlertDescription className="text-xs text-yellow-700">
+              For testing, use card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
+            </AlertDescription>
+          </Alert>
           {!stripeConfig.isInitialized && (
             <Alert variant="destructive" className="mt-2">
               <AlertDescription className="text-xs">

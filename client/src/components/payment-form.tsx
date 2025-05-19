@@ -131,9 +131,11 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
   const { toast } = useToast();
   
   // Get Stripe configuration to show environment information
-  const { data: stripeConfig } = useQuery({ 
+  const { data: stripeConfig, isError: stripeConfigError } = useQuery({ 
     queryKey: ['stripe-config'],
-    queryFn: getStripeConfig
+    queryFn: getStripeConfig,
+    // Don't retry too many times if the API is failing
+    retry: 1
   });
   
   // If we have pendingRfpData but no rfpId, we need to create the RFP first
@@ -222,6 +224,9 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
     },
   };
 
+  // Determine if we have payment provider configuration issues
+  const hasStripeError = !stripePromise || stripeConfigError;
+
   return (
     <div>
       {stripeConfig && (
@@ -264,14 +269,25 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
           {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
           
-          <Elements stripe={stripePromise} options={options}>
-            <StripeCheckoutForm 
-              rfpId={rfpId || createdRfpId || undefined} 
-              pendingRfpData={pendingRfpData} 
-              onSuccess={onSuccess} 
-              onCancel={onCancel} 
-            />
-          </Elements>
+          {hasStripeError ? (
+            <div className="p-6 text-center">
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>
+                  Stripe payment integration is not properly configured. Please contact the administrator.
+                </AlertDescription>
+              </Alert>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          ) : (
+            <Elements stripe={stripePromise} options={options}>
+              <StripeCheckoutForm 
+                rfpId={rfpId || createdRfpId || undefined} 
+                pendingRfpData={pendingRfpData} 
+                onSuccess={onSuccess} 
+                onCancel={onCancel} 
+              />
+            </Elements>
+          )}
         </CardContent>
       </Card>
     </div>

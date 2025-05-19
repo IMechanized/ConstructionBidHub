@@ -50,9 +50,10 @@ if (!keyMatchesMode && STRIPE_PUBLISHABLE_KEY) {
 }
 
 // Create Stripe instance with error handling
+// Use proper typing for the Stripe promise
 const stripePromise = STRIPE_PUBLISHABLE_KEY 
   ? loadStripe(STRIPE_PUBLISHABLE_KEY) 
-  : Promise.reject(new Error('Stripe publishable key is not available. Please check your environment variables.'));
+  : null;
 
 // Get the payment amount for featuring an RFP
 export async function getFeaturedRfpPrice(): Promise<number> {

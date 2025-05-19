@@ -7,11 +7,12 @@ import { Elements } from '@stripe/react-stripe-js';
 // Get available publishable keys with exact variable names
 const LIVE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY;
 const TEST_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY;
+const GENERIC_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // Determine which mode to use based on available keys
 const hasLiveKey = Boolean(LIVE_PUBLISHABLE_KEY);
 const hasTestKey = Boolean(TEST_PUBLISHABLE_KEY);
-const hasGenericKey = false; // Removed generic fallback
+const hasGenericKey = Boolean(GENERIC_PUBLISHABLE_KEY);
 
 // If both live and test keys are available, prefer live mode
 // If only one set is available, use that one
@@ -20,6 +21,9 @@ if (hasLiveKey) {
   mode = 'live';
 } else if (hasTestKey) {
   mode = 'test';
+} else if (hasGenericKey) {
+  // Try to determine mode from generic key format
+  mode = GENERIC_PUBLISHABLE_KEY?.startsWith('pk_live') ? 'live' : 'test';
 } else {
   console.error('No Stripe publishable keys provided. Please add either VITE_STRIPE_LIVE_PUBLISHABLE_KEY or VITE_STRIPE_TEST_PUBLISHABLE_KEY');
   mode = 'test'; // Default to test mode but it won't work without keys
@@ -28,9 +32,9 @@ if (hasLiveKey) {
 // Select the appropriate key based on mode
 let STRIPE_PUBLISHABLE_KEY: string | undefined;
 if (mode === 'live') {
-  STRIPE_PUBLISHABLE_KEY = LIVE_PUBLISHABLE_KEY;
+  STRIPE_PUBLISHABLE_KEY = LIVE_PUBLISHABLE_KEY || (GENERIC_PUBLISHABLE_KEY?.startsWith('pk_live') ? GENERIC_PUBLISHABLE_KEY : undefined);
 } else {
-  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY;
+  STRIPE_PUBLISHABLE_KEY = TEST_PUBLISHABLE_KEY || (GENERIC_PUBLISHABLE_KEY?.startsWith('pk_test') ? GENERIC_PUBLISHABLE_KEY : undefined);
 }
 
 // Determine if the selected key matches the intended mode

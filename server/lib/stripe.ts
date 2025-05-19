@@ -8,11 +8,12 @@ import Stripe from 'stripe';
 // Get available keys using the exact variable names provided
 const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
 const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY;
+const GENERIC_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
 // Determine which mode to use based on available keys
 const hasLiveKey = Boolean(LIVE_SECRET_KEY);
 const hasTestKey = Boolean(TEST_SECRET_KEY);
-const hasGenericKey = false; // Removed generic fallback
+const hasGenericKey = Boolean(GENERIC_SECRET_KEY);
 
 // If both live and test keys are available, prefer live mode
 // If only one set is available, use that one
@@ -21,15 +22,18 @@ if (hasLiveKey) {
   mode = 'live';
 } else if (hasTestKey) {
   mode = 'test';
+} else if (hasGenericKey) {
+  // Try to determine mode from generic key format
+  mode = GENERIC_SECRET_KEY?.startsWith('sk_live') ? 'live' : 'test';
 }
 // No keys provided - will log a warning but not throw an error
 
 // Select the appropriate key based on mode
 let stripeSecretKey: string | undefined;
 if (mode === 'live') {
-  stripeSecretKey = LIVE_SECRET_KEY;
+  stripeSecretKey = LIVE_SECRET_KEY || (GENERIC_SECRET_KEY?.startsWith('sk_live') ? GENERIC_SECRET_KEY : undefined);
 } else {
-  stripeSecretKey = TEST_SECRET_KEY;
+  stripeSecretKey = TEST_SECRET_KEY || (GENERIC_SECRET_KEY?.startsWith('sk_test') ? GENERIC_SECRET_KEY : undefined);
 }
 
 // Determine if the selected key matches the intended mode

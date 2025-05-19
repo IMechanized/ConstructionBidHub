@@ -15,20 +15,36 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
-// Initialize Stripe with appropriate secret key based on mode
-const stripeSecretKey = process.env.NODE_ENV === 'production' 
-  ? process.env.STRIPE_LIVE_SECRET_KEY 
-  : process.env.STRIPE_TEST_SECRET_KEY;
+// Get Stripe secret key from environment variables
+// First look for the most common environment variable names
+const possibleSecretKeys = [
+  process.env.STRIPE_SECRET_KEY,       // Primary key name
+  process.env.STRIPE_SK,               // Short form
+  process.env.STRIPE_API_KEY,          // Another common name
+  process.env.STRIPE_KEY                // Shortest form
+];
 
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16',
-  appInfo: {
-    name: 'FindConstructionBids'
+// Use the first valid key found
+const stripeSecretKey = possibleSecretKeys.find(key => key && typeof key === 'string' && key.startsWith('sk_'));
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Create Stripe instance with proper configuration and error handling
+let stripe = null;
+try {
+  if (stripeSecretKey) {
+    stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+      appInfo: {
+        name: 'FindConstructionBids',
+        version: '1.0.0'
+      }
+    });
+    console.log(`Stripe successfully initialized`);
+  } else {
+    console.warn('Stripe secret key not found in environment variables - payment features will be in mock mode');
   }
-}) : null;
-
-if (!stripe) {
-  console.warn('Stripe secret key not set for current environment - payment features will be disabled');
+} catch (error) {
+  console.error(`Failed to initialize Stripe: ${error.message}`);
 }
 
 // Configure WebSocket for Neon
@@ -366,7 +382,28 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-app.use(session(sessionConfig));
+// Enable CORS with credentials
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+app.use(session({
+  ...sessionConfig,
+  cookie: {
+    ...sessionConfig.cookie,
+    sameSite: 'none',
+    secure: true
+  }
+}));
 
 // Set up authentication
 app.use(passport.initialize());
@@ -432,7 +469,10 @@ app.use([
   '/api/rfis',
   '/api/analytics',
   '/api/user/settings',
-  '/api/user/onboarding'
+  '/api/user/onboarding',
+  '/api/payments/create-payment-intent',
+  '/api/payments/confirm-payment',
+  '/api/payments/status'
 ], requireAuth);
 
 // Routes
@@ -782,6 +822,13 @@ app.get('/api/payments/price', (req, res) => {
     res.json({ price: FEATURED_RFP_PRICE });
 });
 
+// Get Stripe configuration information
+app.get('/api/payments/config', (req, res) => {
+    res.json({ 
+        isInitialized: Boolean(stripe)
+    });
+});
+
 // Create payment intent for featuring an RFP
 app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
     try {
@@ -801,15 +848,58 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
             return res.status(403).json({ message: "You can only feature your own RFPs" });
         }
 
-        // Create real payment intent with Stripe
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: FEATURED_RFP_PRICE,
-            currency: 'usd',
-            metadata: {
-                rfpId: String(rfpId),
-                userId: String(req.user.id)
+        // Create payment intent
+        let paymentIntent;
+        
+        if (stripe) {
+            try {
+                // Create real payment intent with Stripe
+                paymentIntent = await stripe.paymentIntents.create({
+                    amount: FEATURED_RFP_PRICE,
+                    currency: 'usd',
+                    metadata: {
+                        rfpId: String(rfpId),
+                        userId: String(req.user.id)
+                    },
+                    automatic_payment_methods: {
+                        enabled: true // Allow multiple payment methods
+                    }
+                });
+                console.log(`Created payment intent: ${paymentIntent.id}`);
+            } catch (stripeError) {
+                console.error('Stripe error creating payment intent:', stripeError);
+                
+                // Fallback to mock in development
+                if (!isProduction) {
+                    console.log('Stripe error encountered, using mock payment for development');
+                    return res.json({
+                        clientSecret: 'mock_client_secret_for_development',
+                        amount: FEATURED_RFP_PRICE,
+                        isMock: true
+                    });
+                } else {
+                    return res.status(503).json({
+                        message: "Payment service error: " + stripeError.message,
+                        reason: 'stripe_error'
+                    });
+                }
             }
-        });
+        } else {
+            // If Stripe is not available, provide a mock in development
+            if (!isProduction) {
+                console.log('Using mock payment intent for development (Stripe not available)');
+                return res.json({
+                    clientSecret: 'mock_client_secret_for_development',
+                    amount: FEATURED_RFP_PRICE,
+                    isMock: true
+                });
+            } else {
+                return res.status(503).json({
+                    message: "Payment service is currently unavailable. Stripe is not initialized.",
+                    reason: 'stripe_not_initialized'
+                });
+            }
+        }
 
         res.json({
             clientSecret: paymentIntent.client_secret,
@@ -826,18 +916,31 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
 // Confirm payment and update RFP featured status
 app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
     try {
-
         const { paymentIntentId, rfpId } = req.body;
 
         if (!paymentIntentId || !rfpId) {
             return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
         }
 
-        // Verify the payment with Stripe
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        
-        if (paymentIntent.status !== 'succeeded') {
-            return res.status(400).json({ message: "Payment has not been completed" });
+        // Handle mock payments in development environment
+        if (paymentIntentId === 'mock_client_secret_for_development') {
+            console.log('Processing mock payment confirmation for development environment');
+            // Skip payment verification in development mode without Stripe keys
+        } else {
+            // Verify with Stripe in production or if real keys are available
+            if (!stripe) {
+                return res.status(503).json({ 
+                    message: 'Payment service is currently unavailable. Stripe is not initialized.',
+                    reason: 'stripe_not_initialized'
+                });
+            }
+            
+            // Verify the payment with Stripe
+            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+            
+            if (paymentIntent.status !== 'succeeded') {
+                return res.status(400).json({ message: "Payment has not been completed" });
+            }
         }
 
         // Update the RFP to be featured

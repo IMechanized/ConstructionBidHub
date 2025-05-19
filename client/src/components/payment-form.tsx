@@ -5,12 +5,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Loader } from './ui/loader';
-import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice } from '@/lib/stripe';
+import { Alert, AlertDescription } from './ui/alert';
+import { Badge } from './ui/badge';
+import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice, getStripeConfig } from '@/lib/stripe';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentFormProps {
@@ -127,6 +129,14 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const { toast } = useToast();
   
+  // Get Stripe configuration to show initialization status
+  const { data: stripeConfig, isError: stripeConfigError } = useQuery({ 
+    queryKey: ['stripe-config'],
+    queryFn: getStripeConfig,
+    // Don't retry too many times if the API is failing
+    retry: 1
+  });
+  
   // If we have pendingRfpData but no rfpId, we need to create the RFP first
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -143,6 +153,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formattedData),
+        credentials: "include",
       });
       
       if (!res.ok) {
@@ -212,8 +223,34 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
     },
   };
 
+  // Determine if we have payment provider configuration issues
+  const hasStripeError = !stripePromise || stripeConfigError;
+
   return (
     <div>
+      {stripeConfig && (
+        <div className="mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Payment System</span>
+            <Badge variant="secondary">
+              Ready
+            </Badge>
+          </div>
+          <Alert variant="default" className="mt-2 bg-yellow-50">
+            <AlertDescription className="text-xs text-yellow-700">
+              For testing, use card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
+            </AlertDescription>
+          </Alert>
+          {!stripeConfig.isInitialized && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription className="text-xs">
+                Payment system is not fully configured. This is only a preview of the payment flow.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+      
       <div className="mb-6">
         <div className="flex justify-between mb-2">
           <span className="font-medium">Featured RFP listing:</span>
@@ -229,14 +266,25 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
           {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
           
-          <Elements stripe={stripePromise} options={options}>
-            <StripeCheckoutForm 
-              rfpId={rfpId || createdRfpId || undefined} 
-              pendingRfpData={pendingRfpData} 
-              onSuccess={onSuccess} 
-              onCancel={onCancel} 
-            />
-          </Elements>
+          {hasStripeError ? (
+            <div className="p-6 text-center">
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>
+                  Stripe payment integration is not properly configured. Please contact the administrator.
+                </AlertDescription>
+              </Alert>
+              <Button variant="outline" onClick={onCancel}>Cancel</Button>
+            </div>
+          ) : (
+            <Elements stripe={stripePromise} options={options}>
+              <StripeCheckoutForm 
+                rfpId={rfpId || createdRfpId || undefined} 
+                pendingRfpData={pendingRfpData} 
+                onSuccess={onSuccess} 
+                onCancel={onCancel} 
+              />
+            </Elements>
+          )}
         </CardContent>
       </Card>
     </div>

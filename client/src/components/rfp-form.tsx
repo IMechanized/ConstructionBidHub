@@ -380,7 +380,18 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           </Button>
           <Button
             type="button"
-            onClick={() => form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()}
+            onClick={() => {
+              // Make sure user is authenticated before allowing payment flow
+              if (!user) {
+                toast({
+                  title: t('common.error'),
+                  description: t('auth.loginRequired'),
+                  variant: "destructive",
+                });
+                return;
+              }
+              form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()
+            }}
             disabled={createRfpMutation.isPending || isPriceLoading}
             data-testid="boost-button"
             className="w-full sm:w-auto"

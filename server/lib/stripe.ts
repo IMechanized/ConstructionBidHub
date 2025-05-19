@@ -5,7 +5,7 @@
 
 import Stripe from 'stripe';
 
-// Get available keys
+// Get available keys using the exact variable names provided
 const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
 const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY;
 

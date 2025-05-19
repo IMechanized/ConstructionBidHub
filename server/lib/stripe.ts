@@ -5,58 +5,19 @@
 
 import Stripe from 'stripe';
 
-// Get available keys using the exact variable names provided
-const LIVE_SECRET_KEY = process.env.STRIPE_LIVE_SECRET_KEY;
-const TEST_SECRET_KEY = process.env.STRIPE_TEST_SECRET_KEY;
-const GENERIC_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+// Get Stripe secret key
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-// Determine which mode to use based on available keys
-const hasLiveKey = Boolean(LIVE_SECRET_KEY);
-const hasTestKey = Boolean(TEST_SECRET_KEY);
-const hasGenericKey = Boolean(GENERIC_SECRET_KEY);
-
-// If both live and test keys are available, prefer live mode
-// If only one set is available, use that one
-let mode: 'live' | 'test' = 'test'; // Default to test mode
-if (hasLiveKey) {
-  mode = 'live';
-} else if (hasTestKey) {
-  mode = 'test';
-} else if (hasGenericKey) {
-  // Try to determine mode from generic key format
-  mode = GENERIC_SECRET_KEY?.startsWith('sk_live') ? 'live' : 'test';
-}
-// No keys provided - will log a warning but not throw an error
-
-// Select the appropriate key based on mode
-let stripeSecretKey: string | undefined;
-if (mode === 'live') {
-  stripeSecretKey = LIVE_SECRET_KEY || (GENERIC_SECRET_KEY?.startsWith('sk_live') ? GENERIC_SECRET_KEY : undefined);
-} else {
-  stripeSecretKey = TEST_SECRET_KEY || (GENERIC_SECRET_KEY?.startsWith('sk_test') ? GENERIC_SECRET_KEY : undefined);
-}
-
-// Determine if the selected key matches the intended mode
-const keyType = stripeSecretKey?.startsWith('sk_live') ? 'live' : 'test';
-const keyMatchesMode = mode === keyType;
-
-// Initialize Stripe with appropriate secret key
+// Initialize Stripe with the secret key
 const stripe = stripeSecretKey 
   ? new Stripe(stripeSecretKey) 
   : null;
 
-// Log which environment we're using
-console.log(`Stripe mode: ${mode}`);
+// Log Stripe initialization status
 console.log(`Stripe initialized: ${Boolean(stripe)}`);
-console.log(`Key type: ${keyType}`);
-
-// Warn if key type doesn't match intended mode
-if (!keyMatchesMode && stripeSecretKey) {
-  console.warn(`Warning: Stripe key type (${keyType}) doesn't match intended mode (${mode})`);
-}
 
 if (!stripe) {
-  console.warn('Stripe secret key not set for current environment - payment features will be disabled');
+  console.warn('Stripe secret key not set - payment features will be disabled');
 }
 
 // Define featured RFP price (in cents)
@@ -127,13 +88,7 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
 
 // Export status indicators to help with environment detection
 export const stripeStatus = {
-  isInitialized: Boolean(stripe),
-  mode,
-  keyType,
-  keyMatchesMode,
-  hasLiveKey,
-  hasTestKey,
-  hasGenericKey
+  isInitialized: Boolean(stripe)
 };
 
 export default stripe;

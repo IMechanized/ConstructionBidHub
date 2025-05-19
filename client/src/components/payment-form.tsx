@@ -146,14 +146,8 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
         certificationGoals: data.certificationGoals || null,
         featured: false // Initially create as non-featured
       };
-      const res = await fetch("/api/rfps", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-        credentials: "include",
-      });
+      // Use the apiRequest helper to ensure authentication is included
+      const res = await apiRequest("POST", "/api/rfps", formattedData);
       
       if (!res.ok) {
         const errorData = await res.json();

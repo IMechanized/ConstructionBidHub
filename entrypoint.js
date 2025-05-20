@@ -516,6 +516,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
+// Authentication status endpoint
+app.get('/api/health/auth-status', (req, res) => {
+  res.json({ 
+    isAuthenticated: req.isAuthenticated(),
+    user: req.isAuthenticated() ? {
+      id: req.user.id,
+      email: req.user.email,
+      companyName: req.user.companyName
+    } : null
+  });
+});
+
 // RFP routes
 app.get("/api/rfps", async (req, res) => {
   const rfps = await storage.getRfps();

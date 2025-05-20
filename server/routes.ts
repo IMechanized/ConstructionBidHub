@@ -655,7 +655,6 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Register the payments router
-  import paymentsRouter from './routes/payments.js';
   app.use('/api/payments', paymentsRouter);
 
   const httpServer = createServer(app);

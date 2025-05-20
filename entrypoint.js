@@ -1,18 +1,19 @@
-import express from 'express';
-import session from 'express-session';
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import bcrypt from 'bcrypt';
-import path from 'path';
-import fs from 'fs';
-import { Pool } from 'pg';
-import pgSession from 'connect-pg-simple';
-import Stripe from 'stripe';
-import { fileURLToPath } from 'url';
+// Using CommonJS require syntax for compatibility
+const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+const { Strategy: LocalStrategy } = require('passport-local');
+const bcrypt = require('bcrypt');
+const path = require('path');
+const fs = require('fs');
+const { Pool } = require('pg');
+const connectPgSimple = require('connect-pg-simple');
+const Stripe = require('stripe');
 
-// Get the directory name
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Create session store
+const pgSession = connectPgSimple(session);
+
+// In CommonJS, __dirname is already available
 
 // Initialize the Express app
 const app = express();

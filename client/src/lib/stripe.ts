@@ -25,11 +25,6 @@ try {
   if (STRIPE_PUBLISHABLE_KEY) {
     stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
     console.log('✅ Stripe client initialized');
-  } else if (import.meta.env.DEV) {
-    console.warn('⚠️ Using mock Stripe in development mode');
-    // Mock implementation for development
-    stripePromise = Promise.resolve({} as any);
-    stripeConfigError = true;
   } else {
     console.error('❌ No valid Stripe publishable key found');
     stripeConfigError = true;
@@ -115,9 +110,7 @@ export async function createPaymentIntent(rfpId: number): Promise<{
   const data = await response.json();
   
   // Validate that we received a valid client secret
-  if (!data.clientSecret || 
-      (data.clientSecret !== 'mock_client_secret_for_development' && 
-       !data.clientSecret.includes('_secret_'))) {
+  if (!data.clientSecret || !data.clientSecret.includes('_secret_')) {
     console.error('Invalid client secret received:', data);
     throw new Error('Invalid payment session. Please try again.');
   }

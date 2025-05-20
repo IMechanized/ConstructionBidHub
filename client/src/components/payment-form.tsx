@@ -254,8 +254,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
   };
   
   // Don't render Stripe Elements if client secret is empty or invalid
-  const isValidClientSecret = clientSecret && 
-    (clientSecret.includes('_secret_') || clientSecret === 'mock_client_secret_for_development');
+  const isValidClientSecret = clientSecret && clientSecret.includes('_secret_');
 
   // Determine if we have payment provider configuration issues
   const hasStripeError = !stripePromise || stripeConfigError;

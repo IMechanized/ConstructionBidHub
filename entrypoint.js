@@ -893,6 +893,21 @@ app.get('/api/payments/config', (req, res) => {
 });
 
 /**
+ * Debug endpoint to check Stripe status and connection
+ */
+app.get('/api/payments/debug', (req, res) => {
+  // Return detailed information about Stripe configuration
+  res.json({
+    stripeStatus: stripeStatus,
+    hasStripeKey: Boolean(stripeSecretKey),
+    stripeKeyLastFour: stripeSecretKey ? `...${stripeSecretKey.slice(-4)}` : null,
+    nodeEnv: process.env.NODE_ENV || 'development',
+    isProduction: isProduction,
+    testMode: stripeStatus.keyType === 'test'
+  });
+});
+
+/**
  * Create payment intent for featuring an RFP
  * This endpoint handles the initial payment setup process
  */

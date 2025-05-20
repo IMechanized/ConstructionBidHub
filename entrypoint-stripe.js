@@ -97,7 +97,7 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
 
       if (stripe) {
         try {
-          // Create real payment intent with Stripe
+          // Create payment intent with Stripe
           paymentIntent = await stripe.paymentIntents.create({
             amount: FEATURED_RFP_PRICE,
             currency: 'usd',
@@ -114,35 +114,16 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
         } catch (stripeError) {
           console.error('❌ Stripe error creating payment intent:', stripeError);
-          
-          // In development, provide a mock payment intent for testing
-          if (!isProduction) {
-            console.log('⚠️ Using mock payment intent for development (Stripe error)');
-            paymentIntent = {
-              client_secret: 'mock_client_secret_for_development',
-              amount: FEATURED_RFP_PRICE
-            };
-          } else {
-            return res.status(500).json({ 
-              message: "Payment service error: " + stripeError.message,
-              reason: 'stripe_error'
-            });
-          }
-        }
-      } else {
-        // If Stripe is not available, provide a mock in development
-        if (!isProduction) {
-          console.log('⚠️ Using mock payment intent for development (Stripe not available)');
-          paymentIntent = {
-            client_secret: 'mock_client_secret_for_development',
-            amount: FEATURED_RFP_PRICE
-          };
-        } else {
-          return res.status(503).json({ 
-            message: "Payment service is currently unavailable. Stripe is not initialized.",
-            reason: 'stripe_not_initialized'
+          return res.status(500).json({ 
+            message: "Payment service error: " + stripeError.message,
+            reason: 'stripe_error'
           });
         }
+      } else {
+        return res.status(503).json({ 
+          message: "Payment service is currently unavailable. Stripe is not initialized.",
+          reason: 'stripe_not_initialized'
+        });
       }
 
       // Send the client secret back to the client
@@ -177,37 +158,32 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
         return res.status(403).json({ message: "You can only feature your own RFPs" });
       }
       
-      // Handle mock payments in development environment
+      // Verify payment with Stripe
       let paymentVerified = false;
       
-      if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
-        console.log('⚠️ Processing mock payment confirmation for development');
-        paymentVerified = true;
-      } else {
-        // Verify payment with Stripe
-        if (!stripe) {
-          return res.status(503).json({ 
-            message: 'Payment service unavailable. Stripe is not initialized.',
-            reason: 'stripe_not_initialized'
-          });
-        }
+      // Verify payment with Stripe
+      if (!stripe) {
+        return res.status(503).json({ 
+          message: 'Payment service unavailable. Stripe is not initialized.',
+          reason: 'stripe_not_initialized'
+        });
+      }
+      
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        paymentVerified = paymentIntent.status === 'succeeded';
         
-        try {
-          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-          paymentVerified = paymentIntent.status === 'succeeded';
-          
-          if (!paymentVerified) {
-            console.log(`❌ Payment ${paymentIntentId} verification failed: ${paymentIntent.status}`);
-            return res.status(400).json({ 
-              message: `Payment verification failed: ${paymentIntent.status}` 
-            });
-          }
-        } catch (stripeError) {
-          console.error('❌ Error retrieving payment intent:', stripeError);
-          return res.status(500).json({ 
-            message: "Error verifying payment: " + stripeError.message
+        if (!paymentVerified) {
+          console.log(`❌ Payment ${paymentIntentId} verification failed: ${paymentIntent.status}`);
+          return res.status(400).json({ 
+            message: `Payment verification failed: ${paymentIntent.status}` 
           });
         }
+      } catch (stripeError) {
+        console.error('❌ Error retrieving payment intent:', stripeError);
+        return res.status(500).json({ 
+          message: "Error verifying payment: " + stripeError.message
+        });
       }
       
       // Update the RFP to be featured
@@ -239,19 +215,7 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
         return res.status(400).json({ message: "Payment intent ID is required" });
       }
       
-      // Handle mock payments in development
-      if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
-        return res.json({
-          id: 'mock_pi_' + Date.now(),
-          status: 'succeeded',
-          amount: FEATURED_RFP_PRICE,
-          created: Date.now() / 1000,
-          metadata: {
-            rfpId: req.query.rfpId || '1',
-            userId: req.user.id.toString()
-          }
-        });
-      }
+
 
       // Verify with Stripe if available
       if (!stripe) {
@@ -300,14 +264,7 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
         return res.status(400).json({ message: "Payment intent ID is required" });
       }
       
-      // Handle mock payments in development
-      if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
-        console.log('⚠️ Cancelling mock payment in development mode');
-        return res.json({
-          success: true,
-          message: "Mock payment cancelled successfully"
-        });
-      }
+
       
       // Verify with Stripe if available
       if (!stripe) {

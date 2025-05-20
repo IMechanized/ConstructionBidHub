@@ -1,6 +1,6 @@
 /**
- * Stripe Payment Processor
- * Handles all payment-related operations for the FindConstructionBids platform
+ * Stripe Payment Processing Service
+ * Handles all payment operations for the FindConstructionBids platform
  */
 
 import Stripe from 'stripe';

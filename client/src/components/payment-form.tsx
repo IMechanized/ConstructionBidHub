@@ -247,11 +247,15 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
 
   // Type assertion to avoid type errors with Stripe's API
   const options = {
-    clientSecret,
+    clientSecret: clientSecret || '',  // Ensure it's never null, but we'll handle empty string case
     appearance: {
       theme: 'stripe' as const,
     },
   };
+  
+  // Don't render Stripe Elements if client secret is empty or invalid
+  const isValidClientSecret = clientSecret && 
+    (clientSecret.includes('_secret_') || clientSecret === 'mock_client_secret_for_development');
 
   // Determine if we have payment provider configuration issues
   const hasStripeError = !stripePromise || stripeConfigError;
@@ -296,11 +300,13 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
           {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
           
-          {hasStripeError ? (
+          {hasStripeError || !isValidClientSecret ? (
             <div className="p-6 text-center">
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>
-                  Stripe payment integration is not properly configured. Please contact the administrator.
+                  {!isValidClientSecret 
+                    ? "Could not initialize payment session. Please try again or contact support."
+                    : "Stripe payment integration is not properly configured. Please contact the administrator."}
                 </AlertDescription>
               </Alert>
               <Button variant="outline" onClick={onCancel}>Cancel</Button>

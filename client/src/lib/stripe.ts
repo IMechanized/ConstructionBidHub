@@ -112,7 +112,17 @@ export async function createPaymentIntent(rfpId: number): Promise<{
     throw new Error(error.message || `Payment failed (${response.status})`);
   }
   
-  return await response.json();
+  const data = await response.json();
+  
+  // Validate that we received a valid client secret
+  if (!data.clientSecret || 
+      (data.clientSecret !== 'mock_client_secret_for_development' && 
+       !data.clientSecret.includes('_secret_'))) {
+    console.error('Invalid client secret received:', data);
+    throw new Error('Invalid payment session. Please try again.');
+  }
+  
+  return data;
 }
 
 /**

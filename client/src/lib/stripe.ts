@@ -1,51 +1,80 @@
 /**
  * Client-side Stripe utilities
+ * Handles integration with Stripe for payment processing
  */
+
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Check multiple possible environment variable names for Stripe publishable key
+// Get the publishable key from environment variables
 const possibleKeys = [
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
-  import.meta.env.VITE_STRIPE_PUBLIC_KEY,
-  import.meta.env.VITE_STRIPE_PK,
-  import.meta.env.VITE_PUBLISHABLE_KEY,
-  import.meta.env.STRIPE_PUBLISHABLE_KEY, // Some environments pass without VITE_ prefix
-  // We don't use placeholders - they would cause Stripe to throw errors
-  undefined
+  import.meta.env.STRIPE_PUBLISHABLE_KEY
 ];
-
-// Find the first valid key
 const STRIPE_PUBLISHABLE_KEY = possibleKeys.find(key => key && typeof key === 'string');
 
-// Log configuration
-console.log('Stripe client key found:', Boolean(STRIPE_PUBLISHABLE_KEY));
-
-// Create Stripe instance with error handling
+// Initialize Stripe with error handling
 let stripePromise = null;
+let stripeConfigError = false;
+
 try {
   if (STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
     stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-    console.log('Stripe client initialized');
-  } else if (process.env.NODE_ENV !== 'production') {
-    console.warn('Using mock Stripe in development mode');
-    // In development, we'll create a mock implementation
+    console.log('✅ Stripe client initialized');
+  } else if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+    console.warn('⚠️ Using mock Stripe in development mode');
+    // In development, we'll use a mock implementation if not properly configured
     stripePromise = Promise.resolve({ 
       elements: () => ({}),
       createPaymentMethod: () => Promise.resolve({}) 
     }) as any;
+    stripeConfigError = true;
   } else {
-    console.error('No valid Stripe publishable key found for this environment');
+    console.error('❌ No valid Stripe publishable key found');
+    stripeConfigError = true;
   }
 } catch (error) {
-  console.error('Error initializing Stripe:', error);
+  console.error('❌ Error initializing Stripe:', error);
+  stripeConfigError = true;
 }
 
-// Get the payment amount for featuring an RFP
+/**
+ * Format a price from cents to a readable currency format
+ * @param cents Price in cents
+ * @returns Formatted price string
+ */
+export function formatPrice(cents: number): string {
+  const dollars = cents / 100;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(dollars);
+}
+
+/**
+ * Get the Stripe configuration status
+ * @returns Configuration status object
+ */
+export async function getStripeConfig(): Promise<{ isInitialized: boolean }> {
+  try {
+    const response = await fetch('/api/payments/config', {
+      credentials: 'include',
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching Stripe config:', error);
+    return { isInitialized: false };
+  }
+}
+
+/**
+ * Get the price for featuring an RFP
+ * @returns Price in cents
+ */
 export async function getFeaturedRfpPrice(): Promise<number> {
   try {
     const response = await fetch('/api/payments/price', {
-      credentials: 'include', // Include cookies for session authentication
+      credentials: 'include',
     });
     const data = await response.json();
     return data.price;
@@ -55,94 +84,79 @@ export async function getFeaturedRfpPrice(): Promise<number> {
   }
 }
 
-// Get Stripe configuration information
-export async function getStripeConfig(): Promise<{ 
-  isInitialized: boolean;
-}> {
-  try {
-    const response = await fetch('/api/payments/config', {
-      credentials: 'include', // Include cookies for session authentication
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch Stripe configuration');
-    }
-    return response.json();
-  } catch (error) {
-    console.error('Error fetching Stripe configuration:', error);
-    return { 
-      isInitialized: false
-    };
+/**
+ * Create a payment intent for featuring an RFP
+ * @param rfpId The ID of the RFP to feature
+ * @returns The client secret and amount
+ */
+export async function createPaymentIntent(rfpId: number): Promise<{ clientSecret: string, amount: number }> {
+  const response = await fetch('/api/payments/create-payment-intent', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ rfpId }),
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Failed to create payment intent (${response.status})`);
   }
+  
+  return await response.json();
 }
 
-// Format price from cents to dollars with currency symbol
-export function formatPrice(cents: number): string {
-  const dollars = cents / 100;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(dollars);
-}
-
-// Create a payment intent
-export async function createPaymentIntent(rfpId: number): Promise<{clientSecret: string, amount: number, isMock?: boolean}> {
-  try {
-    const response = await fetch('/api/payments/create-payment-intent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ rfpId }),
-      credentials: 'include', // Include cookies for session authentication
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Create payment intent error:', response.status, error);
-      throw new Error(error.message || `Failed to create payment intent (${response.status})`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating payment intent:', error);
-    
-    // In development mode, return a mock payment intent to allow testing
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('Using mock payment intent in development due to error');
-      return {
-        clientSecret: 'mock_client_secret_for_development',
-        amount: 2500, // $25.00
-        isMock: true
-      };
-    }
-    
-    throw error;
-  }
-}
-
-// Confirm successful payment and update RFP status
+/**
+ * Confirm a successful payment and update RFP status
+ * @param paymentIntentId The ID of the payment intent
+ * @param rfpId The ID of the RFP
+ * @returns Success status and updated RFP
+ */
 export async function confirmPayment(paymentIntentId: string, rfpId: number): Promise<{success: boolean, rfp: any}> {
-  try {
-    const response = await fetch('/api/payments/confirm-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ paymentIntentId, rfpId }),
-      credentials: 'include', // Include cookies for session authentication
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Confirm payment error:', response.status, error);
-      throw new Error(error.message || `Failed to confirm payment (${response.status})`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error confirming payment:', error);
-    throw error;
+  const response = await fetch('/api/payments/confirm-payment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ paymentIntentId, rfpId }),
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Failed to confirm payment (${response.status})`);
   }
+  
+  return await response.json();
 }
 
-export { stripePromise, Elements };
+/**
+ * Get payment status
+ * @param paymentIntentId The ID of the payment intent
+ * @returns Payment status
+ */
+export async function getPaymentStatus(paymentIntentId: string, rfpId?: number): Promise<any> {
+  const url = new URL(`/api/payments/status/${paymentIntentId}`, window.location.origin);
+  if (rfpId) {
+    url.searchParams.append('rfpId', String(rfpId));
+  }
+  
+  const response = await fetch(url.toString(), {
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Failed to get payment status (${response.status})`);
+  }
+  
+  return await response.json();
+}
+
+// Export Stripe-related objects and variables
+export { 
+  stripePromise, 
+  Elements,
+  stripeConfigError
+};

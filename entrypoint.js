@@ -1172,37 +1172,6 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
 });
 
 // User routes
-            if (!isProduction) {
-                console.log('Using mock payment intent for development (Stripe not available)');
-                return res.json({
-                    clientSecret: 'mock_client_secret_for_development',
-                    amount: FEATURED_RFP_PRICE,
-                    isMock: true
-                });
-            } else {
-                return res.status(503).json({
-                    message: "Payment service is currently unavailable. Stripe is not initialized.",
-                    reason: 'stripe_not_initialized'
-                });
-            }
-        }
-
-        res.json({
-            clientSecret: paymentIntent.client_secret,
-            amount: paymentIntent.amount,
-        });
-    } catch (error) {
-        console.error('Error creating payment intent:', error);
-        res.status(500).json({
-            message: error instanceof Error ? error.message : "Failed to create payment intent"
-        });
-    }
-});
-
-// This duplicate payment confirmation route has been removed
-// The primary implementation is already defined above
-
-// End of payment routes
 
 // User routes
 app.get("/api/user", requireAuth, (req, res) => {

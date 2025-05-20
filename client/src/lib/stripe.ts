@@ -1,33 +1,34 @@
 /**
- * Client-side Stripe utilities
- * Handles integration with Stripe for payment processing
+ * Client-side Stripe Integration
+ * Provides utilities for Stripe payment processing on the frontend
  */
 
 import { loadStripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
-// Get the publishable key from environment variables
+// Get Stripe publishable key from environment variables
 const possibleKeys = [
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
   import.meta.env.STRIPE_PUBLISHABLE_KEY
 ];
-const STRIPE_PUBLISHABLE_KEY = possibleKeys.find(key => key && typeof key === 'string');
+
+const STRIPE_PUBLISHABLE_KEY = possibleKeys.find(key => 
+  key && typeof key === 'string' && key.startsWith('pk_')
+);
 
 // Initialize Stripe with error handling
-let stripePromise = null;
+let stripePromise: Promise<Stripe | null> | null = null;
 let stripeConfigError = false;
 
 try {
-  if (STRIPE_PUBLISHABLE_KEY && STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
+  if (STRIPE_PUBLISHABLE_KEY) {
     stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
     console.log('✅ Stripe client initialized');
-  } else if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+  } else if (import.meta.env.DEV) {
     console.warn('⚠️ Using mock Stripe in development mode');
-    // In development, we'll use a mock implementation if not properly configured
-    stripePromise = Promise.resolve({ 
-      elements: () => ({}),
-      createPaymentMethod: () => Promise.resolve({}) 
-    }) as any;
+    // Mock implementation for development
+    stripePromise = Promise.resolve({} as any);
     stripeConfigError = true;
   } else {
     console.error('❌ No valid Stripe publishable key found');
@@ -41,7 +42,7 @@ try {
 /**
  * Format a price from cents to a readable currency format
  * @param cents Price in cents
- * @returns Formatted price string
+ * @returns Formatted price string (e.g., "$25.00")
  */
 export function formatPrice(cents: number): string {
   const dollars = cents / 100;
@@ -52,10 +53,14 @@ export function formatPrice(cents: number): string {
 }
 
 /**
- * Get the Stripe configuration status
+ * Get the Stripe configuration status from the server
  * @returns Configuration status object
  */
-export async function getStripeConfig(): Promise<{ isInitialized: boolean }> {
+export async function getStripeConfig(): Promise<{ 
+  isInitialized: boolean,
+  mode?: string,
+  keyType?: string
+}> {
   try {
     const response = await fetch('/api/payments/config', {
       credentials: 'include',
@@ -87,9 +92,12 @@ export async function getFeaturedRfpPrice(): Promise<number> {
 /**
  * Create a payment intent for featuring an RFP
  * @param rfpId The ID of the RFP to feature
- * @returns The client secret and amount
+ * @returns Payment details including client secret
  */
-export async function createPaymentIntent(rfpId: number): Promise<{ clientSecret: string, amount: number }> {
+export async function createPaymentIntent(rfpId: number): Promise<{ 
+  clientSecret: string, 
+  amount: number 
+}> {
   const response = await fetch('/api/payments/create-payment-intent', {
     method: 'POST',
     headers: {
@@ -101,19 +109,22 @@ export async function createPaymentIntent(rfpId: number): Promise<{ clientSecret
   
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || `Failed to create payment intent (${response.status})`);
+    throw new Error(error.message || `Payment failed (${response.status})`);
   }
   
   return await response.json();
 }
 
 /**
- * Confirm a successful payment and update RFP status
+ * Confirm a payment was successful and update RFP status
  * @param paymentIntentId The ID of the payment intent
- * @param rfpId The ID of the RFP
+ * @param rfpId The ID of the RFP to feature
  * @returns Success status and updated RFP
  */
-export async function confirmPayment(paymentIntentId: string, rfpId: number): Promise<{success: boolean, rfp: any}> {
+export async function confirmPayment(paymentIntentId: string, rfpId: number): Promise<{
+  success: boolean,
+  rfp: any
+}> {
   const response = await fetch('/api/payments/confirm-payment', {
     method: 'POST',
     headers: {
@@ -132,9 +143,10 @@ export async function confirmPayment(paymentIntentId: string, rfpId: number): Pr
 }
 
 /**
- * Get payment status
+ * Get the status of a payment
  * @param paymentIntentId The ID of the payment intent
- * @returns Payment status
+ * @param rfpId Optional RFP ID for additional context
+ * @returns Payment status details
  */
 export async function getPaymentStatus(paymentIntentId: string, rfpId?: number): Promise<any> {
   const url = new URL(`/api/payments/status/${paymentIntentId}`, window.location.origin);
@@ -149,6 +161,32 @@ export async function getPaymentStatus(paymentIntentId: string, rfpId?: number):
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || `Failed to get payment status (${response.status})`);
+  }
+  
+  return await response.json();
+}
+
+/**
+ * Cancel a pending payment
+ * @param paymentIntentId The ID of the payment intent to cancel
+ * @returns Success status and message
+ */
+export async function cancelPayment(paymentIntentId: string): Promise<{
+  success: boolean,
+  message: string
+}> {
+  const response = await fetch('/api/payments/cancel-payment', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ paymentIntentId }),
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Failed to cancel payment (${response.status})`);
   }
   
   return await response.json();

@@ -8,7 +8,6 @@ import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
-import paymentsRouter from './routes/payments.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -655,7 +654,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Register the payments router
-  import paymentsRouter from './routes/payments.js';
+  const paymentsRouter = (await import('./routes/payments.js')).default;
   app.use('/api/payments', paymentsRouter);
 
   const httpServer = createServer(app);

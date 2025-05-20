@@ -1,6 +1,6 @@
 /**
- * Payment routes for RFP featuring
- * Handles Stripe integration for the FindConstructionBids platform
+ * Payment Routes for RFP featuring
+ * Handles all payment-related API endpoints
  */
 
 import express from 'express';
@@ -24,7 +24,7 @@ router.get('/price', (req, res) => {
 });
 
 /**
- * Get current Stripe environment information
+ * Get current Stripe configuration status
  */
 router.get('/config', (req, res) => {
   res.json({ 
@@ -67,7 +67,7 @@ router.post('/create-payment-intent', async (req, res) => {
       rfpTitle: rfp.title
     });
 
-    // Return the client secret and amount to the client
+    // Return the client secret and amount
     res.json({
       clientSecret: paymentIntent.client_secret,
       amount: paymentIntent.amount
@@ -81,7 +81,7 @@ router.post('/create-payment-intent', async (req, res) => {
 });
 
 /**
- * Confirm a payment and mark RFP as featured if successful
+ * Confirm a payment and mark RFP as featured
  */
 router.post('/confirm-payment', async (req, res) => {
   try {
@@ -116,7 +116,7 @@ router.post('/confirm-payment', async (req, res) => {
     // Update RFP to be featured
     const updatedRfp = await storage.updateRfp(Number(rfpId), {
       featured: true,
-      featuredUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      featuredAt: new Date() // Current timestamp
     });
 
     // Return success and the updated RFP

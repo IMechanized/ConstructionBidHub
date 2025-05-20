@@ -15,8 +15,11 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
+// Set the price for a featured RFP in cents ($25.00)
+const FEATURED_RFP_PRICE = 2500;
+
 // Get Stripe secret key from environment variables
-// First look for the most common environment variable names
+// Check all common environment variable names
 const possibleSecretKeys = [
   process.env.STRIPE_SECRET_KEY,       // Primary key name
   process.env.STRIPE_SK,               // Short form
@@ -24,27 +27,32 @@ const possibleSecretKeys = [
   process.env.STRIPE_KEY                // Shortest form
 ];
 
-// Use the first valid key found
+// Use the first valid key found (must start with sk_)
 const stripeSecretKey = possibleSecretKeys.find(key => key && typeof key === 'string' && key.startsWith('sk_'));
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Create Stripe instance with proper configuration and error handling
+// Initialize Stripe with proper error handling
 let stripe = null;
+let stripeStatus = {
+  isInitialized: false,
+  mode: process.env.NODE_ENV || 'development',
+  keyType: 'none'
+};
+
 try {
   if (stripeSecretKey) {
-    stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-      appInfo: {
-        name: 'FindConstructionBids',
-        version: '1.0.0'
-      }
-    });
-    console.log(`Stripe successfully initialized`);
+    stripe = new Stripe(stripeSecretKey);
+    stripeStatus = {
+      isInitialized: true,
+      mode: process.env.NODE_ENV || 'development',
+      keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
+    };
+    console.log(`✅ Stripe payment processing initialized successfully`);
   } else {
-    console.warn('Stripe secret key not found in environment variables - payment features will be in mock mode');
+    console.warn('⚠️ No valid Stripe secret key found - payment features will use mock implementations');
   }
 } catch (error) {
-  console.error(`Failed to initialize Stripe: ${error.message}`);
+  console.error(`❌ Failed to initialize Stripe: ${error.message}`);
 }
 
 // Configure WebSocket for Neon

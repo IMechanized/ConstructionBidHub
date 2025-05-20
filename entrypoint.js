@@ -485,9 +485,11 @@ app.use([
   '/api/analytics',
   '/api/user/settings',
   '/api/user/onboarding',
+  // Payment and Stripe routes
   '/api/payments/create-payment-intent',
   '/api/payments/confirm-payment',
-  '/api/payments/status'
+  '/api/payments/status',
+  '/api/stripe'  // For any other potential Stripe routes
 ], requireAuth);
 
 // Routes

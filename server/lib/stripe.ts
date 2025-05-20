@@ -1,25 +1,34 @@
 /**
- * Stripe integration utilities
- * Handles payment processing for featured RFPs
+ * Stripe Payment Processing Utilities
+ * Handles all payment operations for the FindConstructionBids platform
  */
 
 import Stripe from 'stripe';
 
-// Set price for featuring an RFP ($25.00 in cents)
+// Feature pricing in cents ($25.00)
 export const FEATURED_RFP_PRICE = 2500;
 
-// Get Stripe secret key from environment variables
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+// Get Stripe secret key from environment variables with fallback options
+const possibleKeys = [
+  process.env.STRIPE_SECRET_KEY,
+  process.env.STRIPE_SK,
+  process.env.STRIPE_API_KEY,
+  process.env.STRIPE_KEY
+];
 
-// Initialize Stripe with proper error handling
+const stripeSecretKey = possibleKeys.find(key => 
+  key && typeof key === 'string' && key.startsWith('sk_')
+);
+
+// Initialize Stripe instance
 let stripe: Stripe | null = null;
+
 try {
-  if (stripeSecretKey && stripeSecretKey.startsWith('sk_')) {
-    // Initialize without specifying apiVersion to use the default current version
+  if (stripeSecretKey) {
     stripe = new Stripe(stripeSecretKey);
-    console.log('✅ Stripe initialized successfully');
+    console.log('✅ Stripe payment processing initialized successfully');
   } else {
-    console.error('❌ Invalid Stripe secret key format');
+    console.warn('⚠️ No valid Stripe secret key found - payment features will be limited');
   }
 } catch (error) {
   console.error('❌ Failed to initialize Stripe:', error);
@@ -28,17 +37,16 @@ try {
 /**
  * Create a payment intent for featuring an RFP
  * 
- * @param metadata Additional information about the payment
+ * @param metadata Additional information to store with the payment
  * @returns The created payment intent
- * @throws Error if Stripe is not initialized
  */
-export async function createPaymentIntent(metadata: { 
+export async function createPaymentIntent(metadata: {
   rfpId: string;
   userId: string;
   rfpTitle: string;
 }): Promise<Stripe.PaymentIntent> {
   if (!stripe) {
-    throw new Error('Stripe is not initialized. Please check your API keys.');
+    throw new Error('Payment service unavailable: Stripe is not initialized');
   }
   
   try {
@@ -47,12 +55,12 @@ export async function createPaymentIntent(metadata: {
       currency: 'usd',
       metadata,
       automatic_payment_methods: {
-        enabled: true,
+        enabled: true, // Allow multiple payment methods
       },
-      description: `Featured RFP: ${metadata.rfpTitle.substring(0, 50)}...`,
+      description: `Featured RFP: ${metadata.rfpTitle.substring(0, 50)}`,
     });
     
-    console.log(`Payment intent created for RFP ${metadata.rfpId}: ${paymentIntent.id}`);
+    console.log(`Created payment intent ${paymentIntent.id} for RFP ${metadata.rfpId}`);
     return paymentIntent;
   } catch (error) {
     console.error('Error creating payment intent:', error);
@@ -63,13 +71,12 @@ export async function createPaymentIntent(metadata: {
 /**
  * Retrieve a payment intent by ID
  * 
- * @param paymentIntentId The ID of the payment intent to retrieve
+ * @param paymentIntentId The ID of the payment intent
  * @returns The payment intent or null if not found
- * @throws Error if Stripe is not initialized
  */
 export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null> {
   if (!stripe) {
-    throw new Error('Stripe is not initialized. Please check your API keys.');
+    throw new Error('Payment service unavailable: Stripe is not initialized');
   }
   
   try {
@@ -81,20 +88,19 @@ export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.
 }
 
 /**
- * Verify a payment was successful
+ * Verify that a payment has succeeded
  * 
  * @param paymentIntentId The ID of the payment intent to verify
- * @returns True if payment succeeded, false otherwise
- * @throws Error if Stripe is not initialized
+ * @returns True if the payment succeeded, false otherwise
  */
 export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
   if (!stripe) {
-    throw new Error('Stripe is not initialized. Please check your API keys.');
+    throw new Error('Payment service unavailable: Stripe is not initialized');
   }
   
   try {
-    const paymentIntent = await getPaymentIntent(paymentIntentId);
-    return paymentIntent?.status === 'succeeded';
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    return paymentIntent.status === 'succeeded';
   } catch (error) {
     console.error('Error verifying payment:', error);
     return false;
@@ -105,29 +111,27 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
  * Cancel a payment intent
  * 
  * @param paymentIntentId The ID of the payment intent to cancel
- * @returns True if successfully canceled, false otherwise
- * @throws Error if Stripe is not initialized
+ * @returns True if canceled successfully, false otherwise
  */
 export async function cancelPayment(paymentIntentId: string): Promise<boolean> {
   if (!stripe) {
-    throw new Error('Stripe is not initialized. Please check your API keys.');
+    throw new Error('Payment service unavailable: Stripe is not initialized');
   }
   
   try {
-    const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
-    return paymentIntent.status === 'canceled';
+    const result = await stripe.paymentIntents.cancel(paymentIntentId);
+    return result.status === 'canceled';
   } catch (error) {
     console.error('Error canceling payment intent:', error);
     return false;
   }
 }
 
-// Export status indicators to help with environment detection
+// Export Stripe instance and configuration status
 export const stripeStatus = {
   isInitialized: Boolean(stripe),
   mode: process.env.NODE_ENV || 'development',
   keyType: stripeSecretKey?.startsWith('sk_test_') ? 'test' : 'live'
 };
 
-// Export the Stripe instance
 export default stripe;

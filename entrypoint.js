@@ -846,14 +846,7 @@ app.use('/api/payments', (req, res, next) => {
   next();
 }, stripePaymentRoutes);
 
-// Legacy payment route handler (will be removed)
-app.post('/api/legacy-payments/create-payment-intent', requireAuth, async (req, res) => {
-    try {
-        const { rfpId } = req.body;
-
-        if (!rfpId) {
-            return res.status(400).json({ message: "RFP ID is required" });
-        }
+// User routes
 
         // Verify the RFP exists and belongs to this user
         const rfp = await storage.getRfpById(Number(rfpId));

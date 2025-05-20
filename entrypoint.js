@@ -15,11 +15,15 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 
+/**
+ * Stripe Payment Processing Integration
+ * Enhanced implementation with better error handling and development support
+ */
+
 // Set the price for a featured RFP in cents ($25.00)
 const FEATURED_RFP_PRICE = 2500;
 
-// Get Stripe secret key from environment variables
-// Check all common environment variable names
+// Get Stripe secret key from environment variables with multiple fallback options
 const possibleSecretKeys = [
   process.env.STRIPE_SECRET_KEY,       // Primary key name
   process.env.STRIPE_SK,               // Short form
@@ -41,13 +45,20 @@ let stripeStatus = {
 
 try {
   if (stripeSecretKey) {
-    stripe = new Stripe(stripeSecretKey);
+    stripe = new Stripe(stripeSecretKey, {
+      appInfo: {
+        name: 'FindConstructionBids',
+        version: '1.0.0'
+      }
+    });
+    
     stripeStatus = {
       isInitialized: true,
       mode: process.env.NODE_ENV || 'development',
       keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
     };
-    console.log(`✅ Stripe payment processing initialized successfully`);
+    
+    console.log(`✅ Stripe payment processing initialized successfully (${stripeStatus.keyType} mode)`);
   } else {
     console.warn('⚠️ No valid Stripe secret key found - payment features will use mock implementations');
   }
@@ -840,14 +851,19 @@ app.use((err, req, res, next) => {
 });
 
 // STRIPE PAYMENT PROCESSING SYSTEM
-// Completely rewritten implementation
+// Payment Routes - Fully rewritten implementation
 
-// Get price for featuring an RFP
+/**
+ * Get the price for featuring an RFP
+ */
 app.get('/api/payments/price', (req, res) => {
   res.json({ price: FEATURED_RFP_PRICE });
 });
 
-// Get Stripe configuration information
+/**
+ * Get Stripe configuration status
+ * Provides information about the current Stripe setup
+ */
 app.get('/api/payments/config', (req, res) => {
   res.json(stripeStatus);
 });

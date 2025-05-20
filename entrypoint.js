@@ -1092,7 +1092,10 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
   }
 });
 
-// Cancel a payment intent
+/**
+ * Cancel a payment intent
+ * Allows users to cancel an in-progress payment
+ */
 app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
   try {
     const { paymentIntentId } = req.body;
@@ -1244,29 +1247,13 @@ app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
     }
 });
 
-// Get payment status
-app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) => {
-    try {
+/**
+ * This is a duplicate route that needs to be removed
+ * The primary payment status route is already implemented above
+ */
+// REMOVED DUPLICATE PAYMENT STATUS ROUTE
 
-        const { paymentIntentId } = req.params;
-
-        // In a full implementation, this would get the payment intent from Stripe
-        // For entrypoint.js, we'll just return a mock status
-
-        res.json({
-            id: paymentIntentId,
-            status: 'succeeded',
-            amount: FEATURED_RFP_PRICE,
-            created: Date.now() / 1000,
-            rfpId: req.query.rfpId || '1'
-        });
-    } catch (error) {
-        console.error('Error fetching payment status:', error);
-        res.status(500).json({
-            message: error instanceof Error ? error.message : "Failed to fetch payment status"
-        });
-    }
-});
+// This code has been removed as it was part of a duplicate route handler
 
 // User routes
 app.get("/api/user", requireAuth, (req, res) => {

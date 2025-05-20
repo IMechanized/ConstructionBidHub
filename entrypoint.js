@@ -516,8 +516,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Authentication status endpoint
+// Authentication status endpoints (support both paths for compatibility)
 app.get('/api/health/auth-status', (req, res) => {
+  res.json({ 
+    isAuthenticated: req.isAuthenticated(),
+    user: req.isAuthenticated() ? {
+      id: req.user.id,
+      email: req.user.email,
+      companyName: req.user.companyName
+    } : null
+  });
+});
+
+// The endpoint path being requested in logs
+app.get('/api/auth-status', (req, res) => {
   res.json({ 
     isAuthenticated: req.isAuthenticated(),
     user: req.isAuthenticated() ? {

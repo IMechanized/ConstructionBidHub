@@ -5,99 +5,112 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader } from '@/components/ui/loader';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { 
-  stripePromise, 
-  Elements, 
-  createPaymentIntent, 
-  confirmPayment, 
-  formatPrice, 
-  getStripeConfig,
-  stripeConfigError
-} from '@/lib/stripe';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
+import { Loader } from './ui/loader';
+import { Alert, AlertDescription } from './ui/alert';
+import { Badge } from './ui/badge';
+import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice, getStripeConfig } from '@/lib/stripe';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Component for the actual Stripe payment form
-function StripeCheckoutForm({ 
-  rfpId, 
-  pendingRfpData, 
-  onSuccess, 
-  onCancel 
-}: { 
+interface PaymentFormProps {
   rfpId?: number;
   pendingRfpData?: any;
-  onSuccess: (rfp: any) => void;
+  onSuccess: () => void;
   onCancel: () => void;
-}) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+}
+
+function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Handle form submission and payment processing
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async ({ paymentIntentId, rfpId }: { paymentIntentId: string, rfpId: number }) => {
+      try {
+        // Check authentication status before attempting payment confirmation
+        const authResponse = await fetch('/api/auth-status', {
+          credentials: 'include' // Include cookies for session authentication
+        });
+        
+        if (!authResponse.ok) {
+          throw new Error('Could not verify authentication status');
+        }
+        
+        const authStatus = await authResponse.json();
+        
+        if (!authStatus.isAuthenticated) {
+          console.error('Authentication check failed before payment confirmation', authStatus);
+          throw new Error('Your session has expired. Please refresh the page and try again.');
+        }
+        
+        // Proceed with payment confirmation
+        return confirmPayment(paymentIntentId, rfpId);
+      } catch (error) {
+        console.error('Error during payment confirmation process:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Payment Successful',
+        description: 'Your RFP has been featured successfully!',
+        variant: 'default',
+      });
+      onSuccess();
+    },
+    onError: (error: Error) => {
+      setIsLoading(false);
+      
+      // Check if it's an authentication error
+      const isAuthError = error.message?.includes('401') || 
+                          error.message?.includes('session') ||
+                          error.message?.includes('expired');
+      
+      toast({
+        title: 'Payment Confirmation Failed',
+        description: isAuthError 
+          ? 'Your session may have expired. Please refresh the page and try again.'
+          : error.message || 'Failed to confirm payment. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !rfpId) {
-      setErrorMessage("Payment system not ready yet. Please try again.");
+    // Get the actual RFP ID (either directly provided or created during payment setup)
+    const actualRfpId = rfpId || (window as any).createdRfpId;
+    
+    if (!stripe || !elements || !actualRfpId) {
+      setErrorMessage('Payment cannot be processed. Missing required information.');
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
 
-    try {
-      // Confirm the payment with Stripe
-      const { error: paymentError } = await stripe.confirmPayment({
-        elements,
-        redirect: 'if_required',
-        confirmParams: {
-          return_url: window.location.origin,
-        },
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      setErrorMessage(error.message || 'An unknown error occurred');
+      setIsLoading(false);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Payment successful, now update the RFP status
+      confirmPaymentMutation.mutate({ 
+        paymentIntentId: paymentIntent.id, 
+        rfpId: actualRfpId 
       });
-
-      if (paymentError) {
-        setErrorMessage(paymentError.message || "An error occurred during payment");
-        setIsLoading(false);
-        return;
-      }
-
-      // Get PaymentIntent ID from elements
-      const { paymentIntent } = await stripe.retrievePaymentIntent(
-        elements.getElement(PaymentElement)?.dataset?.clientSecret || ''
-      );
-
-      if (!paymentIntent) {
-        throw new Error("Could not retrieve payment information");
-      }
-
-      // Verify payment with our backend
-      const result = await confirmPayment(paymentIntent.id, rfpId);
-      
-      if (result.success) {
-        toast({
-          title: 'Payment Successful',
-          description: 'Your RFP has been featured and will appear in the featured listings.',
-        });
-        onSuccess(result.rfp);
-      } else {
-        throw new Error("Payment was processed but RFP update failed");
-      }
-    } catch (error) {
-      console.error('Payment confirmation error:', error);
-      toast({
-        title: 'Payment Failed',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
-      });
-    } finally {
+    } else {
+      setErrorMessage('Payment status is pending or requires additional action');
       setIsLoading(false);
     }
   };
@@ -140,46 +153,50 @@ function StripeCheckoutForm({
   );
 }
 
-// Main payment form container component
-export default function PaymentForm({ 
-  rfpId,
-  pendingRfpData,
-  price,
-  onSuccess,
-  onCancel,
-}: {
-  rfpId?: number;
-  pendingRfpData?: any;
-  price?: number;
-  onSuccess: (rfp: any) => void;
-  onCancel: () => void;
-}) {
+export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel }: PaymentFormProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [price, setPrice] = useState<number>(0);
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
-  const [displayPrice, setPrice] = useState<number>(price || 0);
   const { toast } = useToast();
-
-  // Mutation to create RFP if needed
+  
+  // Get Stripe configuration to show initialization status
+  const { data: stripeConfig, isError: stripeConfigError } = useQuery({ 
+    queryKey: ['stripe-config'],
+    queryFn: getStripeConfig,
+    // Don't retry too many times if the API is failing
+    retry: 1
+  });
+  
+  // If we have pendingRfpData but no rfpId, we need to create the RFP first
   const createRfpMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/rfps', {
-        method: 'POST',
+      const formattedData = {
+        ...data,
+        budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
+        portfolioLink: data.portfolioLink || null,
+        certificationGoals: data.certificationGoals || null,
+        featured: false // Initially create as non-featured
+      };
+      const res = await fetch("/api/rfps", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
-        credentials: 'include',
+        body: JSON.stringify(formattedData),
+        credentials: "include",
       });
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Failed to create RFP (${response.status})`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create RFP");
       }
       
-      return await response.json();
+      return res.json();
     },
-    onSuccess: (data) => {
-      setCreatedRfpId(data.id);
+    onSuccess: (newRfp) => {
+      setCreatedRfpId(newRfp.id);
+      // Now that we have the RFP ID, create a payment intent
+      createPaymentIntentMutation.mutate(newRfp.id);
     },
     onError: (error: Error) => {
       toast({
@@ -191,7 +208,6 @@ export default function PaymentForm({
     }
   });
 
-  // Mutation to create a payment intent
   const createPaymentIntentMutation = useMutation({
     mutationFn: async (rfpId: number) => {
       return createPaymentIntent(rfpId);
@@ -221,14 +237,6 @@ export default function PaymentForm({
     }
   }, [rfpId, pendingRfpData, createdRfpId]);
 
-  // If we've created an RFP, create a payment intent for it
-  useEffect(() => {
-    if (createdRfpId) {
-      createPaymentIntentMutation.mutate(createdRfpId);
-    }
-  }, [createdRfpId]);
-
-  // Loading state
   if (!clientSecret || createPaymentIntentMutation.isPending) {
     return (
       <Card className="p-8 flex justify-center items-center">
@@ -237,6 +245,7 @@ export default function PaymentForm({
     );
   }
 
+  // Type assertion to avoid type errors with Stripe's API
   const options = {
     clientSecret,
     appearance: {
@@ -248,20 +257,42 @@ export default function PaymentForm({
   const hasStripeError = !stripePromise || stripeConfigError;
 
   return (
-    <div className="max-w-md mx-auto mb-8">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="mb-6 flex flex-col items-center">
-            <h2 className="text-xl font-bold mb-2">Feature Your RFP</h2>
-            <Badge variant="outline" className="mb-2">
-              {formatPrice(displayPrice)} for 30 Days
+    <div>
+      {stripeConfig && (
+        <div className="mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Payment System</span>
+            <Badge variant="secondary">
+              Ready
             </Badge>
-            <p className="text-sm text-muted-foreground text-center px-4">
-              Featuring your RFP increases visibility by placing it in the featured section,
-              resulting in more contractor views and higher-quality bids.
-            </p>
           </div>
-
+          <Alert variant="default" className="mt-2 bg-yellow-50">
+            <AlertDescription className="text-xs text-yellow-700">
+              For testing, use card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
+            </AlertDescription>
+          </Alert>
+          {!stripeConfig.isInitialized && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription className="text-xs">
+                Payment system is not fully configured. This is only a preview of the payment flow.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+      
+      <div className="mb-6">
+        <div className="flex justify-between mb-2">
+          <span className="font-medium">Featured RFP listing:</span>
+          <span className="font-bold">{formatPrice(price)}</span>
+        </div>
+        <div className="text-sm text-muted-foreground mb-4">
+          Your RFP will be featured for 30 days, after which it will return to normal listing status.
+        </div>
+      </div>
+      
+      <Card>
+        <CardContent className="p-4">
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
           {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
           

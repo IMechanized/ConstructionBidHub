@@ -116,7 +116,7 @@ router.post('/confirm-payment', async (req, res) => {
     // Update RFP to be featured
     const updatedRfp = await storage.updateRfp(Number(rfpId), {
       featured: true,
-      featuredAt: new Date() // Set current date as the featured date
+      featuredUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
     });
 
     // Return success and the updated RFP

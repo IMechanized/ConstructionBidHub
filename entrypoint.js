@@ -839,32 +839,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
-// Register payment routes
-app.use('/api/payments', (req, res, next) => {
-  // Middleware for payment routes
-  console.log(`Payment route accessed: ${req.path}`);
-  next();
-}, stripePaymentRoutes);
+// Payment routes - completely rewritten for better modularity
+// Using ES import for the payment routes router
+import('./server/routes/payments.js').then(module => {
+  const paymentRoutes = module.default;
+  app.use('/api/payments', paymentRoutes);
+  console.log('✅ Payment routes successfully registered');
+}).catch(error => {
+  console.error('❌ Failed to load payment routes:', error);
+});
 
 // User routes
-
-        // Verify the RFP exists and belongs to this user
-        const rfp = await storage.getRfpById(Number(rfpId));
-        if (!rfp) {
-            return res.status(404).json({ message: "RFP not found" });
-        }
-
-        if (rfp.organizationId !== req.user.id) {
-            return res.status(403).json({ message: "You can only feature your own RFPs" });
-        }
-
-        // Create payment intent
-        let paymentIntent;
-        
-        if (stripe) {
-            try {
-                // Create real payment intent with Stripe
-                paymentIntent = await stripe.paymentIntents.create({
                     amount: FEATURED_RFP_PRICE,
                     currency: 'usd',
                     metadata: {

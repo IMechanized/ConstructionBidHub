@@ -1,26 +1,17 @@
-// Using CommonJS require syntax for compatibility
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
-const { Strategy: LocalStrategy } = require('passport-local');
+const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
 const { Pool } = require('pg');
-const connectPgSimple = require('connect-pg-simple');
+const pgSession = require('connect-pg-simple')(session);
 const Stripe = require('stripe');
-
-// Create session store
-const pgSession = connectPgSimple(session);
-
-// In CommonJS, __dirname is already available
 
 // Initialize the Express app
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Create session store
-const PgSessionStore = pgSession(session);
 
 // Database pool for PostgreSQL
 const pool = new Pool({
@@ -48,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure session
 app.use(session({
-  store: new PgSessionStore({
+  store: new pgSession({
     pool,
     tableName: 'session'
   }),
@@ -115,6 +106,11 @@ function requireAuth(req, res, next) {
     return next();
   }
   res.status(401).json({ message: "Authentication required" });
+}
+
+// Utility function to convert camelCase to snake_case
+function snakeCaseKey(key) {
+  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 
 // Mock storage implementation for entrypoint.js
@@ -327,18 +323,47 @@ const storage = {
     return sessionResult.rows[0];
   },
   
+  async getEmployees(organizationId) {
+    const result = await pool.query(
+      'SELECT * FROM employees WHERE organization_id = $1 ORDER BY created_at DESC',
+      [organizationId]
+    );
+    return result.rows;
+  },
+  
+  async getEmployee(id) {
+    const result = await pool.query('SELECT * FROM employees WHERE id = $1', [id]);
+    return result.rows[0];
+  },
+  
+  async createEmployee(data) {
+    const keys = Object.keys(data);
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+    const columns = keys.map(key => snakeCaseKey(key)).join(', ');
+    
+    const result = await pool.query(
+      `INSERT INTO employees (${columns}) VALUES (${placeholders}) RETURNING *`,
+      Object.values(data)
+    );
+    
+    return result.rows[0];
+  },
+  
+  async deleteEmployee(id) {
+    await pool.query('DELETE FROM employees WHERE id = $1', [id]);
+  },
+  
+  async deleteUser(id) {
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  },
+  
   get sessionStore() {
-    return new PgSessionStore({
+    return new pgSession({
       pool,
       tableName: 'session'
     });
   }
 };
-
-// Utility function to convert camelCase to snake_case
-function snakeCaseKey(key) {
-  return key.replace(/([A-Z])/g, '_$1').toLowerCase();
-}
 
 // Set Stripe price constant
 const FEATURED_RFP_PRICE = 2500; // $25.00 (in cents)
@@ -385,7 +410,7 @@ app.post("/api/login", (req, res, next) => {
   })(req, res, next);
 });
 
-app.post("/api/logout", (req, res) => {
+app.post("/api/logout", (req, res, next) => {
   req.logout(function(err) {
     if (err) { return next(err); }
     res.json({ success: true });
@@ -433,7 +458,7 @@ app.post("/api/user/settings", async (req, res) => {
 });
 
 // Deactivate user account
-app.post("/api/user/deactivate", async (req, res) => {
+app.post("/api/user/deactivate", async (req, res, next) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
@@ -445,7 +470,7 @@ app.post("/api/user/deactivate", async (req, res) => {
     
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: "Error logging out" });
+        return next(err);
       }
       res.json(updatedUser);
     });
@@ -456,7 +481,7 @@ app.post("/api/user/deactivate", async (req, res) => {
 });
 
 // Delete user account
-app.delete("/api/user", async (req, res) => {
+app.delete("/api/user", async (req, res, next) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
@@ -466,7 +491,7 @@ app.delete("/api/user", async (req, res) => {
     
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: "Error logging out" });
+        return next(err);
       }
       res.json({ message: "Account deleted successfully" });
     });
@@ -507,6 +532,118 @@ app.get("/api/rfps/:id", async (req, res) => {
   } catch (error) {
     console.error("Error fetching RFP:", error);
     res.status(500).json({ message: "Error fetching RFP" });
+  }
+});
+
+app.post("/api/rfps", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfp = await storage.createRfp({
+      ...req.body,
+      organizationId: req.user.id,
+    });
+    
+    res.status(201).json(rfp);
+  } catch (error) {
+    console.error("Error creating RFP:", error);
+    res.status(500).json({ message: "Error creating RFP" });
+  }
+});
+
+app.put("/api/rfps/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp || rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    const updated = await storage.updateRfp(Number(req.params.id), req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating RFP:", error);
+    res.status(500).json({ message: "Error updating RFP" });
+  }
+});
+
+app.delete("/api/rfps/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp || rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    await storage.deleteRfp(Number(req.params.id));
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error deleting RFP:", error);
+    res.status(500).json({ message: "Error deleting RFP" });
+  }
+});
+
+// Employee routes
+app.get("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employees = await storage.getEmployees(req.user.id);
+    res.json(employees);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ message: "Failed to fetch employees" });
+  }
+});
+
+app.post("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employee = await storage.createEmployee({
+      ...req.body,
+      organizationId: req.user.id,
+    });
+    
+    res.status(201).json(employee);
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create employee" 
+    });
+  }
+});
+
+app.delete("/api/employees/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employee = await storage.getEmployee(Number(req.params.id));
+    if (!employee || employee.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
+    }
+    
+    await storage.deleteEmployee(Number(req.params.id));
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to delete employee" 
+    });
   }
 });
 
@@ -600,58 +737,33 @@ app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
   }
 });
 
-// Employee routes
-app.get("/api/employees", async (req, res) => {
+// Post RFI for specific RFP
+app.post("/api/rfps/:id/rfi", async (req, res) => {
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
     
-    const employees = await storage.getEmployees(req.user.id);
-    res.json(employees);
-  } catch (error) {
-    console.error('Error fetching employees:', error);
-    res.status(500).json({ message: "Failed to fetch employees" });
-  }
-});
-
-app.post("/api/employees", async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
     }
     
-    const employee = await storage.createEmployee({
+    // Use the authenticated user's email
+    const rfi = await storage.createRfi({
       ...req.body,
-      organizationId: req.user.id,
+      email: req.user.email,
+      rfpId: Number(req.params.id),
     });
     
-    res.status(201).json(employee);
-  } catch (error) {
-    console.error('Error creating employee:', error);
-    res.status(500).json({ 
-      message: error instanceof Error ? error.message : "Failed to create employee" 
+    res.status(201).json({ 
+      message: "Request for information submitted successfully",
+      rfi
     });
-  }
-});
-
-app.delete("/api/employees/:id", async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const employee = await storage.getEmployee(Number(req.params.id));
-    if (!employee || employee.organizationId !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
-    }
-    
-    await storage.deleteEmployee(Number(req.params.id));
-    res.sendStatus(200);
   } catch (error) {
-    console.error('Error deleting employee:', error);
+    console.error('Error submitting RFI:', error);
     res.status(500).json({ 
-      message: error instanceof Error ? error.message : "Failed to delete employee" 
+      message: error instanceof Error ? error.message : "Failed to submit RFI"
     });
   }
 });
@@ -679,7 +791,7 @@ app.get("/api/analytics/rfp/:rfpId", requireAuth, async (req, res) => {
   }
 });
 
-app.get("/api/analytics/featured", requireAuth, async (req, res) => {
+app.get("/api/analytics/boosted", requireAuth, async (req, res) => {
   try {
     const analytics = await storage.getBoostedAnalytics(req.user.id);
     res.json(analytics);
@@ -854,6 +966,47 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
   }
 });
 
+// Cancel payment intent
+app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    
+    if (!paymentIntentId) {
+      return res.status(400).json({ message: "Payment intent ID is required" });
+    }
+    
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not initialized. Please check your API keys." });
+    }
+    
+    // Get the payment intent to verify ownership
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    
+    if (!paymentIntent) {
+      return res.status(404).json({ message: "Payment intent not found" });
+    }
+    
+    // Verify the payment belongs to this user
+    if (paymentIntent.metadata.userId !== String(req.user.id)) {
+      return res.status(403).json({ message: "You can only cancel your own payments" });
+    }
+    
+    // Cancel the payment intent
+    const canceledIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+    
+    res.json({
+      success: true,
+      status: canceledIntent.status,
+      message: "Payment cancelled successfully"
+    });
+  } catch (error) {
+    console.error('Error cancelling payment:', error);
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Failed to cancel payment"
+    });
+  }
+});
+
 // Serve static files
 const staticDir = path.join(process.cwd(), 'dist/public');
 if (fs.existsSync(staticDir)) {
@@ -878,4 +1031,4 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-export default app;
+module.exports = app;

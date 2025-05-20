@@ -1,17 +1,25 @@
-const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcrypt');
-const path = require('path');
-const fs = require('fs');
-const { Pool } = require('pg');
-const pgSession = require('connect-pg-simple')(session);
-const Stripe = require('stripe');
+import express from 'express';
+import session from 'express-session';
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcrypt';
+import path from 'path';
+import fs from 'fs';
+import { Pool } from 'pg';
+import pgSession from 'connect-pg-simple';
+import Stripe from 'stripe';
+import { fileURLToPath } from 'url';
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize the Express app
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Create session store
+const PgSessionStore = pgSession(session);
 
 // Database pool for PostgreSQL
 const pool = new Pool({
@@ -39,7 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure session
 app.use(session({
-  store: new pgSession({
+  store: new PgSessionStore({
     pool,
     tableName: 'session'
   }),
@@ -261,8 +269,65 @@ const storage = {
     });
   },
   
+  async trackRfpView(rfpId, userId, duration) {
+    // Create a new RFP view session
+    const sessionResult = await pool.query(
+      `INSERT INTO rfp_view_sessions (rfp_id, user_id, view_date, duration)
+       VALUES ($1, $2, NOW(), $3)
+       RETURNING *`,
+      [rfpId, userId, duration]
+    );
+
+    // Upsert RFP analytics for today
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if analytics entry exists for today
+    const analyticsCheck = await pool.query(
+      `SELECT * FROM rfp_analytics
+       WHERE rfp_id = $1 AND date = $2`,
+      [rfpId, today]
+    );
+    
+    if (analyticsCheck.rows.length > 0) {
+      // Update existing analytics
+      const analytics = analyticsCheck.rows[0];
+      await pool.query(
+        `UPDATE rfp_analytics
+         SET total_views = total_views + 1,
+             unique_views = (
+               SELECT COUNT(DISTINCT user_id) 
+               FROM rfp_view_sessions 
+               WHERE rfp_id = $1 AND DATE(view_date) = $2
+             ),
+             average_view_time = (
+               SELECT AVG(duration)
+               FROM rfp_view_sessions
+               WHERE rfp_id = $1 AND DATE(view_date) = $2
+             )
+         WHERE id = $3
+         RETURNING *`,
+        [rfpId, today, analytics.id]
+      );
+    } else {
+      // Create new analytics entry
+      await pool.query(
+        `INSERT INTO rfp_analytics (rfp_id, date, total_views, unique_views, average_view_time)
+         VALUES (
+           $1, 
+           $2, 
+           1, 
+           1, 
+           $3
+         )`,
+        [rfpId, today, duration]
+      );
+    }
+    
+    return sessionResult.rows[0];
+  },
+  
   get sessionStore() {
-    return new pgSession({
+    return new PgSessionStore({
       pool,
       tableName: 'session'
     });
@@ -361,6 +426,55 @@ app.post("/api/rfis", async (req, res) => {
   } catch (error) {
     console.error("Error creating RFI:", error);
     res.status(500).json({ message: "Error creating RFI" });
+  }
+});
+
+// Analytics routes
+app.get("/api/analytics/rfp/:rfpId", requireAuth, async (req, res) => {
+  try {
+    const rfpId = Number(req.params.rfpId);
+    
+    // Verify the RFP exists and belongs to this user
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only view analytics for your own RFPs" });
+    }
+    
+    const analytics = await storage.getAnalyticsByRfpId(rfpId);
+    res.json(analytics || { rfpId, totalViews: 0, uniqueViews: 0, averageViewTime: 0 });
+  } catch (error) {
+    console.error("Error fetching RFP analytics:", error);
+    res.status(500).json({ message: "Error fetching RFP analytics" });
+  }
+});
+
+app.get("/api/analytics/featured", requireAuth, async (req, res) => {
+  try {
+    const analytics = await storage.getBoostedAnalytics(req.user.id);
+    res.json(analytics);
+  } catch (error) {
+    console.error("Error fetching featured RFP analytics:", error);
+    res.status(500).json({ message: "Error fetching featured RFP analytics" });
+  }
+});
+
+app.post("/api/analytics/track-view", async (req, res) => {
+  try {
+    const { rfpId, userId, duration } = req.body;
+    
+    if (!rfpId || !userId || duration === undefined) {
+      return res.status(400).json({ message: "RFP ID, user ID, and duration are required" });
+    }
+    
+    const viewSession = await storage.trackRfpView(Number(rfpId), Number(userId), Number(duration));
+    res.status(201).json(viewSession);
+  } catch (error) {
+    console.error("Error tracking RFP view:", error);
+    res.status(500).json({ message: "Error tracking RFP view" });
   }
 });
 
@@ -536,3 +650,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+export default app;

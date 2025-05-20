@@ -344,6 +344,23 @@ const FEATURED_RFP_PRICE = 2500; // $25.00 (in cents)
 
 // API Routes
 
+// File upload endpoint
+app.post("/api/upload", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // In entrypoint.js, we'll use a simplified approach since multer isn't set up
+    res.status(400).json({ message: "File upload not supported in entrypoint.js" });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to upload file"
+    });
+  }
+});
+
 // User routes
 app.get("/api/user", requireAuth, (req, res) => {
   res.json(req.user);
@@ -372,6 +389,90 @@ app.post("/api/logout", (req, res) => {
     if (err) { return next(err); }
     res.json({ success: true });
   });
+});
+
+// User onboarding
+app.post("/api/user/onboarding", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Update user with onboarding data
+    const updatedUser = await storage.updateUser(req.user.id, {
+      ...req.body,
+      onboardingComplete: true
+    });
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error during onboarding:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to complete onboarding"
+    });
+  }
+});
+
+// Update user settings
+app.post("/api/user/settings", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const updatedUser = await storage.updateUser(req.user.id, {
+      ...req.body,
+    });
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user settings:', error);
+    res.status(400).json({ message: "Failed to update settings" });
+  }
+});
+
+// Deactivate user account
+app.post("/api/user/deactivate", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const updatedUser = await storage.updateUser(req.user.id, {
+      status: "deactivated",
+    });
+    
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.json(updatedUser);
+    });
+  } catch (error) {
+    console.error('Error deactivating account:', error);
+    res.status(400).json({ message: "Failed to deactivate account" });
+  }
+});
+
+// Delete user account
+app.delete("/api/user", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    await storage.deleteUser(req.user.id);
+    
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.json({ message: "Account deleted successfully" });
+    });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(400).json({ message: "Failed to delete account" });
+  }
 });
 
 // RFP routes
@@ -426,6 +527,131 @@ app.post("/api/rfis", async (req, res) => {
   } catch (error) {
     console.error("Error creating RFI:", error);
     res.status(500).json({ message: "Error creating RFI" });
+  }
+});
+
+// Get RFIs for current user
+app.get("/api/rfis", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const user = req.user;
+    const userRfis = await storage.getRfisByEmail(user.email);
+
+    // Fetch RFP details for each RFI
+    const rfisWithRfp = await Promise.all(
+      userRfis.map(async (rfi) => {
+        if (rfi.rfpId === null) {
+          return {
+            ...rfi,
+            rfp: null
+          };
+        }
+        const rfp = await storage.getRfpById(rfi.rfpId);
+        return {
+          ...rfi,
+          rfp
+        };
+      })
+    );
+
+    res.json(rfisWithRfp);
+  } catch (error) {
+    console.error('Error fetching RFIs:', error);
+    res.status(500).json({ message: "Failed to fetch RFIs" });
+  }
+});
+
+// Update RFI status
+app.put("/api/rfps/:rfpId/rfi/:rfiId/status", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const { status } = req.body;
+    if (!status || !['pending', 'responded'].includes(status)) {
+      return res.status(400).json({ message: "Valid status (pending or responded) is required" });
+    }
+    
+    const rfpId = Number(req.params.rfpId);
+    const rfiId = Number(req.params.rfiId);
+    
+    // Verify the RFP exists and belongs to this user
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only update RFIs for your own RFPs" });
+    }
+    
+    // Update the RFI status
+    const updatedRfi = await storage.updateRfiStatus(rfiId, status);
+    
+    res.json(updatedRfi);
+  } catch (error) {
+    console.error('Error updating RFI status:', error);
+    res.status(500).json({ message: "Failed to update RFI status" });
+  }
+});
+
+// Employee routes
+app.get("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employees = await storage.getEmployees(req.user.id);
+    res.json(employees);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ message: "Failed to fetch employees" });
+  }
+});
+
+app.post("/api/employees", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employee = await storage.createEmployee({
+      ...req.body,
+      organizationId: req.user.id,
+    });
+    
+    res.status(201).json(employee);
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create employee" 
+    });
+  }
+});
+
+app.delete("/api/employees/:id", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const employee = await storage.getEmployee(Number(req.params.id));
+    if (!employee || employee.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
+    }
+    
+    await storage.deleteEmployee(Number(req.params.id));
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to delete employee" 
+    });
   }
 });
 

@@ -1,4 +1,4 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth.js";
 import { storage } from "./storage.js";
@@ -24,6 +24,16 @@ const upload = multer({
   }
 });
 
+// Middleware for routes that require authentication
+function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated() || !req.user) {
+    console.log('[Auth] Unauthorized access attempt to', req.originalUrl);
+    return res.status(401).json({ message: "Unauthorized: Please log in again" });
+  }
+  next();
+}
+
+// Helper function for checking auth within route handlers
 function requireAuth(req: Request) {
   if (!req.isAuthenticated()) {
     throw new Error("Unauthorized");
@@ -580,9 +590,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Payment routes
-  app.post("/api/payments/create-payment-intent", async (req, res) => {
+  app.post("/api/payments/create-payment-intent", requireAuthMiddleware, async (req, res) => {
     try {
-      requireAuth(req);
       
       const { rfpId } = req.body;
       if (!rfpId) {

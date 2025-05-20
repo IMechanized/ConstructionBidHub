@@ -839,20 +839,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
-// Payment routes
+// Register payment routes
+app.use('/api/payments', (req, res, next) => {
+  // Middleware for payment routes
+  console.log(`Payment route accessed: ${req.path}`);
+  next();
+}, stripePaymentRoutes);
 
-// Get featured RFP pricing
-app.get('/api/payments/price', (req, res) => {
-    res.json({ price: FEATURED_RFP_PRICE });
-});
-
-// Get Stripe configuration information
-app.get('/api/payments/config', (req, res) => {
-    res.json(stripeStatus);
-});
-
-// Create payment intent for featuring an RFP
-app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
+// Legacy payment route handler (will be removed)
+app.post('/api/legacy-payments/create-payment-intent', requireAuth, async (req, res) => {
     try {
         const { rfpId } = req.body;
 

@@ -839,29 +839,105 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
-// Payment routes - completely rewritten for better modularity
-// Using ES import for the payment routes router
-import('./server/routes/payments.js').then(module => {
-  const paymentRoutes = module.default;
-  app.use('/api/payments', paymentRoutes);
-  console.log('✅ Payment routes successfully registered');
-}).catch(error => {
-  console.error('❌ Failed to load payment routes:', error);
+// STRIPE PAYMENT PROCESSING SYSTEM
+// Completely rewritten implementation
+
+// Get price for featuring an RFP
+app.get('/api/payments/price', (req, res) => {
+  res.json({ price: FEATURED_RFP_PRICE });
+});
+
+// Get Stripe configuration information
+app.get('/api/payments/config', (req, res) => {
+  res.json(stripeStatus);
+});
+
+// Create payment intent for featuring an RFP
+app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
+  try {
+    const { rfpId } = req.body;
+
+    if (!rfpId) {
+      return res.status(400).json({ message: "RFP ID is required" });
+    }
+
+    // Verify the RFP exists and belongs to this user
+    const rfp = await storage.getRfpById(Number(rfpId));
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only feature your own RFPs" });
+    }
+
+    // Create payment intent
+    let paymentIntent;
+
+    if (stripe) {
+      try {
+        // Create real payment intent with Stripe
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: FEATURED_RFP_PRICE,
+          currency: 'usd',
+          metadata: {
+            rfpId: String(rfpId),
+            userId: String(req.user.id),
+            rfpTitle: rfp.title
+          },
+          automatic_payment_methods: {
+            enabled: true
+          },
+          description: `Featured RFP: ${rfp.title.substring(0, 50)}`
+        });
+        console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
+      } catch (stripeError) {
+        console.error('❌ Stripe error creating payment intent:', stripeError);
+        
+        // In development, provide a mock payment intent for testing
+        if (!isProduction) {
+          console.log('⚠️ Using mock payment intent for development (Stripe error)');
+          paymentIntent = {
+            client_secret: 'mock_client_secret_for_development',
+            amount: FEATURED_RFP_PRICE
+          };
+        } else {
+          return res.status(500).json({ 
+            message: "Payment service error: " + stripeError.message,
+            reason: 'stripe_error'
+          });
+        }
+      }
+    } else {
+      // If Stripe is not available, provide a mock in development
+      if (!isProduction) {
+        console.log('⚠️ Using mock payment intent for development (Stripe not available)');
+        paymentIntent = {
+          client_secret: 'mock_client_secret_for_development',
+          amount: FEATURED_RFP_PRICE
+        };
+      } else {
+        return res.status(503).json({ 
+          message: "Payment service is currently unavailable. Stripe is not initialized.",
+          reason: 'stripe_not_initialized'
+        });
+      }
+    }
+
+    // Send the client secret back to the client
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      amount: paymentIntent.amount,
+    });
+  } catch (error) {
+    console.error('❌ Error creating payment intent:', error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to create payment intent"
+    });
+  }
 });
 
 // User routes
-                    amount: FEATURED_RFP_PRICE,
-                    currency: 'usd',
-                    metadata: {
-                        rfpId: String(rfpId),
-                        userId: String(req.user.id)
-                    },
-                    automatic_payment_methods: {
-                        enabled: true // Allow multiple payment methods
-                    }
-                });
-                console.log(`Created payment intent: ${paymentIntent.id}`);
-            } catch (stripeError) {
                 console.error('Stripe error creating payment intent:', stripeError);
                 
                 // Fallback to mock in development

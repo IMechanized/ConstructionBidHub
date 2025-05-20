@@ -1199,61 +1199,10 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
     }
 });
 
-// Confirm payment and update RFP featured status
-app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
-    try {
-        const { paymentIntentId, rfpId } = req.body;
+// This duplicate payment confirmation route has been removed
+// The primary implementation is already defined above
 
-        if (!paymentIntentId || !rfpId) {
-            return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
-        }
-
-        // Handle mock payments in development environment
-        if (paymentIntentId === 'mock_client_secret_for_development') {
-            console.log('Processing mock payment confirmation for development environment');
-            // Skip payment verification in development mode without Stripe keys
-        } else {
-            // Verify with Stripe in production or if real keys are available
-            if (!stripe) {
-                return res.status(503).json({ 
-                    message: 'Payment service is currently unavailable. Stripe is not initialized.',
-                    reason: 'stripe_not_initialized'
-                });
-            }
-            
-            // Verify the payment with Stripe
-            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-            
-            if (paymentIntent.status !== 'succeeded') {
-                return res.status(400).json({ message: "Payment has not been completed" });
-            }
-        }
-
-        // Update the RFP to be featured
-        const updatedRfp = await storage.updateRfp(Number(rfpId), {
-            featured: true,
-            featuredAt: new Date()
-        });
-
-        res.json({
-            success: true,
-            rfp: updatedRfp
-        });
-    } catch (error) {
-        console.error('Error confirming payment:', error);
-        res.status(500).json({
-            message: error instanceof Error ? error.message : "Failed to confirm payment"
-        });
-    }
-});
-
-/**
- * This is a duplicate route that needs to be removed
- * The primary payment status route is already implemented above
- */
-// REMOVED DUPLICATE PAYMENT STATUS ROUTE
-
-// This code has been removed as it was part of a duplicate route handler
+// End of payment routes
 
 // User routes
 app.get("/api/user", requireAuth, (req, res) => {

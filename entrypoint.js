@@ -896,6 +896,14 @@ app.get('/api/payments/config', (req, res) => {
  * Debug endpoint to check Stripe status and connection
  */
 app.get('/api/payments/debug', (req, res) => {
+  console.log('Stripe Debug Information:');
+  console.log('- Stripe Status:', JSON.stringify(stripeStatus));
+  console.log('- Has Stripe Key:', Boolean(stripeSecretKey));
+  console.log('- Stripe Key Last Four:', stripeSecretKey ? `...${stripeSecretKey.slice(-4)}` : 'none');
+  console.log('- Node Environment:', process.env.NODE_ENV || 'development');
+  console.log('- Is Production:', isProduction);
+  console.log('- Test Mode:', stripeStatus.keyType === 'test');
+  
   // Return detailed information about Stripe configuration
   res.json({
     stripeStatus: stripeStatus,

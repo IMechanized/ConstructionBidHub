@@ -6,7 +6,7 @@ const router = Router();
 // Store the server start time to help with hot reloading
 const SERVER_START_TIME = Date.now();
 
-router.get('/api/health', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Test Redis connectivity
     await redis.ping();
@@ -30,7 +30,7 @@ router.get('/api/health', async (req, res) => {
 });
 
 // Authentication status check route (for debugging)
-router.get('/api/auth-status', (req, res) => {
+router.get('/auth-status', (req, res) => {
   res.json({
     isAuthenticated: req.isAuthenticated?.() || false,
     user: req.user ? { id: req.user.id } : null,

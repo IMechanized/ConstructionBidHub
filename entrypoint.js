@@ -840,7 +840,6 @@ app.use((err, req, res, next) => {
 });
 
 // Payment routes
-const FEATURED_RFP_PRICE = 2500; // $25.00 (in cents)
 
 // Get featured RFP pricing
 app.get('/api/payments/price', (req, res) => {
@@ -849,9 +848,7 @@ app.get('/api/payments/price', (req, res) => {
 
 // Get Stripe configuration information
 app.get('/api/payments/config', (req, res) => {
-    res.json({ 
-        isInitialized: Boolean(stripe)
-    });
+    res.json(stripeStatus);
 });
 
 // Create payment intent for featuring an RFP

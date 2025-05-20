@@ -868,7 +868,10 @@ app.get('/api/payments/config', (req, res) => {
   res.json(stripeStatus);
 });
 
-// Create payment intent for featuring an RFP
+/**
+ * Create payment intent for featuring an RFP
+ * This endpoint handles the initial payment setup process
+ */
 app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) => {
   try {
     const { rfpId } = req.body;
@@ -953,9 +956,10 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
   }
 });
 
-// PAYMENT ROUTES CONTINUED
-
-// Confirm payment and update RFP featured status
+/**
+ * Confirm payment and update RFP featured status
+ * Verifies payment was successful and updates the RFP
+ */
 app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
   try {
     const { paymentIntentId, rfpId } = req.body;

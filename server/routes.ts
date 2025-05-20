@@ -24,20 +24,17 @@ const upload = multer({
   }
 });
 
-// Middleware for routes that require authentication
-function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) {
-  if (!req.isAuthenticated() || !req.user) {
-    console.log('[Auth] Unauthorized access attempt to', req.originalUrl);
-    return res.status(401).json({ message: "Unauthorized: Please log in again" });
-  }
-  next();
-}
-
 // Helper function for checking auth within route handlers
-function requireAuth(req: Request) {
+function requireAuth(req: Request, res?: Response) {
   if (!req.isAuthenticated()) {
+    if (res) {
+      // If response object is provided, send 401 directly
+      res.status(401).json({ message: "Unauthorized: Please log in again" });
+      return false;
+    }
     throw new Error("Unauthorized");
   }
+  return true;
 }
 
 export function registerRoutes(app: Express): Server {
@@ -590,8 +587,10 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Payment routes
-  app.post("/api/payments/create-payment-intent", requireAuthMiddleware, async (req, res) => {
+  app.post("/api/payments/create-payment-intent", async (req, res) => {
     try {
+      // Check authentication and return early if not authenticated
+      if (!requireAuth(req, res)) return;
       
       const { rfpId } = req.body;
       if (!rfpId) {
@@ -625,7 +624,8 @@ export function registerRoutes(app: Express): Server {
   
   app.post("/api/payments/confirm-payment", async (req, res) => {
     try {
-      requireAuth(req);
+      // Check authentication and return early if not authenticated
+      if (!requireAuth(req, res)) return;
       
       const { paymentIntentId, rfpId } = req.body;
       if (!paymentIntentId || !rfpId) {

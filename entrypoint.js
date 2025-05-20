@@ -1066,19 +1066,7 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
     
-    // Handle mock payments in development
-    if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
-      return res.json({
-        id: 'mock_pi_' + Date.now(),
-        status: 'succeeded',
-        amount: FEATURED_RFP_PRICE,
-        created: Date.now() / 1000,
-        metadata: {
-          rfpId: req.query.rfpId || '1',
-          userId: req.user.id.toString()
-        }
-      });
-    }
+    // We no longer support mock payments, always use Stripe
 
     // Verify with Stripe if available
     if (!stripe) {

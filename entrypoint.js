@@ -453,10 +453,25 @@ passport.deserializeUser(async (id, done) => {
 // Authentication middleware
 function requireAuth(req, res, next) {
   console.log('[Auth] Checking authentication:', req.isAuthenticated());
-  if (!req.isAuthenticated()) {
-    console.log('[Auth] Unauthorized access attempt');
-    return res.status(401).json({ message: "Unauthorized" });
+  
+  // Check if the request has a valid session
+  if (!req.isAuthenticated() || !req.user) {
+    console.log('[Auth] Unauthorized access attempt to', req.originalUrl);
+    
+    // Add debugging information in development to help troubleshoot
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(401).json({ 
+        message: "Unauthorized: Session is invalid or expired",
+        sessionPresent: Boolean(req.sessionID),
+        sessionID: req.sessionID ? `...${req.sessionID.slice(-6)}` : null,
+        hasUser: Boolean(req.user),
+        path: req.originalUrl
+      });
+    }
+    
+    return res.status(401).json({ message: "Unauthorized: Please log in again" });
   }
+  
   console.log('[Auth] User authenticated:', req.user.id);
   next();
 }

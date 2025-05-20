@@ -1172,8 +1172,6 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
 });
 
 // User routes
-
-// User routes
 app.get("/api/user", requireAuth, (req, res) => {
     res.json(req.user);
 });

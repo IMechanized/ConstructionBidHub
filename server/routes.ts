@@ -653,9 +653,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Register the payments router
-  const paymentsRouter = (await import('./routes/payments.js')).default;
-  app.use('/api/payments', paymentsRouter);
+  // For now, we'll use the payment routes from entrypoint.js
+  // We'll integrate the dedicated payment router in a future update
+  console.log('Payment routes are handled in entrypoint.js');
 
   const httpServer = createServer(app);
   return httpServer;

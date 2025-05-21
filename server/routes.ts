@@ -175,14 +175,8 @@ export function registerRoutes(app: Express): Server {
   // Protected RFP routes
   app.post("/api/rfps", async (req, res) => {
     try {
-      // Check authentication first
-      if (!req.isAuthenticated()) {
-        console.log('[Auth] Unauthorized access attempt to POST /api/rfps');
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      console.log('RFP creation request received from user:', req.user?.id);
-      console.log('Request body:', req.body);
+      requireAuth(req);
+      console.log('RFP creation request received:', req.body);
 
       const data = insertRfpSchema.parse(req.body);
       console.log('Validated RFP data:', data);
@@ -204,53 +198,25 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/rfps/:id", async (req, res) => {
-    try {
-      // Check authentication first
-      if (!req.isAuthenticated()) {
-        console.log('[Auth] Unauthorized access attempt to PUT /api/rfps/:id');
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const rfp = await storage.getRfpById(Number(req.params.id));
-      if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to modify this RFP" });
-      }
-
-      const updated = await storage.updateRfp(Number(req.params.id), req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error('Error updating RFP:', error);
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Failed to update RFP" });
-      }
+    requireAuth(req);
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp || rfp.organizationId !== req.user?.id) {
+      return res.status(403).send("Unauthorized");
     }
+
+    const updated = await storage.updateRfp(Number(req.params.id), req.body);
+    res.json(updated);
   });
 
   app.delete("/api/rfps/:id", async (req, res) => {
-    try {
-      // Check authentication first
-      if (!req.isAuthenticated()) {
-        console.log('[Auth] Unauthorized access attempt to DELETE /api/rfps/:id');
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const rfp = await storage.getRfpById(Number(req.params.id));
-      if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to delete this RFP" });
-      }
-
-      await storage.deleteRfp(Number(req.params.id));
-      res.sendStatus(200);
-    } catch (error) {
-      console.error('Error deleting RFP:', error);
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Failed to delete RFP" });
-      }
+    requireAuth(req);
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp || rfp.organizationId !== req.user?.id) {
+      return res.status(403).send("Unauthorized");
     }
+
+    await storage.deleteRfp(Number(req.params.id));
+    res.sendStatus(200);
   });
 
   // Employee routes

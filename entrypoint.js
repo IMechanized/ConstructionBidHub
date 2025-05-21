@@ -45,37 +45,20 @@ let stripeStatus = {
 
 try {
   if (stripeSecretKey) {
-    // Log the type of key being used (mask the actual key)
-    const keyType = stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live';
-    const maskedKey = stripeSecretKey.substring(0, 8) + '...' + stripeSecretKey.substring(stripeSecretKey.length - 4);
-    console.log(`🔑 Using Stripe ${keyType} key: ${maskedKey}`);
-    
     stripe = new Stripe(stripeSecretKey, {
       appInfo: {
         name: 'FindConstructionBids',
         version: '1.0.0'
-      },
-      // Add API version explicitly for better compatibility
-      apiVersion: '2023-10-16'
+      }
     });
 
     stripeStatus = {
       isInitialized: true,
       mode: process.env.NODE_ENV || 'development',
-      keyType: keyType
+      keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
     };
 
     console.log(`✅ Stripe payment processing initialized successfully (${stripeStatus.keyType} mode)`);
-    
-    // Load our debug helper
-    try {
-      const stripeDebug = require('./server/lib/stripe-debug');
-      // Wrap Stripe instance with logging
-      stripe = stripeDebug.interceptStripeApi(stripe, keyType);
-      console.log(`✅ Enhanced Stripe debugging enabled for ${keyType} mode`);
-    } catch (debugError) {
-      console.warn(`⚠️ Stripe debugging could not be enabled: ${debugError.message}`);
-    }
   } else {
     console.warn('⚠️ No valid Stripe secret key found - payment features will use mock implementations');
   }
@@ -432,15 +415,12 @@ app.use((req, res, next) => {
   }
 });
 
-// Fix session configuration to work better with API requests
 app.use(session({
   ...sessionConfig,
   cookie: {
     ...sessionConfig.cookie,
-    // Allow same-site cookies for better API compatibility
-    sameSite: 'lax',
-    // Only use secure in production
-    secure: process.env.NODE_ENV === 'production'
+    sameSite: 'none',
+    secure: true
   }
 }));
 
@@ -492,15 +472,8 @@ passport.deserializeUser(async (id, done) => {
 // Authentication middleware
 function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
-    console.log('[Auth] Unauthorized access attempt to ' + req.originalUrl);
-    return res.status(401).json({ 
-      message: "Unauthorized: Please log in",
-      path: req.originalUrl
-    });
+    return res.status(401).json({ message: "Unauthorized: Please log in" });
   }
-  
-  // Successfully authenticated
-  console.log(`[Auth] User ${req.user.id} authenticated for ${req.originalUrl}`);
   next();
 }
 
@@ -519,15 +492,6 @@ app.use([
   '/api/payments/status',
   '/api/stripe'  // For any other potential Stripe routes
 ], requireAuth);
-
-// Import stripe debug routes
-try {
-  const registerStripeDebugRoutes = require('./server/routes/stripe-debug.js');
-  registerStripeDebugRoutes(app, stripe, stripeStatus);
-  console.log('✅ Stripe debug routes registered');
-} catch (error) {
-  console.error('❌ Failed to register Stripe debug routes:', error.message);
-}
 
 // Routes
 app.get('/api/health', (req, res) => {
@@ -966,9 +930,6 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
 
     if (stripe) {
       try {
-        // Log key type being used
-        console.log(`💳 Creating payment intent with ${stripeStatus.keyType} key for RFP ${rfpId}`);
-        
         // Always create real payment intent with Stripe, even in development
         paymentIntent = await stripe.paymentIntents.create({
           amount: FEATURED_RFP_PRICE,
@@ -983,10 +944,7 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
           },
           description: `Featured RFP: ${rfp.title.substring(0, 50)}`
         });
-        
-        // Detailed logging of the payment intent response
         console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
-        console.log(`📊 Payment intent details: status=${paymentIntent.status}, amount=${paymentIntent.amount}, client_secret=${paymentIntent.client_secret ? 'present' : 'missing'}`);
       } catch (stripeError) {
         console.error('❌ Stripe error creating payment intent:', stripeError);
 

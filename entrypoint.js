@@ -520,6 +520,15 @@ app.use([
   '/api/stripe'  // For any other potential Stripe routes
 ], requireAuth);
 
+// Import stripe debug routes
+try {
+  const registerStripeDebugRoutes = require('./server/routes/stripe-debug.js');
+  registerStripeDebugRoutes(app, stripe, stripeStatus);
+  console.log('✅ Stripe debug routes registered');
+} catch (error) {
+  console.error('❌ Failed to register Stripe debug routes:', error.message);
+}
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });

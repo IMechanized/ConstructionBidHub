@@ -1100,14 +1100,7 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    // Handle mock payments in development
-    if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
-      console.log('⚠️ Cancelling mock payment in development mode');
-      return res.json({
-        success: true,
-        message: "Mock payment cancelled successfully"
-      });
-    }
+    
 
     // Verify with Stripe if available
     if (!stripe) {

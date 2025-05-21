@@ -24,14 +24,6 @@ try {
   if (STRIPE_PUBLISHABLE_KEY) {
     stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
     console.log('✅ Stripe client initialized');
-  } else if (import.meta.env.DEV) {
-    console.warn('⚠️ Using mock Stripe in development mode');
-    // Mock implementation for development
-    stripePromise = Promise.resolve({
-      elements: () => ({}),
-      createPaymentMethod: () => Promise.resolve({})
-    });
-    stripeConfigError = true;
   } else {
     console.error('❌ No valid Stripe publishable key found');
     stripeConfigError = true;

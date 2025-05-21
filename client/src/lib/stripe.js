@@ -4,7 +4,6 @@
  */
 
 import { loadStripe } from '@stripe/stripe-js';
-import type { Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 
 // Get Stripe publishable key from environment variables
@@ -18,15 +17,17 @@ const STRIPE_PUBLISHABLE_KEY = possibleKeys.find(key =>
 );
 
 // Initialize Stripe with error handling
-let stripePromise: Promise<Stripe | null> | null = null;
+let stripePromise = null;
 let stripeConfigError = false;
 
 try {
-  if (!STRIPE_PUBLISHABLE_KEY) {
-    throw new Error('No valid Stripe publishable key found');
+  if (STRIPE_PUBLISHABLE_KEY) {
+    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+    console.log('✅ Stripe client initialized');
+  } else {
+    console.error('❌ No valid Stripe publishable key found');
+    stripeConfigError = true;
   }
-  stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-  console.log('✅ Stripe client initialized');
 } catch (error) {
   console.error('❌ Error initializing Stripe:', error);
   stripeConfigError = true;
@@ -34,10 +35,10 @@ try {
 
 /**
  * Format a price from cents to a readable currency format
- * @param cents Price in cents
- * @returns Formatted price string (e.g., "$25.00")
+ * @param {number} cents Price in cents
+ * @returns {string} Formatted price string (e.g., "$25.00")
  */
-export function formatPrice(cents: number): string {
+export function formatPrice(cents) {
   const dollars = cents / 100;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -47,13 +48,9 @@ export function formatPrice(cents: number): string {
 
 /**
  * Get the Stripe configuration status from the server
- * @returns Configuration status object
+ * @returns {Promise<Object>} Configuration status object
  */
-export async function getStripeConfig(): Promise<{ 
-  isInitialized: boolean,
-  mode?: string,
-  keyType?: string
-}> {
+export async function getStripeConfig() {
   try {
     const response = await fetch('/api/payments/config', {
       credentials: 'include',
@@ -67,9 +64,9 @@ export async function getStripeConfig(): Promise<{
 
 /**
  * Get the price for featuring an RFP
- * @returns Price in cents
+ * @returns {Promise<number>} Price in cents
  */
-export async function getFeaturedRfpPrice(): Promise<number> {
+export async function getFeaturedRfpPrice() {
   try {
     const response = await fetch('/api/payments/price', {
       credentials: 'include',
@@ -84,13 +81,10 @@ export async function getFeaturedRfpPrice(): Promise<number> {
 
 /**
  * Create a payment intent for featuring an RFP
- * @param rfpId The ID of the RFP to feature
- * @returns Payment details including client secret
+ * @param {number} rfpId The ID of the RFP to feature
+ * @returns {Promise<Object>} Payment details including client secret
  */
-export async function createPaymentIntent(rfpId: number): Promise<{ 
-  clientSecret: string, 
-  amount: number 
-}> {
+export async function createPaymentIntent(rfpId) {
   const response = await fetch('/api/payments/create-payment-intent', {
     method: 'POST',
     headers: {
@@ -105,27 +99,16 @@ export async function createPaymentIntent(rfpId: number): Promise<{
     throw new Error(error.message || `Payment failed (${response.status})`);
   }
   
-  const data = await response.json();
-  
-  // Validate that we received a valid client secret
-  if (!data.clientSecret || !data.clientSecret.includes('_secret_')) {
-    console.error('Invalid client secret received:', data);
-    throw new Error('Invalid payment session. Please try again.');
-  }
-  
-  return data;
+  return await response.json();
 }
 
 /**
  * Confirm a payment was successful and update RFP status
- * @param paymentIntentId The ID of the payment intent
- * @param rfpId The ID of the RFP to feature
- * @returns Success status and updated RFP
+ * @param {string} paymentIntentId The ID of the payment intent
+ * @param {number} rfpId The ID of the RFP to feature
+ * @returns {Promise<Object>} Success status and updated RFP
  */
-export async function confirmPayment(paymentIntentId: string, rfpId: number): Promise<{
-  success: boolean,
-  rfp: any
-}> {
+export async function confirmPayment(paymentIntentId, rfpId) {
   const response = await fetch('/api/payments/confirm-payment', {
     method: 'POST',
     headers: {
@@ -145,11 +128,11 @@ export async function confirmPayment(paymentIntentId: string, rfpId: number): Pr
 
 /**
  * Get the status of a payment
- * @param paymentIntentId The ID of the payment intent
- * @param rfpId Optional RFP ID for additional context
- * @returns Payment status details
+ * @param {string} paymentIntentId The ID of the payment intent
+ * @param {number} [rfpId] Optional RFP ID for additional context
+ * @returns {Promise<Object>} Payment status details
  */
-export async function getPaymentStatus(paymentIntentId: string, rfpId?: number): Promise<any> {
+export async function getPaymentStatus(paymentIntentId, rfpId) {
   const url = new URL(`/api/payments/status/${paymentIntentId}`, window.location.origin);
   if (rfpId) {
     url.searchParams.append('rfpId', String(rfpId));
@@ -169,13 +152,10 @@ export async function getPaymentStatus(paymentIntentId: string, rfpId?: number):
 
 /**
  * Cancel a pending payment
- * @param paymentIntentId The ID of the payment intent to cancel
- * @returns Success status and message
+ * @param {string} paymentIntentId The ID of the payment intent to cancel
+ * @returns {Promise<Object>} Success status and message
  */
-export async function cancelPayment(paymentIntentId: string): Promise<{
-  success: boolean,
-  message: string
-}> {
+export async function cancelPayment(paymentIntentId) {
   const response = await fetch('/api/payments/cancel-payment', {
     method: 'POST',
     headers: {

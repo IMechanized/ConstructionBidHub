@@ -31,7 +31,29 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
 
   const confirmPaymentMutation = useMutation({
     mutationFn: async ({ paymentIntentId, rfpId }: { paymentIntentId: string, rfpId: number }) => {
-      return confirmPayment(paymentIntentId, rfpId);
+      try {
+        // Check authentication status before attempting payment confirmation
+        const authResponse = await fetch('/api/auth-status', {
+          credentials: 'include' // Include cookies for session authentication
+        });
+        
+        if (!authResponse.ok) {
+          throw new Error('Could not verify authentication status');
+        }
+        
+        const authStatus = await authResponse.json();
+        
+        if (!authStatus.isAuthenticated) {
+          console.error('Authentication check failed before payment confirmation', authStatus);
+          throw new Error('Your session has expired. Please refresh the page and try again.');
+        }
+        
+        // Proceed with payment confirmation
+        return confirmPayment(paymentIntentId, rfpId);
+      } catch (error) {
+        console.error('Error during payment confirmation process:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -43,9 +65,17 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
     },
     onError: (error: Error) => {
       setIsLoading(false);
+      
+      // Check if it's an authentication error
+      const isAuthError = error.message?.includes('401') || 
+                          error.message?.includes('session') ||
+                          error.message?.includes('expired');
+      
       toast({
         title: 'Payment Confirmation Failed',
-        description: error.message || 'Failed to confirm payment. Please try again.',
+        description: isAuthError 
+          ? 'Your session may have expired. Please refresh the page and try again.'
+          : error.message || 'Failed to confirm payment. Please try again.',
         variant: 'destructive',
       });
     }
@@ -217,11 +247,14 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
 
   // Type assertion to avoid type errors with Stripe's API
   const options = {
-    clientSecret,
+    clientSecret: clientSecret || '',  // Ensure it's never null, but we'll handle empty string case
     appearance: {
       theme: 'stripe' as const,
     },
   };
+  
+  // Don't render Stripe Elements if client secret is empty or invalid
+  const isValidClientSecret = clientSecret && clientSecret.includes('_secret_');
 
   // Determine if we have payment provider configuration issues
   const hasStripeError = !stripePromise || stripeConfigError;
@@ -266,11 +299,13 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
           {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
           
-          {hasStripeError ? (
+          {hasStripeError || !isValidClientSecret ? (
             <div className="p-6 text-center">
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>
-                  Stripe payment integration is not properly configured. Please contact the administrator.
+                  {!isValidClientSecret 
+                    ? "Could not initialize payment session. Please try again or contact support."
+                    : "Stripe payment integration is not properly configured. Please contact the administrator."}
                 </AlertDescription>
               </Alert>
               <Button variant="outline" onClick={onCancel}>Cancel</Button>

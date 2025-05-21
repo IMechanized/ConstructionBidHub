@@ -27,11 +27,7 @@ router.get('/price', (req, res) => {
  * Get current Stripe configuration status
  */
 router.get('/config', (req, res) => {
-  res.json({ 
-    isInitialized: stripeStatus.isInitialized,
-    mode: stripeStatus.mode,
-    keyType: stripeStatus.keyType
-  });
+  res.json(stripeStatus);
 });
 
 /**
@@ -39,45 +35,31 @@ router.get('/config', (req, res) => {
  */
 router.post('/create-payment-intent', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { rfpId } = req.body;
-    
+
     if (!rfpId) {
       return res.status(400).json({ message: "RFP ID is required" });
     }
 
-    // Verify the RFP exists and belongs to this user
     const rfp = await storage.getRfpById(Number(rfpId));
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
-    
-    if (rfp.organizationId !== req.user!.id) {
+
+    if (rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "You can only feature your own RFPs" });
     }
 
-    // Create the payment intent
     const paymentIntent = await createPaymentIntent({
       rfpId: String(rfpId),
-      userId: String(req.user!.id),
+      userId: String(req.user.id),
       rfpTitle: rfp.title
     });
 
-    // Log the payment intent response
-    console.log('Stripe PaymentIntent Response:', JSON.stringify({
-      id: paymentIntent.id,
-      amount: paymentIntent.amount,
-      status: paymentIntent.status,
-      client_secret: paymentIntent.client_secret,
-      created: new Date(paymentIntent.created * 1000).toISOString(),
-      metadata: paymentIntent.metadata
-    }, null, 2));
-
-    // Return the client secret and amount
     res.json({
       clientSecret: paymentIntent.client_secret,
       amount: paymentIntent.amount
@@ -95,48 +77,36 @@ router.post('/create-payment-intent', async (req, res) => {
  */
 router.post('/confirm-payment', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId, rfpId } = req.body;
-    
+
     if (!paymentIntentId || !rfpId) {
       return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
     }
 
-    // Verify the RFP exists and belongs to this user
     const rfp = await storage.getRfpById(Number(rfpId));
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
-    
-    if (rfp.organizationId !== req.user!.id) {
+
+    if (rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "You can only feature your own RFPs" });
     }
 
-    // Verify payment was successful
     const paymentVerified = await verifyPayment(paymentIntentId);
-    
-    // Log the payment verification response
-    console.log('Stripe Payment Verification Response:', JSON.stringify({
-      paymentIntentId,
-      verified: paymentVerified,
-      timestamp: new Date().toISOString()
-    }, null, 2));
-    
+
     if (!paymentVerified) {
       return res.status(400).json({ message: "Payment verification failed" });
     }
 
-    // Update RFP to be featured
     const updatedRfp = await storage.updateRfp(Number(rfpId), {
       featured: true,
-      featuredAt: new Date() // Current timestamp
+      featuredAt: new Date()
     });
 
-    // Return success and the updated RFP
     res.json({
       success: true,
       rfp: updatedRfp
@@ -154,25 +124,22 @@ router.post('/confirm-payment', async (req, res) => {
  */
 router.get('/status/:paymentIntentId', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId } = req.params;
-    
+
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    // Get the payment intent from Stripe
     const paymentIntent = await getPaymentIntent(paymentIntentId);
-    
+
     if (!paymentIntent) {
       return res.status(404).json({ message: "Payment intent not found" });
     }
 
-    // Return the payment status
     res.json({
       id: paymentIntent.id,
       status: paymentIntent.status,
@@ -193,37 +160,32 @@ router.get('/status/:paymentIntentId', async (req, res) => {
  */
 router.post('/cancel-payment', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId } = req.body;
-    
+
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    // Get the payment intent from Stripe to verify ownership
     const paymentIntent = await getPaymentIntent(paymentIntentId);
-    
+
     if (!paymentIntent) {
       return res.status(404).json({ message: "Payment intent not found" });
     }
 
-    // Verify the payment intent belongs to this user
-    if (paymentIntent.metadata.userId !== String(req.user!.id)) {
+    if (paymentIntent.metadata.userId !== String(req.user.id)) {
       return res.status(403).json({ message: "You can only cancel your own payments" });
     }
 
-    // Cancel the payment intent
     const cancelled = await cancelPayment(paymentIntentId);
-    
+
     if (!cancelled) {
       return res.status(400).json({ message: "Failed to cancel payment" });
     }
 
-    // Return success
     res.json({
       success: true,
       message: "Payment cancelled successfully"

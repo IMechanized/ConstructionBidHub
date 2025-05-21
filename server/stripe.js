@@ -1,6 +1,6 @@
 /**
- * Stripe Payment Processing Utilities
- * Handles all payment operations for the FindConstructionBids platform
+ * Stripe Payment Processing Service
+ * Handles all payment functionality for the FindConstructionBids platform
  */
 
 import Stripe from 'stripe';
@@ -21,7 +21,7 @@ const stripeSecretKey = possibleKeys.find(key =>
 );
 
 // Initialize Stripe instance
-let stripe: Stripe | null = null;
+let stripe = null;
 
 try {
   if (stripeSecretKey) {
@@ -37,14 +37,13 @@ try {
 /**
  * Create a payment intent for featuring an RFP
  * 
- * @param metadata Additional information to store with the payment
- * @returns The created payment intent
+ * @param {Object} metadata Additional information to store with the payment
+ * @param {string} metadata.rfpId RFP identifier
+ * @param {string} metadata.userId User identifier
+ * @param {string} metadata.rfpTitle RFP title for the description
+ * @returns {Promise<Object>} The created payment intent
  */
-export async function createPaymentIntent(metadata: {
-  rfpId: string;
-  userId: string;
-  rfpTitle: string;
-}): Promise<Stripe.PaymentIntent> {
+export async function createPaymentIntent(metadata) {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
@@ -57,7 +56,7 @@ export async function createPaymentIntent(metadata: {
       automatic_payment_methods: {
         enabled: true, // Allow multiple payment methods
       },
-      description: `Featured RFP: ${metadata.rfpTitle.substring(0, 50)}`,
+      description: `Featured RFP: ${metadata.rfpTitle ? metadata.rfpTitle.substring(0, 50) : 'unknown'}`
     });
     
     console.log(`Created payment intent ${paymentIntent.id} for RFP ${metadata.rfpId}`);
@@ -71,10 +70,10 @@ export async function createPaymentIntent(metadata: {
 /**
  * Retrieve a payment intent by ID
  * 
- * @param paymentIntentId The ID of the payment intent
- * @returns The payment intent or null if not found
+ * @param {string} paymentIntentId The ID of the payment intent
+ * @returns {Promise<Object|null>} The payment intent or null if not found
  */
-export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null> {
+export async function getPaymentIntent(paymentIntentId) {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
@@ -90,10 +89,10 @@ export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.
 /**
  * Verify that a payment has succeeded
  * 
- * @param paymentIntentId The ID of the payment intent to verify
- * @returns True if the payment succeeded, false otherwise
+ * @param {string} paymentIntentId The ID of the payment intent to verify
+ * @returns {Promise<boolean>} True if the payment succeeded, false otherwise
  */
-export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
+export async function verifyPayment(paymentIntentId) {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
@@ -110,10 +109,10 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
 /**
  * Cancel a payment intent
  * 
- * @param paymentIntentId The ID of the payment intent to cancel
- * @returns True if canceled successfully, false otherwise
+ * @param {string} paymentIntentId The ID of the payment intent to cancel
+ * @returns {Promise<boolean>} True if canceled successfully, false otherwise
  */
-export async function cancelPayment(paymentIntentId: string): Promise<boolean> {
+export async function cancelPayment(paymentIntentId) {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
@@ -127,9 +126,11 @@ export async function cancelPayment(paymentIntentId: string): Promise<boolean> {
   }
 }
 
-// Export Stripe instance status
+// Export Stripe instance and configuration status
 export const stripeStatus = {
-  isInitialized: Boolean(stripe)
+  isInitialized: Boolean(stripe),
+  mode: process.env.NODE_ENV || 'development',
+  keyType: stripeSecretKey?.startsWith('sk_test_') ? 'test' : 'live'
 };
 
 export default stripe;

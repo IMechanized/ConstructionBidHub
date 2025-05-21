@@ -1,4 +1,4 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth.js";
 import { storage } from "./storage.js";
@@ -8,7 +8,6 @@ import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
-import paymentsRouter from './routes/payments.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -25,10 +24,17 @@ const upload = multer({
   }
 });
 
-function requireAuth(req: Request) {
+// Helper function for checking auth within route handlers
+function requireAuth(req: Request, res?: Response) {
   if (!req.isAuthenticated()) {
+    if (res) {
+      // If response object is provided, send 401 directly
+      res.status(401).json({ message: "Unauthorized: Please log in again" });
+      return false;
+    }
     throw new Error("Unauthorized");
   }
+  return true;
 }
 
 export function registerRoutes(app: Express): Server {
@@ -583,7 +589,8 @@ export function registerRoutes(app: Express): Server {
   // Payment routes
   app.post("/api/payments/create-payment-intent", async (req, res) => {
     try {
-      requireAuth(req);
+      // Check authentication and return early if not authenticated
+      if (!requireAuth(req, res)) return;
       
       const { rfpId } = req.body;
       if (!rfpId) {
@@ -617,7 +624,8 @@ export function registerRoutes(app: Express): Server {
   
   app.post("/api/payments/confirm-payment", async (req, res) => {
     try {
-      requireAuth(req);
+      // Check authentication and return early if not authenticated
+      if (!requireAuth(req, res)) return;
       
       const { paymentIntentId, rfpId } = req.body;
       if (!paymentIntentId || !rfpId) {
@@ -654,8 +662,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Register the payments router
-  app.use('/api/payments', paymentsRouter);
+  // For now, we'll use the payment routes from entrypoint.js
+  // We'll integrate the dedicated payment router in a future update
+  console.log('Payment routes are handled in entrypoint.js');
 
   const httpServer = createServer(app);
   return httpServer;

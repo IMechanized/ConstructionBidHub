@@ -45,20 +45,37 @@ let stripeStatus = {
 
 try {
   if (stripeSecretKey) {
+    // Log the type of key being used (mask the actual key)
+    const keyType = stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live';
+    const maskedKey = stripeSecretKey.substring(0, 8) + '...' + stripeSecretKey.substring(stripeSecretKey.length - 4);
+    console.log(`🔑 Using Stripe ${keyType} key: ${maskedKey}`);
+    
     stripe = new Stripe(stripeSecretKey, {
       appInfo: {
         name: 'FindConstructionBids',
         version: '1.0.0'
-      }
+      },
+      // Add API version explicitly for better compatibility
+      apiVersion: '2023-10-16'
     });
 
     stripeStatus = {
       isInitialized: true,
       mode: process.env.NODE_ENV || 'development',
-      keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
+      keyType: keyType
     };
 
     console.log(`✅ Stripe payment processing initialized successfully (${stripeStatus.keyType} mode)`);
+    
+    // Load our debug helper
+    try {
+      const stripeDebug = require('./server/lib/stripe-debug');
+      // Wrap Stripe instance with logging
+      stripe = stripeDebug.interceptStripeApi(stripe, keyType);
+      console.log(`✅ Enhanced Stripe debugging enabled for ${keyType} mode`);
+    } catch (debugError) {
+      console.warn(`⚠️ Stripe debugging could not be enabled: ${debugError.message}`);
+    }
   } else {
     console.warn('⚠️ No valid Stripe secret key found - payment features will use mock implementations');
   }
@@ -930,6 +947,9 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
 
     if (stripe) {
       try {
+        // Log key type being used
+        console.log(`💳 Creating payment intent with ${stripeStatus.keyType} key for RFP ${rfpId}`);
+        
         // Always create real payment intent with Stripe, even in development
         paymentIntent = await stripe.paymentIntents.create({
           amount: FEATURED_RFP_PRICE,
@@ -944,7 +964,10 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
           },
           description: `Featured RFP: ${rfp.title.substring(0, 50)}`
         });
+        
+        // Detailed logging of the payment intent response
         console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
+        console.log(`📊 Payment intent details: status=${paymentIntent.status}, amount=${paymentIntent.amount}, client_secret=${paymentIntent.client_secret ? 'present' : 'missing'}`);
       } catch (stripeError) {
         console.error('❌ Stripe error creating payment intent:', stripeError);
 

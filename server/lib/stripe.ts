@@ -48,7 +48,7 @@ export async function createPaymentIntent(metadata: {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
-  
+
   try {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: FEATURED_RFP_PRICE,
@@ -59,7 +59,7 @@ export async function createPaymentIntent(metadata: {
       },
       description: `Featured RFP: ${metadata.rfpTitle.substring(0, 50)}`,
     });
-    
+
     console.log(`Created payment intent ${paymentIntent.id} for RFP ${metadata.rfpId}`);
     return paymentIntent;
   } catch (error) {
@@ -78,7 +78,7 @@ export async function getPaymentIntent(paymentIntentId: string): Promise<Stripe.
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
-  
+
   try {
     return await stripe.paymentIntents.retrieve(paymentIntentId);
   } catch (error) {
@@ -97,7 +97,7 @@ export async function verifyPayment(paymentIntentId: string): Promise<boolean> {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
-  
+
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     return paymentIntent.status === 'succeeded';
@@ -117,7 +117,7 @@ export async function cancelPayment(paymentIntentId: string): Promise<boolean> {
   if (!stripe) {
     throw new Error('Payment service unavailable: Stripe is not initialized');
   }
-  
+
   try {
     const result = await stripe.paymentIntents.cancel(paymentIntentId);
     return result.status === 'canceled';

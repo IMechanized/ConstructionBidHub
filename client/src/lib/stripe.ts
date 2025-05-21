@@ -22,13 +22,11 @@ let stripePromise: Promise<Stripe | null> | null = null;
 let stripeConfigError = false;
 
 try {
-  if (STRIPE_PUBLISHABLE_KEY) {
-    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-    console.log('✅ Stripe client initialized');
-  } else {
-    console.error('❌ No valid Stripe publishable key found');
-    stripeConfigError = true;
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    throw new Error('No valid Stripe publishable key found');
   }
+  stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  console.log('✅ Stripe client initialized');
 } catch (error) {
   console.error('❌ Error initializing Stripe:', error);
   stripeConfigError = true;

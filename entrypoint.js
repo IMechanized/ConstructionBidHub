@@ -595,6 +595,10 @@ app.get("/api/rfps/:id", async (req, res) => {
 
 app.post("/api/rfps", requireAuth, async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
     console.log('RFP creation request received:', req.body);
 
     // Convert string dates to Date objects
@@ -604,7 +608,9 @@ app.post("/api/rfps", requireAuth, async (req, res) => {
       rfiDate: new Date(req.body.rfiDate),
       deadline: new Date(req.body.deadline),
       organizationId: req.user.id,
+      createdAt: new Date()
     });
+
     res.status(201).json(rfp);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -1100,7 +1106,7 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    
+
 
     // Verify with Stripe if available
     if (!stripe) {

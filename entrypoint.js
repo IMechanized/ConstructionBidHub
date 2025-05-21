@@ -432,12 +432,15 @@ app.use((req, res, next) => {
   }
 });
 
+// Fix session configuration to work better with API requests
 app.use(session({
   ...sessionConfig,
   cookie: {
     ...sessionConfig.cookie,
-    sameSite: 'none',
-    secure: true
+    // Allow same-site cookies for better API compatibility
+    sameSite: 'lax',
+    // Only use secure in production
+    secure: process.env.NODE_ENV === 'production'
   }
 }));
 
@@ -489,8 +492,15 @@ passport.deserializeUser(async (id, done) => {
 // Authentication middleware
 function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized: Please log in" });
+    console.log('[Auth] Unauthorized access attempt to ' + req.originalUrl);
+    return res.status(401).json({ 
+      message: "Unauthorized: Please log in",
+      path: req.originalUrl
+    });
   }
+  
+  // Successfully authenticated
+  console.log(`[Auth] User ${req.user.id} authenticated for ${req.originalUrl}`);
   next();
 }
 

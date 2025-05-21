@@ -97,6 +97,7 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
       if (stripe) {
         try {
           // Create payment intent with Stripe
+          console.log(`🔍 Creating payment intent for RFP ${rfpId} using Stripe key type: ${stripeStatus.keyType}`);
           paymentIntent = await stripe.paymentIntents.create({
             amount: FEATURED_RFP_PRICE,
             currency: 'usd',
@@ -110,7 +111,8 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
             },
             description: `Featured RFP: ${rfp.title.substring(0, 50)}`
           });
-          console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
+          console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId} with status: ${paymentIntent.status}`);
+          console.log(`✅ Payment details: amount=${paymentIntent.amount}, currency=${paymentIntent.currency}`);
         } catch (stripeError) {
           console.error('❌ Stripe error creating payment intent:', stripeError);
           return res.status(500).json({ 
@@ -169,7 +171,10 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
       }
 
       try {
+        console.log(`🔍 Retrieving payment intent ${paymentIntentId} with key type: ${stripeStatus.keyType}`);
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        console.log(`💳 Payment intent details: id=${paymentIntent.id}, status=${paymentIntent.status}, amount=${paymentIntent.amount}`);
+        
         paymentVerified = paymentIntent.status === 'succeeded';
 
         if (!paymentVerified) {
@@ -177,6 +182,8 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           return res.status(400).json({ 
             message: `Payment verification failed: ${paymentIntent.status}` 
           });
+        } else {
+          console.log(`✅ Payment ${paymentIntentId} verified successfully with status: ${paymentIntent.status}`);
         }
       } catch (stripeError) {
         console.error('❌ Error retrieving payment intent:', stripeError);

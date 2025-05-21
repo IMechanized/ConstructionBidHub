@@ -129,8 +129,7 @@ export async function cancelPayment(paymentIntentId) {
 // Export Stripe instance and configuration status
 export const stripeStatus = {
   isInitialized: Boolean(stripe),
-  mode: process.env.NODE_ENV || 'development',
-  keyType: stripeSecretKey?.startsWith('sk_test_') ? 'test' : 'live'
+  mode: process.env.NODE_ENV || 'development'
 };
 
 export default stripe;

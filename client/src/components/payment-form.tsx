@@ -269,11 +269,7 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
               Ready
             </Badge>
           </div>
-          <Alert variant="default" className="mt-2 bg-yellow-50">
-            <AlertDescription className="text-xs text-yellow-700">
-              For testing, use card number <span className="font-mono">4242 4242 4242 4242</span> with any future expiration date and CVC.
-            </AlertDescription>
-          </Alert>
+          
           {!stripeConfig.isInitialized && (
             <Alert variant="destructive" className="mt-2">
               <AlertDescription className="text-xs">

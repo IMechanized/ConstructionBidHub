@@ -1305,14 +1305,4 @@ app.use((err, req, res, next) => {
 res.status(500).json({ message: "Internal server error" });
 });
 
-// This line updates stripeStatus object to remove the test/live mode distinction.
-stripeStatus = {
-  isInitialized: Boolean(stripe)
-};
-
-// Export Stripe instance status
-export const stripeStatus = {
-  isInitialized: Boolean(stripe)
-};
-
 export default app;

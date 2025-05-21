@@ -35,51 +35,37 @@ router.get('/config', (req, res) => {
  */
 router.post('/create-payment-intent', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { rfpId } = req.body;
-    
+
     if (!rfpId) {
       return res.status(400).json({ message: "RFP ID is required" });
     }
 
-    // Verify the RFP exists and belongs to this user
     const rfp = await storage.getRfpById(Number(rfpId));
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
-    
+
     if (rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "You can only feature your own RFPs" });
     }
 
-    // Create the payment intent
     const paymentIntent = await createPaymentIntent({
       rfpId: String(rfpId),
       userId: String(req.user.id),
       rfpTitle: rfp.title
     });
 
-    // Return the client secret and amount
     res.json({
       clientSecret: paymentIntent.client_secret,
       amount: paymentIntent.amount
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
-    
-    // In development, provide mock data if Stripe isn't set up
-    if (process.env.NODE_ENV !== 'production' && error.message.includes('Stripe is not initialized')) {
-      console.log('⚠️ Using mock payment intent for development (Stripe error)');
-      return res.json({
-        clientSecret: 'mock_client_secret_for_development',
-        amount: FEATURED_RFP_PRICE
-      });
-    }
-    
     res.status(500).json({ 
       message: error instanceof Error ? error.message : "Failed to create payment intent"
     });
@@ -91,49 +77,36 @@ router.post('/create-payment-intent', async (req, res) => {
  */
 router.post('/confirm-payment', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId, rfpId } = req.body;
-    
+
     if (!paymentIntentId || !rfpId) {
       return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
     }
 
-    // Verify the RFP exists and belongs to this user
     const rfp = await storage.getRfpById(Number(rfpId));
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
-    
+
     if (rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "You can only feature your own RFPs" });
     }
 
-    let paymentVerified = false;
-    
-    // Handle mock payments in development
-    if (paymentIntentId === 'mock_client_secret_for_development' && process.env.NODE_ENV !== 'production') {
-      paymentVerified = true;
-      console.log('⚠️ Using mock payment verification for development');
-    } else {
-      // Verify payment was successful
-      paymentVerified = await verifyPayment(paymentIntentId);
-    }
-    
+    const paymentVerified = await verifyPayment(paymentIntentId);
+
     if (!paymentVerified) {
       return res.status(400).json({ message: "Payment verification failed" });
     }
 
-    // Update RFP to be featured
     const updatedRfp = await storage.updateRfp(Number(rfpId), {
       featured: true,
-      featuredAt: new Date() // Current timestamp
+      featuredAt: new Date()
     });
 
-    // Return success and the updated RFP
     res.json({
       success: true,
       rfp: updatedRfp
@@ -151,40 +124,22 @@ router.post('/confirm-payment', async (req, res) => {
  */
 router.get('/status/:paymentIntentId', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId } = req.params;
-    
+
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    // Handle mock payments in development
-    if (paymentIntentId === 'mock_client_secret_for_development' && process.env.NODE_ENV !== 'production') {
-      console.log('⚠️ Using mock payment status for development');
-      return res.json({
-        id: 'mock_pi_' + Date.now(),
-        status: 'succeeded',
-        amount: FEATURED_RFP_PRICE,
-        created: Date.now() / 1000,
-        metadata: {
-          rfpId: req.query.rfpId || '1',
-          userId: req.user.id.toString()
-        }
-      });
-    }
-
-    // Get the payment intent from Stripe
     const paymentIntent = await getPaymentIntent(paymentIntentId);
-    
+
     if (!paymentIntent) {
       return res.status(404).json({ message: "Payment intent not found" });
     }
 
-    // Return the payment status
     res.json({
       id: paymentIntent.id,
       status: paymentIntent.status,
@@ -205,46 +160,32 @@ router.get('/status/:paymentIntentId', async (req, res) => {
  */
 router.post('/cancel-payment', async (req, res) => {
   try {
-    // Ensure user is authenticated
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { paymentIntentId } = req.body;
-    
+
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
 
-    // Handle mock payments in development
-    if (paymentIntentId === 'mock_client_secret_for_development' && process.env.NODE_ENV !== 'production') {
-      console.log('⚠️ Using mock payment cancellation for development');
-      return res.json({
-        success: true,
-        message: "Mock payment cancelled successfully"
-      });
-    }
-
-    // Get the payment intent from Stripe to verify ownership
     const paymentIntent = await getPaymentIntent(paymentIntentId);
-    
+
     if (!paymentIntent) {
       return res.status(404).json({ message: "Payment intent not found" });
     }
 
-    // Verify the payment intent belongs to this user
     if (paymentIntent.metadata.userId !== String(req.user.id)) {
       return res.status(403).json({ message: "You can only cancel your own payments" });
     }
 
-    // Cancel the payment intent
     const cancelled = await cancelPayment(paymentIntentId);
-    
+
     if (!cancelled) {
       return res.status(400).json({ message: "Failed to cancel payment" });
     }
 
-    // Return success
     res.json({
       success: true,
       message: "Payment cancelled successfully"

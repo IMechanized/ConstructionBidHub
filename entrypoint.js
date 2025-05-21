@@ -51,13 +51,13 @@ try {
         version: '1.0.0'
       }
     });
-    
+
     stripeStatus = {
       isInitialized: true,
       mode: process.env.NODE_ENV || 'development',
       keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
     };
-    
+
     console.log(`✅ Stripe payment processing initialized successfully (${stripeStatus.keyType} mode)`);
   } else {
     console.warn('⚠️ No valid Stripe secret key found - payment features will use mock implementations');
@@ -203,7 +203,7 @@ const storage = {
         })
         .where(eq(users.id, id))
         .returning();
-      
+
       if (!user) throw new Error("User not found");
       return user;
     } catch (error) {
@@ -407,7 +407,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -885,7 +885,7 @@ app.get('/api/payments/debug', (req, res) => {
   console.log('- Node Environment:', process.env.NODE_ENV || 'development');
   console.log('- Is Production:', isProduction);
   console.log('- Test Mode:', stripeStatus.keyType === 'test');
-  
+
   // Return detailed information about Stripe configuration
   res.json({
     stripeStatus: stripeStatus,
@@ -941,7 +941,7 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
         console.log(`✅ Created payment intent ${paymentIntent.id} for RFP ${rfpId}`);
       } catch (stripeError) {
         console.error('❌ Stripe error creating payment intent:', stripeError);
-        
+
         // Always return the real Stripe error
         return res.status(500).json({ 
           message: "Payment service error: " + stripeError.message,
@@ -976,24 +976,24 @@ app.post('/api/payments/create-payment-intent', requireAuth, async (req, res) =>
 app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
   try {
     const { paymentIntentId, rfpId } = req.body;
-    
+
     if (!paymentIntentId || !rfpId) {
       return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
     }
-    
+
     // Verify the RFP exists and belongs to this user
     const rfp = await storage.getRfpById(Number(rfpId));
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
-    
+
     if (rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "You can only feature your own RFPs" });
     }
-    
+
     // Always verify payment with Stripe
     let paymentVerified = false;
-    
+
     // Verify payment with Stripe
     if (!stripe) {
       return res.status(503).json({ 
@@ -1001,11 +1001,11 @@ app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
         reason: 'stripe_not_initialized'
       });
     }
-    
+
     try {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       paymentVerified = paymentIntent.status === 'succeeded';
-      
+
       if (!paymentVerified) {
         console.log(`❌ Payment ${paymentIntentId} verification failed: ${paymentIntent.status}`);
         return res.status(400).json({ 
@@ -1018,15 +1018,15 @@ app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
         message: "Error verifying payment: " + stripeError.message
       });
     }
-    
+
     // Update the RFP to be featured
     const updatedRfp = await storage.updateRfp(Number(rfpId), {
       featured: true,
       featuredAt: new Date()
     });
-    
+
     console.log(`✅ RFP ${rfpId} successfully marked as featured`);
-    
+
     res.json({
       success: true,
       rfp: updatedRfp
@@ -1047,7 +1047,7 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
-    
+
     // We no longer support mock payments, always use Stripe
 
     // Verify with Stripe if available
@@ -1057,11 +1057,11 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
         reason: 'stripe_not_initialized'
       });
     }
-    
+
     // Get payment intent from Stripe
     try {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
+
       res.json({
         id: paymentIntent.id,
         status: paymentIntent.status,
@@ -1071,11 +1071,11 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
       });
     } catch (stripeError) {
       console.error('❌ Error retrieving payment intent:', stripeError);
-      
+
       if (stripeError.code === 'resource_missing') {
         return res.status(404).json({ message: "Payment intent not found" });
       }
-      
+
       return res.status(500).json({ 
         message: "Error retrieving payment: " + stripeError.message
       });
@@ -1095,11 +1095,11 @@ app.get('/api/payments/status/:paymentIntentId', requireAuth, async (req, res) =
 app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
   try {
     const { paymentIntentId } = req.body;
-    
+
     if (!paymentIntentId) {
       return res.status(400).json({ message: "Payment intent ID is required" });
     }
-    
+
     // Handle mock payments in development
     if (paymentIntentId === 'mock_client_secret_for_development' && !isProduction) {
       console.log('⚠️ Cancelling mock payment in development mode');
@@ -1108,7 +1108,7 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
         message: "Mock payment cancelled successfully"
       });
     }
-    
+
     // Verify with Stripe if available
     if (!stripe) {
       return res.status(503).json({ 
@@ -1116,32 +1116,32 @@ app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
         reason: 'stripe_not_initialized'
       });
     }
-    
+
     // Get the payment intent from Stripe
     let paymentIntent;
     try {
       paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (stripeError) {
       console.error('❌ Error retrieving payment intent:', stripeError);
-      
+
       if (stripeError.code === 'resource_missing') {
         return res.status(404).json({ message: "Payment intent not found" });
       }
-      
+
       return res.status(500).json({ 
         message: "Error retrieving payment: " + stripeError.message
       });
     }
-    
+
     // Verify ownership
     if (paymentIntent.metadata.userId !== String(req.user.id)) {
       return res.status(403).json({ message: "You can only cancel your own payments" });
     }
-    
+
     // Cancel the payment intent
     try {
       const cancelledPayment = await stripe.paymentIntents.cancel(paymentIntentId);
-      
+
       if (cancelledPayment.status === 'canceled') {
         console.log(`✅ Payment ${paymentIntentId} successfully cancelled`);
         return res.json({
@@ -1305,5 +1305,14 @@ app.use((err, req, res, next) => {
 res.status(500).json({ message: "Internal server error" });
 });
 
-// Export for serverless
+// This line updates stripeStatus object to remove the test/live mode distinction.
+stripeStatus = {
+  isInitialized: Boolean(stripe)
+};
+
+// Export Stripe instance status
+export const stripeStatus = {
+  isInitialized: Boolean(stripe)
+};
+
 export default app;

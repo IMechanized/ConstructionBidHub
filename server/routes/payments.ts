@@ -67,6 +67,16 @@ router.post('/create-payment-intent', async (req, res) => {
       rfpTitle: rfp.title
     });
 
+    // Log the payment intent response
+    console.log('Stripe PaymentIntent Response:', JSON.stringify({
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      status: paymentIntent.status,
+      client_secret: paymentIntent.client_secret,
+      created: new Date(paymentIntent.created * 1000).toISOString(),
+      metadata: paymentIntent.metadata
+    }, null, 2));
+
     // Return the client secret and amount
     res.json({
       clientSecret: paymentIntent.client_secret,
@@ -108,6 +118,13 @@ router.post('/confirm-payment', async (req, res) => {
 
     // Verify payment was successful
     const paymentVerified = await verifyPayment(paymentIntentId);
+    
+    // Log the payment verification response
+    console.log('Stripe Payment Verification Response:', JSON.stringify({
+      paymentIntentId,
+      verified: paymentVerified,
+      timestamp: new Date().toISOString()
+    }, null, 2));
     
     if (!paymentVerified) {
       return res.status(400).json({ message: "Payment verification failed" });

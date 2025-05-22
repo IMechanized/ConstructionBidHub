@@ -329,32 +329,99 @@ const storage = {
 
   async getAnalyticsByRfpId(rfpId) {
     try {
-      const [analytics] = await db.select().from(rfpAnalytics).where(eq(rfpAnalytics.rfpId, rfpId));
+      // Format today's date properly for SQL
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      // Get analytics for the specific date
+      const [analytics] = await db.select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfpId),
+            eq(rfpAnalytics.date, formattedDate)
+          )
+        );
+      
+      if (!analytics) {
+        // If no analytics found for today, create a default analytics object
+        // This avoids undefined errors when spreading the analytics object
+        return {
+          id: -1, // Placeholder ID
+          rfpId: rfpId,
+          date: formattedDate,
+          totalViews: 0,
+          uniqueViews: 0,
+          averageViewTime: 0,
+          totalBids: 0,
+          clickThroughRate: 0
+        };
+      }
+      
       return analytics;
     } catch (error) {
       console.error("Error getting analytics by RFP ID:", error);
-      return null;
+      // Return default structure to avoid null errors
+      return {
+        id: -1,
+        rfpId: rfpId,
+        totalViews: 0, 
+        uniqueViews: 0,
+        averageViewTime: 0,
+        totalBids: 0,
+        clickThroughRate: 0
+      };
     }
   },
 
   async getBoostedAnalytics(userId) {
     try {
+      console.log(`Getting boosted analytics for user ${userId}`);
+      
+      // Get featured RFPs owned by this user
       const featuredRfps = await db.select().from(rfps)
         .where(and(
           eq(rfps.organizationId, userId),
           eq(rfps.featured, true)
         ));
+      
+      console.log(`Found ${featuredRfps.length} featured RFPs for user ${userId}`);
+      
+      if (featuredRfps.length === 0) {
+        return []; // No featured RFPs, return empty array
+      }
 
+      // For each featured RFP, get or create analytics
       const analyticsWithRfps = await Promise.all(
         featuredRfps.map(async (rfp) => {
-          const analytics = await this.getAnalyticsByRfpId(rfp.id);
-          return {
-            ...analytics,
-            rfp
-          };
+          try {
+            // Get analytics, which will now be properly filtered by date
+            // or return a default object if none exists
+            const analytics = await this.getAnalyticsByRfpId(rfp.id);
+            
+            // Return combined data
+            return {
+              ...analytics,
+              rfp
+            };
+          } catch (err) {
+            console.error(`Error processing analytics for RFP ${rfp.id}:`, err);
+            // Return a default object with the RFP to prevent the entire array from failing
+            return {
+              id: -1,
+              rfpId: rfp.id,
+              totalViews: 0,
+              uniqueViews: 0,
+              averageViewTime: 0,
+              totalBids: 0,
+              clickThroughRate: 0,
+              rfp
+            };
+          }
         })
       );
 
+      console.log(`Successfully processed ${analyticsWithRfps.length} analytics records`);
       return analyticsWithRfps;
     } catch (error) {
       console.error("Error getting boosted analytics:", error);

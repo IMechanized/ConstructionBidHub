@@ -25,31 +25,30 @@ function initializeStripe() {
   const stripeSecretKey = possibleKeys.find(key => 
     key && typeof key === 'string' && key.startsWith('sk_')
   );
-  
+
   // Determine if we're in production mode
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   // Prepare stripe status object
   let stripeStatus = {
     isInitialized: false,
-    mode: process.env.NODE_ENV || 'development',
     keyType: 'none'
   };
-  
+
   // Initialize Stripe
   let stripe = null;
-  
+
   try {
     if (stripeSecretKey) {
       const Stripe = require('stripe');
       stripe = new Stripe(stripeSecretKey);
-      
+
       stripeStatus = {
         isInitialized: true,
         mode: process.env.NODE_ENV || 'development',
         keyType: stripeSecretKey.startsWith('sk_test_') ? 'test' : 'live'
       };
-      
+
       console.log('✅ Stripe payment processing initialized successfully');
     } else {
       console.warn('⚠️ No valid Stripe secret key found - payment features will be limited');
@@ -57,7 +56,7 @@ function initializeStripe() {
   } catch (error) {
     console.error('❌ Failed to initialize Stripe:', error);
   }
-  
+
   return { stripe, stripeStatus, isProduction };
 }
 
@@ -143,24 +142,24 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
   app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
     try {
       const { paymentIntentId, rfpId } = req.body;
-      
+
       if (!paymentIntentId || !rfpId) {
         return res.status(400).json({ message: "Payment intent ID and RFP ID are required" });
       }
-      
+
       // Verify the RFP exists and belongs to this user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp) {
         return res.status(404).json({ message: "RFP not found" });
       }
-      
+
       if (rfp.organizationId !== req.user.id) {
         return res.status(403).json({ message: "You can only feature your own RFPs" });
       }
-      
+
       // Verify payment with Stripe
       let paymentVerified = false;
-      
+
       // Verify payment with Stripe
       if (!stripe) {
         return res.status(503).json({ 
@@ -168,11 +167,11 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           reason: 'stripe_not_initialized'
         });
       }
-      
+
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         paymentVerified = paymentIntent.status === 'succeeded';
-        
+
         if (!paymentVerified) {
           console.log(`❌ Payment ${paymentIntentId} verification failed: ${paymentIntent.status}`);
           return res.status(400).json({ 
@@ -185,15 +184,15 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           message: "Error verifying payment: " + stripeError.message
         });
       }
-      
+
       // Update the RFP to be featured
       const updatedRfp = await storage.updateRfp(Number(rfpId), {
         featured: true,
         featuredAt: new Date()
       });
-      
+
       console.log(`✅ RFP ${rfpId} successfully marked as featured`);
-      
+
       res.json({
         success: true,
         rfp: updatedRfp
@@ -214,7 +213,7 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
       if (!paymentIntentId) {
         return res.status(400).json({ message: "Payment intent ID is required" });
       }
-      
+
 
 
       // Verify with Stripe if available
@@ -224,11 +223,11 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           reason: 'stripe_not_initialized'
         });
       }
-      
+
       // Get payment intent from Stripe
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        
+
         res.json({
           id: paymentIntent.id,
           status: paymentIntent.status,
@@ -238,11 +237,11 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
         });
       } catch (stripeError) {
         console.error('❌ Error retrieving payment intent:', stripeError);
-        
+
         if (stripeError.code === 'resource_missing') {
           return res.status(404).json({ message: "Payment intent not found" });
         }
-        
+
         return res.status(500).json({ 
           message: "Error retrieving payment: " + stripeError.message
         });
@@ -259,13 +258,13 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
   app.post('/api/payments/cancel-payment', requireAuth, async (req, res) => {
     try {
       const { paymentIntentId } = req.body;
-      
+
       if (!paymentIntentId) {
         return res.status(400).json({ message: "Payment intent ID is required" });
       }
-      
 
-      
+
+
       // Verify with Stripe if available
       if (!stripe) {
         return res.status(503).json({ 
@@ -273,32 +272,32 @@ function registerPaymentRoutes(app, { stripe, stripeStatus, isProduction }, stor
           reason: 'stripe_not_initialized'
         });
       }
-      
+
       // Get the payment intent from Stripe
       let paymentIntent;
       try {
         paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       } catch (stripeError) {
         console.error('❌ Error retrieving payment intent:', stripeError);
-        
+
         if (stripeError.code === 'resource_missing') {
           return res.status(404).json({ message: "Payment intent not found" });
         }
-        
+
         return res.status(500).json({ 
           message: "Error retrieving payment: " + stripeError.message
         });
       }
-      
+
       // Verify ownership
       if (paymentIntent.metadata.userId !== String(req.user.id)) {
         return res.status(403).json({ message: "You can only cancel your own payments" });
       }
-      
+
       // Cancel the payment intent
       try {
         const cancelledPayment = await stripe.paymentIntents.cancel(paymentIntentId);
-        
+
         if (cancelledPayment.status === 'canceled') {
           console.log(`✅ Payment ${paymentIntentId} successfully cancelled`);
           return res.json({

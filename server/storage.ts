@@ -165,8 +165,11 @@ export class DatabaseStorage implements IStorage {
    * Analytics Operations
    */
   async getBoostedAnalytics(userId: number): Promise<(RfpAnalytics & { rfp: Rfp })[]> {
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`getBoostedAnalytics: Getting analytics for user ID ${userId} for date ${today}`);
+    // Create proper SQL date from current date
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    console.log(`getBoostedAnalytics: Getting analytics for user ID ${userId} for date ${formattedDate}`);
 
     // Get only the featured RFPs created by this user - being extra explicit with ownership checks
     const featuredRfps = await db
@@ -195,109 +198,137 @@ export class DatabaseStorage implements IStorage {
 
     // For each featured RFP owned by this user, get or create an analytics record
     const analyticsPromises = ownedRfps.map(async (rfp) => {
-      // Check if analytics exist for today
-      const [existingAnalytics] = await db
-        .select()
-        .from(rfpAnalytics)
-        .where(
-          and(
-            eq(rfpAnalytics.rfpId, rfp.id),
-            eq(rfpAnalytics.date, today)
-          )
-        );
+      try {
+        // Check if analytics exist for today
+        const [existingAnalytics] = await db
+          .select()
+          .from(rfpAnalytics)
+          .where(
+            and(
+              eq(rfpAnalytics.rfpId, rfp.id),
+              eq(rfpAnalytics.date, formattedDate)
+            )
+          );
 
-      console.log(`Processing RFP ${rfp.id}: ${existingAnalytics ? 'Analytics exist' : 'Creating new analytics'}`);
+        console.log(`Processing RFP ${rfp.id}: ${existingAnalytics ? 'Analytics exist' : 'Creating new analytics'}`);
 
-      if (existingAnalytics) {
-        // Return existing analytics with RFP data
-        return { ...existingAnalytics, rfp };
-      } else {
-        // Create new analytics record with default values
-        const [newAnalytics] = await db
-          .insert(rfpAnalytics)
-          .values({
-            rfpId: rfp.id,
-            date: today,
-            totalViews: 0,
-            uniqueViews: 0,
-            averageViewTime: 0,
-            totalBids: 0,
-            clickThroughRate: 0,
-          })
-          .returning();
-        
-        console.log(`Created new analytics for RFP ${rfp.id}`);
-        
-        // Return new analytics with RFP data
-        return { ...newAnalytics, rfp };
+        if (existingAnalytics) {
+          // Return existing analytics with RFP data
+          return { ...existingAnalytics, rfp };
+        } else {
+          // Create new analytics record with default values
+          const [newAnalytics] = await db
+            .insert(rfpAnalytics)
+            .values({
+              rfpId: rfp.id,
+              date: formattedDate,
+              totalViews: 0,
+              uniqueViews: 0,
+              averageViewTime: 0,
+              totalBids: 0,
+              clickThroughRate: 0,
+            })
+            .returning();
+          
+          console.log(`Created new analytics for RFP ${rfp.id}`);
+          
+          // Return new analytics with RFP data
+          return { ...newAnalytics, rfp };
+        }
+      } catch (error) {
+        console.error(`Error processing analytics for RFP ${rfp.id}:`, error);
+        // Return a default structure with the RFP to avoid breaking the entire analytics collection
+        return {
+          id: -1, // Use a placeholder ID
+          rfpId: rfp.id,
+          date: formattedDate,
+          totalViews: 0,
+          uniqueViews: 0,
+          averageViewTime: 0,
+          totalBids: 0,
+          clickThroughRate: 0,
+          rfp
+        };
       }
     });
 
-    // Wait for all analytics records to be fetched or created
-    const results = await Promise.all(analyticsPromises);
-    console.log(`getBoostedAnalytics: Returning ${results.length} analytics records`);
-    
-    return results;
+    try {
+      // Wait for all analytics records to be fetched or created
+      const results = await Promise.all(analyticsPromises);
+      console.log(`getBoostedAnalytics: Returning ${results.length} analytics records`);
+      
+      return results;
+    } catch (error) {
+      console.error("Error in getBoostedAnalytics:", error);
+      return []; // Return empty array in case of error to avoid crashing
+    }
   }
 
   /**
    * Tracks a view session for an RFP and updates analytics
    */
   async trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession> {
-    // Create view session record
-    const [viewSession] = await db
-      .insert(rfpViewSessions)
-      .values({
-        rfpId,
-        userId,
-        viewDate: new Date(),
-        duration,
-      })
-      .returning();
-
-    // Update analytics for the day
-    const today = new Date().toISOString().split('T')[0];
-    const [existingAnalytics] = await db
-      .select()
-      .from(rfpAnalytics)
-      .where(
-        and(
-          eq(rfpAnalytics.rfpId, rfpId),
-          eq(rfpAnalytics.date, today)
-        )
-      );
-
-    if (existingAnalytics) {
-      // Update existing analytics record
-      await db
-        .update(rfpAnalytics)
-        .set({
-          totalViews: sql`${rfpAnalytics.totalViews} + 1`,
-          uniqueViews: sql`${rfpAnalytics.uniqueViews} + CASE WHEN NOT EXISTS (
-            SELECT 1 FROM ${rfpViewSessions} 
-            WHERE rfp_id = ${rfpId} 
-            AND user_id = ${userId} 
-            AND view_date::date = CURRENT_DATE
-          ) THEN 1 ELSE 0 END`,
-          averageViewTime: sql`(${rfpAnalytics.averageViewTime} * ${rfpAnalytics.totalViews} + ${duration}) / (${rfpAnalytics.totalViews} + 1)`,
-        })
-        .where(eq(rfpAnalytics.id, existingAnalytics.id));
-    } else {
-      // Create new analytics record
-      await db
-        .insert(rfpAnalytics)
+    try {
+      // Create view session record
+      const [viewSession] = await db
+        .insert(rfpViewSessions)
         .values({
           rfpId,
-          date: today,
-          totalViews: 1,
-          uniqueViews: 1,
-          averageViewTime: duration,
-          totalBids: 0,
-          clickThroughRate: 0,
-        });
-    }
+          userId,
+          viewDate: new Date(),
+          duration,
+        })
+        .returning();
 
-    return viewSession;
+      // Update analytics for the day
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      const [existingAnalytics] = await db
+        .select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfpId),
+            eq(rfpAnalytics.date, formattedDate)
+          )
+        );
+
+      if (existingAnalytics) {
+        // Update existing analytics record
+        await db
+          .update(rfpAnalytics)
+          .set({
+            totalViews: sql`${rfpAnalytics.totalViews} + 1`,
+            uniqueViews: sql`${rfpAnalytics.uniqueViews} + CASE WHEN NOT EXISTS (
+              SELECT 1 FROM ${rfpViewSessions} 
+              WHERE rfp_id = ${rfpId} 
+              AND user_id = ${userId} 
+              AND view_date::date = CURRENT_DATE
+            ) THEN 1 ELSE 0 END`,
+            averageViewTime: sql`(${rfpAnalytics.averageViewTime} * ${rfpAnalytics.totalViews} + ${duration}) / (${rfpAnalytics.totalViews} + 1)`,
+          })
+          .where(eq(rfpAnalytics.id, existingAnalytics.id));
+      } else {
+        // Create new analytics record
+        await db
+          .insert(rfpAnalytics)
+          .values({
+            rfpId,
+            date: formattedDate,
+            totalViews: 1,
+            uniqueViews: 1,
+            averageViewTime: duration,
+            totalBids: 0,
+            clickThroughRate: 0,
+          });
+      }
+
+      return viewSession;
+    } catch (error) {
+      console.error("Error tracking RFP view:", error);
+      throw error; // Re-throw to allow the caller to handle it
+    }
   }
 
   /**
@@ -404,56 +435,70 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined> {
-    const today = new Date().toISOString().split('T')[0];
-    const [analytics] = await db
-      .select()
-      .from(rfpAnalytics)
-      .where(
-        and(
-          eq(rfpAnalytics.rfpId, rfpId),
-          eq(rfpAnalytics.date, today)
-        )
-      );
+    try {
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      const [analytics] = await db
+        .select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfpId),
+            eq(rfpAnalytics.date, formattedDate)
+          )
+        );
 
-    return analytics;
+      return analytics;
+    } catch (error) {
+      console.error(`Error getting analytics for RFP ${rfpId}:`, error);
+      return undefined;
+    }
   }
 
   async updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics> {
-    const today = new Date().toISOString().split('T')[0];
-    const [analytics] = await db
-      .select()
-      .from(rfpAnalytics)
-      .where(
-        and(
-          eq(rfpAnalytics.rfpId, rfpId),
-          eq(rfpAnalytics.date, today)
-        )
-      );
+    try {
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      const [analytics] = await db
+        .select()
+        .from(rfpAnalytics)
+        .where(
+          and(
+            eq(rfpAnalytics.rfpId, rfpId),
+            eq(rfpAnalytics.date, formattedDate)
+          )
+        );
 
-    if (analytics) {
-      const [updated] = await db
-        .update(rfpAnalytics)
-        .set(updates)
-        .where(eq(rfpAnalytics.id, analytics.id))
+      if (analytics) {
+        const [updated] = await db
+          .update(rfpAnalytics)
+          .set(updates)
+          .where(eq(rfpAnalytics.id, analytics.id))
+          .returning();
+        return updated;
+      }
+
+      const [newAnalytics] = await db
+        .insert(rfpAnalytics)
+        .values({
+          rfpId,
+          date: formattedDate,
+          totalViews: 0,
+          uniqueViews: 0,
+          averageViewTime: 0,
+          totalBids: 0,
+          clickThroughRate: 0,
+          ...updates,
+        })
         .returning();
-      return updated;
+
+      return newAnalytics;
+    } catch (error) {
+      console.error(`Error updating analytics for RFP ${rfpId}:`, error);
+      throw error;
     }
-
-    const [newAnalytics] = await db
-      .insert(rfpAnalytics)
-      .values({
-        rfpId,
-        date: today,
-        totalViews: 0,
-        uniqueViews: 0,
-        averageViewTime: 0,
-        totalBids: 0,
-        clickThroughRate: 0,
-        ...updates,
-      })
-      .returning();
-
-    return newAnalytics;
   }
 }
 

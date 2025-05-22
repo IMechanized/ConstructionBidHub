@@ -18,7 +18,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { OfflineIndicator } from "@/components/offline-status";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
@@ -101,7 +100,6 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <span className="font-semibold text-lg">{t('common.appName')}</span>
         </Link>
         <div className="flex items-center gap-2">
-          <OfflineIndicator />
           <ThemeToggle variant="ghost" />
         </div>
       </div>

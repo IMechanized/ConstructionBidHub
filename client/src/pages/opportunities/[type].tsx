@@ -5,11 +5,9 @@ import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, ArrowUpDown, WifiOff } from "lucide-react";
+import { Loader2, Search, ArrowUpDown } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { Link } from "wouter";
-import { useOffline, handleOfflineFetch } from "@/hooks/use-offline";
-import { OfflineBanner, OfflineIndicator } from "@/components/offline-status";
 import {
   Select,
   SelectContent,
@@ -27,13 +25,12 @@ export default function OpportunitiesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("none");
-  const [locationFilter, setLocationFilter] = useState("all"); // Changed from empty string to "all"
-  const { isOffline } = useOffline();
+  const [locationFilter, setLocationFilter] = useState("all");
   
   const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
-    staleTime: isOffline ? Infinity : 300000, // 5 minutes (use cached data indefinitely when offline)
-    retry: isOffline ? false : 3, // Don't retry when offline
+    staleTime: 300000, // 5 minutes
+    retry: 3,
   });
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
@@ -153,22 +150,10 @@ export default function OpportunitiesPage() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center p-8 space-y-4 border rounded-lg bg-background">
-            {isOffline ? (
-              <>
-                <WifiOff className="h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-medium">Limited data available offline</h3>
-                <p className="text-center text-muted-foreground max-w-md">
-                  You're viewing cached data while offline. Some content may be unavailable until you reconnect.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-center text-muted-foreground">
-                  Unable to load opportunities. Please try again later.
-                </p>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-              </>
-            )}
+            <p className="text-center text-muted-foreground">
+              Unable to load opportunities. Please try again later.
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
           </div>
         ) : displayedRfps.length > 0 ? (
           <>
@@ -198,7 +183,7 @@ export default function OpportunitiesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages || isOffline} // Disable in offline mode
+                  disabled={currentPage === totalPages}
                 >
                   Next
                 </Button>
@@ -207,10 +192,7 @@ export default function OpportunitiesPage() {
           </>
         ) : (
           <p className="text-center text-muted-foreground">
-            {isOffline 
-              ? "Limited data available while offline. Some opportunities may not be displayed."
-              : "No opportunities found matching your criteria."
-            }
+            No opportunities found matching your criteria.
           </p>
         )}
       </main>

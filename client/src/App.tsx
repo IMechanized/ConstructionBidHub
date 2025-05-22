@@ -28,9 +28,7 @@ import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
-import { PwaInstallDialog } from "@/components/pwa-install-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
-import { OfflineStatus } from "@/components/offline-status";
 import HotReload from "@/components/hot-reload";
 
 // Import i18n configuration
@@ -100,8 +98,6 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Router />
-            <OfflineStatus />
-            <PwaInstallDialog />
             {/* Add hot reload component for development only */}
             {import.meta.env.DEV && <HotReload />}
           </AuthProvider>

@@ -100,7 +100,6 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <span className="font-semibold text-lg">{t('common.appName')}</span>
         </Link>
         <div className="flex items-center gap-2">
-          <OfflineIndicator />
           <ThemeToggle variant="ghost" />
         </div>
       </div>

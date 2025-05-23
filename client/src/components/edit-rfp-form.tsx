@@ -54,12 +54,18 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const updateRfpMutation = useMutation({
     mutationFn: async (data: any) => {
       // Convert date strings to Date objects for the API
+      // Ensure dates are valid Date objects before sending to API
       const processedData = {
         ...data,
-        walkthroughDate: new Date(data.walkthroughDate),
-        rfiDate: new Date(data.rfiDate),
-        deadline: new Date(data.deadline),
+        walkthroughDate: data.walkthroughDate ? new Date(data.walkthroughDate) : null,
+        rfiDate: data.rfiDate ? new Date(data.rfiDate) : null,
+        deadline: data.deadline ? new Date(data.deadline) : null,
       };
+
+      // Validate that dates were converted successfully
+      if (!processedData.walkthroughDate || !processedData.rfiDate || !processedData.deadline) {
+        throw new Error("Invalid date format");
+      }
 
       const response = await fetch(`/api/rfps/${rfp.id}`, {
         method: "PUT",

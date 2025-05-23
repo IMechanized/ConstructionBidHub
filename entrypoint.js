@@ -709,14 +709,24 @@ app.put("/api/rfps/:id", requireAuth, async (req, res) => {
 
 app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
-    if (!rfp || rfp.organizationId !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
     }
+
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete your own RFPs" });
+    }
+
     await storage.deleteRfp(Number(req.params.id));
     res.sendStatus(200);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error deleting RFP:', error);
+    res.status(500).json({ message: error.message || "Failed to delete RFP" });
   }
 });
 

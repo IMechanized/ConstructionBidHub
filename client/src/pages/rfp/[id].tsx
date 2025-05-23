@@ -13,10 +13,12 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import RfiForm from "@/components/bid-form";
+import EditRfpForm from "@/components/edit-rfp-form";
+import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download } from "lucide-react";
+import { Download, Edit, Trash2 } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 
@@ -24,6 +26,8 @@ export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [, setLocation] = useLocation();
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
@@ -250,6 +254,33 @@ export default function RfpPage() {
             </div>
           </div>
 
+          {/* Owner Controls */}
+          {isOwner && (
+            <>
+              <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
+                <div className="flex space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit RFP
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete RFP
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
           <hr className="my-6 border-muted" />
 
           {/* Project Overview */}
@@ -359,6 +390,31 @@ export default function RfpPage() {
               />
             </DialogContent>
           </Dialog>
+        )}
+
+        {/* Edit RFP Modal */}
+        {isOwner && (
+          <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit RFP</DialogTitle>
+              </DialogHeader>
+              <EditRfpForm
+                rfp={rfp}
+                onSuccess={() => setIsEditModalOpen(false)}
+                onCancel={() => setIsEditModalOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Delete RFP Dialog */}
+        {isOwner && (
+          <DeleteRfpDialog
+            rfp={rfp}
+            isOpen={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+          />
         )}
       </main>
     </div>

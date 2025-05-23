@@ -690,9 +690,19 @@ app.put("/api/rfps/:id", requireAuth, async (req, res) => {
     if (!rfp || rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
-    const updated = await storage.updateRfp(Number(req.params.id), req.body);
+
+    // Convert date strings to Date objects
+    const processedData = {
+      ...req.body,
+      walkthroughDate: req.body.walkthroughDate ? new Date(req.body.walkthroughDate) : undefined,
+      rfiDate: req.body.rfiDate ? new Date(req.body.rfiDate) : undefined,
+      deadline: req.body.deadline ? new Date(req.body.deadline) : undefined
+    };
+
+    const updated = await storage.updateRfp(Number(req.params.id), processedData);
     res.json(updated);
   } catch (error) {
+    console.error('Error updating RFP:', error);
     res.status(400).json({ message: error.message });
   }
 });

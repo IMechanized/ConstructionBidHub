@@ -47,9 +47,9 @@ export default function DeleteRfpDialog({ rfp, isOpen, onOpenChange }: DeleteRfp
         title: "Success",
         description: "RFP deleted successfully",
       });
-      // Close the dialog first, then redirect to dashboard
-      onOpenChange(false);
+      // Redirect to dashboard first, then close dialog
       setLocation("/dashboard");
+      onOpenChange(false);
     },
     onError: (error: any) => {
       toast({

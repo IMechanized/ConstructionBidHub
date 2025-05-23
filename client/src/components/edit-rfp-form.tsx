@@ -53,12 +53,20 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
 
   const updateRfpMutation = useMutation({
     mutationFn: async (data: any) => {
+      // Convert date strings to Date objects for the API
+      const processedData = {
+        ...data,
+        walkthroughDate: new Date(data.walkthroughDate),
+        rfiDate: new Date(data.rfiDate),
+        deadline: new Date(data.deadline),
+      };
+
       const response = await fetch(`/api/rfps/${rfp.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(processedData),
         credentials: "include",
       });
       

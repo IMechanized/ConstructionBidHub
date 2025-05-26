@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import redis from '../lib/redis.js';
 
 const router = Router();
 
@@ -8,21 +7,16 @@ const SERVER_START_TIME = Date.now();
 
 router.get('/', async (req, res) => {
   try {
-    // Test Redis connectivity
-    await redis.ping();
-    
     // Include server start time for hot reload detection
     res.json({ 
-      status: 'healthy', 
-      redis: 'connected',
+      status: 'healthy',
       serverStartTime: SERVER_START_TIME
     });
   } catch (err) {
     // Handle the error safely
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     res.status(503).json({ 
-      status: 'unhealthy', 
-      redis: 'disconnected',
+      status: 'unhealthy',
       error: errorMessage,
       serverStartTime: SERVER_START_TIME
     });

@@ -38,7 +38,8 @@ export default function DeleteRfpDialog({ rfp, isOpen, onOpenChange }: DeleteRfp
         throw new Error(error.message || "Failed to delete RFP");
       }
       
-      return response.json();
+      // Backend returns 200 with no body, so don't try to parse JSON
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });

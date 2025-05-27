@@ -5,9 +5,6 @@ import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Edit2 } from "lucide-react";
-import QuickEditRfpDialog from "./quick-edit-rfp-dialog";
-import { useState } from "react";
 
 interface RfpCardProps {
   rfp: Rfp & {
@@ -25,7 +22,6 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
   const isOwner = currentUser?.id === rfp.organizationId;
-  const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
 
   return (
     <Card 
@@ -98,32 +94,7 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
             </Button>
           </div>
         )}
-
-        {/* Quick Edit Button for Owner */}
-        {isOwner && (
-          <div className="mt-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsQuickEditOpen(true);
-              }}
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Quick Edit
-            </Button>
-          </div>
-        )}
       </CardContent>
-
-      {/* Quick Edit Dialog */}
-      <QuickEditRfpDialog
-        rfp={rfp}
-        isOpen={isQuickEditOpen}
-        onOpenChange={setIsQuickEditOpen}
-      />
     </Card>
   );
 }

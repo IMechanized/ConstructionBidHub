@@ -30,6 +30,7 @@ import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import { ThemeProvider } from "@/components/theme-provider";
 import HotReload from "@/components/hot-reload";
+import { Toaster } from "@/components/ui/toaster";
 
 // Import i18n configuration
 import "./lib/i18n";
@@ -98,6 +99,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Router />
+            <Toaster />
             {/* Add hot reload component for development only */}
             {import.meta.env.DEV && <HotReload />}
           </AuthProvider>

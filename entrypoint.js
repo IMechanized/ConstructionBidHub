@@ -690,23 +690,43 @@ app.put("/api/rfps/:id", requireAuth, async (req, res) => {
     if (!rfp || rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
-    const updated = await storage.updateRfp(Number(req.params.id), req.body);
+
+    // Convert date strings to Date objects
+    const processedData = {
+      ...req.body,
+      walkthroughDate: req.body.walkthroughDate ? new Date(req.body.walkthroughDate) : undefined,
+      rfiDate: req.body.rfiDate ? new Date(req.body.rfiDate) : undefined,
+      deadline: req.body.deadline ? new Date(req.body.deadline) : undefined
+    };
+
+    const updated = await storage.updateRfp(Number(req.params.id), processedData);
     res.json(updated);
   } catch (error) {
+    console.error('Error updating RFP:', error);
     res.status(400).json({ message: error.message });
   }
 });
 
 app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
-    if (!rfp || rfp.organizationId !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
     }
+
+    const rfp = await storage.getRfpById(Number(req.params.id));
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+
+    if (rfp.organizationId !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete your own RFPs" });
+    }
+
     await storage.deleteRfp(Number(req.params.id));
     res.sendStatus(200);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error deleting RFP:', error);
+    res.status(500).json({ message: error.message || "Failed to delete RFP" });
   }
 });
 

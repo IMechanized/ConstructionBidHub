@@ -6,9 +6,10 @@ import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 
@@ -39,18 +40,62 @@ export default function LandingPage() {
           <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors">
             FindConstructionBids
           </Link>
-          <div className="flex items-center gap-2 md:gap-4">
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-4">
             <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Support
             </Link>
             <ThemeToggle size="sm" />
-            <Button asChild variant="outline" size="sm" className="md:text-base">
+            <Button asChild variant="outline" size="sm" className="text-base">
               {user ? (
                 <Link href="/dashboard">Dashboard</Link>
               ) : (
                 <Link href="/auth">Get Started</Link>
               )}
             </Button>
+          </div>
+
+          {/* Mobile Navigation - Hamburger Menu */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px]">
+                <div className="flex flex-col h-full pt-6">
+                  <div className="space-y-4 flex-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-base"
+                      asChild
+                    >
+                      <Link href="/support">Support</Link>
+                    </Button>
+                    
+                    <div className="flex items-center justify-between px-3">
+                      <span className="text-sm font-medium">Theme</span>
+                      <ThemeToggle size="sm" />
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full text-base"
+                      asChild
+                    >
+                      {user ? (
+                        <Link href="/dashboard">Dashboard</Link>
+                      ) : (
+                        <Link href="/auth">Get Started</Link>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </nav>

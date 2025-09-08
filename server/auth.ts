@@ -31,26 +31,14 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret',
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      secure: app.get("env") === "production",
-      httpOnly: true,
-      sameSite: app.get("env") === "production" ? "strict" : "lax",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-  };
-
-  if (app.get("env") === "production") {
-    app.set("trust proxy", 1);
-  }
-
-  app.use(session(sessionSettings));
+  console.log('[Auth] Initializing Passport authentication...');
+  
+  // Initialize Passport middleware
+  // Note: Session middleware should be set up before calling this function
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  console.log('[Auth] Passport middleware initialized successfully');
 
   passport.use(
     new LocalStrategy(

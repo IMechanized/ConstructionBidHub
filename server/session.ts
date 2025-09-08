@@ -9,9 +9,11 @@ import crypto from 'crypto';
  */
 export function createSession(app: Express) {
   // Generate a strong session secret
-  const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+  const sessionSecret = process.env.SESSION_SECRET || process.env.REPL_ID || crypto.randomBytes(32).toString('hex');
   
-  // Create session configuration with domain-aware settings
+  console.log('[Session] Initializing session configuration...');
+  
+  // Create session configuration with consistent settings
   const sessionConfig: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
@@ -20,25 +22,38 @@ export function createSession(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours - consistent timeout
+      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax' // Use lax for better compatibility
     }
   };
 
-  // Handle Vercel-specific settings for production
+  // Handle production-specific settings
   if (process.env.NODE_ENV === 'production') {
-    // Make sure secure cookies work properly with sameSite=none
-    sessionConfig.cookie!.secure = true;
-    
-    // Set domain for Vercel deployments if available
-    if (process.env.VERCEL_URL) {
-      console.log(`Detected Vercel deployment URL: ${process.env.VERCEL_URL}`);
-    }
+    console.log('[Session] Configuring for production environment');
     
     // Trust the proxy in production environments like Vercel
     app.set('trust proxy', 1);
+    
+    // Set secure flag for HTTPS
+    sessionConfig.cookie!.secure = true;
+    
+    // Log Vercel URL if detected
+    if (process.env.VERCEL_URL) {
+      console.log(`[Session] Detected Vercel deployment URL: ${process.env.VERCEL_URL}`);
+    }
+  } else {
+    console.log('[Session] Configuring for development environment');
   }
+
+  // Log session configuration for debugging
+  console.log('[Session] Configuration:', {
+    maxAge: sessionConfig.cookie?.maxAge,
+    secure: sessionConfig.cookie?.secure,
+    sameSite: sessionConfig.cookie?.sameSite,
+    httpOnly: sessionConfig.cookie?.httpOnly
+  });
 
   // Apply session middleware
   app.use(session(sessionConfig));
+  console.log('[Session] Session middleware initialized successfully');
 }

@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth.js";
+import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
@@ -38,6 +39,10 @@ function requireAuth(req: Request, res?: Response) {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Initialize session middleware first (required for authentication)
+  createSession(app);
+  
+  // Then initialize authentication (depends on session)
   setupAuth(app);
 
   // File upload endpoint

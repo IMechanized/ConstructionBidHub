@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 

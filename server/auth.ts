@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage.js";
-import { User as SelectUser, passwordResetSchema } from "../shared/schema.js";
+import { User as SelectUser, passwordResetSchema, insertUserSchema } from "../shared/schema.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
 import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
 
@@ -95,6 +95,20 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       console.log(`[Auth] Registration attempt for email: ${req.body.email}`);
+      
+      // Validate request body against schema
+      const validationResult = insertUserSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        console.log(`[Auth] Registration validation failed:`, validationResult.error.issues);
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+      
       const existingUser = await storage.getUserByUsername(req.body.email);
       if (existingUser) {
         console.log(`[Auth] Registration failed - email already exists: ${req.body.email}`);

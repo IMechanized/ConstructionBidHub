@@ -103,10 +103,10 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           companyName: updates.companyName,
-          contact: updates.contact,
+          firstName: updates.firstName,
+          lastName: updates.lastName,
           telephone: updates.telephone,
           cell: updates.cell,
-          businessEmail: updates.businessEmail,
           trade: updates.trade,
           isMinorityOwned: updates.isMinorityOwned,
           minorityGroup: updates.minorityGroup,

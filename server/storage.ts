@@ -105,6 +105,7 @@ export class DatabaseStorage implements IStorage {
           companyName: updates.companyName,
           firstName: updates.firstName,
           lastName: updates.lastName,
+          jobTitle: updates.jobTitle,
           telephone: updates.telephone,
           cell: updates.cell,
           trade: updates.trade,

@@ -50,6 +50,7 @@ const MINORITY_GROUPS = [
 type FormValues = {
   firstName: string;
   lastName: string;
+  jobTitle: string;
   telephone: string;
   cell: string;
   isMinorityOwned: boolean;
@@ -79,6 +80,7 @@ export default function OnboardingForm() {
     defaultValues: {
       firstName: "",
       lastName: "",
+      jobTitle: "",
       telephone: "",
       cell: "",
       isMinorityOwned: false,
@@ -250,6 +252,20 @@ export default function OnboardingForm() {
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Last Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jobTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Project Manager, Site Supervisor, etc." />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

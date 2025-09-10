@@ -30,6 +30,7 @@ export const users = pgTable("users", {
   companyName: text("company_name").notNull(),
   firstName: text("first_name"),              // Contact first name
   lastName: text("last_name"),                // Contact last name
+  jobTitle: text("job_title"),                // Job title/position
   telephone: text("telephone"),                // Office phone
   cell: text("cell"),                         // Mobile phone
   isMinorityOwned: boolean("is_minority_owned").default(false),
@@ -144,6 +145,7 @@ export const backupLogs = pgTable("backup_logs", {
 export const onboardingSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  jobTitle: z.string().min(1, "Job title is required"),
   telephone: z.string().min(1, "Telephone number is required"),
   cell: z.string().min(1, "Cell phone number is required"),
   isMinorityOwned: z.boolean(),

@@ -16,7 +16,9 @@ export const CERTIFICATIONS = [
   "LGBTQ-owned",
   "Rural",
   "Minority-owned",
-  "Section 3"
+  "Section 3",
+  "SBE",
+  "DBE"
 ];
 
 /**
@@ -148,8 +150,6 @@ export const onboardingSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required"),
   telephone: z.string().min(1, "Telephone number is required"),
   cell: z.string().min(1, "Cell phone number is required"),
-  isMinorityOwned: z.boolean(),
-  minorityGroup: z.string().optional(),
   trade: z.string().min(1, "Trade is required"),
   certificationName: z.array(z.string()).optional(),
   logo: z.any().optional(),

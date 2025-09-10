@@ -38,14 +38,18 @@ const TRADE_OPTIONS = [
   "Division 16 — Electrical",
 ];
 
-const MINORITY_GROUPS = [
-  "African American",
-  "Hispanic American",
-  "Asian Pacific American",
-  "Native American",
-  "Subcontinent Asian American",
-  "Other",
-];
+// Phone number formatting utility
+const formatPhoneNumber = (value: string) => {
+  if (!value) return value;
+  const phoneNumber = value.replace(/[^\d]/g, '');
+  const phoneNumberLength = phoneNumber.length;
+  
+  if (phoneNumberLength < 4) return phoneNumber;
+  if (phoneNumberLength < 7) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  }
+  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
 
 type FormValues = {
   firstName: string;
@@ -53,8 +57,6 @@ type FormValues = {
   jobTitle: string;
   telephone: string;
   cell: string;
-  isMinorityOwned: boolean;
-  minorityGroup: string;
   trade: string;
   certificationName: string[];
   logo: File | string | null;
@@ -83,8 +85,6 @@ export default function OnboardingForm() {
       jobTitle: "",
       telephone: "",
       cell: "",
-      isMinorityOwned: false,
-      minorityGroup: "",
       trade: "",
       certificationName: [],
       logo: null,
@@ -279,7 +279,15 @@ export default function OnboardingForm() {
                   <FormItem>
                     <FormLabel>Telephone</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Office Phone" type="tel" />
+                      <Input 
+                        {...field} 
+                        placeholder="(555) 123-4567" 
+                        type="tel"
+                        onChange={(e) => {
+                          const formattedValue = formatPhoneNumber(e.target.value);
+                          field.onChange(formattedValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,7 +301,15 @@ export default function OnboardingForm() {
                   <FormItem>
                     <FormLabel>Cell Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Mobile Number" type="tel" />
+                      <Input 
+                        {...field} 
+                        placeholder="(555) 123-4567" 
+                        type="tel"
+                        onChange={(e) => {
+                          const formattedValue = formatPhoneNumber(e.target.value);
+                          field.onChange(formattedValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -397,56 +413,6 @@ export default function OnboardingForm() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="isMinorityOwned"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Minority-Owned Business
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("isMinorityOwned") && (
-                <FormField
-                  control={form.control}
-                  name="minorityGroup"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minority Group</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select minority group" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {MINORITY_GROUPS.map((group) => (
-                            <SelectItem key={group} value={group}>
-                              {group}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <div className="flex gap-4">
                 <Button

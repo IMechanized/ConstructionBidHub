@@ -109,8 +109,6 @@ export class DatabaseStorage implements IStorage {
           telephone: updates.telephone,
           cell: updates.cell,
           trade: updates.trade,
-          isMinorityOwned: updates.isMinorityOwned,
-          minorityGroup: updates.minorityGroup,
           certificationName: updates.certificationName,
           logo: updates.logo,
           language: updates.language

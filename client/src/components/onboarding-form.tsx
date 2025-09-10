@@ -171,10 +171,22 @@ export default function OnboardingForm() {
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // File size validation
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
-          title: "Error",
-          description: "Logo file size must be less than 5MB",
+          title: "File Too Large",
+          description: "Logo file size must be less than 5MB. Please compress your image or choose a different file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // File type validation
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a PNG, JPG, or SVG file for best results.",
           variant: "destructive",
         });
         return;
@@ -186,6 +198,11 @@ export default function OnboardingForm() {
       };
       reader.readAsDataURL(file);
       form.setValue('logo', file);
+      
+      toast({
+        title: "Logo Uploaded",
+        description: "Your logo has been uploaded successfully. Preview it below in different sizes.",
+      });
     }
   };
 
@@ -374,41 +391,84 @@ export default function OnboardingForm() {
                 render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel>Company Logo</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-col items-center gap-4">
-                        <label
-                          htmlFor="logo-upload"
-                          className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors"
-                        >
-                          {isUploading ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-8 w-8 animate-spin" />
-                              <span>Uploading...</span>
-                            </div>
-                          ) : logoPreview ? (
-                            <img
-                              src={logoPreview}
-                              alt="Logo preview"
-                              className="max-h-32 object-contain"
+                    <div className="space-y-3">
+                      <div className="bg-muted/50 rounded-lg p-4 text-sm">
+                        <h4 className="font-medium mb-2">Logo Guidelines:</h4>
+                        <ul className="space-y-1 text-muted-foreground">
+                          <li>• <strong>Format:</strong> PNG recommended (for transparency), JPG, or SVG</li>
+                          <li>• <strong>Size:</strong> Minimum 200×200px, maximum 1000×1000px</li>
+                          <li>• <strong>File Size:</strong> Under 5MB</li>
+                          <li>• <strong>Design:</strong> Clean, professional, readable at small sizes</li>
+                          <li>• <strong>Background:</strong> Transparent or white background works best</li>
+                        </ul>
+                      </div>
+                      
+                      <FormControl>
+                        <div className="flex flex-col gap-4">
+                          <label
+                            htmlFor="logo-upload"
+                            className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-8 hover:border-primary transition-colors bg-background"
+                          >
+                            {isUploading ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                                <span>Uploading...</span>
+                              </div>
+                            ) : logoPreview ? (
+                              <img
+                                src={logoPreview}
+                                alt="Logo preview"
+                                className="max-h-32 object-contain"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Upload className="h-8 w-8" />
+                                <span className="font-medium">Click to upload your company logo</span>
+                                <span className="text-xs">or drag and drop your file here</span>
+                              </div>
+                            )}
+                            <input
+                              id="logo-upload"
+                              type="file"
+                              ref={fileInputRef}
+                              accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                              className="hidden"
+                              onChange={handleLogoChange}
+                              disabled={isUploading}
                             />
-                          ) : (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <Upload className="h-8 w-8" />
-                              <span>Click to upload logo</span>
+                          </label>
+                          
+                          {logoPreview && (
+                            <div className="bg-muted/30 rounded-lg p-4">
+                              <h4 className="font-medium mb-3">Preview at Different Sizes:</h4>
+                              <div className="grid grid-cols-3 gap-4 items-center">
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-2 mb-2 flex items-center justify-center h-16">
+                                    <img src={logoPreview} alt="Large preview" className="max-h-12 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Large (Profile)</span>
+                                </div>
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-1 mb-2 flex items-center justify-center h-10">
+                                    <img src={logoPreview} alt="Medium preview" className="max-h-6 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Medium (Directory)</span>
+                                </div>
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-1 mb-2 flex items-center justify-center h-8">
+                                    <img src={logoPreview} alt="Small preview" className="max-h-4 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Small (Lists)</span>
+                                </div>
+                              </div>
+                              <div className="mt-3 text-xs text-muted-foreground">
+                                ✓ Your logo looks good at all sizes. Make sure text and details are clear in the smallest preview.
+                              </div>
                             </div>
                           )}
-                          <input
-                            id="logo-upload"
-                            type="file"
-                            ref={fileInputRef}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoChange}
-                            disabled={isUploading}
-                          />
-                        </label>
-                      </div>
-                    </FormControl>
+                        </div>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

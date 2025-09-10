@@ -48,10 +48,10 @@ const MINORITY_GROUPS = [
 ];
 
 type FormValues = {
-  contact: string;
+  firstName: string;
+  lastName: string;
   telephone: string;
   cell: string;
-  businessEmail: string;
   isMinorityOwned: boolean;
   minorityGroup: string;
   trade: string;
@@ -77,10 +77,10 @@ export default function OnboardingForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      contact: "",
+      firstName: "",
+      lastName: "",
       telephone: "",
       cell: "",
-      businessEmail: "",
       isMinorityOwned: false,
       minorityGroup: "",
       trade: "",
@@ -230,12 +230,26 @@ export default function OnboardingForm() {
 
               <FormField
                 control={form.control}
-                name="contact"
+                name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Full Name" />
+                      <Input {...field} placeholder="First Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Last Name" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -264,20 +278,6 @@ export default function OnboardingForm() {
                     <FormLabel>Cell Phone</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Mobile Number" type="tel" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="businessEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Business Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Business Email" type="email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

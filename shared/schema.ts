@@ -28,10 +28,10 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
-  contact: text("contact"),                    // Primary contact person
+  firstName: text("first_name"),              // Contact first name
+  lastName: text("last_name"),                // Contact last name
   telephone: text("telephone"),                // Office phone
   cell: text("cell"),                         // Mobile phone
-  businessEmail: text("business_email"),       // Secondary/business email
   isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),       // Specific minority classification
   trade: text("trade"),                       // Primary trade/industry
@@ -142,10 +142,10 @@ export const backupLogs = pgTable("backup_logs", {
 
 // Onboarding form validation
 export const onboardingSchema = z.object({
-  contact: z.string().min(1, "Contact name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   telephone: z.string().min(1, "Telephone number is required"),
   cell: z.string().min(1, "Cell phone number is required"),
-  businessEmail: z.string().email("Invalid email address"),
   isMinorityOwned: z.boolean(),
   minorityGroup: z.string().optional(),
   trade: z.string().min(1, "Trade is required"),

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -37,7 +38,7 @@ export default function NewRfps() {
   });
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
-  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+  const locations = US_STATES_AND_TERRITORIES;
 
   const newRfps = rfps?.filter(rfp => {
     if (!(!rfp.featured && isAfter(new Date(rfp.createdAt), twentyFourHoursAgo))) return false;

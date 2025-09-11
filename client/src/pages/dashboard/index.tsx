@@ -26,7 +26,7 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("none");
+  const [sortBy, setSortBy] = useState<SortOption>("deadline");
   const [locationFilter, setLocationFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
@@ -132,10 +132,9 @@ export default function Dashboard() {
                       <SelectValue placeholder={t('dashboard.sortBy')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">{t('dashboard.sortOptions.default')}</SelectItem>
+                      <SelectItem value="deadline">{t('dashboard.sortOptions.deadline')}</SelectItem>
                       <SelectItem value="priceAsc">{t('dashboard.sortOptions.priceLowHigh')}</SelectItem>
                       <SelectItem value="priceDesc">{t('dashboard.sortOptions.priceHighLow')}</SelectItem>
-                      <SelectItem value="deadline">{t('dashboard.sortOptions.deadline')}</SelectItem>
                     </SelectContent>
                   </Select>
 

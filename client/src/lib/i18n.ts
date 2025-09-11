@@ -48,9 +48,8 @@ const resources = {
         filterByLocation: 'Filter by location',
         allLocations: 'All Locations',
         sortOptions: {
-          default: 'Default',
-          priceLowHigh: 'Price: Low to High',
-          priceHighLow: 'Price: High to Low',
+          priceLowHigh: 'RFP Amount: Low to High',
+          priceHighLow: 'RFP Amount: High to Low',
           deadline: 'Deadline'
         }
       },
@@ -173,9 +172,8 @@ const resources = {
         filterByLocation: 'Filtrar por ubicación',
         allLocations: 'Todas las Ubicaciones',
         sortOptions: {
-          default: 'Predeterminado',
-          priceLowHigh: 'Precio: Bajo a Alto',
-          priceHighLow: 'Precio: Alto a Bajo',
+          priceLowHigh: 'Cantidad RFP: Bajo a Alto',
+          priceHighLow: 'Cantidad RFP: Alto a Bajo',
           deadline: 'Fecha Límite'
         }
       },
@@ -276,9 +274,8 @@ const resources = {
         filterByLocation: 'Filtrer par lieu',
         allLocations: 'Tous les Lieux',
         sortOptions: {
-          default: 'Par défaut',
-          priceLowHigh: 'Prix: Bas à Élevé',
-          priceHighLow: 'Prix: Élevé à Bas',
+          priceLowHigh: 'Montant RFP: Bas à Élevé',
+          priceHighLow: 'Montant RFP: Élevé à Bas',
           deadline: 'Date Limite'
         }
       },
@@ -379,9 +376,8 @@ const resources = {
         filterByLocation: 'Nach Standort filtern',
         allLocations: 'Alle Standorte',
         sortOptions: {
-          default: 'Standard',
-          priceLowHigh: 'Preis: Niedrig zu Hoch',
-          priceHighLow: 'Preis: Hoch zu Niedrig',
+          priceLowHigh: 'RFP-Betrag: Niedrig zu Hoch',
+          priceHighLow: 'RFP-Betrag: Hoch zu Niedrig',
           deadline: 'Frist'
         }
       },
@@ -482,9 +478,8 @@ const resources = {
         filterByLocation: '場所でフィルター',
         allLocations: 'すべての場所',
         sortOptions: {
-          default: 'デフォルト',
-          priceLowHigh: '価格：安い順',
-          priceHighLow: '価格：高い順',
+          priceLowHigh: 'RFP金額：安い順',
+          priceHighLow: 'RFP金額：高い順',
           deadline: '締切日'
         }
       },
@@ -585,9 +580,8 @@ const resources = {
         filterByLocation: '按位置筛选',
         allLocations: '所有位置',
         sortOptions: {
-          default: '默认',
-          priceLowHigh: '价格：从低到高',
-          priceHighLow: '价格：从高到低',
+          priceLowHigh: 'RFP金额：从低到高',
+          priceHighLow: 'RFP金额：从高到低',
           deadline: '截止日期'
         }
       },

@@ -25,7 +25,7 @@ export default function OpportunitiesPage() {
   const { type } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("none");
+  const [sortBy, setSortBy] = useState<SortOption>("deadline");
   const [locationFilter, setLocationFilter] = useState("all");
   
   const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
@@ -119,10 +119,9 @@ export default function OpportunitiesPage() {
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Default</SelectItem>
-                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
                 <SelectItem value="deadline">Deadline</SelectItem>
+                <SelectItem value="priceAsc">RFP Amount: Low to High</SelectItem>
+                <SelectItem value="priceDesc">RFP Amount: High to Low</SelectItem>
               </SelectContent>
             </Select>
 

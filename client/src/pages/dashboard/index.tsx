@@ -16,6 +16,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 
 type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
@@ -56,7 +57,7 @@ export default function Dashboard() {
     setIsCreateModalOpen(false);
   };
 
-  const locations = Array.from(new Set(rfps?.map((rfp) => rfp.jobLocation) || [])).sort();
+  const locations = US_STATES_AND_TERRITORIES;
 
   const applyFilters = (rfpList: Rfp[]) => {
     let filtered = rfpList;

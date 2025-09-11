@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
@@ -80,8 +81,8 @@ export default function OpportunitiesPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Get unique locations for the location filter dropdown
-  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+  // Use predefined US states and territories for location filtering
+  const locations = US_STATES_AND_TERRITORIES;
 
   return (
     <div className="min-h-screen bg-background">

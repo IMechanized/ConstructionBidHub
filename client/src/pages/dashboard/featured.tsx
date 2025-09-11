@@ -40,6 +40,9 @@ export default function FeaturedRfps() {
 
   const featuredRfps = rfps?.filter(rfp => {
     if (!rfp.featured) return false;
+    
+    // Hide RFPs past their deadline
+    if (new Date(rfp.deadline) < new Date()) return false;
 
     let matches = true;
 

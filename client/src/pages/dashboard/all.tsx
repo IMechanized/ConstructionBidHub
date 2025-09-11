@@ -39,6 +39,9 @@ export default function AllRfps() {
   const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
 
   const filteredRfps = rfps?.filter((rfp) => {
+    // Hide RFPs past their deadline
+    if (new Date(rfp.deadline) < new Date()) return false;
+    
     let matches = true;
 
     if (searchTerm) {

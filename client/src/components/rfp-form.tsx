@@ -419,8 +419,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
                 
                 {/* Select dropdown for adding certifications */}
                 <Select
-                  onValueChange={(value) => {
-                    const currentValue = field.value || [];
+                  onValueChange={(value: string) => {
+                    const currentValue = field.value as string[] || [];
                     if (!currentValue.includes(value)) {
                       field.onChange([...currentValue, value]);
                     }
@@ -432,7 +432,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {CERTIFICATIONS.filter(cert => !(field.value || []).includes(cert)).map((cert) => (
+                    {CERTIFICATIONS.filter(cert => !(field.value as string[] || []).includes(cert)).map((cert) => (
                       <SelectItem key={cert} value={cert}>
                         {cert}
                       </SelectItem>

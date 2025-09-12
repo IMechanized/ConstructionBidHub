@@ -27,10 +27,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertRfpSchema } from "@shared/schema";
-import { Loader2, Zap } from "lucide-react";
+import { insertRfpSchema, CERTIFICATIONS } from "@shared/schema";
+import { Loader2, Zap, X } from "lucide-react";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
+import { getCertificationClasses } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
@@ -70,7 +73,10 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       insertRfpSchema.extend({
         title: insertRfpSchema.shape.title.min(1, t('validation.titleRequired')),
         description: insertRfpSchema.shape.description.min(1, t('validation.descriptionRequired')),
-        jobLocation: insertRfpSchema.shape.jobLocation.min(1, t('validation.jobLocationRequired')),
+        jobStreet: insertRfpSchema.shape.jobStreet.min(1, t('validation.jobStreetRequired')),
+        jobCity: insertRfpSchema.shape.jobCity.min(1, t('validation.jobCityRequired')),
+        jobState: insertRfpSchema.shape.jobState.min(1, t('validation.jobStateRequired')),
+        jobZip: insertRfpSchema.shape.jobZip.min(1, t('validation.jobZipRequired')),
         walkthroughDate: insertRfpSchema.shape.walkthroughDate.min(1, t('validation.walkthroughDateRequired')),
         rfiDate: insertRfpSchema.shape.rfiDate.min(1, t('validation.rfiDateRequired')),
         deadline: insertRfpSchema.shape.deadline.min(1, t('validation.deadlineRequired')),
@@ -83,8 +89,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       rfiDate: "",
       deadline: "",
       budgetMin: undefined,
-      certificationGoals: "",
-      jobLocation: "",
+      certificationGoals: [],
+      jobStreet: "",
+      jobCity: "",
+      jobState: "",
+      jobZip: "",
       portfolioLink: "",
       featured: false,
     },
@@ -97,7 +106,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         ...data,
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
         portfolioLink: data.portfolioLink || null,
-        certificationGoals: data.certificationGoals || null,
+        certificationGoals: data.certificationGoals && data.certificationGoals.length > 0 ? data.certificationGoals : null,
         // Always set featured to false - we'll update it after payment if needed
         featured: false
       };
@@ -290,24 +299,94 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
-        {/* Location Field */}
-        <FormField
-          control={form.control}
-          name="jobLocation"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('rfp.jobLocation')}</FormLabel>
-              <FormControl>
-                <Input 
-                  data-testid="location-input"
-                  placeholder={t('rfp.enterJobLocation')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage role="alert" data-testid="location-error" />
-            </FormItem>
-          )}
-        />
+        {/* Job Address Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{t('rfp.jobAddress')}</h3>
+          
+          {/* Street Address */}
+          <FormField
+            control={form.control}
+            name="jobStreet"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('rfp.streetAddress')}</FormLabel>
+                <FormControl>
+                  <Input 
+                    data-testid="street-input"
+                    placeholder={t('rfp.enterStreetAddress')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage role="alert" data-testid="street-error" />
+              </FormItem>
+            )}
+          />
+
+          {/* City and State */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="jobCity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('rfp.city')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      data-testid="city-input"
+                      placeholder={t('rfp.enterCity')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage role="alert" data-testid="city-error" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="jobState"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('rfp.state')}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="state-select">
+                        <SelectValue placeholder={t('rfp.selectState')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {US_STATES_AND_TERRITORIES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage role="alert" data-testid="state-error" />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* ZIP Code */}
+          <FormField
+            control={form.control}
+            name="jobZip"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('rfp.zipCode')}</FormLabel>
+                <FormControl>
+                  <Input 
+                    data-testid="zip-input"
+                    placeholder={t('rfp.enterZipCode')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage role="alert" data-testid="zip-error" />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Certification Goals Field */}
         <FormField
@@ -316,13 +395,52 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('rfp.certificationGoals')}</FormLabel>
-              <FormControl>
-                <Textarea 
-                  data-testid="certification-input"
-                  placeholder={t('rfp.enterCertificationGoals')}
-                  {...field}
-                />
-              </FormControl>
+              <div className="space-y-3">
+                {/* Display selected certifications */}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {field.value?.map((cert, index) => (
+                    <div 
+                      key={index} 
+                      className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCertificationClasses(cert, false)}`}
+                    >
+                      <span>{cert}</span>
+                      <X 
+                        className="h-4 w-4 cursor-pointer" 
+                        onClick={() => {
+                          const newValue = [...(field.value || [])];
+                          newValue.splice(index, 1);
+                          field.onChange(newValue);
+                        }}
+                        data-testid={`remove-certification-${index}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Select dropdown for adding certifications */}
+                <Select
+                  onValueChange={(value) => {
+                    const currentValue = field.value || [];
+                    if (!currentValue.includes(value)) {
+                      field.onChange([...currentValue, value]);
+                    }
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="certification-select">
+                      <SelectValue placeholder={t('rfp.selectCertificationGoals')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CERTIFICATIONS.filter(cert => !(field.value || []).includes(cert)).map((cert) => (
+                      <SelectItem key={cert} value={cert}>
+                        {cert}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('rfp.certificationGoalsDescription')}</p>
+              </div>
               <FormMessage role="alert" data-testid="certification-error" />
             </FormItem>
           )}

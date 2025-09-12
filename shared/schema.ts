@@ -62,8 +62,11 @@ export const rfps = pgTable("rfps", {
   rfiDate: timestamp("rfi_date").notNull(),                  // Last day for questions
   deadline: timestamp("deadline").notNull(),                 // Bid submission deadline
   budgetMin: integer("budget_min"),                         // Minimum budget (optional)
-  certificationGoals: text("certification_goals"),          // Required certifications
-  jobLocation: text("job_location").notNull(),
+  certificationGoals: text("certification_goals").array(),   // Required certifications
+  jobStreet: text("job_street").notNull(),                 // Street address
+  jobCity: text("job_city").notNull(),                     // City
+  jobState: text("job_state").notNull(),                   // State
+  jobZip: text("job_zip").notNull(),                       // ZIP code
   portfolioLink: text("portfolio_link"),                    // Additional resources
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
@@ -192,7 +195,10 @@ export const insertRfpSchema = createInsertSchema(rfps)
     deadline: true,
     budgetMin: true,
     certificationGoals: true,
-    jobLocation: true,
+    jobStreet: true,
+    jobCity: true,
+    jobState: true,
+    jobZip: true,
     portfolioLink: true,
     featured: true,
   })
@@ -201,8 +207,11 @@ export const insertRfpSchema = createInsertSchema(rfps)
     rfiDate: z.string(),
     deadline: z.string(),
     budgetMin: z.number().min(0, "Minimum budget must be a positive number").nullish(),
-    jobLocation: z.string().min(1, "Job location is required"),
-    certificationGoals: z.string().nullish(),
+    jobStreet: z.string().min(1, "Street address is required"),
+    jobCity: z.string().min(1, "City is required"),
+    jobState: z.string().min(1, "State is required"),
+    jobZip: z.string().min(1, "ZIP code is required"),
+    certificationGoals: z.array(z.string()).nullish(),
     portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish().or(z.literal("")),
     featured: z.boolean().default(false),
   });

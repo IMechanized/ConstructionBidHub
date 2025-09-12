@@ -456,8 +456,8 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <FormControl>
                 <Input 
                   data-testid="portfolio-input"
-                  type="url"
-                  placeholder="https://..."
+                  type="text"
+                  placeholder="www.example.com or https://example.com"
                   {...field}
                 />
               </FormControl>

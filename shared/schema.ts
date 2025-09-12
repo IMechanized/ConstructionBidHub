@@ -212,7 +212,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobState: z.string().min(1, "State is required"),
     jobZip: z.string().min(1, "ZIP code is required"),
     certificationGoals: z.array(z.string()).nullish(),
-    portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish().or(z.literal("")),
+    portfolioLink: z.string().nullish().or(z.literal("")),
     featured: z.boolean().default(false),
   });
 

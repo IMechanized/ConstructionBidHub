@@ -75,8 +75,8 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
 
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Location:</span>
-            <span>{rfp.jobLocation}</span>
+            <span className="text-muted-foreground">State:</span>
+            <span>{rfp.jobState}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Deadline:</span>

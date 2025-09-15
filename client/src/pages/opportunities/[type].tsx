@@ -50,14 +50,17 @@ export default function OpportunitiesPage() {
     filteredRfps = filteredRfps.filter(rfp =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+      rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobZip.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
 
   // Apply location filter
   if (locationFilter && locationFilter !== "all") { // Updated filter logic
     filteredRfps = filteredRfps.filter(rfp =>
-      rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
+      rfp.jobState.toLowerCase().includes(locationFilter.toLowerCase())
     );
   }
 

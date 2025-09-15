@@ -49,12 +49,15 @@ export default function AllRfps() {
       matches = matches && (
         rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+        rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rfp.jobZip.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (locationFilter && locationFilter !== "all") {
-      matches = matches && rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase());
+      matches = matches && rfp.jobState.toLowerCase().includes(locationFilter.toLowerCase());
     }
 
     return matches;

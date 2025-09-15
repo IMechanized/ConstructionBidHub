@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -41,12 +42,15 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
     defaultValues: {
       title: rfp.title,
       description: rfp.description,
-      jobLocation: rfp.jobLocation,
+      jobStreet: rfp.jobStreet,
+      jobCity: rfp.jobCity,
+      jobState: rfp.jobState,
+      jobZip: rfp.jobZip,
       budgetMin: rfp.budgetMin || undefined,
       walkthroughDate: format(new Date(rfp.walkthroughDate), "yyyy-MM-dd'T'HH:mm"),
       rfiDate: format(new Date(rfp.rfiDate), "yyyy-MM-dd'T'HH:mm"),
       deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
-      certificationGoals: rfp.certificationGoals || "",
+      certificationGoals: rfp.certificationGoals || [],
       portfolioLink: rfp.portfolioLink || "",
     },
   });
@@ -137,18 +141,78 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           )}
         </div>
 
-        <div>
-          <Label htmlFor="jobLocation">Job Location</Label>
-          <Input
-            id="jobLocation"
-            {...form.register("jobLocation")}
-            placeholder="Enter job location"
-          />
-          {form.formState.errors.jobLocation && (
-            <p className="text-sm text-destructive mt-1">
-              {form.formState.errors.jobLocation.message}
-            </p>
-          )}
+        {/* Job Address Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Job Address</h3>
+          
+          {/* Street Address */}
+          <div>
+            <Label htmlFor="jobStreet">Street Address</Label>
+            <Input
+              id="jobStreet"
+              {...form.register("jobStreet")}
+              placeholder="Enter street address"
+            />
+            {form.formState.errors.jobStreet && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.jobStreet.message}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* City */}
+            <div>
+              <Label htmlFor="jobCity">City</Label>
+              <Input
+                id="jobCity"
+                {...form.register("jobCity")}
+                placeholder="Enter city"
+              />
+              {form.formState.errors.jobCity && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.jobCity.message}
+                </p>
+              )}
+            </div>
+
+            {/* State */}
+            <div>
+              <Label htmlFor="jobState">State</Label>
+              <select
+                id="jobState"
+                {...form.register("jobState")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select state</option>
+                {US_STATES_AND_TERRITORIES.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+              {form.formState.errors.jobState && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.jobState.message}
+                </p>
+              )}
+            </div>
+
+            {/* ZIP Code */}
+            <div>
+              <Label htmlFor="jobZip">ZIP Code</Label>
+              <Input
+                id="jobZip"
+                {...form.register("jobZip")}
+                placeholder="Enter ZIP code"
+              />
+              {form.formState.errors.jobZip && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.jobZip.message}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div>

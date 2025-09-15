@@ -116,7 +116,7 @@ export default function DetailedReportPage() {
               <div>
                 <h2 className="text-lg font-semibold mb-2">Project Details</h2>
                 <div className="space-y-2">
-                  <p><strong>Location:</strong> {rfp.jobLocation}</p>
+                  <p><strong>Location:</strong> {rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}</p>
                   <p><strong>Budget:</strong> ${rfp.budgetMin?.toLocaleString() || "Not specified"}</p>
                   <p><strong>Due Date:</strong> {format(new Date(rfp.deadline), "PPp")}</p>
                 </div>

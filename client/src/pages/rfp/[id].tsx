@@ -21,6 +21,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Download, Edit, Trash2 } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { getCertificationClasses } from "@/lib/utils";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -297,7 +299,7 @@ export default function RfpPage() {
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <h3 className="font-medium mb-2">Location</h3>
-                <p>{rfp.jobLocation}</p>
+                <p>{rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}</p>
               </div>
               <div>
                 <h3 className="font-medium mb-2">Budget</h3>
@@ -331,12 +333,18 @@ export default function RfpPage() {
             </div>
           </div>
 
-          {rfp.certificationGoals && (
+          {rfp.certificationGoals && rfp.certificationGoals.length > 0 && (
             <>
               <hr className="my-6 border-muted" />
               <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-4">Certification Requirements</h2>
-                <p className="text-justify">{rfp.certificationGoals}</p>
+                <div className="flex flex-wrap gap-2">
+                  {rfp.certificationGoals.map((cert, index) => (
+                    <Badge key={index} className={getCertificationClasses(cert)}>
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </>
           )}

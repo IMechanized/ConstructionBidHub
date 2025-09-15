@@ -57,7 +57,7 @@ async function seed() {
       isMinorityOwned: faker.datatype.boolean(),
       minorityGroup: faker.helpers.arrayElement(["Asian", "Black", "Hispanic", "Native American", null]),
       trade: faker.helpers.arrayElement(trades),
-      certificationName: faker.helpers.arrayElement([...certifications, null]),
+      certificationName: faker.helpers.arrayElements(certifications, { min: 1, max: 3 }),
       onboardingComplete: true,
       status: "active",
     }).returning({ id: users.id });

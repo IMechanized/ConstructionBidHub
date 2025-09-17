@@ -203,14 +203,38 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/rfps/:id", async (req, res) => {
-    requireAuth(req);
-    const rfp = await storage.getRfpById(Number(req.params.id));
-    if (!rfp || rfp.organizationId !== req.user?.id) {
-      return res.status(403).send("Unauthorized");
-    }
+    try {
+      requireAuth(req);
+      console.log('RFP update request received:', req.body);
 
-    const updated = await storage.updateRfp(Number(req.params.id), req.body);
-    res.json(updated);
+      const rfp = await storage.getRfpById(Number(req.params.id));
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Validate the update data using the insert schema but make all fields optional
+      const data = insertRfpSchema.partial().parse(req.body);
+      console.log('Validated RFP update data:', data);
+
+      // Convert date strings to Date objects for storage
+      const processedData = {
+        ...data,
+        walkthroughDate: data.walkthroughDate ? new Date(data.walkthroughDate) : undefined,
+        rfiDate: data.rfiDate ? new Date(data.rfiDate) : undefined,
+        deadline: data.deadline ? new Date(data.deadline) : undefined,
+      };
+
+      const updated = await storage.updateRfp(Number(req.params.id), processedData);
+      console.log('RFP updated successfully:', updated);
+      res.json(updated);
+    } catch (error) {
+      console.error('RFP update error:', error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to update RFP" });
+      }
+    }
   });
 
   app.delete("/api/rfps/:id", async (req, res) => {

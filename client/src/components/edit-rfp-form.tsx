@@ -2,15 +2,18 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { insertRfpSchema, type Rfp } from "@shared/schema";
+import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
+import { US_STATES_AND_TERRITORIES, getCertificationClasses } from "@/lib/utils";
+import { X } from "lucide-react";
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -272,14 +275,53 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           )}
         </div>
 
+        {/* Certification Goals Field */}
         <div>
-          <Label htmlFor="certificationGoals">Certification Requirements (Optional)</Label>
-          <Textarea
-            id="certificationGoals"
-            {...form.register("certificationGoals")}
-            placeholder="Describe any certification requirements"
-            rows={3}
-          />
+          <Label>Certification Requirements (Optional)</Label>
+          <div className="space-y-3">
+            {/* Display selected certifications */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {form.watch("certificationGoals")?.map((cert, index) => (
+                <div 
+                  key={index} 
+                  className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCertificationClasses(cert, false)}`}
+                >
+                  <span>{cert}</span>
+                  <X 
+                    className="h-4 w-4 cursor-pointer" 
+                    onClick={() => {
+                      const currentValue = form.getValues("certificationGoals") || [];
+                      const newValue = [...currentValue];
+                      newValue.splice(index, 1);
+                      form.setValue("certificationGoals", newValue);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Select dropdown for adding certifications */}
+            <Select
+              onValueChange={(value: string) => {
+                const currentValue = form.getValues("certificationGoals") || [];
+                if (!currentValue.includes(value)) {
+                  form.setValue("certificationGoals", [...currentValue, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select certification requirements" />
+              </SelectTrigger>
+              <SelectContent>
+                {CERTIFICATIONS.filter(cert => !(form.watch("certificationGoals") || []).includes(cert)).map((cert) => (
+                  <SelectItem key={cert} value={cert}>
+                    {cert}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Select multiple certifications that contractors should have</p>
+          </div>
           {form.formState.errors.certificationGoals && (
             <p className="text-sm text-destructive mt-1">
               {form.formState.errors.certificationGoals.message}

@@ -298,8 +298,20 @@ export default function RfpPage() {
             <h2 className="text-xl font-semibold mb-4">Project Details</h2>
             <div className="grid grid-cols-2 gap-8">
               <div>
-                <h3 className="font-medium mb-2">Location</h3>
-                <p>{rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}</p>
+                <h3 className="font-medium mb-2">Street Address</h3>
+                <p>{rfp.jobStreet}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">City</h3>
+                <p>{rfp.jobCity}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">State</h3>
+                <p>{rfp.jobState}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">ZIP Code</h3>
+                <p>{rfp.jobZip}</p>
               </div>
               <div>
                 <h3 className="font-medium mb-2">Budget</h3>

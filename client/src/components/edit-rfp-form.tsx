@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { US_STATES_AND_TERRITORIES, getCertificationClasses } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, Zap, Loader2 } from "lucide-react";
+import PaymentDialog from "./payment-dialog";
+import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
+import { useAuth } from "@/hooks/use-auth";
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -38,7 +40,16 @@ interface EditRfpFormProps {
 
 export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isBoosting, setIsBoosting] = useState(false);
+  
+  // Fetch the featured RFP price
+  const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
+    queryKey: ['/api/payments/price'],
+    queryFn: getFeaturedRfpPrice,
+  });
 
   const form = useForm({
     resolver: zodResolver(editRfpSchema),
@@ -58,38 +69,42 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
     },
   });
 
+  // Common mutation function for updating RFP
+  const updateRfpMutationFn = async (data: any) => {
+    // Convert date strings to Date objects for the API
+    // Ensure dates are valid Date objects before sending to API
+    const processedData = {
+      ...data,
+      walkthroughDate: data.walkthroughDate ? new Date(data.walkthroughDate) : null,
+      rfiDate: data.rfiDate ? new Date(data.rfiDate) : null,
+      deadline: data.deadline ? new Date(data.deadline) : null,
+    };
+
+    // Validate that dates were converted successfully
+    if (!processedData.walkthroughDate || !processedData.rfiDate || !processedData.deadline) {
+      throw new Error("Invalid date format");
+    }
+
+    const response = await fetch(`/api/rfps/${rfp.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(processedData),
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update RFP");
+    }
+    
+    return response.json();
+  };
+
+  // Main update mutation (with onSuccess side effects)
   const updateRfpMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // Convert date strings to Date objects for the API
-      // Ensure dates are valid Date objects before sending to API
-      const processedData = {
-        ...data,
-        walkthroughDate: data.walkthroughDate ? new Date(data.walkthroughDate) : null,
-        rfiDate: data.rfiDate ? new Date(data.rfiDate) : null,
-        deadline: data.deadline ? new Date(data.deadline) : null,
-      };
-
-      // Validate that dates were converted successfully
-      if (!processedData.walkthroughDate || !processedData.rfiDate || !processedData.deadline) {
-        throw new Error("Invalid date format");
-      }
-
-      const response = await fetch(`/api/rfps/${rfp.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(processedData),
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update RFP");
-      }
-      
-      return response.json();
-    },
+    mutationFn: updateRfpMutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/rfps/${rfp.id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
@@ -108,8 +123,79 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
     },
   });
 
+  // Silent update mutation (no onSuccess side effects, for pre-boost saves)
+  const silentUpdateRfpMutation = useMutation({
+    mutationFn: updateRfpMutationFn,
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update RFP",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle payment success
+  const handlePaymentSuccess = () => {
+    setShowPaymentDialog(false);
+    setIsBoosting(false);
+    toast({
+      title: "Payment Successful",
+      description: "Your RFP has been boosted for better visibility!",
+    });
+    queryClient.invalidateQueries({ queryKey: [`/api/rfps/${rfp.id}`] });
+    queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
+    onSuccess();
+  };
+
   const onSubmit = (data: any) => {
     updateRfpMutation.mutate(data);
+  };
+
+  const handleBoost = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to boost your RFP",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // First validate the form
+    const isValid = await form.trigger();
+    if (!isValid) {
+      toast({
+        title: "Form Validation Error",
+        description: "Please fix the form errors before boosting",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsBoosting(true);
+    
+    // If form has unsaved changes, save them first
+    if (form.formState.isDirty) {
+      try {
+        // Save the form data first using the silent mutation (won't close form)
+        const formData = form.getValues();
+        await silentUpdateRfpMutation.mutateAsync(formData);
+        
+        // Now proceed with boost
+        setShowPaymentDialog(true);
+      } catch (error) {
+        setIsBoosting(false);
+        toast({
+          title: "Error",
+          description: "Failed to save changes before boosting. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // No unsaved changes, proceed directly to boost
+      setShowPaymentDialog(true);
+    }
   };
 
   return (
@@ -345,14 +431,50 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
         </div>
       </div>
 
-      <div className="flex justify-end space-x-4">
+      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
+        
+        {/* Boost Button - Only show if RFP is not featured */}
+        {!rfp.featured && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleBoost}
+            disabled={isBoosting || isPriceLoading}
+            data-testid="boost-button"
+            className="w-full sm:w-auto"
+          >
+            {isBoosting || isPriceLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Boosting...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                <span className="whitespace-nowrap">Boost for Visibility {formatPrice(featuredPrice)}</span>
+              </>
+            )}
+          </Button>
+        )}
+        
         <Button type="submit" disabled={updateRfpMutation.isPending}>
           {updateRfpMutation.isPending ? "Updating..." : "Update RFP"}
         </Button>
       </div>
+      
+      {/* Payment Dialog */}
+      <PaymentDialog
+        isOpen={showPaymentDialog}
+        onClose={() => {
+          setShowPaymentDialog(false);
+          setIsBoosting(false);
+        }}
+        rfpId={rfp.id}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </form>
   );
 }

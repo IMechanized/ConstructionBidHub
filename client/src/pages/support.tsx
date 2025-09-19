@@ -133,6 +133,22 @@ export default function SupportPage() {
                   notification preferences.
                 </p>
               </div>
+
+              <div>
+                <h3>What are the benefits of boosting my RFP?</h3>
+                <p>
+                  Boosting your RFP provides several key advantages to help you get better results:
+                </p>
+                <ul className="list-disc list-inside mt-2 ml-4 space-y-1">
+                  <li><strong>Priority Visibility:</strong> Featured RFPs appear at the top of search results and category listings, ensuring maximum exposure</li>
+                  <li><strong>More Responses:</strong> Boosted RFPs receive significantly more qualified contractor bids compared to standard listings</li>
+                  <li><strong>Faster Matching:</strong> Get matched with qualified contractors faster through enhanced visibility</li>
+                  <li><strong>Professional Badge:</strong> Displays a "Featured" badge that shows your commitment to the project and attracts serious bidders</li>
+                </ul>
+                <p className="mt-2">
+                  Boosting is especially beneficial for time-sensitive projects or when you need to attract the most qualified contractors in your area.
+                </p>
+              </div>
             </div>
           </div>
         </div>

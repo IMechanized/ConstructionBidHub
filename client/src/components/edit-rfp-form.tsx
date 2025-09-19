@@ -16,6 +16,7 @@ import { X, Zap, Loader2 } from "lucide-react";
 import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -41,6 +42,7 @@ interface EditRfpFormProps {
 export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [isBoosting, setIsBoosting] = useState(false);
@@ -429,6 +431,53 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
             </p>
           )}
         </div>
+
+        {/* RFP Boosting Benefits Section - Only show if RFP is not featured */}
+        {!rfp.featured && (
+          <div 
+            className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 space-y-4" 
+            data-testid="boost-benefits-section"
+            role="region"
+            aria-labelledby="boost-benefits-heading"
+          >
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
+              <h3 id="boost-benefits-heading" className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                {t('rfp.boost.heading')}
+              </h3>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm list-none">
+              <li className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+                <div>
+                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.priorityVisibility.title')}</strong>
+                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.priorityVisibility.description')}</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+                <div>
+                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.moreResponses.title')}</strong>
+                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.moreResponses.description')}</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+                <div>
+                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.fasterMatching.title')}</strong>
+                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.fasterMatching.description')}</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+                <div>
+                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.professionalBadge.title')}</strong>
+                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.professionalBadge.description')}</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">

@@ -466,6 +466,51 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* RFP Boosting Benefits Section */}
+        <div 
+          className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 space-y-4" 
+          data-testid="boost-benefits-section"
+          role="region"
+          aria-labelledby="boost-benefits-heading"
+        >
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" aria-hidden="true" />
+            <h3 id="boost-benefits-heading" className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+              {t('rfp.boost.heading')}
+            </h3>
+          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm list-none">
+            <li className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+              <div>
+                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.priorityVisibility.title')}</strong>
+                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.priorityVisibility.description')}</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+              <div>
+                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.moreResponses.title')}</strong>
+                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.moreResponses.description')}</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+              <div>
+                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.fasterMatching.title')}</strong>
+                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.fasterMatching.description')}</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
+              <div>
+                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.professionalBadge.title')}</strong>
+                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.professionalBadge.description')}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
         {/* Form Actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end sm:gap-4">
           <Button

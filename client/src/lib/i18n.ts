@@ -126,7 +126,26 @@ const resources = {
         boosting: 'Boosting...',
         boostVisibility: 'Boost for Visibility',
         rfpCreated: 'RFP Created',
-        rfpCreatedSuccess: 'Your RFP has been successfully created'
+        rfpCreatedSuccess: 'Your RFP has been successfully created',
+        boost: {
+          heading: 'Why Boost Your RFP?',
+          priorityVisibility: {
+            title: 'Priority Visibility:',
+            description: 'Featured RFPs appear at the top of search results and category listings'
+          },
+          moreResponses: {
+            title: 'More Responses:',
+            description: 'Boosted RFPs receive significantly more qualified contractor bids'
+          },
+          fasterMatching: {
+            title: 'Faster Matching:',
+            description: 'Get matched with qualified contractors faster'
+          },
+          professionalBadge: {
+            title: 'Professional Badge:',
+            description: 'Displays a "Featured" badge showing your commitment to the project'
+          }
+        }
       },
       rfi: {
         emailAddress: 'Email Address',

@@ -29,8 +29,8 @@ router.get('/price', (req, res) => {
 router.get('/config', (req, res) => {
   res.json({ 
     isInitialized: stripeStatus.isInitialized,
-    mode: stripeStatus.mode,
-    keyType: stripeStatus.keyType
+    mode: (stripeStatus as any).mode,
+    keyType: (stripeStatus as any).keyType
   });
 });
 

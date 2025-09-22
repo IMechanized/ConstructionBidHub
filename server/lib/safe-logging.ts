@@ -9,7 +9,10 @@ const SENSITIVE_FIELDS = [
   'client_secret', 'clientSecret',
   'token', 'accessToken', 'refreshToken', 'apiKey', 'api_key',
   'secret', 'privateKey', 'private_key',
-  'creditCard', 'ssn', 'socialSecurityNumber'
+  'authorization', 'set-cookie', 'cookie', 'session', 'csrf',
+  'id_token', 'refresh_token', 'access_token',
+  'creditCard', 'ssn', 'socialSecurityNumber',
+  'verificationToken', 'resetToken'
 ];
 
 // List of fields that should be partially masked (like emails)

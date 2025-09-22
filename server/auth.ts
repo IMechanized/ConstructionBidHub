@@ -8,6 +8,7 @@ import { storage } from "./storage.js";
 import { User as SelectUser, passwordResetSchema, insertUserSchema } from "../shared/schema.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
 import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
+import { safeLog, safeError, createUserLogId, maskEmail } from "./lib/safe-logging.js";
 
 declare global {
   namespace Express {
@@ -45,11 +46,11 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email: string, password: string, done: any) => {
         try {
-          console.log(`[Auth] Login attempt with email:`, email);
+          safeLog(`[Auth] Login attempt with email: ${maskEmail(email)}`);
           const user = await storage.getUserByUsername(email);
 
           if (!user) {
-            console.log(`[Auth] No user found for email: ${email}`);
+            safeLog(`[Auth] No user found for email: ${maskEmail(email)}`);
             return done(null, false, { message: "Invalid email or password" });
           }
 
@@ -57,14 +58,14 @@ export function setupAuth(app: Express) {
           const isValidPassword = await comparePasswords(password, user.password);
 
           if (!isValidPassword) {
-            console.log(`[Auth] Invalid password for email: ${email}`);
+            safeLog(`[Auth] Invalid password for email: ${maskEmail(email)}`);
             return done(null, false, { message: "Invalid email or password" });
           }
 
-          console.log(`[Auth] Login successful for email: ${email}`);
+          safeLog(`[Auth] Login successful for email: ${maskEmail(email)}`);
           return done(null, user);
         } catch (error) {
-          console.error(`[Auth] Error during authentication:`, error);
+          safeError(`[Auth] Error during authentication:`, error);
           return done(error);
         }
       }
@@ -72,34 +73,34 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => {
-    console.log(`[Auth] Serializing user: ${user.id}`);
+    safeLog(`[Auth] Serializing user: ${createUserLogId(user)}`);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log(`[Auth] Deserializing user: ${id}`);
+      safeLog(`[Auth] Deserializing user: ${id}`);
       const user = await storage.getUser(id);
       if (!user) {
-        console.log(`[Auth] No user found during deserialization for id: ${id}`);
+        safeLog(`[Auth] No user found during deserialization for id: ${id}`);
         return done(null, false);
       }
-      console.log(`[Auth] User deserialized successfully: ${id}`);
+      safeLog(`[Auth] User deserialized successfully: ${id}`);
       done(null, user);
     } catch (error) {
-      console.error(`[Auth] Error during deserialization:`, error);
+      safeError(`[Auth] Error during deserialization:`, error);
       done(error);
     }
   });
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log(`[Auth] Registration attempt for email: ${req.body.email}`);
+      safeLog(`[Auth] Registration attempt for email: ${maskEmail(req.body.email)}`);
       
       // Validate request body against schema
       const validationResult = insertUserSchema.safeParse(req.body);
       if (!validationResult.success) {
-        console.log(`[Auth] Registration validation failed:`, validationResult.error.issues);
+        safeLog(`[Auth] Registration validation failed:`, validationResult.error.issues);
         return res.status(400).json({ 
           message: "Validation failed", 
           errors: validationResult.error.issues.map(issue => ({
@@ -111,12 +112,12 @@ export function setupAuth(app: Express) {
       
       const existingUser = await storage.getUserByUsername(req.body.email);
       if (existingUser) {
-        console.log(`[Auth] Registration failed - email already exists: ${req.body.email}`);
+        safeLog(`[Auth] Registration failed - email already exists: ${maskEmail(req.body.email)}`);
         return res.status(400).json({ message: "Email already exists" });
       }
 
       const hashedPassword = await hashPassword(req.body.password);
-      console.log(`[Auth] Password hashed for new registration`);
+      safeLog(`[Auth] Password hashed for new registration`);
 
       const user = await storage.createUser({
         ...req.body,
@@ -124,7 +125,7 @@ export function setupAuth(app: Express) {
         emailVerified: false,  // Set email as unverified
       });
       
-      console.log(`[Auth] User created successfully, id: ${user.id}`);
+      safeLog(`[Auth] User created successfully, id: ${createUserLogId(user)}`);
       
       // Generate and send verification email
       try {
@@ -132,74 +133,74 @@ export function setupAuth(app: Express) {
         const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
         
         if (emailSent) {
-          console.log(`[Auth] Verification email sent to: ${user.email}`);
+          safeLog(`[Auth] Verification email sent to: ${maskEmail(user.email)}`);
         } else {
-          console.error(`[Auth] Failed to send verification email to: ${user.email}`);
+          safeError(`[Auth] Failed to send verification email to: ${maskEmail(user.email)}`);
         }
       } catch (emailError) {
-        console.error(`[Auth] Error sending verification email:`, emailError);
+        safeError(`[Auth] Error sending verification email:`, emailError);
         // Continue despite email error - user is still created
       }
       
       req.login(user, (err) => {
         if (err) {
-          console.error(`[Auth] Error during login after registration:`, err);
+          safeError(`[Auth] Error during login after registration:`, err);
           return next(err);
         }
         res.status(201).json(user);
       });
     } catch (error) {
-      console.error(`[Auth] Error during registration:`, error);
+      safeError(`[Auth] Error during registration:`, error);
       next(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    console.log(`[Auth] Login request received with body:`, req.body);
+    safeLog(`[Auth] Login request received - email: ${req.body.email ? maskEmail(req.body.email) : 'missing'}`);
 
     if (!req.body.email || !req.body.password) {
-      console.log(`[Auth] Missing credentials in request`);
+      safeLog(`[Auth] Missing credentials in request`);
       return res.status(400).json({ message: "Email and password are required" });
     }
 
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) {
-        console.error(`[Auth] Error during authentication:`, err);
+        safeError(`[Auth] Error during authentication:`, err);
         return next(err);
       }
       if (!user) {
-        console.log(`[Auth] Authentication failed: ${info?.message}`);
+        safeLog(`[Auth] Authentication failed: ${info?.message}`);
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       req.login(user, (err) => {
         if (err) {
-          console.error(`[Auth] Error during login:`, err);
+          safeError(`[Auth] Error during login:`, err);
           return next(err);
         }
-        console.log(`[Auth] Login successful for user: ${user.id}`);
+        safeLog(`[Auth] Login successful for user: ${createUserLogId(user)}`);
         res.status(200).json(user);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
-    console.log(`[Auth] Logout request received`);
+    safeLog(`[Auth] Logout request received`);
     req.logout((err) => {
       if (err) {
-        console.error(`[Auth] Error during logout:`, err);
+        safeError(`[Auth] Error during logout:`, err);
         return next(err);
       }
-      console.log(`[Auth] Logout successful`);
+      safeLog(`[Auth] Logout successful`);
       res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
-      console.log(`[Auth] Unauthorized access attempt to /api/user`);
+      safeLog(`[Auth] Unauthorized access attempt to /api/user`);
       return res.sendStatus(401);
     }
-    console.log(`[Auth] User data retrieved for id: ${req.user.id}`);
+    safeLog(`[Auth] User data retrieved for id: ${req.user.id}`);
     res.json(req.user);
   });
 
@@ -216,15 +217,15 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Invalid verification token" });
       }
       
-      console.log(`[Auth] Email verification attempt with token: ${token.slice(0, 10)}...`);
+      safeLog(`[Auth] Email verification attempt with token: ${token.slice(0, 8)}...`);
       const userId = await verifyEmailToken(token);
       
       if (!userId) {
-        console.log(`[Auth] Email verification failed - invalid or expired token`);
+        safeLog(`[Auth] Email verification failed - invalid or expired token`);
         return res.status(400).json({ message: "Invalid or expired verification token" });
       }
       
-      console.log(`[Auth] Email verified successfully for user: ${userId}`);
+      safeLog(`[Auth] Email verified successfully for user: ${userId}`);
       
       // If user is already logged in, update the session
       if (req.isAuthenticated() && req.user.id === userId) {
@@ -232,7 +233,7 @@ export function setupAuth(app: Express) {
         if (updatedUser) {
           req.login(updatedUser, (err) => {
             if (err) {
-              console.error(`[Auth] Error updating user session after verification:`, err);
+              safeError(`[Auth] Error updating user session after verification:`, err);
             }
           });
         }
@@ -240,7 +241,7 @@ export function setupAuth(app: Express) {
       
       return res.status(200).json({ message: "Email verified successfully" });
     } catch (error) {
-      console.error(`[Auth] Error during email verification:`, error);
+      safeError(`[Auth] Error during email verification:`, error);
       return res.status(500).json({ message: "An error occurred during email verification" });
     }
   });
@@ -258,19 +259,19 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email is already verified" });
       }
       
-      console.log(`[Auth] Resending verification email to user: ${user.id}`);
+      safeLog(`[Auth] Resending verification email to user: ${createUserLogId(user)}`);
       const token = await createVerificationToken(user.id);
       const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
       
       if (emailSent) {
-        console.log(`[Auth] Verification email resent to: ${user.email}`);
+        safeLog(`[Auth] Verification email resent to: ${maskEmail(user.email)}`);
         return res.status(200).json({ message: "Verification email sent successfully" });
       } else {
-        console.error(`[Auth] Failed to resend verification email to: ${user.email}`);
+        safeError(`[Auth] Failed to resend verification email to: ${maskEmail(user.email)}`);
         return res.status(500).json({ message: "Failed to send verification email" });
       }
     } catch (error) {
-      console.error(`[Auth] Error resending verification email:`, error);
+      safeError(`[Auth] Error resending verification email:`, error);
       return res.status(500).json({ message: "An error occurred while resending the verification email" });
     }
   });
@@ -288,12 +289,12 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email is required" });
       }
       
-      console.log(`[Auth] Password reset requested for email: ${email}`);
+      safeLog(`[Auth] Password reset requested for email: ${maskEmail(email)}`);
       const user = await storage.getUserByUsername(email);
       
       if (!user) {
         // Don't reveal if email exists or not for security reasons
-        console.log(`[Auth] Password reset requested for non-existent email: ${email}`);
+        safeLog(`[Auth] Password reset requested for non-existent email: ${maskEmail(email)}`);
         return res.status(200).json({ message: "If your email is registered, you will receive a password reset link" });
       }
       
@@ -301,14 +302,14 @@ export function setupAuth(app: Express) {
       const emailSent = await sendPasswordResetEmail(user.email, token, user.companyName);
       
       if (emailSent) {
-        console.log(`[Auth] Password reset email sent to: ${user.email}`);
+        safeLog(`[Auth] Password reset email sent to: ${maskEmail(user.email)}`);
         return res.status(200).json({ message: "Password reset email sent successfully" });
       } else {
-        console.error(`[Auth] Failed to send password reset email to: ${user.email}`);
+        safeError(`[Auth] Failed to send password reset email to: ${maskEmail(user.email)}`);
         return res.status(500).json({ message: "Failed to send password reset email" });
       }
     } catch (error) {
-      console.error(`[Auth] Error during password reset request:`, error);
+      safeError(`[Auth] Error during password reset request:`, error);
       return res.status(500).json({ message: "An error occurred while processing your request" });
     }
   });
@@ -322,18 +323,18 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Invalid reset token" });
       }
       
-      console.log(`[Auth] Verifying password reset token: ${token.slice(0, 10)}...`);
+      safeLog(`[Auth] Verifying password reset token: ${token.slice(0, 8)}...`);
       const userId = await verifyPasswordResetToken(token);
       
       if (!userId) {
-        console.log(`[Auth] Invalid or expired password reset token`);
+        safeLog(`[Auth] Invalid or expired password reset token`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
       
-      console.log(`[Auth] Valid password reset token for user: ${userId}`);
+      safeLog(`[Auth] Valid password reset token for user: ${userId}`);
       return res.status(200).json({ message: "Valid reset token", token });
     } catch (error) {
-      console.error(`[Auth] Error verifying reset token:`, error);
+      safeError(`[Auth] Error verifying reset token:`, error);
       return res.status(500).json({ message: "An error occurred while verifying the reset token" });
     }
   });
@@ -356,11 +357,11 @@ export function setupAuth(app: Express) {
         });
       }
       
-      console.log(`[Auth] Resetting password with token: ${token.slice(0, 10)}...`);
+      safeLog(`[Auth] Resetting password with token: ${token.slice(0, 8)}...`);
       const userId = await verifyPasswordResetToken(token);
       
       if (!userId) {
-        console.log(`[Auth] Password reset failed - invalid or expired token`);
+        safeLog(`[Auth] Password reset failed - invalid or expired token`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
       
@@ -371,10 +372,10 @@ export function setupAuth(app: Express) {
       // Consume the token
       await consumePasswordResetToken(userId);
       
-      console.log(`[Auth] Password reset successful for user: ${userId}`);
+      safeLog(`[Auth] Password reset successful for user: ${userId}`);
       return res.status(200).json({ message: "Password has been reset successfully" });
     } catch (error) {
-      console.error(`[Auth] Error during password reset:`, error);
+      safeError(`[Auth] Error during password reset:`, error);
       return res.status(500).json({ message: "An error occurred during password reset" });
     }
   });

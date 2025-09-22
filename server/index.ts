@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { log, setupVite, serveStatic } from "./vite";
+import { sanitizeApiResponse } from "./lib/safe-logging.js";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -35,11 +36,14 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // Sanitize the response data before logging
+        const sanitizedResponse = sanitizeApiResponse(capturedJsonResponse);
+        const responseStr = JSON.stringify(sanitizedResponse);
+        logLine += ` :: ${responseStr}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 100) {
+        logLine = logLine.slice(0, 99) + "…";
       }
 
       log(logLine);

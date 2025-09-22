@@ -13,6 +13,7 @@ import {
   FEATURED_RFP_PRICE, 
   stripeStatus 
 } from '../lib/stripe.js';
+import { safeLog, safeError } from '../lib/safe-logging.js';
 
 const router = express.Router();
 
@@ -67,15 +68,14 @@ router.post('/create-payment-intent', async (req, res) => {
       rfpTitle: rfp.title
     });
 
-    // Log the payment intent response
-    console.log('Stripe PaymentIntent Response:', JSON.stringify({
+    // Log the payment intent response (without sensitive data)
+    safeLog('Stripe PaymentIntent Created:', {
       id: paymentIntent.id,
       amount: paymentIntent.amount,
       status: paymentIntent.status,
-      client_secret: paymentIntent.client_secret,
       created: new Date(paymentIntent.created * 1000).toISOString(),
-      metadata: paymentIntent.metadata
-    }, null, 2));
+      rfpId: paymentIntent.metadata.rfpId
+    });
 
     // Return the client secret and amount
     res.json({
@@ -83,7 +83,7 @@ router.post('/create-payment-intent', async (req, res) => {
       amount: paymentIntent.amount
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    safeError('Error creating payment intent:', error);
     res.status(500).json({ 
       message: error instanceof Error ? error.message : "Failed to create payment intent"
     });
@@ -120,11 +120,11 @@ router.post('/confirm-payment', async (req, res) => {
     const paymentVerified = await verifyPayment(paymentIntentId);
     
     // Log the payment verification response
-    console.log('Stripe Payment Verification Response:', JSON.stringify({
-      paymentIntentId,
+    safeLog('Stripe Payment Verification:', {
+      paymentIntentId: paymentIntentId.slice(0, 8) + '...',
       verified: paymentVerified,
       timestamp: new Date().toISOString()
-    }, null, 2));
+    });
     
     if (!paymentVerified) {
       return res.status(400).json({ message: "Payment verification failed" });
@@ -142,7 +142,7 @@ router.post('/confirm-payment', async (req, res) => {
       rfp: updatedRfp
     });
   } catch (error) {
-    console.error('Error confirming payment:', error);
+    safeError('Error confirming payment:', error);
     res.status(500).json({ 
       message: error instanceof Error ? error.message : "Failed to confirm payment"
     });
@@ -181,7 +181,7 @@ router.get('/status/:paymentIntentId', async (req, res) => {
       metadata: paymentIntent.metadata
     });
   } catch (error) {
-    console.error('Error fetching payment status:', error);
+    safeError('Error fetching payment status:', error);
     res.status(500).json({
       message: error instanceof Error ? error.message : "Failed to fetch payment status"
     });
@@ -229,7 +229,7 @@ router.post('/cancel-payment', async (req, res) => {
       message: "Payment cancelled successfully"
     });
   } catch (error) {
-    console.error('Error cancelling payment:', error);
+    safeError('Error cancelling payment:', error);
     res.status(500).json({
       message: error instanceof Error ? error.message : "Failed to cancel payment"
     });

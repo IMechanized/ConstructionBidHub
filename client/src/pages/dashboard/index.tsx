@@ -67,13 +67,15 @@ export default function Dashboard() {
         (rfp) =>
           rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+          rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (locationFilter && locationFilter !== "all") {
       filtered = filtered.filter((rfp) =>
-        rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
+        rfp.jobState.toLowerCase().includes(locationFilter.toLowerCase())
       );
     }
 

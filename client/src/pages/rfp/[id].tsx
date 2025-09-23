@@ -23,6 +23,7 @@ import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
+import { LocationMap } from "@/components/location-map";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -322,6 +323,24 @@ export default function RfpPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <hr className="my-6 border-muted" />
+
+          {/* Project Location Map */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Project Location</h2>
+            <div className="rounded-lg overflow-hidden border">
+              <LocationMap
+                address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
+                className="w-full h-80"
+                zoom={15}
+                showMarker={true}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              {rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}
+            </p>
           </div>
 
           <hr className="my-6 border-muted" />

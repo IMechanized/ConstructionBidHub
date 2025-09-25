@@ -80,8 +80,7 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
             <MapPreview
               address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
               className="w-full h-24 rounded-md"
-              onClick={(e) => {
-                e?.stopPropagation();
+              onClick={() => {
                 setLocation(`/rfp/${rfp.id}`);
               }}
             />

@@ -8,9 +8,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Send, Paperclip, Download, Loader2 } from "lucide-react";
+import { Send, Paperclip, Download, Loader2, Check, Trash2 } from "lucide-react";
 import type { Rfi, RfiMessage, RfiAttachment, User } from "@shared/schema";
 
 interface RfiConversationProps {
@@ -25,17 +36,72 @@ type MessageWithDetails = RfiMessage & {
 };
 
 export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
+  // Get RFP details to check ownership
+  const { data: rfpDetails } = useQuery({
+    queryKey: [`/api/rfps/${rfi.rfpId}`],
+    enabled: !!rfi.rfpId,
+  });
   const { user } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch conversation messages
   const { data: messages = [], isLoading } = useQuery<MessageWithDetails[]>({
     queryKey: [`/api/rfis/${rfi.id}/messages`],
     refetchInterval: 5000, // Poll for new messages every 5 seconds
+  });
+
+  // Mark as responded mutation  
+  const markRespondedMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("PUT", `/api/rfps/${rfi.rfpId}/rfi/${rfi.id}/status`, { status: "responded" });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rfis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rfis/received"] });
+      toast({
+        title: "RFI marked as responded",
+        description: "The RFI status has been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update RFI status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete RFI mutation
+  const deleteRfiMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", `/api/rfis/${rfi.id}`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rfis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rfis/received"] });
+      if (onClose) {
+        onClose();
+      }
+      toast({
+        title: "RFI deleted",
+        description: "The RFI conversation has been deleted successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete RFI",
+        variant: "destructive",
+      });
+    },
   });
 
   // Send message mutation
@@ -117,6 +183,21 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
     link.click();
   };
 
+  // Check if current user can mark as responded (RFP owner)
+  const isRfpOwner = user && rfpDetails && user.id === rfpDetails.organizationId;
+  const canMarkAsResponded = isRfpOwner;
+  
+  // Check if current user can delete (RFI submitter or RFP owner)
+  const canDelete = user && (user.email === rfi.email || isRfpOwner);
+
+  const handleMarkAsResponded = () => {
+    markRespondedMutation.mutate();
+  };
+
+  const handleDeleteRfi = () => {
+    deleteRfiMutation.mutate();
+  };
+
   return (
     <Card className="flex flex-col h-[600px] max-w-4xl mx-auto">
       <CardHeader className="border-b">
@@ -130,10 +211,66 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
               Submitted: {format(new Date(rfi.createdAt), "PPp")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Badge variant={rfi.status === "pending" ? "secondary" : "default"}>
               {rfi.status}
             </Badge>
+            
+            {/* Mark as Responded Button - Only for RFP owners when status is pending */}
+            {canMarkAsResponded && rfi.status === "pending" && user?.email !== rfi.email && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAsResponded}
+                disabled={markRespondedMutation.isPending}
+                data-testid="mark-responded-button"
+              >
+                {markRespondedMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Mark Responded
+              </Button>
+            )}
+            
+            {/* Delete Button - For RFI submitters or RFP owners */}
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="delete-rfi-button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete RFI Conversation</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this RFI conversation? This action cannot be undone and will permanently delete all messages and attachments.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteRfi}
+                      disabled={deleteRfiMutation.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleteRfiMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
+                      Delete RFI
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            
             {onClose && (
               <Button variant="ghost" size="sm" onClick={onClose}>
                 ×

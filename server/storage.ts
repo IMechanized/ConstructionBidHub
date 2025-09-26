@@ -5,7 +5,7 @@
 
 import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db } from "./db.js";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
@@ -55,6 +55,7 @@ export interface IStorage {
   getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
+  deleteRfi(id: number): Promise<void>;
   
   // RFI Conversation Operations
   createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage>;
@@ -400,6 +401,22 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updatedRfi) throw new Error("RFI not found");
     return updatedRfi;
+  }
+
+  async deleteRfi(id: number): Promise<void> {
+    // First delete RFI attachments
+    await db.delete(rfiAttachments)
+      .where(inArray(rfiAttachments.messageId, 
+        db.select({ id: rfiMessages.id })
+          .from(rfiMessages)
+          .where(eq(rfiMessages.rfiId, id))
+      ));
+    
+    // Then delete RFI messages
+    await db.delete(rfiMessages).where(eq(rfiMessages.rfiId, id));
+    
+    // Finally delete the RFI itself
+    await db.delete(rfis).where(eq(rfis.id, id));
   }
 
   // RFI Conversation Operations

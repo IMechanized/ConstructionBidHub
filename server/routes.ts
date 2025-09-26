@@ -954,6 +954,48 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Delete RFI endpoint
+  app.delete("/api/rfis/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+
+      const rfiId = Number(req.params.id);
+      
+      // Get RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const userRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the one who submitted the RFI
+      let hasPermission = !!userRfi;
+      
+      // If not the submitter, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Unauthorized to delete this RFI" });
+      }
+
+      await storage.deleteRfi(rfiId);
+      res.json({ message: "RFI deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting RFI:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to delete RFI"
+      });
+    }
+  });
+
   // Notification routes
   app.get("/api/notifications", async (req, res) => {
     try {

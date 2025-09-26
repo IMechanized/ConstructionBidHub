@@ -10,6 +10,7 @@ import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
+import { deadlineMonitor } from './services/deadline-monitor.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -853,6 +854,9 @@ export function registerRoutes(app: Express): Server {
       });
     }
   };
+  
+  // Start the deadline monitoring service
+  deadlineMonitor.start();
   
   return httpServer;
 }

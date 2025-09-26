@@ -688,14 +688,15 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Send a message in RFI conversation
-  app.post("/api/rfis/:id/messages", async (req, res) => {
+  app.post("/api/rfis/:id/messages", upload.array('attachment', 5), async (req, res) => {
     try {
       requireAuth(req);
       const rfiId = Number(req.params.id);
       const { message } = req.body;
+      const files = req.files as Express.Multer.File[] || [];
 
-      if (!message || message.trim() === "") {
-        return res.status(400).json({ message: "Message content is required" });
+      if ((!message || message.trim() === "") && files.length === 0) {
+        return res.status(400).json({ message: "Message content or file attachment is required" });
       }
 
       // Get the RFI details to check permissions
@@ -742,8 +743,38 @@ export function registerRoutes(app: Express): Server {
       const newMessage = await storage.createRfiMessage({
         rfiId,
         senderId: req.user!.id,
-        message: message.trim()
+        message: message ? message.trim() : ""
       });
+
+      // Handle file attachments if present
+      if (files.length > 0) {
+        for (const file of files) {
+          try {
+            const uploadResult = await cloudinary.uploader.upload(file.path, {
+              resource_type: "auto", // Handles PDFs, docs, images, etc.
+              folder: "rfi-attachments",
+              allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "txt", "xls", "xlsx"]
+            });
+            
+            await storage.createRfiAttachment({
+              messageId: newMessage.id,
+              filename: file.originalname,
+              fileUrl: uploadResult.secure_url,
+              fileSize: file.size,
+              mimeType: file.mimetype
+            });
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            // Continue with other files even if one fails
+          }
+        }
+      }
+
+      // Auto-mark RFI as "responded" if the sender is not the contractor
+      if (hasPermission && !contractorRfi) {
+        // This is the RFP owner responding, mark as responded
+        await storage.updateRfiStatus(rfiId, "responded");
+      }
 
       // Create notification for the other party
       if (targetUserId) {
@@ -762,7 +793,7 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      // Return the message with sender information
+      // Return the message with sender information and attachments
       const messageWithSender = await storage.getRfiMessages(rfiId);
       const createdMessage = messageWithSender.find(m => m.id === newMessage.id);
       

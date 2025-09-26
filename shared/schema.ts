@@ -131,6 +131,22 @@ export const rfis = pgTable("rfis", {
 });
 
 /**
+ * Notifications Table
+ * In-app notifications for users
+ */
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type", { enum: ["rfi_response", "deadline_reminder", "system"] }).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedId: integer("related_id"), // ID of related entity (RFI, RFP, etc.)
+  relatedType: text("related_type", { enum: ["rfi", "rfp"] }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Backup Logs Table
  * Tracks database backup operations
  */
@@ -228,6 +244,16 @@ export const insertRfiSchema = createInsertSchema(rfis).pick({
   message: true,
 });
 
+// Notification creation validation
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  type: true,
+  title: true,
+  message: true,
+  relatedId: true,
+  relatedType: true,
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -239,5 +265,7 @@ export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;
 export type InsertRfi = z.infer<typeof insertRfiSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = typeof backupLogs.$inferInsert;

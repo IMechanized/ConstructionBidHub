@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { setupAuth } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
@@ -696,5 +697,73 @@ export function registerRoutes(app: Express): Server {
   console.log('Payment routes are handled in entrypoint.js');
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store active WebSocket connections by user ID
+  const userConnections = new Map<number, WebSocket[]>();
+  
+  wss.on('connection', (ws: WebSocket, req) => {
+    console.log('WebSocket connection established');
+    
+    // Handle user authentication and registration
+    ws.on('message', (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        if (data.type === 'auth' && data.userId) {
+          const userId = parseInt(data.userId);
+          
+          if (!userConnections.has(userId)) {
+            userConnections.set(userId, []);
+          }
+          
+          userConnections.get(userId)!.push(ws);
+          console.log(`User ${userId} connected via WebSocket`);
+          
+          ws.send(JSON.stringify({ type: 'auth_success', message: 'Connected successfully' }));
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      // Remove connection from all users when closed
+      userConnections.forEach((connections, userId) => {
+        const index = connections.indexOf(ws);
+        if (index !== -1) {
+          connections.splice(index, 1);
+          if (connections.length === 0) {
+            userConnections.delete(userId);
+          }
+          console.log(`User ${userId} disconnected from WebSocket`);
+        }
+      });
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
+  // Export function to send notifications to specific users
+  (global as any).sendNotificationToUser = (userId: number, notification: any) => {
+    const connections = userConnections.get(userId);
+    if (connections) {
+      const message = JSON.stringify({
+        type: 'notification',
+        data: notification
+      });
+      
+      connections.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+    }
+  };
+  
   return httpServer;
 }

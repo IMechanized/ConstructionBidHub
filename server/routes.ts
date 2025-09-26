@@ -11,6 +11,9 @@ import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
+import cookie from 'cookie';
+import cookieSignature from 'cookie-signature';
+import { getSessionSecret } from './lib/session-config';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -748,23 +751,57 @@ export function registerRoutes(app: Express): Server {
 
       // Handle file attachments if present
       if (files.length > 0) {
+        const ALLOWED_MIME_TYPES = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/jpg', 
+          'image/png',
+          'text/plain',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+        
         for (const file of files) {
           try {
-            const uploadResult = await cloudinary.uploader.upload(file.path, {
-              resource_type: "auto", // Handles PDFs, docs, images, etc.
+            // SECURITY: Validate file type and size
+            if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+              console.warn(`Rejected file ${file.originalname}: invalid mime type ${file.mimetype}`);
+              continue;
+            }
+            
+            if (file.size > MAX_FILE_SIZE) {
+              console.warn(`Rejected file ${file.originalname}: size ${file.size} exceeds limit ${MAX_FILE_SIZE}`);
+              continue;
+            }
+            
+            // SECURITY: Sanitize filename - remove dangerous characters
+            const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+            
+            // Convert buffer to base64 data URI for Cloudinary upload
+            const dataURI = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            
+            const uploadResult = await cloudinary.uploader.upload(dataURI, {
+              resource_type: "auto",
               folder: "rfi-attachments",
-              allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "txt", "xls", "xlsx"]
+              allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "txt", "xls", "xlsx"],
+              public_id: `${Date.now()}_${sanitizedFilename}`
             });
             
             await storage.createRfiAttachment({
               messageId: newMessage.id,
-              filename: file.originalname,
+              filename: sanitizedFilename,
               fileUrl: uploadResult.secure_url,
               fileSize: file.size,
               mimeType: file.mimetype
             });
+            
+            console.log(`Successfully uploaded file: ${sanitizedFilename} (${file.size} bytes)`);
           } catch (uploadError) {
-            console.error('File upload error:', uploadError);
+            console.error(`File upload error for ${file.originalname}:`, uploadError);
             // Continue with other files even if one fails
           }
         }
@@ -960,25 +997,100 @@ export function registerRoutes(app: Express): Server {
   wss.on('connection', (ws: WebSocket, req) => {
     console.log('WebSocket connection established');
     
+    // Extract session information from the request  
+    const getSessionUserId = (): Promise<number | null> => {
+      return new Promise((resolve) => {
+        if (!req.headers.cookie) {
+          resolve(null);
+          return;
+        }
+
+        try {
+          // SECURITY: Use proper cookie parsing
+          const cookies = cookie.parse(req.headers.cookie);
+          const sessionCookie = cookies['connect.sid'];
+          
+          if (!sessionCookie) {
+            console.warn('WebSocket: No connect.sid cookie found');
+            resolve(null);
+            return;
+          }
+
+          // SECURITY: Properly verify signed cookie
+          let sessionId: string;
+          if (sessionCookie.startsWith('s:')) {
+            // CRITICAL: Use exact same session secret as session.ts
+            const sessionSecret = getSessionSecret();
+            
+            try {
+              // Verify and unsign the cookie
+              sessionId = cookieSignature.unsign(sessionCookie.slice(2), sessionSecret);
+              if (sessionId === false) {
+                console.warn('WebSocket: Invalid cookie signature');
+                resolve(null);
+                return;
+              }
+            } catch (signError) {
+              console.warn('WebSocket: Cookie signature verification failed:', signError);
+              resolve(null);
+              return;
+            }
+          } else {
+            sessionId = sessionCookie;
+          }
+
+          // Get session from store
+          storage.sessionStore.get(sessionId as string, (err: any, session: any) => {
+            if (err || !session) {
+              console.warn('WebSocket session lookup failed:', err?.message || 'No session');
+              resolve(null);
+              return;
+            }
+
+            if (session.passport && session.passport.user) {
+              const userId = parseInt(session.passport.user);
+              console.log(`WebSocket session authenticated user: ${userId} (signature-verified)`);
+              resolve(userId);
+            } else {
+              console.warn('WebSocket session has no authenticated user');
+              resolve(null);
+            }
+          });
+        } catch (error) {
+          console.error('Error parsing WebSocket session:', error);
+          resolve(null);
+        }
+      });
+    };
+    
     // Handle user authentication and registration
-    ws.on('message', (message: string) => {
+    ws.on('message', async (message: string) => {
       try {
         const data = JSON.parse(message);
         
-        if (data.type === 'auth' && data.userId) {
-          const userId = parseInt(data.userId);
+        if (data.type === 'auth') {
+          // SECURITY: Use session user ID, ignore any client-provided userId
+          const sessionUserId = await getSessionUserId();
           
-          if (!userConnections.has(userId)) {
-            userConnections.set(userId, []);
+          if (!sessionUserId) {
+            console.warn('WebSocket auth rejected: no valid session');
+            ws.send(JSON.stringify({ type: 'auth_error', message: 'Not authenticated' }));
+            ws.close(1008, 'Not authenticated'); // Policy violation code
+            return;
           }
           
-          userConnections.get(userId)!.push(ws);
-          console.log(`User ${userId} connected via WebSocket`);
+          if (!userConnections.has(sessionUserId)) {
+            userConnections.set(sessionUserId, []);
+          }
+          
+          userConnections.get(sessionUserId)!.push(ws);
+          console.log(`User ${sessionUserId} connected via WebSocket (session-verified)`);
           
           ws.send(JSON.stringify({ type: 'auth_success', message: 'Connected successfully' }));
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
+        ws.close(1011, 'Server error');
       }
     });
     

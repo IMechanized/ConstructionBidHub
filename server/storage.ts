@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 import createMemoryStore from "memorystore";
@@ -55,6 +55,12 @@ export interface IStorage {
   getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
+  
+  // RFI Conversation Operations
+  createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage>;
+  getRfiMessages(rfiId: number): Promise<(RfiMessage & { sender: User, attachments?: RfiAttachment[] })[]>;
+  createRfiAttachment(attachment: InsertRfiAttachment): Promise<RfiAttachment>;
+  getRfiAttachments(messageId: number): Promise<RfiAttachment[]>;
 
   // Notification Operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -394,6 +400,61 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updatedRfi) throw new Error("RFI not found");
     return updatedRfi;
+  }
+
+  // RFI Conversation Operations
+  async createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage> {
+    const [newMessage] = await db
+      .insert(rfiMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  async getRfiMessages(rfiId: number): Promise<(RfiMessage & { sender: User, attachments?: RfiAttachment[] })[]> {
+    // Get messages with sender information
+    const messages = await db
+      .select({
+        id: rfiMessages.id,
+        rfiId: rfiMessages.rfiId,
+        senderId: rfiMessages.senderId,
+        message: rfiMessages.message,
+        createdAt: rfiMessages.createdAt,
+        sender: users
+      })
+      .from(rfiMessages)
+      .innerJoin(users, eq(rfiMessages.senderId, users.id))
+      .where(eq(rfiMessages.rfiId, rfiId))
+      .orderBy(rfiMessages.createdAt);
+
+    // Get attachments for each message
+    const messagesWithAttachments = await Promise.all(
+      messages.map(async (msg) => {
+        const attachments = await this.getRfiAttachments(msg.id);
+        return {
+          ...msg,
+          attachments
+        };
+      })
+    );
+
+    return messagesWithAttachments;
+  }
+
+  async createRfiAttachment(attachment: InsertRfiAttachment): Promise<RfiAttachment> {
+    const [newAttachment] = await db
+      .insert(rfiAttachments)
+      .values(attachment)
+      .returning();
+    return newAttachment;
+  }
+
+  async getRfiAttachments(messageId: number): Promise<RfiAttachment[]> {
+    return db
+      .select()
+      .from(rfiAttachments)
+      .where(eq(rfiAttachments.messageId, messageId))
+      .orderBy(rfiAttachments.uploadedAt);
   }
 
   async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {

@@ -643,6 +643,138 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // RFI Conversation Endpoints
+  
+  // Get conversation messages for an RFI
+  app.get("/api/rfis/:id/messages", async (req, res) => {
+    try {
+      requireAuth(req);
+      const rfiId = Number(req.params.id);
+
+      // Get the RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const contractorRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the contractor who submitted the RFI
+      let hasPermission = !!contractorRfi;
+      
+      // If not the contractor, check if they're the RFP owner
+      if (!hasPermission) {
+        // Find all RFPs by this user and their RFIs
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Unauthorized to view this RFI conversation" });
+      }
+
+      const messages = await storage.getRfiMessages(rfiId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching RFI messages:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to fetch RFI messages"
+      });
+    }
+  });
+
+  // Send a message in RFI conversation
+  app.post("/api/rfis/:id/messages", async (req, res) => {
+    try {
+      requireAuth(req);
+      const rfiId = Number(req.params.id);
+      const { message } = req.body;
+
+      if (!message || message.trim() === "") {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      // Get the RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const contractorRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the contractor who submitted the RFI
+      let hasPermission = !!contractorRfi;
+      let targetUserId = null; // Who to notify
+      
+      // If not the contractor, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          const foundRfi = rfpRfis.find(r => r.id === rfiId);
+          if (foundRfi) {
+            hasPermission = true;
+            // Find the contractor user to notify
+            const contractorUser = await storage.getUserByUsername(foundRfi.email);
+            if (contractorUser) {
+              targetUserId = contractorUser.id;
+            }
+            break;
+          }
+        }
+      } else {
+        // User is contractor, find RFP owner to notify
+        if (contractorRfi && contractorRfi.rfpId) {
+          const rfp = await storage.getRfpById(contractorRfi.rfpId);
+          if (rfp) {
+            targetUserId = rfp.organizationId;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Unauthorized to send message to this RFI" });
+      }
+
+      // Create the message
+      const newMessage = await storage.createRfiMessage({
+        rfiId,
+        senderId: req.user!.id,
+        message: message.trim()
+      });
+
+      // Create notification for the other party
+      if (targetUserId) {
+        const notification = await storage.createNotification({
+          userId: targetUserId,
+          type: "rfi_response",
+          title: "New RFI Message",
+          message: `New message in RFI conversation`,
+          relatedId: rfiId,
+          relatedType: "rfi"
+        });
+        
+        // Send real-time notification
+        if ((global as any).sendNotificationToUser) {
+          (global as any).sendNotificationToUser(targetUserId, notification);
+        }
+      }
+
+      // Return the message with sender information
+      const messageWithSender = await storage.getRfiMessages(rfiId);
+      const createdMessage = messageWithSender.find(m => m.id === newMessage.id);
+      
+      res.status(201).json(createdMessage);
+    } catch (error) {
+      console.error('Error sending RFI message:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to send message"
+      });
+    }
+  });
+
   // Payment routes
   app.post("/api/payments/create-payment-intent", async (req, res) => {
     try {

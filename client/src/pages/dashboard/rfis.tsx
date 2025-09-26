@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { type Rfi, type Rfp } from "@shared/schema";
+import { type Rfi, type Rfp, type User } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
@@ -16,13 +17,16 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, ArrowLeft } from "lucide-react";
+import { RfiConversation } from "@/components/rfi-conversation";
 
 type RfiWithRfp = Rfi & { rfp: Rfp | null };
 
 export default function RfiPage() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const [selectedRfi, setSelectedRfi] = useState<(Rfi & { rfp: Rfp | null }) | null>(null);
 
   const breadcrumbItems = [
     {
@@ -62,9 +66,29 @@ export default function RfiPage() {
           <BreadcrumbNav items={breadcrumbItems} />
 
           <div className="space-y-6 mt-4">
-            <h1 className="text-2xl font-bold">Request for Information</h1>
+            <div className="flex items-center gap-4">
+              {selectedRfi && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedRfi(null)}
+                  data-testid="back-to-rfi-list-button"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to My RFIs
+                </Button>
+              )}
+              <h1 className="text-2xl font-bold">
+                {selectedRfi ? "RFI Conversation" : "Request for Information"}
+              </h1>
+            </div>
 
-            {isLoading ? (
+            {selectedRfi ? (
+              <RfiConversation
+                rfi={selectedRfi as Rfi & { organization?: User }}
+                onClose={() => setSelectedRfi(null)}
+              />
+            ) : isLoading ? (
               <DashboardSectionSkeleton count={5} />
             ) : error ? (
               <div className="text-center py-8 text-destructive">
@@ -83,11 +107,12 @@ export default function RfiPage() {
                       <TableHead>Message</TableHead>
                       <TableHead>Submitted Date</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rfis.map((rfi: RfiWithRfp) => (
-                      <TableRow key={rfi.id}>
+                      <TableRow key={rfi.id} data-testid={`contractor-rfi-row-${rfi.id}`}>
                         <TableCell className="font-medium">
                           {rfi.rfp?.title || "Unknown RFP"}
                         </TableCell>
@@ -104,6 +129,17 @@ export default function RfiPage() {
                           >
                             {rfi.status || "pending"}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedRfi(rfi)}
+                            data-testid={`view-conversation-${rfi.id}`}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            View Chat
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}

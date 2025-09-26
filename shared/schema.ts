@@ -131,6 +131,32 @@ export const rfis = pgTable("rfis", {
 });
 
 /**
+ * RFI Messages Table
+ * Individual messages in RFI conversation threads
+ */
+export const rfiMessages = pgTable("rfi_messages", {
+  id: serial("id").primaryKey(),
+  rfiId: integer("rfi_id").references(() => rfis.id).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  message: text("message"), // Optional - can be null if message is attachment-only
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * RFI Attachments Table
+ * File attachments for RFI messages
+ */
+export const rfiAttachments = pgTable("rfi_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => rfiMessages.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(), // Cloudinary URL or storage URL
+  fileSize: integer("file_size"), // File size in bytes
+  mimeType: text("mime_type"), // File MIME type
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+/**
  * Notifications Table
  * In-app notifications for users
  */
@@ -244,6 +270,24 @@ export const insertRfiSchema = createInsertSchema(rfis).pick({
   message: true,
 });
 
+// RFI message creation validation
+export const insertRfiMessageSchema = createInsertSchema(rfiMessages).pick({
+  rfiId: true,
+  senderId: true,
+  message: true,
+}).extend({
+  message: z.string().optional(), // Allow optional message for file-only messages
+});
+
+// RFI attachment creation validation
+export const insertRfiAttachmentSchema = createInsertSchema(rfiAttachments).pick({
+  messageId: true,
+  filename: true,
+  fileUrl: true,
+  fileSize: true,
+  mimeType: true,
+});
+
 // Notification creation validation
 export const insertNotificationSchema = createInsertSchema(notifications).pick({
   userId: true,
@@ -265,6 +309,10 @@ export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;
 export type InsertRfi = z.infer<typeof insertRfiSchema>;
+export type RfiMessage = typeof rfiMessages.$inferSelect;
+export type InsertRfiMessage = z.infer<typeof insertRfiMessageSchema>;
+export type RfiAttachment = typeof rfiAttachments.$inferSelect;
+export type InsertRfiAttachment = z.infer<typeof insertRfiAttachmentSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;

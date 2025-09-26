@@ -605,8 +605,34 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ message: "Unauthorized to update this RFI" });
       }
 
+      // Get the RFI details before updating
+      const rfis = await storage.getRfisByRfp(rfpId);
+      const rfi = rfis.find(r => r.id === rfiId);
+      
+      if (!rfi) {
+        return res.status(404).json({ message: "RFI not found" });
+      }
+
       // Update RFI status
       const updatedRfi = await storage.updateRfiStatus(rfiId, status);
+      
+      // If status changed to "responded", create a notification for the RFI submitter
+      if (status === "responded" && rfi.organization) {
+        const notification = await storage.createNotification({
+          userId: rfi.organization.id,
+          type: "rfi_response",
+          title: "RFI Response Available",
+          message: `Your question about "${rfp.title}" has been answered.`,
+          relatedId: rfiId,
+          relatedType: "rfi"
+        });
+        
+        // Send real-time notification
+        if ((global as any).sendNotificationToUser) {
+          (global as any).sendNotificationToUser(rfi.organization.id, notification);
+        }
+      }
+      
       res.json(updatedRfi);
     } catch (error) {
       console.error('Error updating RFI status:', error);

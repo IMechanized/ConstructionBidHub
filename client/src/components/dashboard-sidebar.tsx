@@ -61,7 +61,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       icon: Layout,
     },
     {
-      label: t('sidebar.myRfis'),
+      label: t('sidebar.rfis'),
       href: "/dashboard/rfis",
       icon: MessageSquare,
     },

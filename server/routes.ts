@@ -518,7 +518,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get RFIs for current user
+  // Get RFIs for current user (RFIs they sent out)
   app.get("/api/rfis", async (req, res) => {
     try {
       // Add debug logging
@@ -558,6 +558,41 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Error fetching RFIs:', error);
       res.status(500).json({ message: "Failed to fetch RFIs" });
+    }
+  });
+
+  // Get RFIs on user's RFPs (RFIs they received)
+  app.get("/api/rfis/received", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const user = req.user!;
+      console.log('Fetching received RFIs for user:', user.id);
+
+      // Get all RFPs owned by this user
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === user.id);
+      console.log('Found user RFPs:', userRfps.length);
+
+      // Get all RFIs for these RFPs
+      const allReceivedRfis = [];
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        // Add RFP data to each RFI
+        const rfisWithRfp = rfpRfis.map(rfi => ({
+          ...rfi,
+          rfp
+        }));
+        allReceivedRfis.push(...rfisWithRfp);
+      }
+
+      console.log('Sending response with', allReceivedRfis.length, 'received RFIs');
+      res.json(allReceivedRfis);
+    } catch (error) {
+      console.error('Error fetching received RFIs:', error);
+      res.status(500).json({ message: "Failed to fetch received RFIs" });
     }
   });
 

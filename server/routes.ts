@@ -5,7 +5,7 @@ import { setupAuth } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
-import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
+import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
@@ -689,6 +689,69 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to confirm payment"
       });
+    }
+  });
+
+  // Notification routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      requireAuth(req);
+      const notifications = await storage.getNotificationsByUser(req.user!.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      requireAuth(req);
+      const data = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(data);
+      
+      // Send real-time notification if user is connected
+      if ((global as any).sendNotificationToUser) {
+        (global as any).sendNotificationToUser(data.userId, notification);
+      }
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      requireAuth(req);
+      const notification = await storage.markNotificationAsRead(Number(req.params.id));
+      res.json(notification);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.patch("/api/notifications/read-all", async (req, res) => {
+    try {
+      requireAuth(req);
+      await storage.markAllNotificationsAsRead(req.user!.id);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      res.status(500).json({ message: "Failed to mark notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+      await storage.deleteNotification(Number(req.params.id));
+      res.json({ message: "Notification deleted" });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      res.status(500).json({ message: "Failed to delete notification" });
     }
   });
 

@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, and, sql, desc } from "drizzle-orm";
 import createMemoryStore from "memorystore";
@@ -55,6 +55,13 @@ export interface IStorage {
   getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
+
+  // Notification Operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
+  deleteNotification(id: number): Promise<void>;
 }
 
 /**
@@ -501,6 +508,46 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error updating analytics for RFP ${rfpId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Notification Operations
+   */
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const [updated] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    if (!updated) throw new Error("Notification not found");
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+  }
+
+  async deleteNotification(id: number): Promise<void> {
+    await db.delete(notifications).where(eq(notifications.id, id));
   }
 }
 

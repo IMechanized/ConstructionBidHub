@@ -37,7 +37,7 @@ type MessageWithDetails = RfiMessage & {
 
 export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
   // Get RFP details to check ownership
-  const { data: rfpDetails } = useQuery({
+  const { data: rfpDetails } = useQuery<{id: number, organizationId: number}>({
     queryKey: [`/api/rfps/${rfi.rfpId}`],
     enabled: !!rfi.rfpId,
   });
@@ -112,8 +112,8 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         const formData = new FormData();
         formData.append("message", message);
         
-        Array.from(attachments).forEach((file, index) => {
-          formData.append(`attachment_${index}`, file);
+        Array.from(attachments).forEach((file) => {
+          formData.append("attachment", file);
         });
 
         const response = await fetch(`/api/rfis/${rfi.id}/messages`, {
@@ -230,7 +230,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                Mark Responded
+                <span className="ml-1">Mark Responded</span>
               </Button>
             )}
             

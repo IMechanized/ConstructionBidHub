@@ -200,7 +200,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
   };
 
   return (
-    <Card className="flex flex-col h-[600px] max-w-4xl mx-auto">
+    <Card className="flex flex-col h-[80vh] sm:h-[600px] max-h-[80vh] sm:max-h-[600px] max-w-4xl mx-auto">
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div className="flex-1 min-w-0">
@@ -290,9 +290,9 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4" data-testid="messages-area">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" data-testid="messages-area">
           {isLoading ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -360,7 +360,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         </div>
 
         {/* Message Input Area */}
-        <div className="border-t p-4">
+        <div className="border-t p-4 flex-shrink-0">
           <form onSubmit={handleSendMessage} className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <Textarea

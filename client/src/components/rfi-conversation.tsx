@@ -202,17 +202,17 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
   return (
     <Card className="flex flex-col h-[600px] max-w-4xl mx-auto">
       <CardHeader className="border-b">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-semibold">RFI Conversation</h3>
-            <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold truncate">RFI Conversation</h3>
+            <p className="text-sm text-muted-foreground truncate">
               From: {rfi.organization?.companyName || rfi.email}
             </p>
             <p className="text-sm text-muted-foreground">
               Submitted: {format(new Date(rfi.createdAt), "PPp")}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Badge variant={rfi.status === "pending" ? "secondary" : "default"}>
               {rfi.status}
             </Badge>
@@ -225,13 +225,15 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
                 onClick={handleMarkAsResponded}
                 disabled={markRespondedMutation.isPending}
                 data-testid="mark-responded-button"
+                className="px-2 sm:px-3"
               >
                 {markRespondedMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                <span className="ml-1">Mark Responded</span>
+                <span className="hidden sm:inline ml-1">Mark Responded</span>
+                <span className="sm:hidden ml-1 text-xs">Responded</span>
               </Button>
             )}
             
@@ -243,9 +245,10 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
                     variant="outline"
                     size="sm"
                     data-testid="delete-rfi-button"
+                    className="px-2 sm:px-3"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete
+                    <span className="hidden sm:inline ml-1">Delete</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

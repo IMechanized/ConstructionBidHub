@@ -96,9 +96,11 @@ export default function RfiPage() {
                   size="sm"
                   onClick={() => setSelectedRfi(null)}
                   data-testid="back-to-rfi-list-button"
+                  className="px-2 sm:px-3"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to RFIs
+                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to RFIs</span>
+                  <span className="sm:hidden text-xs ml-1">Back</span>
                 </Button>
               )}
               <h1 className="text-2xl font-bold">

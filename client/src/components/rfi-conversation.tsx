@@ -176,12 +176,8 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
   };
 
   const handleDownloadAttachment = (attachment: RfiAttachment) => {
-    // Use the secure download endpoint that handles authentication
-    const link = document.createElement('a');
-    link.href = `/api/attachments/${attachment.id}/download`;
-    link.download = attachment.filename;
-    link.target = '_blank';
-    link.click();
+    // Open Cloudinary URL directly in new tab - no authentication needed for Cloudinary URLs
+    window.open(attachment.fileUrl, '_blank');
   };
 
   // Check if current user can mark as responded (RFP owner)

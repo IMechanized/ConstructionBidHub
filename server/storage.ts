@@ -60,7 +60,9 @@ export interface IStorage {
   // RFI Conversation Operations
   createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage>;
   getRfiMessages(rfiId: number): Promise<(RfiMessage & { sender: User, attachments?: RfiAttachment[] })[]>;
+  getRfiMessageById(messageId: number): Promise<RfiMessage | undefined>;
   createRfiAttachment(attachment: InsertRfiAttachment): Promise<RfiAttachment>;
+  getRfiAttachmentById(attachmentId: number): Promise<RfiAttachment | undefined>;
   getRfiAttachments(messageId: number): Promise<RfiAttachment[]>;
 
   // Notification Operations
@@ -464,6 +466,28 @@ export class DatabaseStorage implements IStorage {
       .values(attachment)
       .returning();
     return newAttachment;
+  }
+
+  async getRfiMessageById(messageId: number): Promise<RfiMessage | undefined> {
+    const [message] = await db
+      .select({
+        id: rfiMessages.id,
+        rfiId: rfiMessages.rfiId,
+        senderId: rfiMessages.senderId,
+        message: rfiMessages.message,
+        createdAt: rfiMessages.createdAt,
+      })
+      .from(rfiMessages)
+      .where(eq(rfiMessages.id, messageId));
+    return message;
+  }
+
+  async getRfiAttachmentById(attachmentId: number): Promise<RfiAttachment | undefined> {
+    const [attachment] = await db
+      .select()
+      .from(rfiAttachments)
+      .where(eq(rfiAttachments.id, attachmentId));
+    return attachment;
   }
 
   async getRfiAttachments(messageId: number): Promise<RfiAttachment[]> {

@@ -954,6 +954,60 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Download attachment endpoint with authentication
+  app.get("/api/attachments/:attachmentId/download", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const attachmentId = Number(req.params.attachmentId);
+      
+      // Get attachment details
+      const attachment = await storage.getRfiAttachmentById(attachmentId);
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      // Get the RFI message this attachment belongs to
+      const message = await storage.getRfiMessageById(attachment.messageId);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user has permission to access this attachment
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const userRfi = rfis.find(r => r.id === message.rfiId);
+      
+      let hasPermission = !!userRfi;
+      
+      // If not the submitter, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === message.rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+      
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Unauthorized to access this attachment" });
+      }
+      
+      // Redirect to the Cloudinary URL (this maintains authentication context)
+      res.redirect(attachment.fileUrl);
+      
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to download attachment"
+      });
+    }
+  });
+
   // Delete RFI endpoint
   app.delete("/api/rfis/:id", async (req, res) => {
     try {

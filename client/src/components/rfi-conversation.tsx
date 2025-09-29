@@ -176,8 +176,9 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
   };
 
   const handleDownloadAttachment = (attachment: RfiAttachment) => {
+    // Use the secure download endpoint that handles authentication
     const link = document.createElement('a');
-    link.href = attachment.fileUrl;
+    link.href = `/api/attachments/${attachment.id}/download`;
     link.download = attachment.filename;
     link.target = '_blank';
     link.click();

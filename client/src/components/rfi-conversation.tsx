@@ -360,7 +360,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         </div>
 
         {/* Message Input Area */}
-        <div className="border-t p-4">
+        <div className="border-t p-4 pb-6 sm:pb-4">
           <form onSubmit={handleSendMessage} className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-2">
               <Textarea

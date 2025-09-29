@@ -313,14 +313,14 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
                   </AvatarFallback>
                 </Avatar>
                 
-                <div className={`flex-1 max-w-[70%] ${
+                <div className={`flex-1 max-w-[70%] sm:max-w-[80%] md:max-w-[70%] ${
                   msg.senderId === user?.id ? "text-right" : ""
                 }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                    <span className="text-xs text-muted-foreground truncate">
                       {msg.sender.companyName || msg.sender.email}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {format(new Date(msg.createdAt), "MMM d, h:mm a")}
                     </span>
                   </div>
@@ -359,7 +359,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         {/* Message Input Area */}
         <div className="border-t p-4">
           <form onSubmit={handleSendMessage} className="space-y-3">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -372,27 +372,33 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
                 }}
                 data-testid="message-input"
               />
-              <div className="flex flex-col gap-2">
+              <div className="flex sm:flex-col gap-2 justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   data-testid="attach-file-button"
+                  className="px-3 sm:px-2"
                 >
                   <Paperclip className="h-4 w-4" />
+                  <span className="sm:hidden ml-1">Attach</span>
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                   disabled={(!message.trim() && !attachments?.length) || sendMessageMutation.isPending}
                   data-testid="send-message-button"
+                  className="px-3 sm:px-2"
                 >
                   {sendMessageMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
+                  <span className="sm:hidden ml-1">
+                    {sendMessageMutation.isPending ? "Sending..." : "Send"}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -419,7 +425,7 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
             )}
             
             <p className="text-xs text-muted-foreground">
-              Press Ctrl+Enter to send • Attach files: PDF, DOC, Images, TXT
+              <span className="hidden sm:inline">Press Ctrl+Enter to send • </span>Attach files: PDF, DOC, Images, TXT
             </p>
           </form>
         </div>

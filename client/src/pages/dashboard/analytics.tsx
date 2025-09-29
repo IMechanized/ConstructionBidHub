@@ -217,7 +217,7 @@ export default function AnalyticsDashboard() {
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle>Total Views</CardTitle>
@@ -338,76 +338,92 @@ export default function AnalyticsDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>RFP Title</TableHead>
-                      <TableHead className="text-center">Total Views</TableHead>
-                      <TableHead className="text-center">Unique Views</TableHead>
-                      <TableHead className="text-center">Avg. View Time</TableHead>
-                      <TableHead className="text-center">Total Bids</TableHead>
-                      <TableHead className="text-center">CTR</TableHead>
-                      <TableHead>RFP Created</TableHead>
-                      <TableHead>Data From</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentData.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.rfp.title}</TableCell>
-                        <TableCell className="text-center">{item.totalViews || 0}</TableCell>
-                        <TableCell className="text-center">{item.uniqueViews || 0}</TableCell>
-                        <TableCell className="text-center">{item.averageViewTime || 0}s</TableCell>
-                        <TableCell className="text-center">{item.totalBids || 0}</TableCell>
-                        <TableCell className="text-center">{item.clickThroughRate || 0}%</TableCell>
-                        <TableCell>
-                          {format(new Date(item.rfp.createdAt), 'MMM dd, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(item.date), 'MMM dd, yyyy')}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="inline-flex items-center gap-1"
-                            onClick={() => {
-                              setLocation(`/rfp/${item.rfp.id}`);
-                              toast({
-                                title: "Viewing RFP",
-                                description: `Opening ${item.rfp.title}`,
-                              });
-                            }}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View RFP
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <div className="inline-block min-w-full align-middle">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[180px] sm:w-[220px]">RFP Title</TableHead>
+                          <TableHead className="text-center w-[80px] sm:w-[100px]">Views</TableHead>
+                          <TableHead className="hidden md:table-cell text-center w-[100px]">Unique</TableHead>
+                          <TableHead className="hidden lg:table-cell text-center w-[100px]">Avg. Time</TableHead>
+                          <TableHead className="text-center w-[70px] sm:w-[80px]">Bids</TableHead>
+                          <TableHead className="hidden lg:table-cell text-center w-[80px]">CTR</TableHead>
+                          <TableHead className="hidden xl:table-cell w-[120px]">Created</TableHead>
+                          <TableHead className="hidden xl:table-cell w-[120px]">Data From</TableHead>
+                          <TableHead className="text-right w-[80px] sm:w-[120px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentData.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">
+                              <div className="truncate max-w-[180px] sm:max-w-[220px]">
+                                {item.rfp.title}
+                              </div>
+                              {/* Show condensed info on mobile */}
+                              <div className="md:hidden text-xs text-muted-foreground mt-1 space-y-1">
+                                <div>Unique: {item.uniqueViews || 0} | Time: {item.averageViewTime || 0}s</div>
+                                <div className="lg:hidden">CTR: {item.clickThroughRate || 0}%</div>
+                                <div className="xl:hidden">
+                                  Created: {format(new Date(item.rfp.createdAt), 'MMM dd')}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center font-medium">{item.totalViews || 0}</TableCell>
+                            <TableCell className="hidden md:table-cell text-center">{item.uniqueViews || 0}</TableCell>
+                            <TableCell className="hidden lg:table-cell text-center">{item.averageViewTime || 0}s</TableCell>
+                            <TableCell className="text-center font-medium">{item.totalBids || 0}</TableCell>
+                            <TableCell className="hidden lg:table-cell text-center">{item.clickThroughRate || 0}%</TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                              {format(new Date(item.rfp.createdAt), 'MMM dd, yyyy')}
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                              {format(new Date(item.date), 'MMM dd, yyyy')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="h-8 px-2 sm:px-3"
+                                onClick={() => {
+                                  setLocation(`/rfp/${item.rfp.id}`);
+                                  toast({
+                                    title: "Viewing RFP",
+                                    description: `Opening ${item.rfp.title}`,
+                                  });
+                                }}
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 sm:mr-1" />
+                                <span className="hidden sm:inline ml-1">View RFP</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
 
                 {totalPages > 1 && (
                   <div className="mt-4 flex justify-center">
                     <Pagination>
-                      <PaginationContent>
+                      <PaginationContent className="flex flex-wrap justify-center gap-1">
                         <PaginationItem>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="gap-1 pl-2.5"
+                            className="gap-1 pl-2.5 px-2 sm:px-3"
                           >
                             <ChevronLeft className="h-4 w-4" />
-                            <span>Previous</span>
+                            <span className="hidden sm:inline">Previous</span>
                           </Button>
                         </PaginationItem>
                         <PaginationItem className="flex items-center mx-2">
-                          <span>
-                            Page {currentPage} of {totalPages}
+                          <span className="text-sm">
+                            {currentPage}/{totalPages}
                           </span>
                         </PaginationItem>
                         <PaginationItem>
@@ -416,9 +432,9 @@ export default function AnalyticsDashboard() {
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="gap-1 pr-2.5"
+                            className="gap-1 pr-2.5 px-2 sm:px-3"
                           >
-                            <span>Next</span>
+                            <span className="hidden sm:inline">Next</span>
                             <ChevronRight className="h-4 w-4" />
                           </Button>
                         </PaginationItem>

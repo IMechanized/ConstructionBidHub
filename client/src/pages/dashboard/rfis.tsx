@@ -122,21 +122,23 @@ export default function RfiPage() {
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger 
                     value="my-rfis" 
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
                     data-testid="my-rfis-tab"
                   >
-                    <Send className="h-4 w-4" />
-                    My RFIs
-                    <Badge variant="outline">{sentRfis.length}</Badge>
+                    <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline sm:inline">My RFIs</span>
+                    <span className="xs:hidden sm:hidden">RFIs</span>
+                    <Badge variant="outline" className="text-xs">{sentRfis.length}</Badge>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="rfi-requests" 
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
                     data-testid="rfi-requests-tab"
                   >
-                    <Inbox className="h-4 w-4" />
-                    RFI Requests
-                    <Badge variant="outline">{receivedRfis.length}</Badge>
+                    <Inbox className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline sm:inline">RFI Requests</span>
+                    <span className="xs:hidden sm:hidden">Requests</span>
+                    <Badge variant="outline" className="text-xs">{receivedRfis.length}</Badge>
                   </TabsTrigger>
                 </TabsList>
 
@@ -155,51 +157,64 @@ export default function RfiPage() {
                           </div>
                         ) : (
                           <>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>RFP Title</TableHead>
-                                  <TableHead>Message</TableHead>
-                                  <TableHead>Submitted Date</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {currentRfis.map((rfi: RfiWithRfp) => (
-                                  <TableRow key={rfi.id} data-testid={`sent-rfi-row-${rfi.id}`}>
-                                    <TableCell className="font-medium">
-                                      {rfi.rfp?.title || "Unknown RFP"}
-                                    </TableCell>
-                                    <TableCell className="max-w-md">
-                                      <p className="truncate">{rfi.message}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                      {format(new Date(rfi.createdAt), "PPp")}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge 
-                                        variant={rfi.status === "responded" ? "default" : "secondary"}
-                                        className="capitalize"
-                                      >
-                                        {rfi.status || "pending"}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSelectedRfi(rfi)}
-                                        data-testid={`view-conversation-${rfi.id}`}
-                                      >
-                                        <MessageSquare className="h-4 w-4 mr-1" />
-                                        View Chat
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                              <div className="inline-block min-w-full align-middle">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[140px] sm:w-[200px]">RFP Title</TableHead>
+                                      <TableHead className="hidden md:table-cell max-w-[200px]">Message</TableHead>
+                                      <TableHead className="hidden sm:table-cell w-[120px]">Date</TableHead>
+                                      <TableHead className="w-[80px] sm:w-[100px]">Status</TableHead>
+                                      <TableHead className="text-right w-[80px] sm:w-[120px]">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {currentRfis.map((rfi: RfiWithRfp) => (
+                                      <TableRow key={rfi.id} data-testid={`sent-rfi-row-${rfi.id}`}>
+                                        <TableCell className="font-medium">
+                                          <div className="truncate max-w-[140px] sm:max-w-[200px]">
+                                            {rfi.rfp?.title || "Unknown RFP"}
+                                          </div>
+                                          {/* Show message and date on mobile as subtitle */}
+                                          <div className="md:hidden text-xs text-muted-foreground mt-1">
+                                            <div className="truncate max-w-[140px]">{rfi.message}</div>
+                                            <div className="sm:hidden mt-1">{format(new Date(rfi.createdAt), "PP")}</div>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell max-w-[200px]">
+                                          <p className="truncate">{rfi.message}</p>
+                                        </TableCell>
+                                        <TableCell className="hidden sm:table-cell whitespace-nowrap">
+                                          <div className="hidden sm:block md:hidden">{format(new Date(rfi.createdAt), "PP")}</div>
+                                          <div className="hidden md:block">{format(new Date(rfi.createdAt), "PPp")}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge 
+                                            variant={rfi.status === "responded" ? "default" : "secondary"}
+                                            className="capitalize text-xs"
+                                          >
+                                            {rfi.status || "pending"}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setSelectedRfi(rfi)}
+                                            data-testid={`view-conversation-${rfi.id}`}
+                                            className="h-8 px-2 sm:px-3"
+                                          >
+                                            <MessageSquare className="h-4 w-4 sm:mr-1" />
+                                            <span className="hidden sm:inline ml-1">View Chat</span>
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
 
                             {totalPages > 1 && (
                               <Pagination>
@@ -253,55 +268,71 @@ export default function RfiPage() {
                           </div>
                         ) : (
                           <>
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>RFP Title</TableHead>
-                                  <TableHead>Message</TableHead>
-                                  <TableHead>From</TableHead>
-                                  <TableHead>Submitted Date</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {currentRfis.map((rfi: RfiWithRfp) => (
-                                  <TableRow key={`received-${rfi.id}`} data-testid={`received-rfi-row-${rfi.id}`}>
-                                    <TableCell className="font-medium">
-                                      {rfi.rfp?.title || "Unknown RFP"}
-                                    </TableCell>
-                                    <TableCell className="max-w-md">
-                                      <p className="truncate">{rfi.message}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                      {rfi.email}
-                                    </TableCell>
-                                    <TableCell>
-                                      {format(new Date(rfi.createdAt), "PPp")}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge 
-                                        variant={rfi.status === "responded" ? "default" : "secondary"}
-                                        className="capitalize"
-                                      >
-                                        {rfi.status || "pending"}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSelectedRfi(rfi)}
-                                        data-testid={`view-received-conversation-${rfi.id}`}
-                                      >
-                                        <MessageSquare className="h-4 w-4 mr-1" />
-                                        View Chat
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                              <div className="inline-block min-w-full align-middle">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[140px] sm:w-[200px]">RFP Title</TableHead>
+                                      <TableHead className="hidden lg:table-cell max-w-[180px]">Message</TableHead>
+                                      <TableHead className="hidden md:table-cell w-[120px]">From</TableHead>
+                                      <TableHead className="hidden sm:table-cell w-[120px]">Date</TableHead>
+                                      <TableHead className="w-[80px] sm:w-[100px]">Status</TableHead>
+                                      <TableHead className="text-right w-[80px] sm:w-[120px]">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {currentRfis.map((rfi: RfiWithRfp) => (
+                                      <TableRow key={`received-${rfi.id}`} data-testid={`received-rfi-row-${rfi.id}`}>
+                                        <TableCell className="font-medium">
+                                          <div className="truncate max-w-[140px] sm:max-w-[200px]">
+                                            {rfi.rfp?.title || "Unknown RFP"}
+                                          </div>
+                                          {/* Show message, from, and date on mobile as subtitle */}
+                                          <div className="lg:hidden text-xs text-muted-foreground mt-1 space-y-1">
+                                            <div className="truncate max-w-[140px]">{rfi.message}</div>
+                                            <div className="md:hidden text-muted-foreground">
+                                              From: {rfi.email}
+                                            </div>
+                                            <div className="sm:hidden">{format(new Date(rfi.createdAt), "PP")}</div>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="hidden lg:table-cell max-w-[180px]">
+                                          <p className="truncate">{rfi.message}</p>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">
+                                          <div className="truncate max-w-[120px]">{rfi.email}</div>
+                                        </TableCell>
+                                        <TableCell className="hidden sm:table-cell whitespace-nowrap">
+                                          <div className="hidden sm:block md:hidden">{format(new Date(rfi.createdAt), "PP")}</div>
+                                          <div className="hidden md:block">{format(new Date(rfi.createdAt), "PPp")}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge 
+                                            variant={rfi.status === "responded" ? "default" : "secondary"}
+                                            className="capitalize text-xs"
+                                          >
+                                            {rfi.status || "pending"}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setSelectedRfi(rfi)}
+                                            data-testid={`view-received-conversation-${rfi.id}`}
+                                            className="h-8 px-2 sm:px-3"
+                                          >
+                                            <MessageSquare className="h-4 w-4 sm:mr-1" />
+                                            <span className="hidden sm:inline ml-1">View Chat</span>
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
 
                             {totalPages > 1 && (
                               <Pagination>

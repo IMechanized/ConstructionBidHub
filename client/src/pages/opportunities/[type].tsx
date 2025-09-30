@@ -18,10 +18,6 @@ import {
 import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 import { CERTIFICATIONS } from "@shared/schema";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Filter } from "lucide-react";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
@@ -31,11 +27,8 @@ export default function OpportunitiesPage() {
   const { type } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("deadline");
   const [locationFilter, setLocationFilter] = useState("all");
-  const [budgetFilter, setBudgetFilter] = useState("all");
-  const [certificationFilter, setCertificationFilter] = useState<string[]>([]);
-  const [deadlineFilter, setDeadlineFilter] = useState("all");
+  const [consolidatedFilter, setConsolidatedFilter] = useState("deadline");
   
   const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -72,15 +65,16 @@ export default function OpportunitiesPage() {
     );
   }
 
-  // Apply budget filter
-  if (budgetFilter && budgetFilter !== "all") {
+  // Apply consolidated filter (budget, certification, or deadline range)
+  const budgetFilters = ["under50k", "50k-100k", "100k-250k", "250k-500k", "500k+"];
+  const deadlineFilters = ["next7days", "next30days", "next3months"];
+  
+  if (budgetFilters.includes(consolidatedFilter)) {
     filteredRfps = filteredRfps.filter(rfp => {
-      // Skip RFPs without any budget information
       if (rfp.budgetMin == null) return false;
-      
       const budgetMin = rfp.budgetMin;
       
-      switch (budgetFilter) {
+      switch (consolidatedFilter) {
         case "under50k":
           return budgetMin < 50000;
         case "50k-100k":
@@ -95,22 +89,16 @@ export default function OpportunitiesPage() {
           return true;
       }
     });
-  }
-
-  // Apply certification filter
-  if (certificationFilter.length > 0) {
+  } else if (CERTIFICATIONS.includes(consolidatedFilter)) {
     filteredRfps = filteredRfps.filter(rfp => {
       if (!rfp.certificationGoals || rfp.certificationGoals.length === 0) return false;
-      return certificationFilter.some(cert => rfp.certificationGoals?.includes(cert));
+      return rfp.certificationGoals.includes(consolidatedFilter);
     });
-  }
-
-  // Apply deadline filter
-  if (deadlineFilter && deadlineFilter !== "all") {
+  } else if (deadlineFilters.includes(consolidatedFilter)) {
     const now = new Date();
     filteredRfps = filteredRfps.filter(rfp => {
       const deadline = new Date(rfp.deadline);
-      switch (deadlineFilter) {
+      switch (consolidatedFilter) {
         case "next7days":
           return deadline <= addDays(now, 7) && deadline >= now;
         case "next30days":
@@ -123,17 +111,16 @@ export default function OpportunitiesPage() {
     });
   }
 
-  // Apply sorting
+  // Apply sorting (default or explicit)
   filteredRfps = [...filteredRfps].sort((a, b) => {
-    switch (sortBy) {
+    switch (consolidatedFilter) {
       case "priceAsc":
         return (a.budgetMin || 0) - (b.budgetMin || 0);
       case "priceDesc":
         return (b.budgetMin || 0) - (a.budgetMin || 0);
       case "deadline":
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
       default:
-        return 0;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     }
   });
 
@@ -178,14 +165,37 @@ export default function OpportunitiesPage() {
               />
             </div>
 
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="w-[200px]" data-testid="select-sort">
-                <SelectValue placeholder="Sort by..." />
+            <Select 
+              value={consolidatedFilter} 
+              onValueChange={(value) => {
+                setConsolidatedFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[200px]" data-testid="select-filter">
+                <SelectValue placeholder="Sort & Filter" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="deadline">Deadline</SelectItem>
-                <SelectItem value="priceAsc">RFP Amount: Low to High</SelectItem>
-                <SelectItem value="priceDesc">RFP Amount: High to Low</SelectItem>
+              <SelectContent className="max-h-[400px]">
+                <SelectItem value="deadline">Sort: Deadline</SelectItem>
+                <SelectItem value="priceAsc">Sort: Price Low to High</SelectItem>
+                <SelectItem value="priceDesc">Sort: Price High to Low</SelectItem>
+                
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">PROJECT SIZE</div>
+                <SelectItem value="under50k">Under $50k</SelectItem>
+                <SelectItem value="50k-100k">$50k - $100k</SelectItem>
+                <SelectItem value="100k-250k">$100k - $250k</SelectItem>
+                <SelectItem value="250k-500k">$250k - $500k</SelectItem>
+                <SelectItem value="500k+">$500k+</SelectItem>
+                
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">CERTIFICATIONS</div>
+                {CERTIFICATIONS.map((cert) => (
+                  <SelectItem key={cert} value={cert}>{cert}</SelectItem>
+                ))}
+                
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">DEADLINE RANGE</div>
+                <SelectItem value="next7days">Next 7 Days</SelectItem>
+                <SelectItem value="next30days">Next 30 Days</SelectItem>
+                <SelectItem value="next3months">Next 3 Months</SelectItem>
               </SelectContent>
             </Select>
 
@@ -197,7 +207,7 @@ export default function OpportunitiesPage() {
               }}
             >
               <SelectTrigger className="w-[200px]" data-testid="select-location">
-                <SelectValue placeholder="Filter by location" />
+                <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
@@ -206,83 +216,6 @@ export default function OpportunitiesPage() {
                     {location}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select
-              value={budgetFilter}
-              onValueChange={(value) => {
-                setBudgetFilter(value);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-budget">
-                <SelectValue placeholder="Project Size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sizes</SelectItem>
-                <SelectItem value="under50k">Under $50k</SelectItem>
-                <SelectItem value="50k-100k">$50k - $100k</SelectItem>
-                <SelectItem value="100k-250k">$100k - $250k</SelectItem>
-                <SelectItem value="250k-500k">$250k - $500k</SelectItem>
-                <SelectItem value="500k+">$500k+</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-[200px]" data-testid="button-certifications">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Certifications
-                  {certificationFilter.length > 0 && ` (${certificationFilter.length})`}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm">Contractor Requirements</h4>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    {CERTIFICATIONS.map((cert) => (
-                      <div key={cert} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={cert}
-                          checked={certificationFilter.includes(cert)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setCertificationFilter([...certificationFilter, cert]);
-                            } else {
-                              setCertificationFilter(certificationFilter.filter(c => c !== cert));
-                            }
-                            setCurrentPage(1);
-                          }}
-                          data-testid={`checkbox-cert-${cert}`}
-                        />
-                        <Label htmlFor={cert} className="text-sm cursor-pointer">
-                          {cert}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <Select
-              value={deadlineFilter}
-              onValueChange={(value) => {
-                setDeadlineFilter(value);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-deadline">
-                <SelectValue placeholder="Deadline Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Deadlines</SelectItem>
-                <SelectItem value="next7days">Next 7 Days</SelectItem>
-                <SelectItem value="next30days">Next 30 Days</SelectItem>
-                <SelectItem value="next3months">Next 3 Months</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import createMemoryStore from 'memorystore';
 import multer from 'multer';
@@ -368,29 +368,32 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
-// Define schema
+// Define schema matching shared/schema.ts
 const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
-  password: text("password"),
+  password: text("password").notNull(),
   companyName: text("company_name").notNull(),
-  contact: text("contact"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  jobTitle: text("job_title"),
   telephone: text("telephone"),
   cell: text("cell"),
-  businessEmail: text("business_email"),
-  isMinorityOwned: boolean("is_minority_owned"),
+  isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),
   trade: text("trade"),
   certificationName: text("certification_name").array(),
   logo: text("logo"),
-  onboardingComplete: boolean("onboarding_complete"),
-  status: text("status"),
-  language: text("language"),
-  emailVerified: boolean("email_verified"),
+  onboardingComplete: boolean("onboarding_complete").default(false),
+  status: text("status").default("active"),
+  language: text("language").default("en"),
+  emailVerified: boolean("email_verified").default(false),
   verificationToken: text("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  failedLoginAttempts: integer("failed_login_attempts").default(0),
+  accountLockedUntil: timestamp("account_locked_until"),
 });
 
 const rfps = pgTable("rfps", {
@@ -401,12 +404,15 @@ const rfps = pgTable("rfps", {
   rfiDate: timestamp("rfi_date").notNull(),
   deadline: timestamp("deadline").notNull(),
   budgetMin: integer("budget_min"),
-  certificationGoals: text("certification_goals"),
-  jobLocation: text("job_location").notNull(),
+  certificationGoals: text("certification_goals").array(),
+  jobStreet: text("job_street").notNull(),
+  jobCity: text("job_city").notNull(),
+  jobState: text("job_state").notNull(),
+  jobZip: text("job_zip").notNull(),
   portfolioLink: text("portfolio_link"),
-  status: text("status"),
+  status: text("status").default("open"),
   organizationId: integer("organization_id").references(() => users.id),
-  featured: boolean("featured"),
+  featured: boolean("featured").default(false),
   featuredAt: timestamp("featured_at"),
   createdAt: timestamp("created_at"),
 });
@@ -416,13 +422,43 @@ const rfis = pgTable("rfis", {
   rfpId: integer("rfp_id").references(() => rfps.id),
   email: text("email").notNull(),
   message: text("message").notNull(),
+  createdAt: timestamp("created_at"),
   status: text("status").default("pending"),
-  createdAt: timestamp("created_at")
+});
+
+const rfiMessages = pgTable("rfi_messages", {
+  id: serial("id").primaryKey(),
+  rfiId: integer("rfi_id").references(() => rfis.id).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  message: text("message"),
+  createdAt: timestamp("created_at"),
+});
+
+const rfiAttachments = pgTable("rfi_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => rfiMessages.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at"),
+});
+
+const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedId: integer("related_id"),
+  relatedType: text("related_type"),
+  createdAt: timestamp("created_at"),
 });
 
 const rfpAnalytics = pgTable("rfp_analytics", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
   date: date("date").notNull(),
   totalViews: integer("total_views").default(0),
   uniqueViews: integer("unique_views").default(0),
@@ -433,10 +469,11 @@ const rfpAnalytics = pgTable("rfp_analytics", {
 
 const rfpViewSessions = pgTable("rfp_view_sessions", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
   userId: integer("user_id").references(() => users.id),
   viewDate: timestamp("view_date").notNull(),
   duration: integer("duration").default(0),
+  convertedToBid: boolean("converted_to_bid").default(false),
 });
 
 // Initialize Drizzle ORM
@@ -461,16 +498,19 @@ const storage = {
         .set({
           ...updates,
           companyName: updates.companyName,
-          contact: updates.contact,
+          firstName: updates.firstName,
+          lastName: updates.lastName,
+          jobTitle: updates.jobTitle,
           telephone: updates.telephone,
           cell: updates.cell,
-          businessEmail: updates.businessEmail,
           trade: updates.trade,
           isMinorityOwned: updates.isMinorityOwned,
           minorityGroup: updates.minorityGroup,
           certificationName: updates.certificationName,
           logo: updates.logo,
-          language: updates.language
+          language: updates.language,
+          failedLoginAttempts: updates.failedLoginAttempts,
+          accountLockedUntil: updates.accountLockedUntil
         })
         .where(eq(users.id, id))
         .returning();
@@ -598,6 +638,15 @@ const storage = {
     }
   },
 
+  async deleteRfi(rfiId) {
+    try {
+      await db.delete(rfis).where(eq(rfis.id, rfiId));
+    } catch (error) {
+      console.error("Error deleting RFI:", error);
+      throw error;
+    }
+  },
+
   async getAnalyticsByRfpId(rfpId) {
     try {
       // Format today's date properly for SQL
@@ -697,6 +746,170 @@ const storage = {
     } catch (error) {
       console.error("Error getting boosted analytics:", error);
       return [];
+    }
+  },
+
+  // RFI Conversation Operations
+  async createRfiMessage(message) {
+    try {
+      const [newMessage] = await db
+        .insert(rfiMessages)
+        .values(message)
+        .returning();
+      return newMessage;
+    } catch (error) {
+      console.error("Error creating RFI message:", error);
+      throw error;
+    }
+  },
+
+  async getRfiMessages(rfiId) {
+    try {
+      // Get messages with sender information
+      const messages = await db
+        .select({
+          id: rfiMessages.id,
+          rfiId: rfiMessages.rfiId,
+          senderId: rfiMessages.senderId,
+          message: rfiMessages.message,
+          createdAt: rfiMessages.createdAt,
+          sender: users
+        })
+        .from(rfiMessages)
+        .innerJoin(users, eq(rfiMessages.senderId, users.id))
+        .where(eq(rfiMessages.rfiId, rfiId))
+        .orderBy(rfiMessages.createdAt);
+
+      // Get attachments for each message
+      const messagesWithAttachments = await Promise.all(
+        messages.map(async (msg) => {
+          const attachments = await this.getRfiAttachments(msg.id);
+          return {
+            ...msg,
+            attachments
+          };
+        })
+      );
+
+      return messagesWithAttachments;
+    } catch (error) {
+      console.error("Error getting RFI messages:", error);
+      return [];
+    }
+  },
+
+  async getRfiMessageById(messageId) {
+    try {
+      const [message] = await db
+        .select()
+        .from(rfiMessages)
+        .where(eq(rfiMessages.id, messageId));
+      return message;
+    } catch (error) {
+      console.error("Error getting RFI message by ID:", error);
+      return null;
+    }
+  },
+
+  async createRfiAttachment(attachment) {
+    try {
+      const [newAttachment] = await db
+        .insert(rfiAttachments)
+        .values(attachment)
+        .returning();
+      return newAttachment;
+    } catch (error) {
+      console.error("Error creating RFI attachment:", error);
+      throw error;
+    }
+  },
+
+  async getRfiAttachmentById(attachmentId) {
+    try {
+      const [attachment] = await db
+        .select()
+        .from(rfiAttachments)
+        .where(eq(rfiAttachments.id, attachmentId));
+      return attachment;
+    } catch (error) {
+      console.error("Error getting RFI attachment by ID:", error);
+      return null;
+    }
+  },
+
+  async getRfiAttachments(messageId) {
+    try {
+      return await db
+        .select()
+        .from(rfiAttachments)
+        .where(eq(rfiAttachments.messageId, messageId))
+        .orderBy(rfiAttachments.uploadedAt);
+    } catch (error) {
+      console.error("Error getting RFI attachments:", error);
+      return [];
+    }
+  },
+
+  // Notification Operations
+  async createNotification(notification) {
+    try {
+      const [newNotification] = await db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
+  },
+
+  async getNotificationsByUser(userId) {
+    try {
+      return await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error("Error getting notifications by user:", error);
+      return [];
+    }
+  },
+
+  async markNotificationAsRead(id) {
+    try {
+      const [updated] = await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, id))
+        .returning();
+      if (!updated) throw new Error("Notification not found");
+      return updated;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
+  },
+
+  async markAllNotificationsAsRead(userId) {
+    try {
+      await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      throw error;
+    }
+  },
+
+  async deleteNotification(id) {
+    try {
+      await db.delete(notifications).where(eq(notifications.id, id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      throw error;
     }
   },
 

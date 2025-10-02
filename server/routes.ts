@@ -17,6 +17,7 @@ import { getSessionSecret } from './lib/session-config';
 import helmet from 'helmet';
 import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
 import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
+import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -206,7 +207,10 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/rfps/:id", async (req, res) => {
     try {
-      const rfp = await storage.getRfpById(Number(req.params.id));
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const rfp = await storage.getRfpById(id);
       if (!rfp) {
         return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
@@ -257,7 +261,10 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);
       console.log('RFP update request received:', req.body);
 
-      const rfp = await storage.getRfpById(Number(req.params.id));
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const rfp = await storage.getRfpById(id);
       if (!rfp || rfp.organizationId !== req.user?.id) {
         logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'update', req);
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPUpdate');
@@ -275,7 +282,7 @@ export function registerRoutes(app: Express): Server {
         deadline: data.deadline ? new Date(data.deadline) : undefined,
       };
 
-      const updated = await storage.updateRfp(Number(req.params.id), processedData);
+      const updated = await storage.updateRfp(id, processedData);
       console.log('RFP updated successfully:', updated);
       res.json(updated);
     } catch (error) {
@@ -286,13 +293,17 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/rfps/:id", async (req, res) => {
     requireAuth(req);
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+    
+    const rfp = await storage.getRfpById(id);
     if (!rfp || rfp.organizationId !== req.user?.id) {
       logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'delete', req);
       return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDelete');
     }
 
-    await storage.deleteRfp(Number(req.params.id));
+    await storage.deleteRfp(id);
     res.sendStatus(200);
   });
 
@@ -325,12 +336,16 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/employees/:id", async (req, res) => {
     try {
       requireAuth(req);
-      const employee = await storage.getEmployee(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'Employee ID', res);
+      if (id === null) return;
+      
+      const employee = await storage.getEmployee(id);
       if (!employee || employee.organizationId !== req.user!.id) {
         logAuthorizationFailure(req.user?.id, `Employee ${req.params.id}`, 'delete', req);
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'EmployeeDelete');
       }
-      await storage.deleteEmployee(Number(req.params.id));
+      await storage.deleteEmployee(id);
       res.sendStatus(200);
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'EmployeeDeletion');
@@ -498,7 +513,11 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/analytics/rfp/:id", async (req, res) => {
     try {
       requireAuth(req);
-      const analytics = await storage.getAnalyticsByRfpId(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      const analytics = await storage.getAnalyticsByRfpId(id);
       if (!analytics) {
         return res.status(404).json({ message: "Analytics not found" });
       }
@@ -514,7 +533,10 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);  // Make sure user is authenticated
       const data = insertRfiSchema.parse(req.body);
 
-      const rfp = await storage.getRfpById(Number(req.params.id));
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      const rfp = await storage.getRfpById(id);
       if (!rfp) {
         return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
@@ -523,7 +545,7 @@ export function registerRoutes(app: Express): Server {
       const rfi = await storage.createRfi({
         ...data,
         email: req.user!.email,  // Use authenticated user's email
-        rfpId: Number(req.params.id),
+        rfpId: id,
       });
 
       res.status(201).json({ 
@@ -539,8 +561,11 @@ export function registerRoutes(app: Express): Server {
   // Get RFIs for specific RFP
   app.get("/api/rfps/:id/rfi", async (req, res) => {
     try {
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
       // Get RFIs with organization data in a single query
-      const rfis = await storage.getRfisByRfp(Number(req.params.id));
+      const rfis = await storage.getRfisByRfp(id);
       res.json(rfis);
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPRFIs');
@@ -656,8 +681,11 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
 
-      const rfpId = Number(req.params.rfpId);
-      const rfiId = Number(req.params.rfiId);
+      const params = validateRouteParams(req, res, { rfpId: 'positiveInt', rfiId: 'positiveInt' });
+      if (!params) return;
+      
+      const rfpId = params.rfpId as number;
+      const rfiId = params.rfiId as number;
       const { status } = req.body;
       
       // Validate status is one of the allowed values
@@ -758,7 +786,10 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/rfis/:id/messages", upload.array('attachment', 5), async (req, res) => {
     try {
       requireAuth(req);
-      const rfiId = Number(req.params.id);
+      
+      const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+      if (rfiId === null) return;
+      
       const { message } = req.body;
       const files = req.files as Express.Multer.File[] || [];
 
@@ -991,7 +1022,8 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
       
-      const attachmentId = Number(req.params.attachmentId);
+      const attachmentId = validatePositiveInt(req.params.attachmentId, 'Attachment ID', res);
+      if (attachmentId === null) return;
       
       // Get attachment details
       const attachment = await storage.getRfiAttachmentById(attachmentId);
@@ -1043,7 +1075,8 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
 
-      const rfiId = Number(req.params.id);
+      const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+      if (rfiId === null) return;
       
       // Get RFI details to check permissions
       const rfis = await storage.getRfisByEmail(req.user!.email);
@@ -1109,7 +1142,11 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/notifications/:id/read", async (req, res) => {
     try {
       requireAuth(req);
-      const notification = await storage.markNotificationAsRead(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+      if (id === null) return;
+      
+      const notification = await storage.markNotificationAsRead(id);
       res.json(notification);
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkRead');
@@ -1129,7 +1166,11 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/notifications/:id", async (req, res) => {
     try {
       requireAuth(req);
-      await storage.deleteNotification(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+      if (id === null) return;
+      
+      await storage.deleteNotification(id);
       res.json({ message: "Notification deleted" });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');

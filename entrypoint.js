@@ -716,6 +716,61 @@ const upload = multer({
   }
 });
 
+// Route parameter validation utilities (inline for Vercel self-contained deployment)
+function validatePositiveInt(paramValue, paramName, res) {
+  if (!paramValue) {
+    sendErrorResponse(res, new Error(`Missing ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  // Check if it's a positive integer string
+  if (!/^\d+$/.test(paramValue)) {
+    sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  const num = Number(paramValue);
+  if (!Number.isInteger(num) || num <= 0) {
+    sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  return num;
+}
+
+function validateRouteParams(req, res, params) {
+  const validated = {};
+
+  for (const [paramName, type] of Object.entries(params)) {
+    const paramValue = req.params[paramName];
+
+    if (!paramValue) {
+      sendErrorResponse(res, new Error(`Missing ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+      return null;
+    }
+
+    if (type === 'positiveInt') {
+      if (!/^\d+$/.test(paramValue)) {
+        sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+        return null;
+      }
+
+      const num = Number(paramValue);
+      if (!Number.isInteger(num) || num <= 0) {
+        sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+        return null;
+      }
+
+      validated[paramName] = num;
+    } else {
+      sendErrorResponse(res, new Error(`Unknown validation type: ${type}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+      return null;
+    }
+  }
+
+  return validated;
+}
+
 // Create Express app
 const app = express();
 app.use(express.json());
@@ -1012,7 +1067,10 @@ app.get("/api/rfps/featured", async (req, res) => {
 
 app.get("/api/rfps/:id", async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -1060,7 +1118,10 @@ app.post("/api/rfps", requireAuth, async (req, res) => {
 
 app.put("/api/rfps/:id", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp || rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -1073,7 +1134,7 @@ app.put("/api/rfps/:id", requireAuth, async (req, res) => {
       deadline: req.body.deadline ? new Date(req.body.deadline) : undefined
     };
 
-    const updated = await storage.updateRfp(Number(req.params.id), processedData);
+    const updated = await storage.updateRfp(id, processedData);
     res.json(updated);
   } catch (error) {
     console.error('Error updating RFP:', error);
@@ -1087,7 +1148,10 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -1096,7 +1160,7 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ message: "You can only delete your own RFPs" });
     }
 
-    await storage.deleteRfp(Number(req.params.id));
+    await storage.deleteRfp(id);
     res.sendStatus(200);
   } catch (error) {
     console.error('Error deleting RFP:', error);
@@ -1107,7 +1171,10 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
 // RFI routes
 app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -1115,7 +1182,7 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
     const rfi = await storage.createRfi({
       ...req.body,
       email: req.user.email,
-      rfpId: Number(req.params.id),
+      rfpId: id,
     });
 
     res.status(201).json({
@@ -1129,8 +1196,11 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
 
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
     // First get all RFIs for this RFP
-    const rfis = await storage.getRfisByRfp(Number(req.params.id));
+    const rfis = await storage.getRfisByRfp(id);
 
     // Then for each RFI, get the full user data
     const rfisWithOrgs = await Promise.all(
@@ -1180,8 +1250,11 @@ app.get("/api/rfis", requireAuth, async (req, res) => {
 
 app.put("/api/rfps/:rfpId/rfi/:rfiId/status", requireAuth, async (req, res) => {
   try {
-    const rfpId = Number(req.params.rfpId);
-    const rfiId = Number(req.params.rfiId);
+    const params = validateRouteParams(req, res, { rfpId: 'positiveInt', rfiId: 'positiveInt' });
+    if (!params) return;
+
+    const rfpId = params.rfpId;
+    const rfiId = params.rfiId;
     const { status } = req.body;
 
     const rfp = await storage.getRfpById(rfpId);
@@ -1277,7 +1350,10 @@ app.post("/api/analytics/track-view", requireAuth, async (req, res) => {
 
 app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
   try {
-    const analytics = await storage.getAnalyticsByRfpId(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const analytics = await storage.getAnalyticsByRfpId(id);
     if (!analytics) {
       return res.status(404).json({ message: "Analytics not found" });
     }

@@ -48,6 +48,8 @@ export const users = pgTable("users", {
   verificationTokenExpiry: timestamp("verification_token_expiry"), // When the verification token expires
   resetToken: text("reset_token"),            // Password reset token
   resetTokenExpiry: timestamp("reset_token_expiry"), // When the reset token expires
+  failedLoginAttempts: integer("failed_login_attempts").default(0), // Track failed login attempts
+  accountLockedUntil: timestamp("account_locked_until"), // When the account lockout expires
 });
 
 /**

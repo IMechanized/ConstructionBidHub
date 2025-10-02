@@ -132,7 +132,9 @@ export class DatabaseStorage implements IStorage {
           trade: updates.trade,
           certificationName: updates.certificationName,
           logo: updates.logo,
-          language: updates.language
+          language: updates.language,
+          failedLoginAttempts: updates.failedLoginAttempts,
+          accountLockedUntil: updates.accountLockedUntil
         })
         .where(eq(users.id, id))
         .returning();

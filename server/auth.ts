@@ -10,7 +10,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
 import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
 import { safeLog, safeError, createUserLogId, maskEmail } from "./lib/safe-logging.js";
 import rateLimit from "express-rate-limit";
-import { logFailedLogin, logSuccessfulLogin, logRateLimitHit } from "./lib/security-audit.js";
+import { logFailedLogin, logSuccessfulLogin, logRateLimitHit, logAccountLockout } from "./lib/security-audit.js";
 
 declare global {
   namespace Express {
@@ -78,19 +78,67 @@ export function setupAuth(app: Express) {
       async (req: Request, email: string, password: string, done: any) => {
         try {
           safeLog(`[Auth] Login attempt with email: ${maskEmail(email)}`);
-          const user = await storage.getUserByUsername(email);
+          let user = await storage.getUserByUsername(email);
 
           if (!user) {
             logFailedLogin(email, 'User not found', req);
             return done(null, false, { message: "Invalid email or password" });
           }
 
+          // Check if account is locked
+          if (user.accountLockedUntil && new Date(user.accountLockedUntil) > new Date()) {
+            const lockMinutesRemaining = Math.ceil((new Date(user.accountLockedUntil).getTime() - Date.now()) / 60000);
+            safeLog(`[Auth] Account locked for user: ${maskEmail(email)}, ${lockMinutesRemaining} minutes remaining`);
+            return done(null, false, { 
+              message: `Account is locked due to too many failed login attempts. Please try again in ${lockMinutesRemaining} minute${lockMinutesRemaining !== 1 ? 's' : ''}.` 
+            });
+          }
+
           console.log(`[Auth] User found, verifying password`);
           const isValidPassword = await comparePasswords(password, user.password);
 
           if (!isValidPassword) {
-            logFailedLogin(email, 'Invalid password', req);
-            return done(null, false, { message: "Invalid email or password" });
+            // Increment failed attempts
+            const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+            const MAX_FAILED_ATTEMPTS = 5;
+            const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+            if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+              // Lock account
+              const accountLockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+              const updatedUser = await storage.updateUser(user.id, {
+                failedLoginAttempts: newFailedAttempts,
+                accountLockedUntil
+              });
+              
+              logAccountLockout(updatedUser.id, email, newFailedAttempts, req);
+              logFailedLogin(email, 'Invalid password - account locked', req);
+              
+              return done(null, false, { 
+                message: "Account has been locked due to too many failed login attempts. Please try again in 15 minutes." 
+              });
+            } else {
+              // Update failed attempts
+              const updatedUser = await storage.updateUser(user.id, {
+                failedLoginAttempts: newFailedAttempts
+              });
+              
+              logFailedLogin(email, 'Invalid password', req);
+              const attemptsRemaining = MAX_FAILED_ATTEMPTS - newFailedAttempts;
+              return done(null, false, { 
+                message: `Invalid email or password. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining before account lockout.` 
+              });
+            }
+          }
+
+          // Successful login - clear failed attempts and lockout
+          if (user.failedLoginAttempts || user.accountLockedUntil) {
+            const updatedUser = await storage.updateUser(user.id, {
+              failedLoginAttempts: 0,
+              accountLockedUntil: null
+            });
+            // Use the updated user for the session
+            user = updatedUser;
           }
 
           logSuccessfulLogin(user.id, email, req);

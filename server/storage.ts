@@ -4,14 +4,11 @@
  */
 
 import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
-import { db } from "./db.js";
+import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
-import createMemoryStore from "memorystore";
 import session from "express-session";
 import { Store } from "express-session";
-
-// Initialize memory store for session management
-const MemoryStore = createMemoryStore(session);
+import ConnectPgSimple from 'connect-pg-simple';
 
 /**
  * Storage Interface
@@ -81,7 +78,15 @@ export class DatabaseStorage implements IStorage {
   sessionStore: Store;
 
   constructor() {
-    this.sessionStore = new MemoryStore({ checkPeriod: 86400000 }); // 24 hours
+    // Use PostgreSQL-based session store for persistence and scalability
+    const PgSession = ConnectPgSimple(session);
+    this.sessionStore = new PgSession({
+      pool: pool, // Use the existing database connection pool
+      tableName: 'session', // Table name for session storage
+      createTableIfMissing: true, // Automatically create the session table
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+    });
+    console.log('[Storage] PostgreSQL session store initialized');
   }
 
   /**

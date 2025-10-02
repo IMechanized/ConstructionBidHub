@@ -164,6 +164,139 @@ function safeError(message, error) {
   }
 }
 
+// Error sanitization utilities (matching server/lib/error-handler.ts for Vercel deployment)
+const isDevelopmentMode = process.env.NODE_ENV === 'development' || process.env.DEV === 'true';
+
+const ErrorMessages = {
+  UNAUTHORIZED: 'Authentication required',
+  FORBIDDEN: 'Access denied',
+  INVALID_CREDENTIALS: 'Invalid email or password',
+  INTERNAL_ERROR: 'An internal error occurred',
+  BAD_REQUEST: 'Invalid request',
+  NOT_FOUND: 'Resource not found',
+  UPLOAD_FAILED: 'Failed to upload file',
+  FETCH_FAILED: 'Failed to retrieve data',
+  CREATE_FAILED: 'Failed to create resource',
+  UPDATE_FAILED: 'Failed to update resource',
+  DELETE_FAILED: 'Failed to delete resource',
+  VALIDATION_FAILED: 'Validation failed',
+  INVALID_INPUT: 'Invalid input provided',
+};
+
+function sanitizeError(error, fallbackMessage = 'An error occurred') {
+  if (isDevelopmentMode) {
+    // Development: Return error message and stack only (no raw error object)
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        stack: error.stack
+      };
+    }
+    return {
+      message: String(error || fallbackMessage)
+    };
+  }
+  
+  // Production: Return ONLY the generic message, nothing else
+  return {
+    message: fallbackMessage
+  };
+}
+
+// Sensitive field names that should be redacted from logs
+const SENSITIVE_LOG_FIELDS = [
+  'password', 'secret', 'token', 'key', 'authorization',
+  'cookie', 'session', 'credential', 'apikey', 'api_key',
+  'private', 'ssn', 'creditcard', 'cvv'
+];
+
+// Deep sanitize object for logging - redacts sensitive fields
+function deepSanitize(obj, depth = 0) {
+  if (depth > 5) return '[max_depth]';
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepSanitize(item, depth + 1));
+  }
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      if (SENSITIVE_LOG_FIELDS.some(field => lowerKey.includes(field))) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = deepSanitize(value, depth + 1);
+      }
+    }
+    return sanitized;
+  }
+  return String(obj);
+}
+
+function sanitizeForLogging(error) {
+  if (error instanceof Error) {
+    // For Error objects: extract only safe fields and sanitize any custom properties
+    const baseError = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+    
+    // If Error has custom enumerable properties, sanitize them
+    const customProps = {};
+    for (const key of Object.keys(error)) {
+      if (!['name', 'message', 'stack'].includes(key)) {
+        customProps[key] = deepSanitize(error[key]);
+      }
+    }
+    
+    return Object.keys(customProps).length > 0 
+      ? { ...baseError, ...customProps }
+      : baseError;
+  }
+  
+  // For non-Error objects: deep sanitize to remove sensitive fields
+  return deepSanitize(error);
+}
+
+function sendErrorResponse(res, error, statusCode, userMessage, logContext) {
+  // Log sanitized error server-side (no raw error objects)
+  const context = logContext ? `[${logContext}]` : '';
+  const safeError = sanitizeForLogging(error);
+  console.error(`${context} Error:`, safeError);
+  
+  const sanitized = sanitizeError(error, userMessage);
+  res.status(statusCode).json(sanitized);
+}
+
+function isValidationError(error) {
+  if (error instanceof Error) {
+    const safePatterns = [
+      /required/i,
+      /invalid/i,
+      /must be/i,
+      /cannot be/i,
+      /already exists/i,
+    ];
+    return safePatterns.some(pattern => pattern.test(error.message));
+  }
+  return false;
+}
+
+function getSafeValidationMessage(error) {
+  if (isDevelopmentMode) {
+    return error instanceof Error ? error.message : ErrorMessages.VALIDATION_FAILED;
+  }
+  
+  if (isValidationError(error) && error instanceof Error) {
+    return error.message;
+  }
+  
+  return ErrorMessages.VALIDATION_FAILED;
+}
+
 // Rate limiter for authentication endpoints to prevent brute force attacks
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -1572,8 +1705,7 @@ app.post("/api/user/deactivate", requireAuth, async (req, res) => {
             res.json(updatedUser);
         });
     } catch (error) {
-        console.error("Error deactivating account:", error);
-        res.status(400).json({ message: "Failed to deactivate account" });
+        sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'AccountDeactivation');
     }
 });
 
@@ -1588,13 +1720,12 @@ app.delete("/api/user", requireAuth, async (req, res) => {
 
         req.logout((err) => {
             if (err) {
-                return res.status(500).json({ message: "Error logging out" });
+                return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDelete');
             }
             res.json({ message: "Account deleted successfully" });
         });
     } catch (error) {
-        console.error("Error deleting account:", error);
-        res.status(400).json({ message: "Failed to delete account" });
+        sendErrorResponse(res, error, 400, ErrorMessages.DELETE_FAILED, 'AccountDeletion');
     }
 });
 
@@ -1617,10 +1748,8 @@ app.post("/api/user/onboarding", requireAuth, async (req, res) => {
 
         res.json(updatedUser);
     } catch (error) {
-        console.error("Error completing onboarding:", error);
-        res.status(400).json({
-            message: error instanceof Error ? error.message : "Failed to complete onboarding"
-        });
+        const safeMessage = getSafeValidationMessage(error);
+        sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.UPDATE_FAILED, 'Onboarding');
     }
 });
 
@@ -1628,8 +1757,7 @@ app.post("/api/user/onboarding", requireAuth, async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-res.status(500).json({ message: "Internal server error" });
+    sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'GlobalErrorHandler');
 });
 
 export default app;

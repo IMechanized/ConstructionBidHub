@@ -15,6 +15,7 @@ import cookie from 'cookie';
 import cookieSignature from 'cookie-signature';
 import { getSessionSecret } from './lib/session-config';
 import helmet from 'helmet';
+import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -35,8 +36,8 @@ const upload = multer({
 function requireAuth(req: Request, res?: Response) {
   if (!req.isAuthenticated()) {
     if (res) {
-      // If response object is provided, send 401 directly
-      res.status(401).json({ message: "Unauthorized: Please log in again" });
+      // If response object is provided, send sanitized 401
+      sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
       return false;
     }
     throw new Error("Unauthorized");
@@ -112,18 +113,15 @@ export function registerRoutes(app: Express): Server {
       try {
         requireAuth(req);
       } catch (error) {
-        console.log('Authentication failed:', error);
-        return res.status(401).json({ message: "Authentication required" });
+        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
       }
 
       if (!req.file) {
-        console.log('No file in request');
-        return res.status(400).json({ message: "No file uploaded" });
+        return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
       }
 
       if (!req.file.mimetype.startsWith('image/')) {
-        console.log('Invalid file type:', req.file.mimetype);
-        return res.status(400).json({ message: "Only image files are allowed" });
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
       }
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
@@ -141,11 +139,7 @@ export function registerRoutes(app: Express): Server {
       console.log('Upload successful:', result.secure_url);
       res.json({ url: result.secure_url });
     } catch (error) {
-      console.error('Upload error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to upload file",
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
     }
   });
 
@@ -202,8 +196,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json(rfpsWithOrgs);
     } catch (error) {
-      console.error('Error fetching featured RFPs:', error);
-      res.status(500).json({ message: "Failed to fetch featured RFPs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'FeaturedRFPs');
     }
   });
 
@@ -211,7 +204,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const rfp = await storage.getRfpById(Number(req.params.id));
       if (!rfp) {
-        return res.status(404).json({ message: "RFP not found" });
+        return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
       if (rfp.organizationId === null) {
         return res.json({
@@ -230,8 +223,7 @@ export function registerRoutes(app: Express): Server {
       };
       res.json(rfpWithOrg);
     } catch (error) {
-      console.error('Error fetching RFP:', error);
-      res.status(500).json({ message: "Failed to fetch RFP" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFP');
     }
   });
 
@@ -251,12 +243,8 @@ export function registerRoutes(app: Express): Server {
       console.log('RFP created successfully:', rfp);
       res.status(201).json(rfp);
     } catch (error) {
-      console.error('RFP creation error:', error);
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Failed to create RFP" });
-      }
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'RFPCreation');
     }
   });
 
@@ -286,12 +274,8 @@ export function registerRoutes(app: Express): Server {
       console.log('RFP updated successfully:', updated);
       res.json(updated);
     } catch (error) {
-      console.error('RFP update error:', error);
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Failed to update RFP" });
-      }
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.UPDATE_FAILED, 'RFPUpdate');
     }
   });
 
@@ -327,11 +311,8 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(employee);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'EmployeeCreation');
     }
   });
 
@@ -345,11 +326,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteEmployee(Number(req.params.id));
       res.sendStatus(200);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'EmployeeDeletion');
     }
   });
 
@@ -364,7 +341,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updatedUser);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update settings" });
+      sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'UserSettings');
     }
   });
 
@@ -379,12 +356,12 @@ export function registerRoutes(app: Express): Server {
       });
       req.logout((err) => {
         if (err) {
-          return res.status(500).json({ message: "Error logging out" });
+          return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDeactivate');
         }
         res.json(updatedUser);
       });
     } catch (error) {
-      res.status(400).json({ message: "Failed to deactivate account" });
+      sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'AccountDeactivation');
     }
   });
 
@@ -397,12 +374,12 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUser(user.id);
       req.logout((err) => {
         if (err) {
-          return res.status(500).json({ message: "Error logging out" });
+          return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDelete');
         }
         res.json({ message: "Account deleted successfully" });
       });
     } catch (error) {
-      res.status(400).json({ message: "Failed to delete account" });
+      sendErrorResponse(res, error, 400, ErrorMessages.DELETE_FAILED, 'AccountDeletion');
     }
   });
 
@@ -423,10 +400,7 @@ export function registerRoutes(app: Express): Server {
       // Return the filtered analytics
       res.json(analytics);
     } catch (error) {
-      console.error('Error fetching boosted analytics:', error);
-      res.status(500).json({ 
-        message: "Failed to fetch analytics"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Analytics');
     }
   });
 
@@ -510,8 +484,7 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, viewSession });
     } catch (error) {
-      console.error('Error tracking RFP view:', error);
-      res.status(500).json({ message: "Failed to track view" });
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'TrackView');
     }
   });
 
@@ -524,8 +497,7 @@ export function registerRoutes(app: Express): Server {
       }
       res.json(analytics);
     } catch (error) {
-      console.error('Error fetching RFP analytics:', error);
-      res.status(500).json({ message: "Failed to fetch RFP analytics" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPAnalytics');
     }
   });
 
@@ -537,7 +509,7 @@ export function registerRoutes(app: Express): Server {
 
       const rfp = await storage.getRfpById(Number(req.params.id));
       if (!rfp) {
-        return res.status(404).json({ message: "RFP not found" });
+        return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
 
       // Use the authenticated user's email
@@ -552,10 +524,8 @@ export function registerRoutes(app: Express): Server {
         rfi
       });
     } catch (error) {
-      console.error('Error submitting RFI:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to submit RFI"
-      });
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 500, safeMessage || ErrorMessages.CREATE_FAILED, 'RFISubmission');
     }
   });
 
@@ -566,8 +536,7 @@ export function registerRoutes(app: Express): Server {
       const rfis = await storage.getRfisByRfp(Number(req.params.id));
       res.json(rfis);
     } catch (error) {
-      console.error('Error fetching RFIs for RFP:', error);
-      res.status(500).json({ message: "Failed to fetch RFIs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPRFIs');
     }
   });
 
@@ -609,8 +578,7 @@ export function registerRoutes(app: Express): Server {
       console.log('Sending response with', rfisWithRfp.length, 'RFIs');
       res.json(rfisWithRfp);
     } catch (error) {
-      console.error('Error fetching RFIs:', error);
-      res.status(500).json({ message: "Failed to fetch RFIs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'UserRFIs');
     }
   });
 
@@ -644,8 +612,7 @@ export function registerRoutes(app: Express): Server {
       console.log('Sending response with', allReceivedRfis.length, 'received RFIs');
       res.json(allReceivedRfis);
     } catch (error) {
-      console.error('Error fetching received RFIs:', error);
-      res.status(500).json({ message: "Failed to fetch received RFIs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReceivedRFIs');
     }
   });
 
@@ -1054,10 +1021,7 @@ export function registerRoutes(app: Express): Server {
       res.redirect(attachment.fileUrl);
       
     } catch (error) {
-      console.error('Error downloading attachment:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to download attachment"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'AttachmentDownload');
     }
   });
 
@@ -1096,10 +1060,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteRfi(rfiId);
       res.json({ message: "RFI deleted successfully" });
     } catch (error) {
-      console.error('Error deleting RFI:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to delete RFI"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFIDeletion');
     }
   });
 
@@ -1110,8 +1071,7 @@ export function registerRoutes(app: Express): Server {
       const notifications = await storage.getNotificationsByUser(req.user!.id);
       res.json(notifications);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ message: "Failed to fetch notifications" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Notifications');
     }
   });
 
@@ -1128,8 +1088,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(notification);
     } catch (error) {
-      console.error('Error creating notification:', error);
-      res.status(500).json({ message: "Failed to create notification" });
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'NotificationCreation');
     }
   });
 
@@ -1139,8 +1098,7 @@ export function registerRoutes(app: Express): Server {
       const notification = await storage.markNotificationAsRead(Number(req.params.id));
       res.json(notification);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      res.status(500).json({ message: "Failed to mark notification as read" });
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkRead');
     }
   });
 
@@ -1150,8 +1108,7 @@ export function registerRoutes(app: Express): Server {
       await storage.markAllNotificationsAsRead(req.user!.id);
       res.json({ message: "All notifications marked as read" });
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      res.status(500).json({ message: "Failed to mark notifications as read" });
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkAllRead');
     }
   });
 
@@ -1161,8 +1118,7 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteNotification(Number(req.params.id));
       res.json({ message: "Notification deleted" });
     } catch (error) {
-      console.error('Error deleting notification:', error);
-      res.status(500).json({ message: "Failed to delete notification" });
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
     }
   });
 

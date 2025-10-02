@@ -14,6 +14,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
 
 /**
  * Stripe Payment Processing Integration
@@ -64,6 +66,31 @@ try {
   }
 } catch (error) {
   console.error(`❌ Failed to initialize Stripe: ${error.message}`);
+}
+
+// Password hashing and comparison utilities
+const scryptAsync = promisify(scrypt);
+
+async function comparePasswords(supplied, stored) {
+  // Guard against null, undefined, or improperly formatted passwords
+  if (!stored || typeof stored !== 'string' || !stored.includes('.')) {
+    return false;
+  }
+  
+  const [hashed, salt] = stored.split(".");
+  if (!hashed || !salt) {
+    return false;
+  }
+  
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = await scryptAsync(supplied, salt, 64);
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    // Handle any errors in password comparison (e.g., invalid hex)
+    console.error('Password comparison error:', error.message);
+    return false;
+  }
 }
 
 // Configure WebSocket for Neon
@@ -507,7 +534,13 @@ passport.use(
         if (user.status === 'deactivated') {
           return done(null, false, { message: "Account is deactivated" });
         }
-        // In a full implementation, we would verify the password here
+        
+        // Verify password using secure comparison
+        const isValidPassword = await comparePasswords(password, user.password);
+        if (!isValidPassword) {
+          return done(null, false, { message: "Invalid email or password" });
+        }
+        
         return done(null, user);
       } catch (error) {
         return done(error);

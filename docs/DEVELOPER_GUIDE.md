@@ -88,7 +88,7 @@ CLOUDINARY_API_SECRET= # Cloudinary API secret
    npm run db:push  # Push schema changes to database
    ```
 
-## Key Features
+## Key Features and Uses
 
 ### RFP Management
 - Creation and editing of RFPs

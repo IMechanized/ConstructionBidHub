@@ -1,15 +1,15 @@
 import session from 'express-session';
 import { type Express } from 'express';
 import { storage } from './storage';
-import crypto from 'crypto';
+import { getSessionSecret } from './lib/session-config';
 
 /**
  * Configure and create session middleware for the application
  * @param app Express application instance
  */
 export function createSession(app: Express) {
-  // Generate a strong session secret
-  const sessionSecret = process.env.SESSION_SECRET || process.env.REPL_ID || crypto.randomBytes(32).toString('hex');
+  // Use consistent session secret across the application
+  const sessionSecret = getSessionSecret();
   
   console.log('[Session] Initializing session configuration...');
   

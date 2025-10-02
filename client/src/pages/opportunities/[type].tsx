@@ -5,8 +5,8 @@ import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, ArrowUpDown } from "lucide-react";
-import { isAfter, subHours } from "date-fns";
+import { Loader2, Search, ArrowUpDown, Filter } from "lucide-react";
+import { isAfter, subHours, addDays, addMonths } from "date-fns";
 import { Link } from "wouter";
 import {
   Select,
@@ -15,7 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
+import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
+import { CERTIFICATIONS } from "@shared/schema";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
@@ -25,8 +34,8 @@ export default function OpportunitiesPage() {
   const { type } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("none");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>(["deadline"]);
   
   const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -49,28 +58,94 @@ export default function OpportunitiesPage() {
     filteredRfps = filteredRfps.filter(rfp =>
       rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+      rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rfp.jobZip.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
 
   // Apply location filter
-  if (locationFilter && locationFilter !== "all") { // Updated filter logic
+  if (locationFilter && locationFilter !== "all") {
     filteredRfps = filteredRfps.filter(rfp =>
-      rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase())
+      rfp.jobState.toLowerCase().includes(locationFilter.toLowerCase())
     );
   }
 
+  // Apply multi-select filters
+  const budgetFilters = ["under50k", "50k-100k", "100k-250k", "250k-500k", "500k+"];
+  const deadlineFilters = ["next7days", "next30days", "next3months"];
+  
+  const selectedBudgets = selectedFilters.filter(f => budgetFilters.includes(f));
+  const selectedCerts = selectedFilters.filter(f => CERTIFICATIONS.includes(f));
+  const selectedDeadlines = selectedFilters.filter(f => deadlineFilters.includes(f));
+  
+  // Apply budget filters (OR within category)
+  if (selectedBudgets.length > 0) {
+    filteredRfps = filteredRfps.filter(rfp => {
+      if (rfp.budgetMin == null) return false;
+      const budgetMin = rfp.budgetMin;
+      
+      return selectedBudgets.some(filter => {
+        switch (filter) {
+          case "under50k":
+            return budgetMin < 50000;
+          case "50k-100k":
+            return budgetMin >= 50000 && budgetMin < 100000;
+          case "100k-250k":
+            return budgetMin >= 100000 && budgetMin < 250000;
+          case "250k-500k":
+            return budgetMin >= 250000 && budgetMin < 500000;
+          case "500k+":
+            return budgetMin >= 500000;
+          default:
+            return false;
+        }
+      });
+    });
+  }
+  
+  // Apply certification filters (OR within category)
+  if (selectedCerts.length > 0) {
+    filteredRfps = filteredRfps.filter(rfp => {
+      if (!rfp.certificationGoals || rfp.certificationGoals.length === 0) return false;
+      return selectedCerts.some(cert => rfp.certificationGoals.includes(cert));
+    });
+  }
+  
+  // Apply deadline filters (OR within category)
+  if (selectedDeadlines.length > 0) {
+    const now = new Date();
+    filteredRfps = filteredRfps.filter(rfp => {
+      const deadline = new Date(rfp.deadline);
+      return selectedDeadlines.some(filter => {
+        switch (filter) {
+          case "next7days":
+            return deadline <= addDays(now, 7) && deadline >= now;
+          case "next30days":
+            return deadline <= addDays(now, 30) && deadline >= now;
+          case "next3months":
+            return deadline <= addMonths(now, 3) && deadline >= now;
+          default:
+            return false;
+        }
+      });
+    });
+  }
+
   // Apply sorting
+  const sortOptions = ["priceAsc", "priceDesc", "deadline"];
+  const activeSort = selectedFilters.find(f => sortOptions.includes(f)) || "deadline";
+  
   filteredRfps = [...filteredRfps].sort((a, b) => {
-    switch (sortBy) {
+    switch (activeSort) {
       case "priceAsc":
         return (a.budgetMin || 0) - (b.budgetMin || 0);
       case "priceDesc":
         return (b.budgetMin || 0) - (a.budgetMin || 0);
       case "deadline":
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
       default:
-        return 0;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     }
   });
 
@@ -80,8 +155,8 @@ export default function OpportunitiesPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Get unique locations for the location filter dropdown
-  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+  // Use predefined US states and territories for location filtering
+  const locations = US_STATES_AND_TERRITORIES;
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,30 +186,159 @@ export default function OpportunitiesPage() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
+                data-testid="input-search-opportunities"
               />
             </div>
 
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Default</SelectItem>
-                <SelectItem value="priceAsc">Price: Low to High</SelectItem>
-                <SelectItem value="priceDesc">Price: High to Low</SelectItem>
-                <SelectItem value="deadline">Deadline</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-between" data-testid="button-filter">
+                  <span className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Sort & Filter
+                  </span>
+                  {selectedFilters.length > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                      {selectedFilters.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4" align="start">
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold">SORT BY</h4>
+                    <div className="space-y-2">
+                      {[
+                        { value: "deadline", label: "Deadline" },
+                        { value: "priceAsc", label: "Price Low to High" },
+                        { value: "priceDesc", label: "Price High to Low" }
+                      ].map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={option.value}
+                            checked={selectedFilters.includes(option.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedFilters([...selectedFilters, option.value]);
+                              } else {
+                                setSelectedFilters(selectedFilters.filter(f => f !== option.value));
+                              }
+                              setCurrentPage(1);
+                            }}
+                            data-testid={`checkbox-${option.value}`}
+                          />
+                          <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold">PROJECT SIZE</h4>
+                    <div className="space-y-2">
+                      {[
+                        { value: "under50k", label: "Under $50k" },
+                        { value: "50k-100k", label: "$50k - $100k" },
+                        { value: "100k-250k", label: "$100k - $250k" },
+                        { value: "250k-500k", label: "$250k - $500k" },
+                        { value: "500k+", label: "$500k+" }
+                      ].map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={option.value}
+                            checked={selectedFilters.includes(option.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedFilters([...selectedFilters, option.value]);
+                              } else {
+                                setSelectedFilters(selectedFilters.filter(f => f !== option.value));
+                              }
+                              setCurrentPage(1);
+                            }}
+                            data-testid={`checkbox-${option.value}`}
+                          />
+                          <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold">CERTIFICATIONS</h4>
+                    <div className="space-y-2">
+                      {CERTIFICATIONS.map((cert) => (
+                        <div key={cert} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={cert}
+                            checked={selectedFilters.includes(cert)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedFilters([...selectedFilters, cert]);
+                              } else {
+                                setSelectedFilters(selectedFilters.filter(f => f !== cert));
+                              }
+                              setCurrentPage(1);
+                            }}
+                            data-testid={`checkbox-${cert}`}
+                          />
+                          <Label htmlFor={cert} className="text-sm font-normal cursor-pointer">
+                            {cert}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold">DEADLINE RANGE</h4>
+                    <div className="space-y-2">
+                      {[
+                        { value: "next7days", label: "Next 7 Days" },
+                        { value: "next30days", label: "Next 30 Days" },
+                        { value: "next3months", label: "Next 3 Months" }
+                      ].map((option) => (
+                        <div key={option.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={option.value}
+                            checked={selectedFilters.includes(option.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedFilters([...selectedFilters, option.value]);
+                              } else {
+                                setSelectedFilters(selectedFilters.filter(f => f !== option.value));
+                              }
+                              setCurrentPage(1);
+                            }}
+                            data-testid={`checkbox-${option.value}`}
+                          />
+                          <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <Select
               value={locationFilter}
-              onValueChange={setLocationFilter}
+              onValueChange={(value) => {
+                setLocationFilter(value);
+                setCurrentPage(1);
+              }}
             >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by location" />
+              <SelectTrigger className="w-[200px]" data-testid="select-location">
+                <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem> {/* Changed from empty string to "all" */}
+                <SelectItem value="all">All Locations</SelectItem>
                 {locations.map(location => (
                   <SelectItem key={location} value={location}>
                     {location}

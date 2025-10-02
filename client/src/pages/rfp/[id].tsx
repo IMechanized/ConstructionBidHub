@@ -21,6 +21,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Download, Edit, Trash2 } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { getCertificationClasses } from "@/lib/utils";
+import { LocationMap } from "@/components/location-map";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -296,8 +299,20 @@ export default function RfpPage() {
             <h2 className="text-xl font-semibold mb-4">Project Details</h2>
             <div className="grid grid-cols-2 gap-8">
               <div>
-                <h3 className="font-medium mb-2">Location</h3>
-                <p>{rfp.jobLocation}</p>
+                <h3 className="font-medium mb-2">Street Address</h3>
+                <p>{rfp.jobStreet}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">City</h3>
+                <p>{rfp.jobCity}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">State</h3>
+                <p>{rfp.jobState}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">ZIP Code</h3>
+                <p>{rfp.jobZip}</p>
               </div>
               <div>
                 <h3 className="font-medium mb-2">Budget</h3>
@@ -308,6 +323,24 @@ export default function RfpPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <hr className="my-6 border-muted" />
+
+          {/* Project Location Map */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Project Location</h2>
+            <div className="rounded-lg overflow-hidden border">
+              <LocationMap
+                address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
+                className="w-full h-80"
+                zoom={15}
+                showMarker={true}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              {rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}
+            </p>
           </div>
 
           <hr className="my-6 border-muted" />
@@ -331,12 +364,18 @@ export default function RfpPage() {
             </div>
           </div>
 
-          {rfp.certificationGoals && (
+          {rfp.certificationGoals && rfp.certificationGoals.length > 0 && (
             <>
               <hr className="my-6 border-muted" />
               <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-4">Certification Requirements</h2>
-                <p className="text-justify">{rfp.certificationGoals}</p>
+                <div className="flex flex-wrap gap-2">
+                  {rfp.certificationGoals.map((cert, index) => (
+                    <Badge key={index} className={getCertificationClasses(cert)}>
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </>
           )}

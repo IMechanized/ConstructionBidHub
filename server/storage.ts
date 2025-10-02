@@ -3,15 +3,12 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi } from "../shared/schema.js";
-import { db } from "./db.js";
-import { eq, and, sql, desc } from "drizzle-orm";
-import createMemoryStore from "memorystore";
+import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { db, pool } from "./db.js";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import session from "express-session";
 import { Store } from "express-session";
-
-// Initialize memory store for session management
-const MemoryStore = createMemoryStore(session);
+import ConnectPgSimple from 'connect-pg-simple';
 
 /**
  * Storage Interface
@@ -55,6 +52,22 @@ export interface IStorage {
   getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
+  deleteRfi(id: number): Promise<void>;
+  
+  // RFI Conversation Operations
+  createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage>;
+  getRfiMessages(rfiId: number): Promise<(RfiMessage & { sender: User, attachments?: RfiAttachment[] })[]>;
+  getRfiMessageById(messageId: number): Promise<RfiMessage | undefined>;
+  createRfiAttachment(attachment: InsertRfiAttachment): Promise<RfiAttachment>;
+  getRfiAttachmentById(attachmentId: number): Promise<RfiAttachment | undefined>;
+  getRfiAttachments(messageId: number): Promise<RfiAttachment[]>;
+
+  // Notification Operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
+  deleteNotification(id: number): Promise<void>;
 }
 
 /**
@@ -65,7 +78,15 @@ export class DatabaseStorage implements IStorage {
   sessionStore: Store;
 
   constructor() {
-    this.sessionStore = new MemoryStore({ checkPeriod: 86400000 }); // 24 hours
+    // Use PostgreSQL-based session store for persistence and scalability
+    const PgSession = ConnectPgSimple(session);
+    this.sessionStore = new PgSession({
+      pool: pool, // Use the existing database connection pool
+      tableName: 'session', // Table name for session storage
+      createTableIfMissing: true, // Automatically create the session table
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+    });
+    console.log('[Storage] PostgreSQL session store initialized');
   }
 
   /**
@@ -103,16 +124,17 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           companyName: updates.companyName,
-          contact: updates.contact,
+          firstName: updates.firstName,
+          lastName: updates.lastName,
+          jobTitle: updates.jobTitle,
           telephone: updates.telephone,
           cell: updates.cell,
-          businessEmail: updates.businessEmail,
           trade: updates.trade,
-          isMinorityOwned: updates.isMinorityOwned,
-          minorityGroup: updates.minorityGroup,
           certificationName: updates.certificationName,
           logo: updates.logo,
-          language: updates.language
+          language: updates.language,
+          failedLoginAttempts: updates.failedLoginAttempts,
+          accountLockedUntil: updates.accountLockedUntil
         })
         .where(eq(users.id, id))
         .returning();
@@ -150,7 +172,10 @@ export class DatabaseStorage implements IStorage {
         walkthroughDate: new Date(rfp.walkthroughDate),
         rfiDate: new Date(rfp.rfiDate),
         deadline: new Date(rfp.deadline),
-        jobLocation: rfp.jobLocation,
+        jobStreet: rfp.jobStreet,
+        jobCity: rfp.jobCity,
+        jobState: rfp.jobState,
+        jobZip: rfp.jobZip,
         budgetMin: rfp.budgetMin || null,
         certificationGoals: rfp.certificationGoals || null,
         portfolioLink: rfp.portfolioLink || null,
@@ -387,6 +412,99 @@ export class DatabaseStorage implements IStorage {
     return updatedRfi;
   }
 
+  async deleteRfi(id: number): Promise<void> {
+    // First delete RFI attachments
+    await db.delete(rfiAttachments)
+      .where(inArray(rfiAttachments.messageId, 
+        db.select({ id: rfiMessages.id })
+          .from(rfiMessages)
+          .where(eq(rfiMessages.rfiId, id))
+      ));
+    
+    // Then delete RFI messages
+    await db.delete(rfiMessages).where(eq(rfiMessages.rfiId, id));
+    
+    // Finally delete the RFI itself
+    await db.delete(rfis).where(eq(rfis.id, id));
+  }
+
+  // RFI Conversation Operations
+  async createRfiMessage(message: InsertRfiMessage): Promise<RfiMessage> {
+    const [newMessage] = await db
+      .insert(rfiMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  async getRfiMessages(rfiId: number): Promise<(RfiMessage & { sender: User, attachments?: RfiAttachment[] })[]> {
+    // Get messages with sender information
+    const messages = await db
+      .select({
+        id: rfiMessages.id,
+        rfiId: rfiMessages.rfiId,
+        senderId: rfiMessages.senderId,
+        message: rfiMessages.message,
+        createdAt: rfiMessages.createdAt,
+        sender: users
+      })
+      .from(rfiMessages)
+      .innerJoin(users, eq(rfiMessages.senderId, users.id))
+      .where(eq(rfiMessages.rfiId, rfiId))
+      .orderBy(rfiMessages.createdAt);
+
+    // Get attachments for each message
+    const messagesWithAttachments = await Promise.all(
+      messages.map(async (msg) => {
+        const attachments = await this.getRfiAttachments(msg.id);
+        return {
+          ...msg,
+          attachments
+        };
+      })
+    );
+
+    return messagesWithAttachments;
+  }
+
+  async createRfiAttachment(attachment: InsertRfiAttachment): Promise<RfiAttachment> {
+    const [newAttachment] = await db
+      .insert(rfiAttachments)
+      .values(attachment)
+      .returning();
+    return newAttachment;
+  }
+
+  async getRfiMessageById(messageId: number): Promise<RfiMessage | undefined> {
+    const [message] = await db
+      .select({
+        id: rfiMessages.id,
+        rfiId: rfiMessages.rfiId,
+        senderId: rfiMessages.senderId,
+        message: rfiMessages.message,
+        createdAt: rfiMessages.createdAt,
+      })
+      .from(rfiMessages)
+      .where(eq(rfiMessages.id, messageId));
+    return message;
+  }
+
+  async getRfiAttachmentById(attachmentId: number): Promise<RfiAttachment | undefined> {
+    const [attachment] = await db
+      .select()
+      .from(rfiAttachments)
+      .where(eq(rfiAttachments.id, attachmentId));
+    return attachment;
+  }
+
+  async getRfiAttachments(messageId: number): Promise<RfiAttachment[]> {
+    return db
+      .select()
+      .from(rfiAttachments)
+      .where(eq(rfiAttachments.messageId, messageId))
+      .orderBy(rfiAttachments.uploadedAt);
+  }
+
   async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {
     const [rfp] = await db
       .update(rfps)
@@ -499,6 +617,46 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error updating analytics for RFP ${rfpId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Notification Operations
+   */
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const [updated] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    if (!updated) throw new Error("Notification not found");
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+  }
+
+  async deleteNotification(id: number): Promise<void> {
+    await db.delete(notifications).where(eq(notifications.id, id));
   }
 }
 

@@ -18,7 +18,10 @@ const resources = {
       validation: {
         titleRequired: 'Title is required',
         descriptionRequired: 'Description is required',
-        jobLocationRequired: 'Job location is required',
+        jobStreetRequired: 'Street address is required',
+        jobCityRequired: 'City is required',
+        jobStateRequired: 'State is required',
+        jobZipRequired: 'ZIP code is required',
         walkthroughDateRequired: 'Walkthrough date is required',
         rfiDateRequired: 'RFI date is required',
         deadlineRequired: 'Deadline is required',
@@ -48,9 +51,8 @@ const resources = {
         filterByLocation: 'Filter by location',
         allLocations: 'All Locations',
         sortOptions: {
-          default: 'Default',
-          priceLowHigh: 'Price: Low to High',
-          priceHighLow: 'Price: High to Low',
+          priceLowHigh: 'RFP Amount: Low to High',
+          priceHighLow: 'RFP Amount: High to Low',
           deadline: 'Deadline'
         }
       },
@@ -59,7 +61,7 @@ const resources = {
         featuredRfps: 'Featured RFPs',
         newRfps: 'New RFPs',
         allRfps: 'All RFPs',
-        myRfis: 'My RFIs',
+        rfis: 'RFIs',
         reports: 'Reports',
         analytics: 'Analytics',
         employees: 'Employees',
@@ -97,26 +99,53 @@ const resources = {
         deleteWarning: 'This action cannot be undone. This will permanently delete your account and remove all your data from our servers.'
       },
       rfp: {
-        title: 'Title',
+        title: 'Project Title',
         enterTitle: 'Enter RFP title',
-        description: 'Description',
+        description: 'Project Description',
         enterDescription: 'Enter RFP description',
         walkthroughDate: 'Walkthrough Date',
         rfiDate: 'RFI Date',
-        deadline: 'Deadline',
+        deadline: 'Bid Deadline',
         minimumBudget: 'Minimum Budget',
         enterMinimumBudget: 'Enter minimum budget',
-        jobLocation: 'Job Location',
-        enterJobLocation: 'Enter job location',
-        certificationGoals: 'Certification Goals (Optional)',
-        enterCertificationGoals: 'Enter any certification requirements or goals...',
-        portfolioLink: 'Portfolio Link (Optional)',
+        jobAddress: 'Job Address',
+        streetAddress: 'Street Address',
+        enterStreetAddress: 'Enter street address',
+        city: 'City',
+        enterCity: 'Enter city',
+        state: 'State',
+        selectState: 'Select state',
+        zipCode: 'ZIP Code',
+        enterZipCode: 'Enter ZIP code',
+        certificationGoals: 'Certification Requirements',
+        selectCertificationGoals: 'Select certification requirements',
+        certificationGoalsDescription: 'Select one or more certification requirements for this project',
+        portfolioLink: 'Portfolio Link',
         submitRfp: 'Submit RFP',
         creating: 'Creating...',
         boosting: 'Boosting...',
         boostVisibility: 'Boost for Visibility',
         rfpCreated: 'RFP Created',
-        rfpCreatedSuccess: 'Your RFP has been successfully created'
+        rfpCreatedSuccess: 'Your RFP has been successfully created',
+        boost: {
+          heading: 'Why Boost Your RFP?',
+          priorityVisibility: {
+            title: 'Priority Visibility:',
+            description: 'Featured RFPs appear at the top of search results and category listings'
+          },
+          moreResponses: {
+            title: 'More Responses:',
+            description: 'Boosted RFPs receive significantly more qualified contractor bids'
+          },
+          fasterMatching: {
+            title: 'Faster Matching:',
+            description: 'Get matched with qualified contractors faster'
+          },
+          professionalBadge: {
+            title: 'Professional Badge:',
+            description: 'Displays a "Featured" badge showing your commitment to the project'
+          }
+        }
       },
       rfi: {
         emailAddress: 'Email Address',
@@ -143,7 +172,10 @@ const resources = {
       validation: {
         titleRequired: 'El título es obligatorio',
         descriptionRequired: 'La descripción es obligatoria',
-        jobLocationRequired: 'La ubicación del trabajo es obligatoria',
+        jobStreetRequired: 'La dirección es obligatoria',
+        jobCityRequired: 'La ciudad es obligatoria',
+        jobStateRequired: 'El estado es obligatorio',
+        jobZipRequired: 'El código postal es obligatorio',
         walkthroughDateRequired: 'La fecha de visita es obligatoria',
         rfiDateRequired: 'La fecha de RFI es obligatoria',
         deadlineRequired: 'La fecha límite es obligatoria',
@@ -173,9 +205,8 @@ const resources = {
         filterByLocation: 'Filtrar por ubicación',
         allLocations: 'Todas las Ubicaciones',
         sortOptions: {
-          default: 'Predeterminado',
-          priceLowHigh: 'Precio: Bajo a Alto',
-          priceHighLow: 'Precio: Alto a Bajo',
+          priceLowHigh: 'Cantidad RFP: Bajo a Alto',
+          priceHighLow: 'Cantidad RFP: Alto a Bajo',
           deadline: 'Fecha Límite'
         }
       },
@@ -184,7 +215,7 @@ const resources = {
         featuredRfps: 'RFPs Destacados',
         newRfps: 'Nuevos RFPs',
         allRfps: 'Todos los RFPs',
-        myRfis: 'Mis RFIs',
+        rfis: 'RFIs',
         reports: 'Informes',
         analytics: 'Analíticas',
         employees: 'Empleados',
@@ -276,9 +307,8 @@ const resources = {
         filterByLocation: 'Filtrer par lieu',
         allLocations: 'Tous les Lieux',
         sortOptions: {
-          default: 'Par défaut',
-          priceLowHigh: 'Prix: Bas à Élevé',
-          priceHighLow: 'Prix: Élevé à Bas',
+          priceLowHigh: 'Montant RFP: Bas à Élevé',
+          priceHighLow: 'Montant RFP: Élevé à Bas',
           deadline: 'Date Limite'
         }
       },
@@ -287,7 +317,7 @@ const resources = {
         featuredRfps: 'RFPs en Vedette',
         newRfps: 'Nouveaux RFPs',
         allRfps: 'Tous les RFPs',
-        myRfis: 'Mes RFIs',
+        rfis: 'RFIs',
         reports: 'Rapports',
         analytics: 'Analytiques',
         employees: 'Employés',
@@ -379,9 +409,8 @@ const resources = {
         filterByLocation: 'Nach Standort filtern',
         allLocations: 'Alle Standorte',
         sortOptions: {
-          default: 'Standard',
-          priceLowHigh: 'Preis: Niedrig zu Hoch',
-          priceHighLow: 'Preis: Hoch zu Niedrig',
+          priceLowHigh: 'RFP-Betrag: Niedrig zu Hoch',
+          priceHighLow: 'RFP-Betrag: Hoch zu Niedrig',
           deadline: 'Frist'
         }
       },
@@ -390,7 +419,7 @@ const resources = {
         featuredRfps: 'Ausgewählte RFPs',
         newRfps: 'Neue RFPs',
         allRfps: 'Alle RFPs',
-        myRfis: 'Meine RFIs',
+        rfis: 'RFIs',
         reports: 'Berichte',
         analytics: 'Analytik',
         employees: 'Mitarbeiter',
@@ -482,9 +511,8 @@ const resources = {
         filterByLocation: '場所でフィルター',
         allLocations: 'すべての場所',
         sortOptions: {
-          default: 'デフォルト',
-          priceLowHigh: '価格：安い順',
-          priceHighLow: '価格：高い順',
+          priceLowHigh: 'RFP金額：安い順',
+          priceHighLow: 'RFP金額：高い順',
           deadline: '締切日'
         }
       },
@@ -493,7 +521,7 @@ const resources = {
         featuredRfps: '注目のRFP',
         newRfps: '新しいRFP',
         allRfps: 'すべてのRFP',
-        myRfis: '私のRFI',
+        rfis: 'RFI',
         reports: 'レポート',
         analytics: '分析',
         employees: '従業員',
@@ -585,9 +613,8 @@ const resources = {
         filterByLocation: '按位置筛选',
         allLocations: '所有位置',
         sortOptions: {
-          default: '默认',
-          priceLowHigh: '价格：从低到高',
-          priceHighLow: '价格：从高到低',
+          priceLowHigh: 'RFP金额：从低到高',
+          priceHighLow: 'RFP金额：从高到低',
           deadline: '截止日期'
         }
       },

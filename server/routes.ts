@@ -1,14 +1,23 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { setupAuth } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
-import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
+import { insertRfpSchema, insertEmployeeSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
+import { deadlineMonitor } from './services/deadline-monitor.js';
+import cookie from 'cookie';
+import cookieSignature from 'cookie-signature';
+import { getSessionSecret } from './lib/session-config';
+import helmet from 'helmet';
+import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
+import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
+import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -28,9 +37,12 @@ const upload = multer({
 // Helper function for checking auth within route handlers
 function requireAuth(req: Request, res?: Response) {
   if (!req.isAuthenticated()) {
+    // Always log authentication failure for audit trail
+    logAuthenticationFailure(req.path, req);
+    
     if (res) {
-      // If response object is provided, send 401 directly
-      res.status(401).json({ message: "Unauthorized: Please log in again" });
+      // If response object is provided, send sanitized 401
+      sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
       return false;
     }
     throw new Error("Unauthorized");
@@ -39,6 +51,58 @@ function requireAuth(req: Request, res?: Response) {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Apply security headers with Helmet
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'", "'unsafe-inline'", "'unsafe-eval'",
+          "https://js.stripe.com",
+          "https://maps.googleapis.com",
+          "https://*.googleapis.com"
+        ],
+        styleSrc: [
+          "'self'", "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://maps.gstatic.com"
+        ],
+        imgSrc: [
+          "'self'", "data:", "https:", "blob:",
+          "https://maps.gstatic.com",
+          "https://maps.googleapis.com",
+          "https://*.google.com",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com"
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://maps.gstatic.com"
+        ],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "https://m.stripe.network",
+          "https://maps.googleapis.com",
+          "https://*.googleapis.com",
+          "https://*.google.com",
+          "https://api.cloudinary.com",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com"
+        ],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }));
+  
   // Initialize session middleware first (required for authentication)
   createSession(app);
   
@@ -54,18 +118,15 @@ export function registerRoutes(app: Express): Server {
       try {
         requireAuth(req);
       } catch (error) {
-        console.log('Authentication failed:', error);
-        return res.status(401).json({ message: "Authentication required" });
+        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
       }
 
       if (!req.file) {
-        console.log('No file in request');
-        return res.status(400).json({ message: "No file uploaded" });
+        return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
       }
 
       if (!req.file.mimetype.startsWith('image/')) {
-        console.log('Invalid file type:', req.file.mimetype);
-        return res.status(400).json({ message: "Only image files are allowed" });
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
       }
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
@@ -83,11 +144,7 @@ export function registerRoutes(app: Express): Server {
       console.log('Upload successful:', result.secure_url);
       res.json({ url: result.secure_url });
     } catch (error) {
-      console.error('Upload error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to upload file",
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
     }
   });
 
@@ -144,16 +201,18 @@ export function registerRoutes(app: Express): Server {
       
       res.json(rfpsWithOrgs);
     } catch (error) {
-      console.error('Error fetching featured RFPs:', error);
-      res.status(500).json({ message: "Failed to fetch featured RFPs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'FeaturedRFPs');
     }
   });
 
   app.get("/api/rfps/:id", async (req, res) => {
     try {
-      const rfp = await storage.getRfpById(Number(req.params.id));
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const rfp = await storage.getRfpById(id);
       if (!rfp) {
-        return res.status(404).json({ message: "RFP not found" });
+        return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
       if (rfp.organizationId === null) {
         return res.json({
@@ -172,8 +231,7 @@ export function registerRoutes(app: Express): Server {
       };
       res.json(rfpWithOrg);
     } catch (error) {
-      console.error('Error fetching RFP:', error);
-      res.status(500).json({ message: "Failed to fetch RFP" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFP');
     }
   });
 
@@ -193,34 +251,59 @@ export function registerRoutes(app: Express): Server {
       console.log('RFP created successfully:', rfp);
       res.status(201).json(rfp);
     } catch (error) {
-      console.error('RFP creation error:', error);
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Failed to create RFP" });
-      }
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'RFPCreation');
     }
   });
 
   app.put("/api/rfps/:id", async (req, res) => {
-    requireAuth(req);
-    const rfp = await storage.getRfpById(Number(req.params.id));
-    if (!rfp || rfp.organizationId !== req.user?.id) {
-      return res.status(403).send("Unauthorized");
-    }
+    try {
+      requireAuth(req);
+      console.log('RFP update request received:', req.body);
 
-    const updated = await storage.updateRfp(Number(req.params.id), req.body);
-    res.json(updated);
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const rfp = await storage.getRfpById(id);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPUpdate');
+      }
+
+      // Validate the update data using the insert schema but make all fields optional
+      const data = insertRfpSchema.partial().parse(req.body);
+      console.log('Validated RFP update data:', data);
+
+      // Convert date strings to Date objects for storage
+      const processedData = {
+        ...data,
+        walkthroughDate: data.walkthroughDate ? new Date(data.walkthroughDate) : undefined,
+        rfiDate: data.rfiDate ? new Date(data.rfiDate) : undefined,
+        deadline: data.deadline ? new Date(data.deadline) : undefined,
+      };
+
+      const updated = await storage.updateRfp(id, processedData);
+      console.log('RFP updated successfully:', updated);
+      res.json(updated);
+    } catch (error) {
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.UPDATE_FAILED, 'RFPUpdate');
+    }
   });
 
   app.delete("/api/rfps/:id", async (req, res) => {
     requireAuth(req);
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+    
+    const rfp = await storage.getRfpById(id);
     if (!rfp || rfp.organizationId !== req.user?.id) {
-      return res.status(403).send("Unauthorized");
+      logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'delete', req);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDelete');
     }
 
-    await storage.deleteRfp(Number(req.params.id));
+    await storage.deleteRfp(id);
     res.sendStatus(200);
   });
 
@@ -245,29 +328,27 @@ export function registerRoutes(app: Express): Server {
       });
       res.status(201).json(employee);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'EmployeeCreation');
     }
   });
 
   app.delete("/api/employees/:id", async (req, res) => {
     try {
       requireAuth(req);
-      const employee = await storage.getEmployee(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'Employee ID', res);
+      if (id === null) return;
+      
+      const employee = await storage.getEmployee(id);
       if (!employee || employee.organizationId !== req.user!.id) {
-        return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
+        logAuthorizationFailure(req.user?.id, `Employee ${req.params.id}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'EmployeeDelete');
       }
-      await storage.deleteEmployee(Number(req.params.id));
+      await storage.deleteEmployee(id);
       res.sendStatus(200);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'EmployeeDeletion');
     }
   });
 
@@ -282,7 +363,7 @@ export function registerRoutes(app: Express): Server {
       });
       res.json(updatedUser);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update settings" });
+      sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'UserSettings');
     }
   });
 
@@ -297,12 +378,12 @@ export function registerRoutes(app: Express): Server {
       });
       req.logout((err) => {
         if (err) {
-          return res.status(500).json({ message: "Error logging out" });
+          return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDeactivate');
         }
         res.json(updatedUser);
       });
     } catch (error) {
-      res.status(400).json({ message: "Failed to deactivate account" });
+      sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'AccountDeactivation');
     }
   });
 
@@ -315,12 +396,12 @@ export function registerRoutes(app: Express): Server {
       await storage.deleteUser(user.id);
       req.logout((err) => {
         if (err) {
-          return res.status(500).json({ message: "Error logging out" });
+          return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDelete');
         }
         res.json({ message: "Account deleted successfully" });
       });
     } catch (error) {
-      res.status(400).json({ message: "Failed to delete account" });
+      sendErrorResponse(res, error, 400, ErrorMessages.DELETE_FAILED, 'AccountDeletion');
     }
   });
 
@@ -341,10 +422,7 @@ export function registerRoutes(app: Express): Server {
       // Return the filtered analytics
       res.json(analytics);
     } catch (error) {
-      console.error('Error fetching boosted analytics:', error);
-      res.status(500).json({ 
-        message: "Failed to fetch analytics"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Analytics');
     }
   });
 
@@ -428,22 +506,24 @@ export function registerRoutes(app: Express): Server {
       
       res.json({ success: true, viewSession });
     } catch (error) {
-      console.error('Error tracking RFP view:', error);
-      res.status(500).json({ message: "Failed to track view" });
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'TrackView');
     }
   });
 
   app.get("/api/analytics/rfp/:id", async (req, res) => {
     try {
       requireAuth(req);
-      const analytics = await storage.getAnalyticsByRfpId(Number(req.params.id));
+      
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      const analytics = await storage.getAnalyticsByRfpId(id);
       if (!analytics) {
         return res.status(404).json({ message: "Analytics not found" });
       }
       res.json(analytics);
     } catch (error) {
-      console.error('Error fetching RFP analytics:', error);
-      res.status(500).json({ message: "Failed to fetch RFP analytics" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPAnalytics');
     }
   });
 
@@ -453,16 +533,19 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);  // Make sure user is authenticated
       const data = insertRfiSchema.parse(req.body);
 
-      const rfp = await storage.getRfpById(Number(req.params.id));
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      const rfp = await storage.getRfpById(id);
       if (!rfp) {
-        return res.status(404).json({ message: "RFP not found" });
+        return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }
 
       // Use the authenticated user's email
       const rfi = await storage.createRfi({
         ...data,
         email: req.user!.email,  // Use authenticated user's email
-        rfpId: Number(req.params.id),
+        rfpId: id,
       });
 
       res.status(201).json({ 
@@ -470,26 +553,26 @@ export function registerRoutes(app: Express): Server {
         rfi
       });
     } catch (error) {
-      console.error('Error submitting RFI:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to submit RFI"
-      });
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 500, safeMessage || ErrorMessages.CREATE_FAILED, 'RFISubmission');
     }
   });
 
   // Get RFIs for specific RFP
   app.get("/api/rfps/:id/rfi", async (req, res) => {
     try {
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
       // Get RFIs with organization data in a single query
-      const rfis = await storage.getRfisByRfp(Number(req.params.id));
+      const rfis = await storage.getRfisByRfp(id);
       res.json(rfis);
     } catch (error) {
-      console.error('Error fetching RFIs for RFP:', error);
-      res.status(500).json({ message: "Failed to fetch RFIs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPRFIs');
     }
   });
 
-  // Get RFIs for current user
+  // Get RFIs for current user (RFIs they sent out)
   app.get("/api/rfis", async (req, res) => {
     try {
       // Add debug logging
@@ -527,8 +610,41 @@ export function registerRoutes(app: Express): Server {
       console.log('Sending response with', rfisWithRfp.length, 'RFIs');
       res.json(rfisWithRfp);
     } catch (error) {
-      console.error('Error fetching RFIs:', error);
-      res.status(500).json({ message: "Failed to fetch RFIs" });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'UserRFIs');
+    }
+  });
+
+  // Get RFIs on user's RFPs (RFIs they received)
+  app.get("/api/rfis/received", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const user = req.user!;
+      console.log('Fetching received RFIs for user:', user.id);
+
+      // Get all RFPs owned by this user
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === user.id);
+      console.log('Found user RFPs:', userRfps.length);
+
+      // Get all RFIs for these RFPs
+      const allReceivedRfis = [];
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        // Add RFP data to each RFI
+        const rfisWithRfp = rfpRfis.map(rfi => ({
+          ...rfi,
+          rfp
+        }));
+        allReceivedRfis.push(...rfisWithRfp);
+      }
+
+      console.log('Sending response with', allReceivedRfis.length, 'received RFIs');
+      res.json(allReceivedRfis);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReceivedRFIs');
     }
   });
 
@@ -565,8 +681,11 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
 
-      const rfpId = Number(req.params.rfpId);
-      const rfiId = Number(req.params.rfiId);
+      const params = validateRouteParams(req, res, { rfpId: 'positiveInt', rfiId: 'positiveInt' });
+      if (!params) return;
+      
+      const rfpId = params.rfpId as number;
+      const rfiId = params.rfiId as number;
       const { status } = req.body;
       
       // Validate status is one of the allowed values
@@ -577,16 +696,245 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(rfpId);
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to update this RFI" });
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIUpdate');
+      }
+
+      // Get the RFI details before updating
+      const rfis = await storage.getRfisByRfp(rfpId);
+      const rfi = rfis.find(r => r.id === rfiId);
+      
+      if (!rfi) {
+        return res.status(404).json({ message: "RFI not found" });
       }
 
       // Update RFI status
       const updatedRfi = await storage.updateRfiStatus(rfiId, status);
+      
+      // If status changed to "responded", create a notification for the RFI submitter
+      if (status === "responded" && rfi.organization) {
+        const notification = await storage.createNotification({
+          userId: rfi.organization.id,
+          type: "rfi_response",
+          title: "RFI Response Available",
+          message: `Your question about "${rfp.title}" has been answered.`,
+          relatedId: rfiId,
+          relatedType: "rfi"
+        });
+        
+        // Send real-time notification
+        if ((global as any).sendNotificationToUser) {
+          (global as any).sendNotificationToUser(rfi.organization.id, notification);
+        }
+      }
+      
       res.json(updatedRfi);
     } catch (error) {
       console.error('Error updating RFI status:', error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to update RFI status"
+      });
+    }
+  });
+
+  // RFI Conversation Endpoints
+  
+  // Get conversation messages for an RFI
+  app.get("/api/rfis/:id/messages", async (req, res) => {
+    try {
+      requireAuth(req);
+      const rfiId = Number(req.params.id);
+
+      // Get the RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const contractorRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the contractor who submitted the RFI
+      let hasPermission = !!contractorRfi;
+      
+      // If not the contractor, check if they're the RFP owner
+      if (!hasPermission) {
+        // Find all RFPs by this user and their RFIs
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId} conversation`, 'view', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIConversation');
+      }
+
+      const messages = await storage.getRfiMessages(rfiId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching RFI messages:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to fetch RFI messages"
+      });
+    }
+  });
+
+  // Send a message in RFI conversation
+  app.post("/api/rfis/:id/messages", upload.array('attachment', 5), async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+      if (rfiId === null) return;
+      
+      const { message } = req.body;
+      const files = req.files as Express.Multer.File[] || [];
+
+      if ((!message || message.trim() === "") && files.length === 0) {
+        return res.status(400).json({ message: "Message content or file attachment is required" });
+      }
+
+      // Get the RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const contractorRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the contractor who submitted the RFI
+      let hasPermission = !!contractorRfi;
+      let targetUserId = null; // Who to notify
+      
+      // If not the contractor, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          const foundRfi = rfpRfis.find(r => r.id === rfiId);
+          if (foundRfi) {
+            hasPermission = true;
+            // Find the contractor user to notify
+            const contractorUser = await storage.getUserByUsername(foundRfi.email);
+            if (contractorUser) {
+              targetUserId = contractorUser.id;
+            }
+            break;
+          }
+        }
+      } else {
+        // User is contractor, find RFP owner to notify
+        if (contractorRfi && contractorRfi.rfpId) {
+          const rfp = await storage.getRfpById(contractorRfi.rfpId);
+          if (rfp) {
+            targetUserId = rfp.organizationId;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'send message', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIMessage');
+      }
+
+      // Create the message
+      const newMessage = await storage.createRfiMessage({
+        rfiId,
+        senderId: req.user!.id,
+        message: message ? message.trim() : ""
+      });
+
+      // Handle file attachments if present
+      if (files.length > 0) {
+        const ALLOWED_MIME_TYPES = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/jpg', 
+          'image/png',
+          'text/plain',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+        
+        for (const file of files) {
+          try {
+            // SECURITY: Validate file type and size
+            if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+              console.warn(`Rejected file ${file.originalname}: invalid mime type ${file.mimetype}`);
+              continue;
+            }
+            
+            if (file.size > MAX_FILE_SIZE) {
+              console.warn(`Rejected file ${file.originalname}: size ${file.size} exceeds limit ${MAX_FILE_SIZE}`);
+              continue;
+            }
+            
+            // SECURITY: Sanitize filename - remove dangerous characters
+            const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+            
+            // Convert buffer to base64 data URI for Cloudinary upload
+            const dataURI = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            
+            const uploadResult = await cloudinary.uploader.upload(dataURI, {
+              resource_type: "auto",
+              folder: "rfi-attachments",
+              allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "txt", "xls", "xlsx"],
+              public_id: `${Date.now()}_${sanitizedFilename}`
+            });
+            
+            await storage.createRfiAttachment({
+              messageId: newMessage.id,
+              filename: sanitizedFilename,
+              fileUrl: uploadResult.secure_url,
+              fileSize: file.size,
+              mimeType: file.mimetype
+            });
+            
+            console.log(`Successfully uploaded file: ${sanitizedFilename} (${file.size} bytes)`);
+          } catch (uploadError) {
+            console.error(`File upload error for ${file.originalname}:`, uploadError);
+            // Continue with other files even if one fails
+          }
+        }
+      }
+
+      // Auto-mark RFI as "responded" if the sender is not the contractor
+      if (hasPermission && !contractorRfi) {
+        // This is the RFP owner responding, mark as responded
+        await storage.updateRfiStatus(rfiId, "responded");
+      }
+
+      // Create notification for the other party
+      if (targetUserId) {
+        const notification = await storage.createNotification({
+          userId: targetUserId,
+          type: "rfi_response",
+          title: "New RFI Message",
+          message: `New message in RFI conversation`,
+          relatedId: rfiId,
+          relatedType: "rfi"
+        });
+        
+        // Send real-time notification
+        if ((global as any).sendNotificationToUser) {
+          (global as any).sendNotificationToUser(targetUserId, notification);
+        }
+      }
+
+      // Return the message with sender information and attachments
+      const messageWithSender = await storage.getRfiMessages(rfiId);
+      const createdMessage = messageWithSender.find(m => m.id === newMessage.id);
+      
+      res.status(201).json(createdMessage);
+    } catch (error) {
+      console.error('Error sending RFI message:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to send message"
       });
     }
   });
@@ -605,7 +953,8 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
       // Create payment intent with Stripe
@@ -646,7 +995,8 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
       // Update RFP to be featured
@@ -667,10 +1017,316 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Download attachment endpoint with authentication
+  app.get("/api/attachments/:attachmentId/download", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const attachmentId = validatePositiveInt(req.params.attachmentId, 'Attachment ID', res);
+      if (attachmentId === null) return;
+      
+      // Get attachment details
+      const attachment = await storage.getRfiAttachmentById(attachmentId);
+      if (!attachment) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      // Get the RFI message this attachment belongs to
+      const message = await storage.getRfiMessageById(attachment.messageId);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user has permission to access this attachment
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const userRfi = rfis.find(r => r.id === message.rfiId);
+      
+      let hasPermission = !!userRfi;
+      
+      // If not the submitter, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === message.rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+      
+      if (!hasPermission) {
+        logAuthorizationFailure(req.user?.id, `Attachment ${req.params.id}`, 'access', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
+      }
+      
+      // Redirect to the Cloudinary URL (this maintains authentication context)
+      res.redirect(attachment.fileUrl);
+      
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'AttachmentDownload');
+    }
+  });
+
+  // Delete RFI endpoint
+  app.delete("/api/rfis/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+
+      const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+      if (rfiId === null) return;
+      
+      // Get RFI details to check permissions
+      const rfis = await storage.getRfisByEmail(req.user!.email);
+      const userRfi = rfis.find(r => r.id === rfiId);
+      
+      // Check if user is the one who submitted the RFI
+      let hasPermission = !!userRfi;
+      
+      // If not the submitter, check if they're the RFP owner
+      if (!hasPermission) {
+        const allRfps = await storage.getRfps();
+        const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+        
+        for (const rfp of userRfps) {
+          const rfpRfis = await storage.getRfisByRfp(rfp.id);
+          if (rfpRfis.some(r => r.id === rfiId)) {
+            hasPermission = true;
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIDeletion');
+      }
+
+      await storage.deleteRfi(rfiId);
+      res.json({ message: "RFI deleted successfully" });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFIDeletion');
+    }
+  });
+
+  // Notification routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      requireAuth(req);
+      const notifications = await storage.getNotificationsByUser(req.user!.id);
+      res.json(notifications);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Notifications');
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      requireAuth(req);
+      const data = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(data);
+      
+      // Send real-time notification if user is connected
+      if ((global as any).sendNotificationToUser) {
+        (global as any).sendNotificationToUser(data.userId, notification);
+      }
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'NotificationCreation');
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+      if (id === null) return;
+      
+      const notification = await storage.markNotificationAsRead(id);
+      res.json(notification);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkRead');
+    }
+  });
+
+  app.patch("/api/notifications/read-all", async (req, res) => {
+    try {
+      requireAuth(req);
+      await storage.markAllNotificationsAsRead(req.user!.id);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkAllRead');
+    }
+  });
+
+  app.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+      if (id === null) return;
+      
+      await storage.deleteNotification(id);
+      res.json({ message: "Notification deleted" });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+    }
+  });
+
   // For now, we'll use the payment routes from entrypoint.js
   // We'll integrate the dedicated payment router in a future update
   console.log('Payment routes are handled in entrypoint.js');
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store active WebSocket connections by user ID
+  const userConnections = new Map<number, WebSocket[]>();
+  
+  wss.on('connection', (ws: WebSocket, req) => {
+    console.log('WebSocket connection established');
+    
+    // Extract session information from the request  
+    const getSessionUserId = (): Promise<number | null> => {
+      return new Promise((resolve) => {
+        if (!req.headers.cookie) {
+          resolve(null);
+          return;
+        }
+
+        try {
+          // SECURITY: Use proper cookie parsing
+          const cookies = cookie.parse(req.headers.cookie);
+          const sessionCookie = cookies['connect.sid'];
+          
+          if (!sessionCookie) {
+            console.warn('WebSocket: No connect.sid cookie found');
+            resolve(null);
+            return;
+          }
+
+          // SECURITY: Properly verify signed cookie
+          let sessionId: string;
+          if (sessionCookie.startsWith('s:')) {
+            // CRITICAL: Use exact same session secret as session.ts
+            const sessionSecret = getSessionSecret();
+            
+            try {
+              // Verify and unsign the cookie
+              sessionId = cookieSignature.unsign(sessionCookie.slice(2), sessionSecret);
+              if (sessionId === false) {
+                console.warn('WebSocket: Invalid cookie signature');
+                resolve(null);
+                return;
+              }
+            } catch (signError) {
+              console.warn('WebSocket: Cookie signature verification failed:', signError);
+              resolve(null);
+              return;
+            }
+          } else {
+            sessionId = sessionCookie;
+          }
+
+          // Get session from store
+          storage.sessionStore.get(sessionId as string, (err: any, session: any) => {
+            if (err || !session) {
+              console.warn('WebSocket session lookup failed:', err?.message || 'No session');
+              resolve(null);
+              return;
+            }
+
+            if (session.passport && session.passport.user) {
+              const userId = parseInt(session.passport.user);
+              console.log(`WebSocket session authenticated user: ${userId} (signature-verified)`);
+              resolve(userId);
+            } else {
+              console.warn('WebSocket session has no authenticated user');
+              resolve(null);
+            }
+          });
+        } catch (error) {
+          console.error('Error parsing WebSocket session:', error);
+          resolve(null);
+        }
+      });
+    };
+    
+    // Handle user authentication and registration
+    ws.on('message', async (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        if (data.type === 'auth') {
+          // SECURITY: Use session user ID, ignore any client-provided userId
+          const sessionUserId = await getSessionUserId();
+          
+          if (!sessionUserId) {
+            console.warn('WebSocket auth rejected: no valid session');
+            ws.send(JSON.stringify({ type: 'auth_error', message: 'Not authenticated' }));
+            ws.close(1008, 'Not authenticated'); // Policy violation code
+            return;
+          }
+          
+          if (!userConnections.has(sessionUserId)) {
+            userConnections.set(sessionUserId, []);
+          }
+          
+          userConnections.get(sessionUserId)!.push(ws);
+          console.log(`User ${sessionUserId} connected via WebSocket (session-verified)`);
+          
+          ws.send(JSON.stringify({ type: 'auth_success', message: 'Connected successfully' }));
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+        ws.close(1011, 'Server error');
+      }
+    });
+    
+    ws.on('close', () => {
+      // Remove connection from all users when closed
+      userConnections.forEach((connections, userId) => {
+        const index = connections.indexOf(ws);
+        if (index !== -1) {
+          connections.splice(index, 1);
+          if (connections.length === 0) {
+            userConnections.delete(userId);
+          }
+          console.log(`User ${userId} disconnected from WebSocket`);
+        }
+      });
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
+  // Export function to send notifications to specific users
+  (global as any).sendNotificationToUser = (userId: number, notification: any) => {
+    const connections = userConnections.get(userId);
+    if (connections) {
+      const message = JSON.stringify({
+        type: 'notification',
+        data: notification
+      });
+      
+      connections.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+    }
+  };
+  
+  // Start the deadline monitoring service
+  deadlineMonitor.start();
+  
   return httpServer;
 }

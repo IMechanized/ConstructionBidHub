@@ -43,7 +43,7 @@ export default function RfpReport({ rfps }: RfpReportProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px] min-w-[200px]">Title</TableHead>
-                <TableHead className="hidden sm:table-cell">Location</TableHead>
+                <TableHead className="hidden sm:table-cell">State</TableHead>
                 <TableHead className="hidden md:table-cell">Due Date</TableHead>
                 <TableHead className="w-[100px]">Budget</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
@@ -56,7 +56,7 @@ export default function RfpReport({ rfps }: RfpReportProps) {
                     {rfp.title}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell truncate max-w-[150px]">
-                    {rfp.jobLocation}
+                    {rfp.jobState}
                   </TableCell>
                   <TableCell className="hidden md:table-cell whitespace-nowrap">
                     {format(new Date(rfp.deadline), "PP")}

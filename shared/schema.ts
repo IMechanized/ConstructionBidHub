@@ -16,7 +16,9 @@ export const CERTIFICATIONS = [
   "LGBTQ-owned",
   "Rural",
   "Minority-owned",
-  "Section 3"
+  "Section 3",
+  "SBE",
+  "DBE"
 ];
 
 /**
@@ -28,10 +30,11 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
-  contact: text("contact"),                    // Primary contact person
+  firstName: text("first_name"),              // Contact first name
+  lastName: text("last_name"),                // Contact last name
+  jobTitle: text("job_title"),                // Job title/position
   telephone: text("telephone"),                // Office phone
   cell: text("cell"),                         // Mobile phone
-  businessEmail: text("business_email"),       // Secondary/business email
   isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),       // Specific minority classification
   trade: text("trade"),                       // Primary trade/industry
@@ -45,6 +48,8 @@ export const users = pgTable("users", {
   verificationTokenExpiry: timestamp("verification_token_expiry"), // When the verification token expires
   resetToken: text("reset_token"),            // Password reset token
   resetTokenExpiry: timestamp("reset_token_expiry"), // When the reset token expires
+  failedLoginAttempts: integer("failed_login_attempts").default(0), // Track failed login attempts
+  accountLockedUntil: timestamp("account_locked_until"), // When the account lockout expires
 });
 
 /**
@@ -59,8 +64,11 @@ export const rfps = pgTable("rfps", {
   rfiDate: timestamp("rfi_date").notNull(),                  // Last day for questions
   deadline: timestamp("deadline").notNull(),                 // Bid submission deadline
   budgetMin: integer("budget_min"),                         // Minimum budget (optional)
-  certificationGoals: text("certification_goals"),          // Required certifications
-  jobLocation: text("job_location").notNull(),
+  certificationGoals: text("certification_goals").array(),   // Required certifications
+  jobStreet: text("job_street").notNull(),                 // Street address
+  jobCity: text("job_city").notNull(),                     // City
+  jobState: text("job_state").notNull(),                   // State
+  jobZip: text("job_zip").notNull(),                       // ZIP code
   portfolioLink: text("portfolio_link"),                    // Additional resources
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
@@ -125,6 +133,48 @@ export const rfis = pgTable("rfis", {
 });
 
 /**
+ * RFI Messages Table
+ * Individual messages in RFI conversation threads
+ */
+export const rfiMessages = pgTable("rfi_messages", {
+  id: serial("id").primaryKey(),
+  rfiId: integer("rfi_id").references(() => rfis.id).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  message: text("message"), // Optional - can be null if message is attachment-only
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * RFI Attachments Table
+ * File attachments for RFI messages
+ */
+export const rfiAttachments = pgTable("rfi_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => rfiMessages.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(), // Cloudinary URL or storage URL
+  fileSize: integer("file_size"), // File size in bytes
+  mimeType: text("mime_type"), // File MIME type
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+/**
+ * Notifications Table
+ * In-app notifications for users
+ */
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type", { enum: ["rfi_response", "deadline_reminder", "system"] }).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedId: integer("related_id"), // ID of related entity (RFI, RFP, etc.)
+  relatedType: text("related_type", { enum: ["rfi", "rfp"] }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Backup Logs Table
  * Tracks database backup operations
  */
@@ -142,23 +192,33 @@ export const backupLogs = pgTable("backup_logs", {
 
 // Onboarding form validation
 export const onboardingSchema = z.object({
-  contact: z.string().min(1, "Contact name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  jobTitle: z.string().min(1, "Job title is required"),
   telephone: z.string().min(1, "Telephone number is required"),
   cell: z.string().min(1, "Cell phone number is required"),
-  businessEmail: z.string().email("Invalid email address"),
-  isMinorityOwned: z.boolean(),
-  minorityGroup: z.string().optional(),
   trade: z.string().min(1, "Trade is required"),
   certificationName: z.array(z.string()).optional(),
   logo: z.any().optional(),
 });
 
+// Secure password validation
+const securePasswordSchema = z.string()
+  .min(7, "Password must be at least 7 characters long")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+  .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, "Password must contain at least one special character");
+
 // User creation validation
-export const insertUserSchema = createInsertSchema(users).pick({
-  email: true,
-  password: true,
-  companyName: true,
-});
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    email: true,
+    password: true,
+    companyName: true,
+  })
+  .extend({
+    password: securePasswordSchema,
+  });
 
 // Password reset schema
 export const passwordResetSchema = z.object({
@@ -179,7 +239,10 @@ export const insertRfpSchema = createInsertSchema(rfps)
     deadline: true,
     budgetMin: true,
     certificationGoals: true,
-    jobLocation: true,
+    jobStreet: true,
+    jobCity: true,
+    jobState: true,
+    jobZip: true,
     portfolioLink: true,
     featured: true,
   })
@@ -188,9 +251,12 @@ export const insertRfpSchema = createInsertSchema(rfps)
     rfiDate: z.string(),
     deadline: z.string(),
     budgetMin: z.number().min(0, "Minimum budget must be a positive number").nullish(),
-    jobLocation: z.string().min(1, "Job location is required"),
-    certificationGoals: z.string().nullish(),
-    portfolioLink: z.string().url("Portfolio link must be a valid URL").nullish().or(z.literal("")),
+    jobStreet: z.string().min(1, "Street address is required"),
+    jobCity: z.string().min(1, "City is required"),
+    jobState: z.string().min(1, "State is required"),
+    jobZip: z.string().min(1, "ZIP code is required"),
+    certificationGoals: z.array(z.string()).nullish(),
+    portfolioLink: z.string().nullish().or(z.literal("")),
     featured: z.boolean().default(false),
   });
 
@@ -206,6 +272,34 @@ export const insertRfiSchema = createInsertSchema(rfis).pick({
   message: true,
 });
 
+// RFI message creation validation
+export const insertRfiMessageSchema = createInsertSchema(rfiMessages).pick({
+  rfiId: true,
+  senderId: true,
+  message: true,
+}).extend({
+  message: z.string().optional(), // Allow optional message for file-only messages
+});
+
+// RFI attachment creation validation
+export const insertRfiAttachmentSchema = createInsertSchema(rfiAttachments).pick({
+  messageId: true,
+  filename: true,
+  fileUrl: true,
+  fileSize: true,
+  mimeType: true,
+});
+
+// Notification creation validation
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  type: true,
+  title: true,
+  message: true,
+  relatedId: true,
+  relatedType: true,
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -217,5 +311,11 @@ export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;
 export type InsertRfi = z.infer<typeof insertRfiSchema>;
+export type RfiMessage = typeof rfiMessages.$inferSelect;
+export type InsertRfiMessage = z.infer<typeof insertRfiMessageSchema>;
+export type RfiAttachment = typeof rfiAttachments.$inferSelect;
+export type InsertRfiAttachment = z.infer<typeof insertRfiAttachmentSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = typeof backupLogs.$inferInsert;

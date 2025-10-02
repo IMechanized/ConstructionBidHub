@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import createMemoryStore from 'memorystore';
 import multer from 'multer';
@@ -14,6 +14,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 
 /**
  * Stripe Payment Processing Integration
@@ -66,6 +70,273 @@ try {
   console.error(`❌ Failed to initialize Stripe: ${error.message}`);
 }
 
+// Safe logging utilities for authentication (Vercel deployment version matching server/lib/safe-logging.ts)
+const SENSITIVE_FIELDS = [
+  'password', 'confirmPassword', 'currentPassword', 'newPassword',
+  'client_secret', 'clientSecret',
+  'token', 'accessToken', 'refreshToken', 'apiKey', 'api_key',
+  'secret', 'privateKey', 'private_key',
+  'authorization', 'set-cookie', 'cookie', 'session', 'csrf',
+  'id_token', 'refresh_token', 'access_token',
+  'creditCard', 'ssn', 'socialSecurityNumber',
+  'verificationToken', 'resetToken'
+];
+
+const MASKABLE_FIELDS = ['email', 'username', 'phoneNumber', 'phone'];
+
+function maskEmail(email) {
+  if (!email || typeof email !== 'string') return '[invalid_email]';
+  const [username, domain] = email.split('@');
+  if (!username || !domain) return '[invalid_email]';
+  if (username.length <= 1) return `${username}***@${domain}`;
+  return `${username[0]}***@${domain}`;
+}
+
+function maskString(value, showStart = 1, showEnd = 0) {
+  if (!value || typeof value !== 'string') return '[redacted]';
+  if (value.length <= showStart + showEnd) return '[redacted]';
+  const start = value.substring(0, showStart);
+  const end = showEnd > 0 ? value.substring(value.length - showEnd) : '';
+  const middle = '*'.repeat(Math.max(3, value.length - showStart - showEnd));
+  return start + middle + end;
+}
+
+function sanitizeObject(obj, depth = 0) {
+  if (depth > 10) return '[max_depth_reached]';
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item, depth + 1));
+  }
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      // Completely redact sensitive fields
+      if (SENSITIVE_FIELDS.some(field => lowerKey.includes(field.toLowerCase()))) {
+        sanitized[key] = '[REDACTED]';
+      }
+      // Mask email-like and other maskable fields
+      else if (MASKABLE_FIELDS.some(field => lowerKey.includes(field.toLowerCase()))) {
+        if (typeof value === 'string' && value.includes('@')) {
+          sanitized[key] = maskEmail(value);
+        } else if (typeof value === 'string') {
+          sanitized[key] = maskString(value, 2, 0);
+        } else {
+          sanitized[key] = sanitizeObject(value, depth + 1);
+        }
+      }
+      // Recursively sanitize nested objects
+      else {
+        sanitized[key] = sanitizeObject(value, depth + 1);
+      }
+    }
+    return sanitized;
+  }
+  return obj;
+}
+
+function safeLog(message, data) {
+  if (data !== undefined) {
+    console.log(message, sanitizeObject(data));
+  } else {
+    console.log(message);
+  }
+}
+
+function safeError(message, error) {
+  if (error !== undefined) {
+    if (error instanceof Error) {
+      const sanitizedError = {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        ...sanitizeObject({ ...error })
+      };
+      console.error(message, sanitizedError);
+    } else {
+      console.error(message, sanitizeObject(error));
+    }
+  } else {
+    console.error(message);
+  }
+}
+
+// Error sanitization utilities (matching server/lib/error-handler.ts for Vercel deployment)
+const isDevelopmentMode = process.env.NODE_ENV === 'development' || process.env.DEV === 'true';
+
+const ErrorMessages = {
+  UNAUTHORIZED: 'Authentication required',
+  FORBIDDEN: 'Access denied',
+  INVALID_CREDENTIALS: 'Invalid email or password',
+  INTERNAL_ERROR: 'An internal error occurred',
+  BAD_REQUEST: 'Invalid request',
+  NOT_FOUND: 'Resource not found',
+  UPLOAD_FAILED: 'Failed to upload file',
+  FETCH_FAILED: 'Failed to retrieve data',
+  CREATE_FAILED: 'Failed to create resource',
+  UPDATE_FAILED: 'Failed to update resource',
+  DELETE_FAILED: 'Failed to delete resource',
+  VALIDATION_FAILED: 'Validation failed',
+  INVALID_INPUT: 'Invalid input provided',
+};
+
+function sanitizeError(error, fallbackMessage = 'An error occurred') {
+  if (isDevelopmentMode) {
+    // Development: Return error message and stack only (no raw error object)
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        stack: error.stack
+      };
+    }
+    return {
+      message: String(error || fallbackMessage)
+    };
+  }
+  
+  // Production: Return ONLY the generic message, nothing else
+  return {
+    message: fallbackMessage
+  };
+}
+
+// Sensitive field names that should be redacted from logs
+const SENSITIVE_LOG_FIELDS = [
+  'password', 'secret', 'token', 'key', 'authorization',
+  'cookie', 'session', 'credential', 'apikey', 'api_key',
+  'private', 'ssn', 'creditcard', 'cvv'
+];
+
+// Deep sanitize object for logging - redacts sensitive fields
+function deepSanitize(obj, depth = 0) {
+  if (depth > 5) return '[max_depth]';
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepSanitize(item, depth + 1));
+  }
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      if (SENSITIVE_LOG_FIELDS.some(field => lowerKey.includes(field))) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = deepSanitize(value, depth + 1);
+      }
+    }
+    return sanitized;
+  }
+  return String(obj);
+}
+
+function sanitizeForLogging(error) {
+  if (error instanceof Error) {
+    // For Error objects: extract only safe fields and sanitize any custom properties
+    const baseError = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+    
+    // If Error has custom enumerable properties, sanitize them
+    const customProps = {};
+    for (const key of Object.keys(error)) {
+      if (!['name', 'message', 'stack'].includes(key)) {
+        customProps[key] = deepSanitize(error[key]);
+      }
+    }
+    
+    return Object.keys(customProps).length > 0 
+      ? { ...baseError, ...customProps }
+      : baseError;
+  }
+  
+  // For non-Error objects: deep sanitize to remove sensitive fields
+  return deepSanitize(error);
+}
+
+function sendErrorResponse(res, error, statusCode, userMessage, logContext) {
+  // Log sanitized error server-side (no raw error objects)
+  const context = logContext ? `[${logContext}]` : '';
+  const safeError = sanitizeForLogging(error);
+  console.error(`${context} Error:`, safeError);
+  
+  const sanitized = sanitizeError(error, userMessage);
+  res.status(statusCode).json(sanitized);
+}
+
+function isValidationError(error) {
+  if (error instanceof Error) {
+    const safePatterns = [
+      /required/i,
+      /invalid/i,
+      /must be/i,
+      /cannot be/i,
+      /already exists/i,
+    ];
+    return safePatterns.some(pattern => pattern.test(error.message));
+  }
+  return false;
+}
+
+function getSafeValidationMessage(error) {
+  if (isDevelopmentMode) {
+    return error instanceof Error ? error.message : ErrorMessages.VALIDATION_FAILED;
+  }
+  
+  if (isValidationError(error) && error instanceof Error) {
+    return error.message;
+  }
+  
+  return ErrorMessages.VALIDATION_FAILED;
+}
+
+// Rate limiter for authentication endpoints to prevent brute force attacks
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: "Too many login attempts from this IP, please try again after 15 minutes",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for login from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many login attempts from this IP, please try again after 15 minutes" 
+    });
+  },
+});
+
+// Password hashing and comparison utilities
+const scryptAsync = promisify(scrypt);
+
+async function comparePasswords(supplied, stored) {
+  // Guard against null, undefined, or improperly formatted passwords
+  if (!stored || typeof stored !== 'string' || !stored.includes('.')) {
+    return false;
+  }
+  
+  const [hashed, salt] = stored.split(".");
+  if (!hashed || !salt) {
+    return false;
+  }
+  
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = await scryptAsync(supplied, salt, 64);
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    // Handle any errors in password comparison (e.g., invalid hex)
+    safeError('Password comparison error:', error);
+    return false;
+  }
+}
+
 // Configure WebSocket for Neon
 if (ws) {
   neonConfig.webSocketConstructor = ws;
@@ -97,29 +368,32 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
-// Define schema
+// Define schema matching shared/schema.ts
 const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
-  password: text("password"),
+  password: text("password").notNull(),
   companyName: text("company_name").notNull(),
-  contact: text("contact"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  jobTitle: text("job_title"),
   telephone: text("telephone"),
   cell: text("cell"),
-  businessEmail: text("business_email"),
-  isMinorityOwned: boolean("is_minority_owned"),
+  isMinorityOwned: boolean("is_minority_owned").default(false),
   minorityGroup: text("minority_group"),
   trade: text("trade"),
   certificationName: text("certification_name").array(),
   logo: text("logo"),
-  onboardingComplete: boolean("onboarding_complete"),
-  status: text("status"),
-  language: text("language"),
-  emailVerified: boolean("email_verified"),
+  onboardingComplete: boolean("onboarding_complete").default(false),
+  status: text("status").default("active"),
+  language: text("language").default("en"),
+  emailVerified: boolean("email_verified").default(false),
   verificationToken: text("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  failedLoginAttempts: integer("failed_login_attempts").default(0),
+  accountLockedUntil: timestamp("account_locked_until"),
 });
 
 const rfps = pgTable("rfps", {
@@ -130,12 +404,15 @@ const rfps = pgTable("rfps", {
   rfiDate: timestamp("rfi_date").notNull(),
   deadline: timestamp("deadline").notNull(),
   budgetMin: integer("budget_min"),
-  certificationGoals: text("certification_goals"),
-  jobLocation: text("job_location").notNull(),
+  certificationGoals: text("certification_goals").array(),
+  jobStreet: text("job_street").notNull(),
+  jobCity: text("job_city").notNull(),
+  jobState: text("job_state").notNull(),
+  jobZip: text("job_zip").notNull(),
   portfolioLink: text("portfolio_link"),
-  status: text("status"),
+  status: text("status").default("open"),
   organizationId: integer("organization_id").references(() => users.id),
-  featured: boolean("featured"),
+  featured: boolean("featured").default(false),
   featuredAt: timestamp("featured_at"),
   createdAt: timestamp("created_at"),
 });
@@ -145,13 +422,43 @@ const rfis = pgTable("rfis", {
   rfpId: integer("rfp_id").references(() => rfps.id),
   email: text("email").notNull(),
   message: text("message").notNull(),
+  createdAt: timestamp("created_at"),
   status: text("status").default("pending"),
-  createdAt: timestamp("created_at")
+});
+
+const rfiMessages = pgTable("rfi_messages", {
+  id: serial("id").primaryKey(),
+  rfiId: integer("rfi_id").references(() => rfis.id).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  message: text("message"),
+  createdAt: timestamp("created_at"),
+});
+
+const rfiAttachments = pgTable("rfi_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => rfiMessages.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at"),
+});
+
+const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedId: integer("related_id"),
+  relatedType: text("related_type"),
+  createdAt: timestamp("created_at"),
 });
 
 const rfpAnalytics = pgTable("rfp_analytics", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
   date: date("date").notNull(),
   totalViews: integer("total_views").default(0),
   uniqueViews: integer("unique_views").default(0),
@@ -162,10 +469,11 @@ const rfpAnalytics = pgTable("rfp_analytics", {
 
 const rfpViewSessions = pgTable("rfp_view_sessions", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
   userId: integer("user_id").references(() => users.id),
   viewDate: timestamp("view_date").notNull(),
   duration: integer("duration").default(0),
+  convertedToBid: boolean("converted_to_bid").default(false),
 });
 
 // Initialize Drizzle ORM
@@ -190,16 +498,19 @@ const storage = {
         .set({
           ...updates,
           companyName: updates.companyName,
-          contact: updates.contact,
+          firstName: updates.firstName,
+          lastName: updates.lastName,
+          jobTitle: updates.jobTitle,
           telephone: updates.telephone,
           cell: updates.cell,
-          businessEmail: updates.businessEmail,
           trade: updates.trade,
           isMinorityOwned: updates.isMinorityOwned,
           minorityGroup: updates.minorityGroup,
           certificationName: updates.certificationName,
           logo: updates.logo,
-          language: updates.language
+          language: updates.language,
+          failedLoginAttempts: updates.failedLoginAttempts,
+          accountLockedUntil: updates.accountLockedUntil
         })
         .where(eq(users.id, id))
         .returning();
@@ -327,6 +638,15 @@ const storage = {
     }
   },
 
+  async deleteRfi(rfiId) {
+    try {
+      await db.delete(rfis).where(eq(rfis.id, rfiId));
+    } catch (error) {
+      console.error("Error deleting RFI:", error);
+      throw error;
+    }
+  },
+
   async getAnalyticsByRfpId(rfpId) {
     try {
       // Format today's date properly for SQL
@@ -429,6 +749,170 @@ const storage = {
     }
   },
 
+  // RFI Conversation Operations
+  async createRfiMessage(message) {
+    try {
+      const [newMessage] = await db
+        .insert(rfiMessages)
+        .values(message)
+        .returning();
+      return newMessage;
+    } catch (error) {
+      console.error("Error creating RFI message:", error);
+      throw error;
+    }
+  },
+
+  async getRfiMessages(rfiId) {
+    try {
+      // Get messages with sender information
+      const messages = await db
+        .select({
+          id: rfiMessages.id,
+          rfiId: rfiMessages.rfiId,
+          senderId: rfiMessages.senderId,
+          message: rfiMessages.message,
+          createdAt: rfiMessages.createdAt,
+          sender: users
+        })
+        .from(rfiMessages)
+        .innerJoin(users, eq(rfiMessages.senderId, users.id))
+        .where(eq(rfiMessages.rfiId, rfiId))
+        .orderBy(rfiMessages.createdAt);
+
+      // Get attachments for each message
+      const messagesWithAttachments = await Promise.all(
+        messages.map(async (msg) => {
+          const attachments = await this.getRfiAttachments(msg.id);
+          return {
+            ...msg,
+            attachments
+          };
+        })
+      );
+
+      return messagesWithAttachments;
+    } catch (error) {
+      console.error("Error getting RFI messages:", error);
+      return [];
+    }
+  },
+
+  async getRfiMessageById(messageId) {
+    try {
+      const [message] = await db
+        .select()
+        .from(rfiMessages)
+        .where(eq(rfiMessages.id, messageId));
+      return message;
+    } catch (error) {
+      console.error("Error getting RFI message by ID:", error);
+      return null;
+    }
+  },
+
+  async createRfiAttachment(attachment) {
+    try {
+      const [newAttachment] = await db
+        .insert(rfiAttachments)
+        .values(attachment)
+        .returning();
+      return newAttachment;
+    } catch (error) {
+      console.error("Error creating RFI attachment:", error);
+      throw error;
+    }
+  },
+
+  async getRfiAttachmentById(attachmentId) {
+    try {
+      const [attachment] = await db
+        .select()
+        .from(rfiAttachments)
+        .where(eq(rfiAttachments.id, attachmentId));
+      return attachment;
+    } catch (error) {
+      console.error("Error getting RFI attachment by ID:", error);
+      return null;
+    }
+  },
+
+  async getRfiAttachments(messageId) {
+    try {
+      return await db
+        .select()
+        .from(rfiAttachments)
+        .where(eq(rfiAttachments.messageId, messageId))
+        .orderBy(rfiAttachments.uploadedAt);
+    } catch (error) {
+      console.error("Error getting RFI attachments:", error);
+      return [];
+    }
+  },
+
+  // Notification Operations
+  async createNotification(notification) {
+    try {
+      const [newNotification] = await db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
+  },
+
+  async getNotificationsByUser(userId) {
+    try {
+      return await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error("Error getting notifications by user:", error);
+      return [];
+    }
+  },
+
+  async markNotificationAsRead(id) {
+    try {
+      const [updated] = await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, id))
+        .returning();
+      if (!updated) throw new Error("Notification not found");
+      return updated;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
+  },
+
+  async markAllNotificationsAsRead(userId) {
+    try {
+      await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      throw error;
+    }
+  },
+
+  async deleteNotification(id) {
+    try {
+      await db.delete(notifications).where(eq(notifications.id, id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      throw error;
+    }
+  },
+
   get sessionStore() {
     const MemoryStore = createMemoryStore(session);
     return new MemoryStore({
@@ -445,12 +929,121 @@ const upload = multer({
   }
 });
 
+// Route parameter validation utilities (inline for Vercel self-contained deployment)
+function validatePositiveInt(paramValue, paramName, res) {
+  if (!paramValue) {
+    sendErrorResponse(res, new Error(`Missing ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  // Check if it's a positive integer string
+  if (!/^\d+$/.test(paramValue)) {
+    sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  const num = Number(paramValue);
+  if (!Number.isInteger(num) || num <= 0) {
+    sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+    return null;
+  }
+
+  return num;
+}
+
+function validateRouteParams(req, res, params) {
+  const validated = {};
+
+  for (const [paramName, type] of Object.entries(params)) {
+    const paramValue = req.params[paramName];
+
+    if (!paramValue) {
+      sendErrorResponse(res, new Error(`Missing ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+      return null;
+    }
+
+    if (type === 'positiveInt') {
+      if (!/^\d+$/.test(paramValue)) {
+        sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+        return null;
+      }
+
+      const num = Number(paramValue);
+      if (!Number.isInteger(num) || num <= 0) {
+        sendErrorResponse(res, new Error(`Invalid ${paramName}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+        return null;
+      }
+
+      validated[paramName] = num;
+    } else {
+      sendErrorResponse(res, new Error(`Unknown validation type: ${type}`), 400, ErrorMessages.BAD_REQUEST, 'ParamValidation');
+      return null;
+    }
+  }
+
+  return validated;
+}
+
 // Create Express app
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up session
+// Apply security headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", "'unsafe-inline'", "'unsafe-eval'",
+        "https://js.stripe.com",
+        "https://maps.googleapis.com",
+        "https://*.googleapis.com"
+      ],
+      styleSrc: [
+        "'self'", "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
+      imgSrc: [
+        "'self'", "data:", "https:", "blob:",
+        "https://maps.gstatic.com",
+        "https://maps.googleapis.com",
+        "https://*.google.com",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://maps.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.stripe.com",
+        "https://m.stripe.network",
+        "https://maps.googleapis.com",
+        "https://*.googleapis.com",
+        "https://*.google.com",
+        "https://api.cloudinary.com",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com"
+      ],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// Set up session - matches server/session.ts configuration
+console.log('[Session] Initializing session configuration...');
+
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret',
   resave: false,
@@ -459,19 +1052,59 @@ const sessionConfig = {
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours - consistent timeout
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax' // Use lax for better compatibility
   }
 };
 
+// Handle production-specific settings
 if (process.env.NODE_ENV === 'production') {
+  console.log('[Session] Configuring for production environment');
+  
+  // Trust the proxy in production environments like Vercel
   app.set('trust proxy', 1);
+  
+  // Set secure flag for HTTPS
+  sessionConfig.cookie.secure = true;
+  
+  // Log Vercel URL if detected
+  if (process.env.VERCEL_URL) {
+    console.log(`[Session] Detected Vercel deployment URL: ${process.env.VERCEL_URL}`);
+  }
+} else {
+  console.log('[Session] Configuring for development environment');
 }
 
+// Log session configuration for debugging
+console.log('[Session] Configuration:', {
+  maxAge: sessionConfig.cookie?.maxAge,
+  secure: sessionConfig.cookie?.secure,
+  sameSite: sessionConfig.cookie?.sameSite,
+  httpOnly: sessionConfig.cookie?.httpOnly
+});
+
 // Enable CORS with credentials
+// CORS configuration with secure origin whitelist
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+      process.env.ALLOWED_ORIGIN,
+      process.env.FRONTEND_URL
+    ].filter(Boolean)
+  : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000', 'http://127.0.0.1:5000'];
+
+safeLog('[CORS] Allowed origins configured:', { origins: allowedOrigins, environment: process.env.NODE_ENV });
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  const origin = req.headers.origin;
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else if (origin) {
+    safeLog(`[Security] CORS blocked request from origin: ${origin}`);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -482,14 +1115,7 @@ app.use((req, res, next) => {
   }
 });
 
-app.use(session({
-  ...sessionConfig,
-  cookie: {
-    ...sessionConfig.cookie,
-    sameSite: 'none',
-    secure: true
-  }
-}));
+app.use(session(sessionConfig));
 
 // Set up authentication
 app.use(passport.initialize());
@@ -500,16 +1126,77 @@ passport.use(
     { usernameField: 'email' },
     async (email, password, done) => {
       try {
-        const user = await storage.getUserByUsername(email);
+        safeLog(`[Auth] Login attempt with email: ${maskEmail(email)}`);
+        let user = await storage.getUserByUsername(email);
+        
         if (!user) {
+          safeLog(`[Auth] No user found for email: ${maskEmail(email)}`);
           return done(null, false, { message: "Invalid email or password" });
         }
+        
         if (user.status === 'deactivated') {
+          safeLog(`[Auth] Account deactivated for email: ${maskEmail(email)}`);
           return done(null, false, { message: "Account is deactivated" });
         }
-        // In a full implementation, we would verify the password here
+
+        // Check if account is locked
+        if (user.accountLockedUntil && new Date(user.accountLockedUntil) > new Date()) {
+          const lockMinutesRemaining = Math.ceil((new Date(user.accountLockedUntil).getTime() - Date.now()) / 60000);
+          safeLog(`[Auth] Account locked for user: ${maskEmail(email)}, ${lockMinutesRemaining} minutes remaining`);
+          return done(null, false, { 
+            message: `Account is locked due to too many failed login attempts. Please try again in ${lockMinutesRemaining} minute${lockMinutesRemaining !== 1 ? 's' : ''}.` 
+          });
+        }
+        
+        safeLog('[Auth] User found, verifying password');
+        const isValidPassword = await comparePasswords(password, user.password);
+        
+        if (!isValidPassword) {
+          // Increment failed attempts
+          const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+          const MAX_FAILED_ATTEMPTS = 5;
+          const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+          if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+            // Lock account
+            const accountLockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+            const updatedUser = await storage.updateUser(user.id, {
+              failedLoginAttempts: newFailedAttempts,
+              accountLockedUntil
+            });
+            
+            safeLog(`[Auth] Account locked for user: ${maskEmail(email)} after ${newFailedAttempts} failed attempts`);
+            return done(null, false, { 
+              message: "Account has been locked due to too many failed login attempts. Please try again in 15 minutes." 
+            });
+          } else {
+            // Update failed attempts
+            const updatedUser = await storage.updateUser(user.id, {
+              failedLoginAttempts: newFailedAttempts
+            });
+            
+            safeLog(`[Auth] Invalid password for email: ${maskEmail(email)}, attempt ${newFailedAttempts} of ${MAX_FAILED_ATTEMPTS}`);
+            const attemptsRemaining = MAX_FAILED_ATTEMPTS - newFailedAttempts;
+            return done(null, false, { 
+              message: `Invalid email or password. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining before account lockout.` 
+            });
+          }
+        }
+
+        // Successful login - clear failed attempts and lockout
+        if (user.failedLoginAttempts || user.accountLockedUntil) {
+          const updatedUser = await storage.updateUser(user.id, {
+            failedLoginAttempts: 0,
+            accountLockedUntil: null
+          });
+          // Use the updated user for the session
+          user = updatedUser;
+        }
+        
+        safeLog(`[Auth] Login successful for email: ${maskEmail(email)}`);
         return done(null, user);
       } catch (error) {
+        safeError(`[Auth] Error during authentication:`, error);
         return done(error);
       }
     }
@@ -517,21 +1204,22 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
+  safeLog(`[Auth] Serializing user: ${user.id}`);
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
-    console.log(`[Auth] Deserializing user: ${id}`);
+    safeLog(`[Auth] Deserializing user: ${id}`);
     const user = await storage.getUser(id);
     if (!user) {
-      console.log(`[Auth] No user found during deserialization for id: ${id}`);
+      safeLog(`[Auth] No user found during deserialization for id: ${id}`);
       return done(null, false);
     }
-    console.log(`[Auth] User deserialized successfully: ${id}`);
+    safeLog(`[Auth] User deserialized successfully: ${id}`);
     done(null, user);
   } catch (error) {
-    console.error(`[Auth] Error during deserialization:`, error);
+    safeError(`[Auth] Error during deserialization:`, error);
     done(error);
   }
 });
@@ -638,7 +1326,10 @@ app.get("/api/rfps/featured", async (req, res) => {
 
 app.get("/api/rfps/:id", async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -686,7 +1377,10 @@ app.post("/api/rfps", requireAuth, async (req, res) => {
 
 app.put("/api/rfps/:id", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp || rfp.organizationId !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -699,7 +1393,7 @@ app.put("/api/rfps/:id", requireAuth, async (req, res) => {
       deadline: req.body.deadline ? new Date(req.body.deadline) : undefined
     };
 
-    const updated = await storage.updateRfp(Number(req.params.id), processedData);
+    const updated = await storage.updateRfp(id, processedData);
     res.json(updated);
   } catch (error) {
     console.error('Error updating RFP:', error);
@@ -713,7 +1407,10 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -722,7 +1419,7 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ message: "You can only delete your own RFPs" });
     }
 
-    await storage.deleteRfp(Number(req.params.id));
+    await storage.deleteRfp(id);
     res.sendStatus(200);
   } catch (error) {
     console.error('Error deleting RFP:', error);
@@ -733,7 +1430,10 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
 // RFI routes
 app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
   try {
-    const rfp = await storage.getRfpById(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const rfp = await storage.getRfpById(id);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }
@@ -741,7 +1441,7 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
     const rfi = await storage.createRfi({
       ...req.body,
       email: req.user.email,
-      rfpId: Number(req.params.id),
+      rfpId: id,
     });
 
     res.status(201).json({
@@ -755,8 +1455,11 @@ app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
 
 app.get("/api/rfps/:id/rfi", async (req, res) => {
   try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
     // First get all RFIs for this RFP
-    const rfis = await storage.getRfisByRfp(Number(req.params.id));
+    const rfis = await storage.getRfisByRfp(id);
 
     // Then for each RFI, get the full user data
     const rfisWithOrgs = await Promise.all(
@@ -806,8 +1509,11 @@ app.get("/api/rfis", requireAuth, async (req, res) => {
 
 app.put("/api/rfps/:rfpId/rfi/:rfiId/status", requireAuth, async (req, res) => {
   try {
-    const rfpId = Number(req.params.rfpId);
-    const rfiId = Number(req.params.rfiId);
+    const params = validateRouteParams(req, res, { rfpId: 'positiveInt', rfiId: 'positiveInt' });
+    if (!params) return;
+
+    const rfpId = params.rfpId;
+    const rfiId = params.rfiId;
     const { status } = req.body;
 
     const rfp = await storage.getRfpById(rfpId);
@@ -903,7 +1609,10 @@ app.post("/api/analytics/track-view", requireAuth, async (req, res) => {
 
 app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
   try {
-    const analytics = await storage.getAnalyticsByRfpId(Number(req.params.id));
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const analytics = await storage.getAnalyticsByRfpId(id);
     if (!analytics) {
       return res.status(404).json({ message: "Analytics not found" });
     }
@@ -1259,7 +1968,7 @@ app.get("/api/user", requireAuth, (req, res) => {
 });
 
 // Auth routes
-app.post("/api/login", (req, res, next) => {
+app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {
             return next(err);
@@ -1331,8 +2040,7 @@ app.post("/api/user/deactivate", requireAuth, async (req, res) => {
             res.json(updatedUser);
         });
     } catch (error) {
-        console.error("Error deactivating account:", error);
-        res.status(400).json({ message: "Failed to deactivate account" });
+        sendErrorResponse(res, error, 400, ErrorMessages.UPDATE_FAILED, 'AccountDeactivation');
     }
 });
 
@@ -1347,13 +2055,12 @@ app.delete("/api/user", requireAuth, async (req, res) => {
 
         req.logout((err) => {
             if (err) {
-                return res.status(500).json({ message: "Error logging out" });
+                return sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'LogoutOnDelete');
             }
             res.json({ message: "Account deleted successfully" });
         });
     } catch (error) {
-        console.error("Error deleting account:", error);
-        res.status(400).json({ message: "Failed to delete account" });
+        sendErrorResponse(res, error, 400, ErrorMessages.DELETE_FAILED, 'AccountDeletion');
     }
 });
 
@@ -1376,19 +2083,379 @@ app.post("/api/user/onboarding", requireAuth, async (req, res) => {
 
         res.json(updatedUser);
     } catch (error) {
-        console.error("Error completing onboarding:", error);
-        res.status(400).json({
-            message: error instanceof Error ? error.message : "Failed to complete onboarding"
-        });
+        const safeMessage = getSafeValidationMessage(error);
+        sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.UPDATE_FAILED, 'Onboarding');
     }
 });
 
 // Employee routes - Mock implementation (removed as per routes.ts)
 
+// Get RFIs received by the user's organization
+app.get("/api/rfis/received", requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    safeLog(`Fetching received RFIs for user: ${user.id}`);
+
+    // Get all RFPs owned by this user
+    const allRfps = await storage.getRfps();
+    const userRfps = allRfps.filter(rfp => rfp.organizationId === user.id);
+    safeLog(`Found user RFPs: ${userRfps.length}`);
+
+    // Get all RFIs for these RFPs
+    const allReceivedRfis = [];
+    for (const rfp of userRfps) {
+      const rfpRfis = await storage.getRfisByRfp(rfp.id);
+      // Add RFP data to each RFI
+      const rfisWithRfp = rfpRfis.map(rfi => ({
+        ...rfi,
+        rfp
+      }));
+      allReceivedRfis.push(...rfisWithRfp);
+    }
+
+    safeLog(`Sending response with ${allReceivedRfis.length} received RFIs`);
+    res.json(allReceivedRfis);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReceivedRFIs');
+  }
+});
+
+// Get conversation messages for an RFI
+app.get("/api/rfis/:id/messages", requireAuth, async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+
+    // Get the RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const contractorRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the contractor who submitted the RFI
+    let hasPermission = !!contractorRfi;
+    
+    // If not the contractor, check if they're the RFP owner
+    if (!hasPermission) {
+      // Find all RFPs by this user and their RFIs
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to view RFI ${rfiId} conversation`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIConversation');
+    }
+
+    const messages = await storage.getRfiMessages(rfiId);
+    res.json(messages);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFIMessages');
+  }
+});
+
+// Send a message in RFI conversation
+app.post("/api/rfis/:id/messages", requireAuth, upload.array('attachment', 5), async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+    
+    const { message } = req.body;
+    const files = req.files || [];
+
+    if ((!message || message.trim() === "") && files.length === 0) {
+      return sendErrorResponse(res, new Error('Message content or file attachment is required'), 400, ErrorMessages.BAD_REQUEST, 'RFIMessageValidation');
+    }
+
+    // Get the RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const contractorRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the contractor who submitted the RFI
+    let hasPermission = !!contractorRfi;
+    let targetUserId = null; // Who to notify
+    
+    // If not the contractor, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        const foundRfi = rfpRfis.find(r => r.id === rfiId);
+        if (foundRfi) {
+          hasPermission = true;
+          // Find the contractor user to notify
+          const contractorUser = await storage.getUserByUsername(foundRfi.email);
+          if (contractorUser) {
+            targetUserId = contractorUser.id;
+          }
+          break;
+        }
+      }
+    } else {
+      // User is contractor, find RFP owner to notify
+      if (contractorRfi && contractorRfi.rfpId) {
+        const rfp = await storage.getRfpById(contractorRfi.rfpId);
+        if (rfp) {
+          targetUserId = rfp.organizationId;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to send message in RFI ${rfiId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIMessage');
+    }
+
+    // Create the message
+    const newMessage = await storage.createRfiMessage({
+      rfiId,
+      senderId: req.user.id,
+      message: message ? message.trim() : ""
+    });
+
+    // Handle file attachments if present
+    if (files.length > 0) {
+      const ALLOWED_MIME_TYPES = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+      
+      for (const file of files) {
+        try {
+          // SECURITY: Validate file type and size
+          if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+            console.warn(`Rejected file ${file.originalname}: invalid mime type ${file.mimetype}`);
+            continue;
+          }
+          
+          if (file.size > MAX_FILE_SIZE) {
+            console.warn(`Rejected file ${file.originalname}: size ${file.size} exceeds limit ${MAX_FILE_SIZE}`);
+            continue;
+          }
+          
+          // SECURITY: Sanitize filename - remove dangerous characters
+          const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+          
+          // For entrypoint.js, we'll store files locally or use a simple upload
+          // In production, this would use Cloudinary like in server/routes.ts
+          await storage.createRfiAttachment({
+            messageId: newMessage.id,
+            filename: sanitizedFilename,
+            fileUrl: `/uploads/rfi-attachments/${Date.now()}_${sanitizedFilename}`,
+            fileSize: file.size,
+            mimeType: file.mimetype
+          });
+          
+          safeLog(`Successfully uploaded file: ${sanitizedFilename} (${file.size} bytes)`);
+        } catch (uploadError) {
+          console.error(`File upload error for ${file.originalname}:`, uploadError);
+          // Continue with other files even if one fails
+        }
+      }
+    }
+
+    // Auto-mark RFI as "responded" if the sender is not the contractor
+    if (hasPermission && !contractorRfi) {
+      // This is the RFP owner responding, mark as responded
+      await storage.updateRfiStatus(rfiId, "responded");
+    }
+
+    // Create notification for the other party
+    if (targetUserId) {
+      const notification = await storage.createNotification({
+        userId: targetUserId,
+        type: "rfi_response",
+        title: "New RFI Message",
+        message: `New message in RFI conversation`,
+        relatedId: rfiId,
+        relatedType: "rfi"
+      });
+      
+      // Send real-time notification
+      if (global.sendNotificationToUser) {
+        global.sendNotificationToUser(targetUserId, notification);
+      }
+    }
+
+    // Return the message with sender information and attachments
+    const messageWithSender = await storage.getRfiMessages(rfiId);
+    const createdMessage = messageWithSender.find(m => m.id === newMessage.id);
+    
+    res.status(201).json(createdMessage);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'RFIMessage');
+  }
+});
+
+// Download attachment endpoint with authentication
+app.get("/api/attachments/:attachmentId/download", requireAuth, async (req, res) => {
+  try {
+    const attachmentId = validatePositiveInt(req.params.attachmentId, 'Attachment ID', res);
+    if (attachmentId === null) return;
+    
+    // Get attachment details
+    const attachment = await storage.getRfiAttachmentById(attachmentId);
+    if (!attachment) {
+      return res.status(404).json({ message: "Attachment not found" });
+    }
+    
+    // Get the RFI message this attachment belongs to
+    const message = await storage.getRfiMessageById(attachment.messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    
+    // Check if user has permission to access this attachment
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const userRfi = rfis.find(r => r.id === message.rfiId);
+    
+    let hasPermission = !!userRfi;
+    
+    // If not the submitter, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === message.rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+    
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to access attachment ${req.params.attachmentId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
+    }
+    
+    // Redirect to the file URL
+    res.redirect(attachment.fileUrl);
+    
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'AttachmentDownload');
+  }
+});
+
+// Delete RFI endpoint
+app.delete("/api/rfis/:id", requireAuth, async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+    
+    // Get RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const userRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the one who submitted the RFI
+    let hasPermission = !!userRfi;
+    
+    // If not the submitter, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to delete RFI ${rfiId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIDeletion');
+    }
+
+    await storage.deleteRfi(rfiId);
+    res.json({ message: "RFI deleted successfully" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFIDeletion');
+  }
+});
+
+// Notification routes
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const notifications = await storage.getNotificationsByUser(req.user.id);
+    res.json(notifications);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Notifications');
+  }
+});
+
+app.post("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    // In entrypoint.js, we skip Zod validation for simplicity
+    const notification = await storage.createNotification(req.body);
+    
+    // Send real-time notification if user is connected
+    if (global.sendNotificationToUser) {
+      global.sendNotificationToUser(req.body.userId, notification);
+    }
+    
+    res.status(201).json(notification);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'NotificationCreation');
+  }
+});
+
+app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+    if (id === null) return;
+    
+    const notification = await storage.markNotificationAsRead(id);
+    res.json(notification);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkRead');
+  }
+});
+
+app.patch("/api/notifications/read-all", requireAuth, async (req, res) => {
+  try {
+    await storage.markAllNotificationsAsRead(req.user.id);
+    res.json({ message: "All notifications marked as read" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkAllRead');
+  }
+});
+
+app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+    if (id === null) return;
+    
+    await storage.deleteNotification(id);
+    res.json({ message: "Notification deleted" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-res.status(500).json({ message: "Internal server error" });
+    sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'GlobalErrorHandler');
 });
 
 export default app;

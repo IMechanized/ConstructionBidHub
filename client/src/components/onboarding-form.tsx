@@ -18,40 +18,45 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getCertificationClasses } from "@/lib/utils";
 
 const TRADE_OPTIONS = [
+  "Owner",
+  "Construction Manager",
   "General Contractor",
-  "Electrical",
-  "Plumbing",
-  "HVAC",
-  "Carpentry",
-  "Masonry",
-  "Painting",
-  "Roofing",
-  "Flooring",
-  "Landscaping",
-  "Concrete",
-  "Steel/Metal Work",
-  "Glass/Glazing",
-  "Insulation",
-  "Drywall",
-  "Other",
+  "Division 02 — Site Works",
+  "Division 03 — Concrete",
+  "Division 04 — Masonry",
+  "Division 05 — Metals",
+  "Division 06 — Wood and Plastics",
+  "Division 07 — Thermal and Moisture Protection",
+  "Division 08 — Doors and Windows",
+  "Division 09 — Finishes",
+  "Division 10 — Specialties",
+  "Division 11 — Equipment",
+  "Division 12 — Furnishings",
+  "Division 13 — Special Construction",
+  "Division 14 — Conveying Systems",
+  "Division 15 — Mechanical/Plumbing",
+  "Division 16 — Electrical",
 ];
 
-const MINORITY_GROUPS = [
-  "African American",
-  "Hispanic American",
-  "Asian Pacific American",
-  "Native American",
-  "Subcontinent Asian American",
-  "Other",
-];
+// Phone number formatting utility
+const formatPhoneNumber = (value: string) => {
+  if (!value) return value;
+  const phoneNumber = value.replace(/[^\d]/g, '');
+  const phoneNumberLength = phoneNumber.length;
+  
+  if (phoneNumberLength < 4) return phoneNumber;
+  if (phoneNumberLength < 7) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  }
+  return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
 
 type FormValues = {
-  contact: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
   telephone: string;
   cell: string;
-  businessEmail: string;
-  isMinorityOwned: boolean;
-  minorityGroup: string;
   trade: string;
   certificationName: string[];
   logo: File | string | null;
@@ -75,12 +80,11 @@ export default function OnboardingForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      contact: "",
+      firstName: "",
+      lastName: "",
+      jobTitle: "",
       telephone: "",
       cell: "",
-      businessEmail: "",
-      isMinorityOwned: false,
-      minorityGroup: "",
       trade: "",
       certificationName: [],
       logo: null,
@@ -167,10 +171,22 @@ export default function OnboardingForm() {
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // File size validation
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
-          title: "Error",
-          description: "Logo file size must be less than 5MB",
+          title: "File Too Large",
+          description: "Logo file size must be less than 5MB. Please compress your image or choose a different file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // File type validation
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a PNG, JPG, or SVG file for best results.",
           variant: "destructive",
         });
         return;
@@ -182,6 +198,11 @@ export default function OnboardingForm() {
       };
       reader.readAsDataURL(file);
       form.setValue('logo', file);
+      
+      toast({
+        title: "Logo Uploaded",
+        description: "Your logo has been uploaded successfully. Preview it below in different sizes.",
+      });
     }
   };
 
@@ -228,12 +249,40 @@ export default function OnboardingForm() {
 
               <FormField
                 control={form.control}
-                name="contact"
+                name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Full Name" />
+                      <Input {...field} placeholder="First Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Last Name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jobTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Project Manager, Site Supervisor, etc." />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,7 +296,15 @@ export default function OnboardingForm() {
                   <FormItem>
                     <FormLabel>Telephone</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Office Phone" type="tel" />
+                      <Input 
+                        {...field} 
+                        placeholder="(555) 123-4567" 
+                        type="tel"
+                        onChange={(e) => {
+                          const formattedValue = formatPhoneNumber(e.target.value);
+                          field.onChange(formattedValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -261,21 +318,15 @@ export default function OnboardingForm() {
                   <FormItem>
                     <FormLabel>Cell Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Mobile Number" type="tel" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="businessEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Business Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Business Email" type="email" />
+                      <Input 
+                        {...field} 
+                        placeholder="(555) 123-4567" 
+                        type="tel"
+                        onChange={(e) => {
+                          const formattedValue = formatPhoneNumber(e.target.value);
+                          field.onChange(formattedValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -340,95 +391,88 @@ export default function OnboardingForm() {
                 render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel>Company Logo</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-col items-center gap-4">
-                        <label
-                          htmlFor="logo-upload"
-                          className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors"
-                        >
-                          {isUploading ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-8 w-8 animate-spin" />
-                              <span>Uploading...</span>
-                            </div>
-                          ) : logoPreview ? (
-                            <img
-                              src={logoPreview}
-                              alt="Logo preview"
-                              className="max-h-32 object-contain"
+                    <div className="space-y-3">
+                      <div className="bg-muted/50 rounded-lg p-4 text-sm">
+                        <h4 className="font-medium mb-2">Logo Guidelines:</h4>
+                        <ul className="space-y-1 text-muted-foreground">
+                          <li>• <strong>Format:</strong> PNG recommended (for transparency), JPG, or SVG</li>
+                          <li>• <strong>Size:</strong> Minimum 200×200px, maximum 1000×1000px</li>
+                          <li>• <strong>File Size:</strong> Under 5MB</li>
+                          <li>• <strong>Design:</strong> Clean, professional, readable at small sizes</li>
+                          <li>• <strong>Background:</strong> Transparent or white background works best</li>
+                        </ul>
+                      </div>
+                      
+                      <FormControl>
+                        <div className="flex flex-col gap-4">
+                          <label
+                            htmlFor="logo-upload"
+                            className="cursor-pointer flex items-center justify-center w-full border-2 border-dashed rounded-lg p-8 hover:border-primary transition-colors bg-background"
+                          >
+                            {isUploading ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                                <span>Uploading...</span>
+                              </div>
+                            ) : logoPreview ? (
+                              <img
+                                src={logoPreview}
+                                alt="Logo preview"
+                                className="max-h-32 object-contain"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Upload className="h-8 w-8" />
+                                <span className="font-medium">Click to upload your company logo</span>
+                                <span className="text-xs">or drag and drop your file here</span>
+                              </div>
+                            )}
+                            <input
+                              id="logo-upload"
+                              type="file"
+                              ref={fileInputRef}
+                              accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+                              className="hidden"
+                              onChange={handleLogoChange}
+                              disabled={isUploading}
                             />
-                          ) : (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <Upload className="h-8 w-8" />
-                              <span>Click to upload logo</span>
+                          </label>
+                          
+                          {logoPreview && (
+                            <div className="bg-muted/30 rounded-lg p-4">
+                              <h4 className="font-medium mb-3">Preview at Different Sizes:</h4>
+                              <div className="grid grid-cols-3 gap-4 items-center">
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-2 mb-2 flex items-center justify-center h-16">
+                                    <img src={logoPreview} alt="Large preview" className="max-h-12 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Large (Profile)</span>
+                                </div>
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-1 mb-2 flex items-center justify-center h-10">
+                                    <img src={logoPreview} alt="Medium preview" className="max-h-6 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Medium (Directory)</span>
+                                </div>
+                                <div className="text-center">
+                                  <div className="bg-white border rounded p-1 mb-2 flex items-center justify-center h-8">
+                                    <img src={logoPreview} alt="Small preview" className="max-h-4 max-w-full object-contain" />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">Small (Lists)</span>
+                                </div>
+                              </div>
+                              <div className="mt-3 text-xs text-muted-foreground">
+                                ✓ Your logo looks good at all sizes. Make sure text and details are clear in the smallest preview.
+                              </div>
                             </div>
                           )}
-                          <input
-                            id="logo-upload"
-                            type="file"
-                            ref={fileInputRef}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoChange}
-                            disabled={isUploading}
-                          />
-                        </label>
-                      </div>
-                    </FormControl>
+                        </div>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="isMinorityOwned"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Minority-Owned Business
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("isMinorityOwned") && (
-                <FormField
-                  control={form.control}
-                  name="minorityGroup"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minority Group</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select minority group" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {MINORITY_GROUPS.map((group) => (
-                            <SelectItem key={group} value={group}>
-                              {group}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <div className="flex gap-4">
                 <Button

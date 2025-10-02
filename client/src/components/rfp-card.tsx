@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { MapPreview } from "@/components/map-preview";
 
 interface RfpCardProps {
   rfp: Rfp & {
@@ -73,14 +74,27 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
           </p>
         )}
 
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Location:</span>
-            <span>{rfp.jobLocation}</span>
+        <div className="space-y-3">
+          {/* Location Map Preview */}
+          <div className="w-full">
+            <MapPreview
+              address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
+              className="w-full h-24 rounded-md"
+              onClick={() => {
+                setLocation(`/rfp/${rfp.id}`);
+              }}
+            />
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Deadline:</span>
-            <span>{format(new Date(rfp.deadline), 'MMM dd, yyyy')}</span>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Location:</span>
+              <span className="text-right text-xs">{rfp.jobCity}, {rfp.jobState}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Deadline:</span>
+              <span>{format(new Date(rfp.deadline), 'MMM dd, yyyy')}</span>
+            </div>
           </div>
         </div>
 

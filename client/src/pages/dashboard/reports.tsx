@@ -90,10 +90,10 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-3">RFPs by Month</h3>
-                <div className="h-[300px] w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <Card className="p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-3">RFPs by Month</h3>
+                <div className="h-[250px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -106,9 +106,9 @@ export default function ReportsPage() {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-3">RFPs by Status</h3>
-                <div className="h-[300px] w-full">
+              <Card className="p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-3">RFPs by Status</h3>
+                <div className="h-[250px] sm:h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={statusData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -122,8 +122,8 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            <Card className="p-6 mt-6">
-              <h2 className="text-xl font-semibold mb-4">RFP Reports</h2>
+            <Card className="p-4 sm:p-6 mt-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">RFP Reports</h2>
               <div className="overflow-x-auto">
                 {userRfps.length > 0 ? (
                   <RfpReport rfps={userRfps} />

@@ -18,6 +18,18 @@ externalPort = 80
 localPort = 5001
 externalPort = 3000
 
+[[ports]]
+localPort = 35649
+externalPort = 3003
+
+[[ports]]
+localPort = 37555
+externalPort = 3002
+
+[[ports]]
+localPort = 43607
+externalPort = 3001
+
 [workflows]
 
 [[workflows.workflow]]
@@ -43,3 +55,6 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+integrations = ["javascript_stripe:1.0.0", "javascript_websocket:1.0.0"]

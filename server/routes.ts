@@ -16,6 +16,7 @@ import cookieSignature from 'cookie-signature';
 import { getSessionSecret } from './lib/session-config';
 import helmet from 'helmet';
 import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
+import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -35,6 +36,9 @@ const upload = multer({
 // Helper function for checking auth within route handlers
 function requireAuth(req: Request, res?: Response) {
   if (!req.isAuthenticated()) {
+    // Always log authentication failure for audit trail
+    logAuthenticationFailure(req.path, req);
+    
     if (res) {
       // If response object is provided, send sanitized 401
       sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
@@ -255,7 +259,8 @@ export function registerRoutes(app: Express): Server {
 
       const rfp = await storage.getRfpById(Number(req.params.id));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized" });
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPUpdate');
       }
 
       // Validate the update data using the insert schema but make all fields optional
@@ -283,7 +288,8 @@ export function registerRoutes(app: Express): Server {
     requireAuth(req);
     const rfp = await storage.getRfpById(Number(req.params.id));
     if (!rfp || rfp.organizationId !== req.user?.id) {
-      return res.status(403).send("Unauthorized");
+      logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'delete', req);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDelete');
     }
 
     await storage.deleteRfp(Number(req.params.id));
@@ -321,7 +327,8 @@ export function registerRoutes(app: Express): Server {
       requireAuth(req);
       const employee = await storage.getEmployee(Number(req.params.id));
       if (!employee || employee.organizationId !== req.user!.id) {
-        return res.status(403).json({ message: "Unauthorized: Employee does not belong to your organization" });
+        logAuthorizationFailure(req.user?.id, `Employee ${req.params.id}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'EmployeeDelete');
       }
       await storage.deleteEmployee(Number(req.params.id));
       res.sendStatus(200);
@@ -661,7 +668,8 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(rfpId);
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to update this RFI" });
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIUpdate');
       }
 
       // Get the RFI details before updating
@@ -732,7 +740,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       if (!hasPermission) {
-        return res.status(403).json({ message: "Unauthorized to view this RFI conversation" });
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId} conversation`, 'view', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIConversation');
       }
 
       const messages = await storage.getRfiMessages(rfiId);
@@ -794,7 +803,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       if (!hasPermission) {
-        return res.status(403).json({ message: "Unauthorized to send message to this RFI" });
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'send message', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIMessage');
       }
 
       // Create the message
@@ -912,7 +922,8 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
       // Create payment intent with Stripe
@@ -953,7 +964,8 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        return res.status(403).json({ message: "Unauthorized to feature this RFP" });
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
       // Update RFP to be featured
@@ -1014,7 +1026,8 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (!hasPermission) {
-        return res.status(403).json({ message: "Unauthorized to access this attachment" });
+        logAuthorizationFailure(req.user?.id, `Attachment ${req.params.id}`, 'access', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
       }
       
       // Redirect to the Cloudinary URL (this maintains authentication context)
@@ -1054,7 +1067,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       if (!hasPermission) {
-        return res.status(403).json({ message: "Unauthorized to delete this RFI" });
+        logAuthorizationFailure(req.user?.id, `RFI ${rfiId}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIDeletion');
       }
 
       await storage.deleteRfi(rfiId);

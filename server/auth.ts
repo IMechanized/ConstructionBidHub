@@ -10,6 +10,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
 import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
 import { safeLog, safeError, createUserLogId, maskEmail } from "./lib/safe-logging.js";
 import rateLimit from "express-rate-limit";
+import { logFailedLogin, logSuccessfulLogin, logRateLimitHit } from "./lib/security-audit.js";
 
 declare global {
   namespace Express {
@@ -40,7 +41,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    safeLog(`[Security] Rate limit exceeded for login from IP: ${req.ip}`);
+    logRateLimitHit('/api/login', req);
     res.status(429).json({ 
       message: "Too many login attempts from this IP, please try again after 15 minutes" 
     });
@@ -54,7 +55,7 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    safeLog(`[Security] Rate limit exceeded for registration from IP: ${req.ip}`);
+    logRateLimitHit('/api/register', req);
     res.status(429).json({ 
       message: "Too many accounts created from this IP, please try again after an hour" 
     });
@@ -73,14 +74,14 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(
-      { usernameField: 'email' },
-      async (email: string, password: string, done: any) => {
+      { usernameField: 'email', passReqToCallback: true },
+      async (req: Request, email: string, password: string, done: any) => {
         try {
           safeLog(`[Auth] Login attempt with email: ${maskEmail(email)}`);
           const user = await storage.getUserByUsername(email);
 
           if (!user) {
-            safeLog(`[Auth] No user found for email: ${maskEmail(email)}`);
+            logFailedLogin(email, 'User not found', req);
             return done(null, false, { message: "Invalid email or password" });
           }
 
@@ -88,11 +89,11 @@ export function setupAuth(app: Express) {
           const isValidPassword = await comparePasswords(password, user.password);
 
           if (!isValidPassword) {
-            safeLog(`[Auth] Invalid password for email: ${maskEmail(email)}`);
+            logFailedLogin(email, 'Invalid password', req);
             return done(null, false, { message: "Invalid email or password" });
           }
 
-          safeLog(`[Auth] Login successful for email: ${maskEmail(email)}`);
+          logSuccessfulLogin(user.id, email, req);
           return done(null, user);
         } catch (error) {
           safeError(`[Auth] Error during authentication:`, error);

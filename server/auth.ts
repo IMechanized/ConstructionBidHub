@@ -111,7 +111,7 @@ export function setupAuth(app: Express) {
                 accountLockedUntil
               });
               
-              logAccountLockout(updatedUser.id, email, newFailedAttempts, req);
+              logAccountLockout(updatedUser.id, email, `${newFailedAttempts} failed login attempts`);
               logFailedLogin(email, 'Invalid password - account locked', req);
               
               return done(null, false, { 

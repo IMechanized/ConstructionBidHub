@@ -1877,6 +1877,369 @@ app.post("/api/user/onboarding", requireAuth, async (req, res) => {
 
 // Employee routes - Mock implementation (removed as per routes.ts)
 
+// Get RFIs received by the user's organization
+app.get("/api/rfis/received", requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    safeLog(`Fetching received RFIs for user: ${user.id}`);
+
+    // Get all RFPs owned by this user
+    const allRfps = await storage.getRfps();
+    const userRfps = allRfps.filter(rfp => rfp.organizationId === user.id);
+    safeLog(`Found user RFPs: ${userRfps.length}`);
+
+    // Get all RFIs for these RFPs
+    const allReceivedRfis = [];
+    for (const rfp of userRfps) {
+      const rfpRfis = await storage.getRfisByRfp(rfp.id);
+      // Add RFP data to each RFI
+      const rfisWithRfp = rfpRfis.map(rfi => ({
+        ...rfi,
+        rfp
+      }));
+      allReceivedRfis.push(...rfisWithRfp);
+    }
+
+    safeLog(`Sending response with ${allReceivedRfis.length} received RFIs`);
+    res.json(allReceivedRfis);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReceivedRFIs');
+  }
+});
+
+// Get conversation messages for an RFI
+app.get("/api/rfis/:id/messages", requireAuth, async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+
+    // Get the RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const contractorRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the contractor who submitted the RFI
+    let hasPermission = !!contractorRfi;
+    
+    // If not the contractor, check if they're the RFP owner
+    if (!hasPermission) {
+      // Find all RFPs by this user and their RFIs
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to view RFI ${rfiId} conversation`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIConversation');
+    }
+
+    const messages = await storage.getRfiMessages(rfiId);
+    res.json(messages);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFIMessages');
+  }
+});
+
+// Send a message in RFI conversation
+app.post("/api/rfis/:id/messages", requireAuth, upload.array('attachment', 5), async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+    
+    const { message } = req.body;
+    const files = req.files || [];
+
+    if ((!message || message.trim() === "") && files.length === 0) {
+      return sendErrorResponse(res, new Error('Message content or file attachment is required'), 400, ErrorMessages.BAD_REQUEST, 'RFIMessageValidation');
+    }
+
+    // Get the RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const contractorRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the contractor who submitted the RFI
+    let hasPermission = !!contractorRfi;
+    let targetUserId = null; // Who to notify
+    
+    // If not the contractor, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        const foundRfi = rfpRfis.find(r => r.id === rfiId);
+        if (foundRfi) {
+          hasPermission = true;
+          // Find the contractor user to notify
+          const contractorUser = await storage.getUserByUsername(foundRfi.email);
+          if (contractorUser) {
+            targetUserId = contractorUser.id;
+          }
+          break;
+        }
+      }
+    } else {
+      // User is contractor, find RFP owner to notify
+      if (contractorRfi && contractorRfi.rfpId) {
+        const rfp = await storage.getRfpById(contractorRfi.rfpId);
+        if (rfp) {
+          targetUserId = rfp.organizationId;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to send message in RFI ${rfiId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIMessage');
+    }
+
+    // Create the message
+    const newMessage = await storage.createRfiMessage({
+      rfiId,
+      senderId: req.user.id,
+      message: message ? message.trim() : ""
+    });
+
+    // Handle file attachments if present
+    if (files.length > 0) {
+      const ALLOWED_MIME_TYPES = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+      
+      for (const file of files) {
+        try {
+          // SECURITY: Validate file type and size
+          if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+            console.warn(`Rejected file ${file.originalname}: invalid mime type ${file.mimetype}`);
+            continue;
+          }
+          
+          if (file.size > MAX_FILE_SIZE) {
+            console.warn(`Rejected file ${file.originalname}: size ${file.size} exceeds limit ${MAX_FILE_SIZE}`);
+            continue;
+          }
+          
+          // SECURITY: Sanitize filename - remove dangerous characters
+          const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+          
+          // For entrypoint.js, we'll store files locally or use a simple upload
+          // In production, this would use Cloudinary like in server/routes.ts
+          await storage.createRfiAttachment({
+            messageId: newMessage.id,
+            filename: sanitizedFilename,
+            fileUrl: `/uploads/rfi-attachments/${Date.now()}_${sanitizedFilename}`,
+            fileSize: file.size,
+            mimeType: file.mimetype
+          });
+          
+          safeLog(`Successfully uploaded file: ${sanitizedFilename} (${file.size} bytes)`);
+        } catch (uploadError) {
+          console.error(`File upload error for ${file.originalname}:`, uploadError);
+          // Continue with other files even if one fails
+        }
+      }
+    }
+
+    // Auto-mark RFI as "responded" if the sender is not the contractor
+    if (hasPermission && !contractorRfi) {
+      // This is the RFP owner responding, mark as responded
+      await storage.updateRfiStatus(rfiId, "responded");
+    }
+
+    // Create notification for the other party
+    if (targetUserId) {
+      const notification = await storage.createNotification({
+        userId: targetUserId,
+        type: "rfi_response",
+        title: "New RFI Message",
+        message: `New message in RFI conversation`,
+        relatedId: rfiId,
+        relatedType: "rfi"
+      });
+      
+      // Send real-time notification
+      if (global.sendNotificationToUser) {
+        global.sendNotificationToUser(targetUserId, notification);
+      }
+    }
+
+    // Return the message with sender information and attachments
+    const messageWithSender = await storage.getRfiMessages(rfiId);
+    const createdMessage = messageWithSender.find(m => m.id === newMessage.id);
+    
+    res.status(201).json(createdMessage);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'RFIMessage');
+  }
+});
+
+// Download attachment endpoint with authentication
+app.get("/api/attachments/:attachmentId/download", requireAuth, async (req, res) => {
+  try {
+    const attachmentId = validatePositiveInt(req.params.attachmentId, 'Attachment ID', res);
+    if (attachmentId === null) return;
+    
+    // Get attachment details
+    const attachment = await storage.getRfiAttachmentById(attachmentId);
+    if (!attachment) {
+      return res.status(404).json({ message: "Attachment not found" });
+    }
+    
+    // Get the RFI message this attachment belongs to
+    const message = await storage.getRfiMessageById(attachment.messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    
+    // Check if user has permission to access this attachment
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const userRfi = rfis.find(r => r.id === message.rfiId);
+    
+    let hasPermission = !!userRfi;
+    
+    // If not the submitter, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === message.rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+    
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to access attachment ${req.params.attachmentId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
+    }
+    
+    // Redirect to the file URL
+    res.redirect(attachment.fileUrl);
+    
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'AttachmentDownload');
+  }
+});
+
+// Delete RFI endpoint
+app.delete("/api/rfis/:id", requireAuth, async (req, res) => {
+  try {
+    const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
+    if (rfiId === null) return;
+    
+    // Get RFI details to check permissions
+    const rfis = await storage.getRfisByEmail(req.user.email);
+    const userRfi = rfis.find(r => r.id === rfiId);
+    
+    // Check if user is the one who submitted the RFI
+    let hasPermission = !!userRfi;
+    
+    // If not the submitter, check if they're the RFP owner
+    if (!hasPermission) {
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user.id);
+      
+      for (const rfp of userRfps) {
+        const rfpRfis = await storage.getRfisByRfp(rfp.id);
+        if (rfpRfis.some(r => r.id === rfiId)) {
+          hasPermission = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to delete RFI ${rfiId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFIDeletion');
+    }
+
+    await storage.deleteRfi(rfiId);
+    res.json({ message: "RFI deleted successfully" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFIDeletion');
+  }
+});
+
+// Notification routes
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const notifications = await storage.getNotificationsByUser(req.user.id);
+    res.json(notifications);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'Notifications');
+  }
+});
+
+app.post("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    // In entrypoint.js, we skip Zod validation for simplicity
+    const notification = await storage.createNotification(req.body);
+    
+    // Send real-time notification if user is connected
+    if (global.sendNotificationToUser) {
+      global.sendNotificationToUser(req.body.userId, notification);
+    }
+    
+    res.status(201).json(notification);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'NotificationCreation');
+  }
+});
+
+app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+    if (id === null) return;
+    
+    const notification = await storage.markNotificationAsRead(id);
+    res.json(notification);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkRead');
+  }
+});
+
+app.patch("/api/notifications/read-all", requireAuth, async (req, res) => {
+  try {
+    await storage.markAllNotificationsAsRead(req.user.id);
+    res.json({ message: "All notifications marked as read" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'NotificationMarkAllRead');
+  }
+});
+
+app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Notification ID', res);
+    if (id === null) return;
+    
+    await storage.deleteNotification(id);
+    res.json({ message: "Notification deleted" });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     sendErrorResponse(res, err, 500, ErrorMessages.INTERNAL_ERROR, 'GlobalErrorHandler');

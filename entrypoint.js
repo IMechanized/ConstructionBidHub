@@ -68,6 +68,100 @@ try {
   console.error(`❌ Failed to initialize Stripe: ${error.message}`);
 }
 
+// Safe logging utilities for authentication (Vercel deployment version matching server/lib/safe-logging.ts)
+const SENSITIVE_FIELDS = [
+  'password', 'confirmPassword', 'currentPassword', 'newPassword',
+  'client_secret', 'clientSecret',
+  'token', 'accessToken', 'refreshToken', 'apiKey', 'api_key',
+  'secret', 'privateKey', 'private_key',
+  'authorization', 'set-cookie', 'cookie', 'session', 'csrf',
+  'id_token', 'refresh_token', 'access_token',
+  'creditCard', 'ssn', 'socialSecurityNumber',
+  'verificationToken', 'resetToken'
+];
+
+const MASKABLE_FIELDS = ['email', 'username', 'phoneNumber', 'phone'];
+
+function maskEmail(email) {
+  if (!email || typeof email !== 'string') return '[invalid_email]';
+  const [username, domain] = email.split('@');
+  if (!username || !domain) return '[invalid_email]';
+  if (username.length <= 1) return `${username}***@${domain}`;
+  return `${username[0]}***@${domain}`;
+}
+
+function maskString(value, showStart = 1, showEnd = 0) {
+  if (!value || typeof value !== 'string') return '[redacted]';
+  if (value.length <= showStart + showEnd) return '[redacted]';
+  const start = value.substring(0, showStart);
+  const end = showEnd > 0 ? value.substring(value.length - showEnd) : '';
+  const middle = '*'.repeat(Math.max(3, value.length - showStart - showEnd));
+  return start + middle + end;
+}
+
+function sanitizeObject(obj, depth = 0) {
+  if (depth > 10) return '[max_depth_reached]';
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item, depth + 1));
+  }
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      // Completely redact sensitive fields
+      if (SENSITIVE_FIELDS.some(field => lowerKey.includes(field.toLowerCase()))) {
+        sanitized[key] = '[REDACTED]';
+      }
+      // Mask email-like and other maskable fields
+      else if (MASKABLE_FIELDS.some(field => lowerKey.includes(field.toLowerCase()))) {
+        if (typeof value === 'string' && value.includes('@')) {
+          sanitized[key] = maskEmail(value);
+        } else if (typeof value === 'string') {
+          sanitized[key] = maskString(value, 2, 0);
+        } else {
+          sanitized[key] = sanitizeObject(value, depth + 1);
+        }
+      }
+      // Recursively sanitize nested objects
+      else {
+        sanitized[key] = sanitizeObject(value, depth + 1);
+      }
+    }
+    return sanitized;
+  }
+  return obj;
+}
+
+function safeLog(message, data) {
+  if (data !== undefined) {
+    console.log(message, sanitizeObject(data));
+  } else {
+    console.log(message);
+  }
+}
+
+function safeError(message, error) {
+  if (error !== undefined) {
+    if (error instanceof Error) {
+      const sanitizedError = {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        ...sanitizeObject({ ...error })
+      };
+      console.error(message, sanitizedError);
+    } else {
+      console.error(message, sanitizeObject(error));
+    }
+  } else {
+    console.error(message);
+  }
+}
+
 // Password hashing and comparison utilities
 const scryptAsync = promisify(scrypt);
 
@@ -88,7 +182,7 @@ async function comparePasswords(supplied, stored) {
     return timingSafeEqual(hashedBuf, suppliedBuf);
   } catch (error) {
     // Handle any errors in password comparison (e.g., invalid hex)
-    console.error('Password comparison error:', error.message);
+    safeError('Password comparison error:', error);
     return false;
   }
 }
@@ -477,7 +571,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up session
+// Set up session - matches server/session.ts configuration
+console.log('[Session] Initializing session configuration...');
+
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret',
   resave: false,
@@ -486,14 +582,36 @@ const sessionConfig = {
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours - consistent timeout
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax' // Use lax for better compatibility
   }
 };
 
+// Handle production-specific settings
 if (process.env.NODE_ENV === 'production') {
+  console.log('[Session] Configuring for production environment');
+  
+  // Trust the proxy in production environments like Vercel
   app.set('trust proxy', 1);
+  
+  // Set secure flag for HTTPS
+  sessionConfig.cookie.secure = true;
+  
+  // Log Vercel URL if detected
+  if (process.env.VERCEL_URL) {
+    console.log(`[Session] Detected Vercel deployment URL: ${process.env.VERCEL_URL}`);
+  }
+} else {
+  console.log('[Session] Configuring for development environment');
 }
+
+// Log session configuration for debugging
+console.log('[Session] Configuration:', {
+  maxAge: sessionConfig.cookie?.maxAge,
+  secure: sessionConfig.cookie?.secure,
+  sameSite: sessionConfig.cookie?.sameSite,
+  httpOnly: sessionConfig.cookie?.httpOnly
+});
 
 // Enable CORS with credentials
 app.use((req, res, next) => {
@@ -509,14 +627,7 @@ app.use((req, res, next) => {
   }
 });
 
-app.use(session({
-  ...sessionConfig,
-  cookie: {
-    ...sessionConfig.cookie,
-    sameSite: 'none',
-    secure: true
-  }
-}));
+app.use(session(sessionConfig));
 
 // Set up authentication
 app.use(passport.initialize());
@@ -527,22 +638,31 @@ passport.use(
     { usernameField: 'email' },
     async (email, password, done) => {
       try {
+        safeLog(`[Auth] Login attempt with email: ${maskEmail(email)}`);
         const user = await storage.getUserByUsername(email);
+        
         if (!user) {
+          safeLog(`[Auth] No user found for email: ${maskEmail(email)}`);
           return done(null, false, { message: "Invalid email or password" });
         }
+        
         if (user.status === 'deactivated') {
+          safeLog(`[Auth] Account deactivated for email: ${maskEmail(email)}`);
           return done(null, false, { message: "Account is deactivated" });
         }
         
-        // Verify password using secure comparison
+        safeLog('[Auth] User found, verifying password');
         const isValidPassword = await comparePasswords(password, user.password);
+        
         if (!isValidPassword) {
+          safeLog(`[Auth] Invalid password for email: ${maskEmail(email)}`);
           return done(null, false, { message: "Invalid email or password" });
         }
         
+        safeLog(`[Auth] Login successful for email: ${maskEmail(email)}`);
         return done(null, user);
       } catch (error) {
+        safeError(`[Auth] Error during authentication:`, error);
         return done(error);
       }
     }
@@ -550,21 +670,22 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
+  safeLog(`[Auth] Serializing user: ${user.id}`);
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
-    console.log(`[Auth] Deserializing user: ${id}`);
+    safeLog(`[Auth] Deserializing user: ${id}`);
     const user = await storage.getUser(id);
     if (!user) {
-      console.log(`[Auth] No user found during deserialization for id: ${id}`);
+      safeLog(`[Auth] No user found during deserialization for id: ${id}`);
       return done(null, false);
     }
-    console.log(`[Auth] User deserialized successfully: ${id}`);
+    safeLog(`[Auth] User deserialized successfully: ${id}`);
     done(null, user);
   } catch (error) {
-    console.error(`[Auth] Error during deserialization:`, error);
+    safeError(`[Auth] Error during deserialization:`, error);
     done(error);
   }
 });

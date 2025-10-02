@@ -17,6 +17,7 @@ import Stripe from 'stripe';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 
 /**
  * Stripe Payment Processing Integration
@@ -586,6 +587,58 @@ const upload = multer({
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply security headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", "'unsafe-inline'", "'unsafe-eval'",
+        "https://js.stripe.com",
+        "https://maps.googleapis.com",
+        "https://*.googleapis.com"
+      ],
+      styleSrc: [
+        "'self'", "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://maps.gstatic.com"
+      ],
+      imgSrc: [
+        "'self'", "data:", "https:", "blob:",
+        "https://maps.gstatic.com",
+        "https://maps.googleapis.com",
+        "https://*.google.com",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://maps.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.stripe.com",
+        "https://m.stripe.network",
+        "https://maps.googleapis.com",
+        "https://*.googleapis.com",
+        "https://*.google.com",
+        "https://api.cloudinary.com",
+        "https://res.cloudinary.com",
+        "https://*.cloudinary.com"
+      ],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
 
 // Set up session - matches server/session.ts configuration
 console.log('[Session] Initializing session configuration...');

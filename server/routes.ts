@@ -14,6 +14,7 @@ import { deadlineMonitor } from './services/deadline-monitor.js';
 import cookie from 'cookie';
 import cookieSignature from 'cookie-signature';
 import { getSessionSecret } from './lib/session-config';
+import helmet from 'helmet';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -44,6 +45,58 @@ function requireAuth(req: Request, res?: Response) {
 }
 
 export function registerRoutes(app: Express): Server {
+  // Apply security headers with Helmet
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'", "'unsafe-inline'", "'unsafe-eval'",
+          "https://js.stripe.com",
+          "https://maps.googleapis.com",
+          "https://*.googleapis.com"
+        ],
+        styleSrc: [
+          "'self'", "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://maps.gstatic.com"
+        ],
+        imgSrc: [
+          "'self'", "data:", "https:", "blob:",
+          "https://maps.gstatic.com",
+          "https://maps.googleapis.com",
+          "https://*.google.com",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com"
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://maps.gstatic.com"
+        ],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "https://m.stripe.network",
+          "https://maps.googleapis.com",
+          "https://*.googleapis.com",
+          "https://*.google.com",
+          "https://api.cloudinary.com",
+          "https://res.cloudinary.com",
+          "https://*.cloudinary.com"
+        ],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }));
+  
   // Initialize session middleware first (required for authentication)
   createSession(app);
   

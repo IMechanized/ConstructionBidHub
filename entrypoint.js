@@ -16,6 +16,7 @@ import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
+import rateLimit from 'express-rate-limit';
 
 /**
  * Stripe Payment Processing Integration
@@ -161,6 +162,21 @@ function safeError(message, error) {
     console.error(message);
   }
 }
+
+// Rate limiter for authentication endpoints to prevent brute force attacks
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: "Too many login attempts from this IP, please try again after 15 minutes",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for login from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many login attempts from this IP, please try again after 15 minutes" 
+    });
+  },
+});
 
 // Password hashing and comparison utilities
 const scryptAsync = promisify(scrypt);
@@ -1413,7 +1429,7 @@ app.get("/api/user", requireAuth, (req, res) => {
 });
 
 // Auth routes
-app.post("/api/login", (req, res, next) => {
+app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {
             return next(err);

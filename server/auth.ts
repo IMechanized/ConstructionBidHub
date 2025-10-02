@@ -9,6 +9,7 @@ import { User as SelectUser, passwordResetSchema, insertUserSchema } from "../sh
 import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email.js";
 import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyPasswordResetToken, consumePasswordResetToken } from "./lib/tokens.js";
 import { safeLog, safeError, createUserLogId, maskEmail } from "./lib/safe-logging.js";
+import rateLimit from "express-rate-limit";
 
 declare global {
   namespace Express {
@@ -30,6 +31,35 @@ async function comparePasswords(supplied: string, stored: string) {
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
+
+// Rate limiters for authentication endpoints to prevent brute force attacks
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: "Too many login attempts from this IP, please try again after 15 minutes",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for login from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many login attempts from this IP, please try again after 15 minutes" 
+    });
+  },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 registration requests per hour
+  message: "Too many accounts created from this IP, please try again after an hour",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for registration from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many accounts created from this IP, please try again after an hour" 
+    });
+  },
+});
 
 export function setupAuth(app: Express) {
   console.log('[Auth] Initializing Passport authentication...');
@@ -93,7 +123,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", registerLimiter, async (req, res, next) => {
     try {
       safeLog(`[Auth] Registration attempt for email: ${maskEmail(req.body.email)}`);
       
@@ -155,7 +185,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", loginLimiter, (req, res, next) => {
     safeLog(`[Auth] Login request received - email: ${req.body.email ? maskEmail(req.body.email) : 'missing'}`);
 
     if (!req.body.email || !req.body.password) {

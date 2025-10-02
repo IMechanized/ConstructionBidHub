@@ -630,9 +630,27 @@ console.log('[Session] Configuration:', {
 });
 
 // Enable CORS with credentials
+// CORS configuration with secure origin whitelist
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+      process.env.ALLOWED_ORIGIN,
+      process.env.FRONTEND_URL
+    ].filter(Boolean)
+  : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000', 'http://127.0.0.1:5000'];
+
+safeLog('[CORS] Allowed origins configured:', { origins: allowedOrigins, environment: process.env.NODE_ENV });
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  const origin = req.headers.origin;
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else if (origin) {
+    safeLog(`[Security] CORS blocked request from origin: ${origin}`);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

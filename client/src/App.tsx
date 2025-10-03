@@ -21,7 +21,6 @@ import NewRfps from "@/pages/dashboard/new";
 import FeaturedRfps from "@/pages/dashboard/featured";
 import RfiPage from "@/pages/dashboard/rfis";
 import ReportsPage from "@/pages/dashboard/reports";
-import EmployeesPage from "@/pages/dashboard/employees";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
@@ -64,9 +63,6 @@ function Router() {
       </Route>
       <Route path="/dashboard/reports">
         <ProtectedRoute path="/dashboard/reports" component={ReportsPage} />
-      </Route>
-      <Route path="/dashboard/employees">
-        <ProtectedRoute path="/dashboard/employees" component={EmployeesPage} />
       </Route>
       <Route path="/dashboard/settings">
         <ProtectedRoute path="/dashboard/settings" component={SettingsPage} />

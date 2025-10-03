@@ -64,7 +64,6 @@ const resources = {
         rfis: 'RFIs',
         reports: 'Reports',
         analytics: 'Analytics',
-        employees: 'Employees',
         settings: 'Settings',
         support: 'Support'
       },
@@ -218,7 +217,6 @@ const resources = {
         rfis: 'RFIs',
         reports: 'Informes',
         analytics: 'Analíticas',
-        employees: 'Empleados',
         settings: 'Configuración',
         support: 'Soporte'
       },
@@ -320,7 +318,6 @@ const resources = {
         rfis: 'RFIs',
         reports: 'Rapports',
         analytics: 'Analytiques',
-        employees: 'Employés',
         settings: 'Paramètres',
         support: 'Support'
       },
@@ -422,7 +419,6 @@ const resources = {
         rfis: 'RFIs',
         reports: 'Berichte',
         analytics: 'Analytik',
-        employees: 'Mitarbeiter',
         settings: 'Einstellungen',
         support: 'Support'
       },
@@ -524,7 +520,6 @@ const resources = {
         rfis: 'RFI',
         reports: 'レポート',
         analytics: '分析',
-        employees: '従業員',
         settings: '設定',
         support: 'サポート'
       },

@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import session from "express-session";
@@ -31,12 +31,6 @@ export interface IStorage {
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
   deleteRfp(id: number): Promise<void>;
-
-  // Employee Operations
-  getEmployees(organizationId: number): Promise<Employee[]>;
-  getEmployee(id: number): Promise<Employee | undefined>;
-  createEmployee(employee: InsertEmployee & { organizationId: number }): Promise<Employee>;
-  deleteEmployee(id: number): Promise<void>;
 
   // Session Store
   sessionStore: Store;
@@ -515,41 +509,12 @@ export class DatabaseStorage implements IStorage {
     return rfp;
   }
 
-  async getEmployees(organizationId: number): Promise<Employee[]> {
-    return db
-      .select()
-      .from(employees)
-      .where(eq(employees.organizationId, organizationId));
-  }
-
-  async getEmployee(id: number): Promise<Employee | undefined> {
-    const [employee] = await db
-      .select()
-      .from(employees)
-      .where(eq(employees.id, id));
-    return employee;
-  }
-
-  async createEmployee(
-    employee: InsertEmployee & { organizationId: number }
-  ): Promise<Employee> {
-    const [newEmployee] = await db
-      .insert(employees)
-      .values({ ...employee, status: "pending" })
-      .returning();
-    return newEmployee;
-  }
-
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
   }
 
   async deleteRfp(id: number): Promise<void> {
     await db.delete(rfps).where(eq(rfps.id, id));
-  }
-
-  async deleteEmployee(id: number): Promise<void> {
-    await db.delete(employees).where(eq(employees.id, id));
   }
 
   async getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined> {

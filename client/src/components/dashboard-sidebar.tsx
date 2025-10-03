@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Settings,
   Building,
-  Users,
   FileBarChart,
   HelpCircle,
   BarChart3,
@@ -75,12 +74,6 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       href: "/dashboard/analytics",
       icon: BarChart3,
     },
-    // Employees link temporarily removed as requested
-    // {
-    //   label: t('sidebar.employees'),
-    //   href: "/dashboard/employees",
-    //   icon: Users,
-    // },
     {
       label: t('sidebar.settings'),
       href: "/dashboard/settings",

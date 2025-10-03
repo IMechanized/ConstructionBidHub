@@ -307,51 +307,6 @@ export function registerRoutes(app: Express): Server {
     res.sendStatus(200);
   });
 
-  // Employee routes
-  app.get("/api/employees", async (req, res) => {
-    try {
-      requireAuth(req);
-      const employees = await storage.getEmployees(req.user!.id);
-      res.json(employees);
-    } catch (error) {
-      res.status(401).json({ message: "Unauthorized access" });
-    }
-  });
-
-  app.post("/api/employees", async (req, res) => {
-    try {
-      requireAuth(req);
-      const data = insertEmployeeSchema.parse(req.body);
-      const employee = await storage.createEmployee({
-        ...data,
-        organizationId: req.user!.id,
-      });
-      res.status(201).json(employee);
-    } catch (error) {
-      const safeMessage = getSafeValidationMessage(error);
-      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'EmployeeCreation');
-    }
-  });
-
-  app.delete("/api/employees/:id", async (req, res) => {
-    try {
-      requireAuth(req);
-      
-      const id = validatePositiveInt(req.params.id, 'Employee ID', res);
-      if (id === null) return;
-      
-      const employee = await storage.getEmployee(id);
-      if (!employee || employee.organizationId !== req.user!.id) {
-        logAuthorizationFailure(req.user?.id, `Employee ${req.params.id}`, 'delete', req);
-        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'EmployeeDelete');
-      }
-      await storage.deleteEmployee(id);
-      res.sendStatus(200);
-    } catch (error) {
-      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'EmployeeDeletion');
-    }
-  });
-
   // Update user settings
   app.post("/api/user/settings", async (req, res) => {
     requireAuth(req);

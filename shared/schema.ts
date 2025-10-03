@@ -106,18 +106,6 @@ export const rfpViewSessions = pgTable("rfp_view_sessions", {
 });
 
 /**
- * Employees Table
- * Organization team members and their roles
- */
-export const employees = pgTable("employees", {
-  id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => users.id),
-  email: text("email").notNull(),
-  role: text("role").notNull(),
-  status: text("status", { enum: ["pending", "active"] }).default("pending"),
-});
-
-/**
  * RFIs (Request for Information) Table
  * Questions and clarifications for RFPs
  */
@@ -260,12 +248,6 @@ export const insertRfpSchema = createInsertSchema(rfps)
     featured: z.boolean().default(false),
   });
 
-// Employee creation validation
-export const insertEmployeeSchema = createInsertSchema(employees).pick({
-  email: true,
-  role: true,
-});
-
 // RFI creation validation
 export const insertRfiSchema = createInsertSchema(rfis).pick({
   email: true,
@@ -304,9 +286,7 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
-export type Employee = typeof employees.$inferSelect;
 export type InsertRfp = z.infer<typeof insertRfpSchema>;
-export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;

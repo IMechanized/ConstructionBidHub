@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, Employee, InsertEmployee, users, rfps, employees, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import session from "express-session";

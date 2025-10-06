@@ -9,6 +9,7 @@ import { z } from "zod";
 
 // List of available certifications
 export const CERTIFICATIONS = [
+  "None",
   "Women-owned",
   "Native American-owned",
   "Veteran-owned",

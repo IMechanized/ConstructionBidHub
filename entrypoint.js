@@ -2211,6 +2211,229 @@ app.get("/api/user", requireAuth, (req, res) => {
 });
 
 // Auth routes
+app.post("/api/register", registerLimiter, async (req, res, next) => {
+  try {
+    safeLog(`[Auth] Registration attempt for email: ${maskEmail(req.body.email)}`);
+    
+    // Validate request body against schema
+    const validationResult = insertUserSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      safeLog(`[Auth] Registration validation failed:`, validationResult.error.issues);
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
+    }
+    
+    const existingUser = await storage.getUserByUsername(req.body.email);
+    if (existingUser) {
+      safeLog(`[Auth] Registration failed - email already exists: ${maskEmail(req.body.email)}`);
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const hashedPassword = await hashPassword(req.body.password);
+    safeLog(`[Auth] Password hashed for new registration`);
+
+    const user = await storage.createUser({
+      ...req.body,
+      password: hashedPassword,
+      emailVerified: false,
+    });
+    
+    safeLog(`[Auth] User created successfully, id: ${user.id}`);
+    
+    // Generate and send verification email
+    try {
+      const token = await createVerificationToken(user.id);
+      const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
+      
+      if (emailSent) {
+        safeLog(`[Auth] Verification email sent to: ${maskEmail(user.email)}`);
+      } else {
+        safeError(`[Auth] Failed to send verification email to: ${maskEmail(user.email)}`);
+      }
+    } catch (emailError) {
+      safeError(`[Auth] Error sending verification email:`, emailError);
+    }
+    
+    req.login(user, (err) => {
+      if (err) {
+        safeError(`[Auth] Error during login after registration:`, err);
+        return next(err);
+      }
+      res.status(201).json(user);
+    });
+  } catch (error) {
+    safeError(`[Auth] Error during registration:`, error);
+    next(error);
+  }
+});
+
+app.get("/api/verify-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: "Invalid verification token" });
+    }
+    
+    safeLog(`[Auth] Email verification attempt with token: ${token.slice(0, 8)}...`);
+    const userId = await verifyEmailToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Email verification failed - invalid or expired token`);
+      return res.status(400).json({ message: "Invalid or expired verification token" });
+    }
+    
+    safeLog(`[Auth] Email verified successfully for user: ${userId}`);
+    
+    // If user is already logged in, update the session
+    if (req.isAuthenticated() && req.user.id === userId) {
+      const updatedUser = await storage.getUser(userId);
+      if (updatedUser) {
+        req.login(updatedUser, (err) => {
+          if (err) {
+            safeError(`[Auth] Error updating user session after verification:`, err);
+          }
+        });
+      }
+    }
+    
+    return res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    safeError(`[Auth] Error during email verification:`, error);
+    return res.status(500).json({ message: "An error occurred during email verification" });
+  }
+});
+
+app.post("/api/resend-verification", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Please log in to resend verification email" });
+    }
+    
+    const user = req.user;
+    
+    if (user.emailVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+    
+    safeLog(`[Auth] Resending verification email to user: ${user.id}`);
+    const token = await createVerificationToken(user.id);
+    const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
+    
+    if (emailSent) {
+      safeLog(`[Auth] Verification email resent to: ${maskEmail(user.email)}`);
+      return res.status(200).json({ message: "Verification email sent successfully" });
+    } else {
+      safeError(`[Auth] Failed to resend verification email to: ${maskEmail(user.email)}`);
+      return res.status(500).json({ message: "Failed to send verification email" });
+    }
+  } catch (error) {
+    safeError(`[Auth] Error resending verification email:`, error);
+    return res.status(500).json({ message: "An error occurred while resending the verification email" });
+  }
+});
+
+app.post("/api/request-password-reset", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    safeLog(`[Auth] Password reset requested for email: ${maskEmail(email)}`);
+    const user = await storage.getUserByUsername(email);
+    
+    if (!user) {
+      safeLog(`[Auth] Password reset requested for non-existent email: ${maskEmail(email)}`);
+      return res.status(200).json({ message: "If your email is registered, you will receive a password reset link" });
+    }
+    
+    const token = await createPasswordResetToken(user.id);
+    const emailSent = await sendPasswordResetEmail(user.email, token, user.companyName);
+    
+    if (emailSent) {
+      safeLog(`[Auth] Password reset email sent to: ${maskEmail(user.email)}`);
+      return res.status(200).json({ message: "Password reset email sent successfully" });
+    } else {
+      safeError(`[Auth] Failed to send password reset email to: ${maskEmail(user.email)}`);
+      return res.status(500).json({ message: "Failed to send password reset email" });
+    }
+  } catch (error) {
+    safeError(`[Auth] Error during password reset request:`, error);
+    return res.status(500).json({ message: "An error occurred while processing your request" });
+  }
+});
+
+app.get("/api/verify-reset-token", async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: "Invalid reset token" });
+    }
+    
+    safeLog(`[Auth] Verifying password reset token: ${token.slice(0, 8)}...`);
+    const userId = await verifyPasswordResetToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Invalid or expired password reset token`);
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+    
+    safeLog(`[Auth] Valid password reset token for user: ${userId}`);
+    return res.status(200).json({ message: "Valid reset token", token });
+  } catch (error) {
+    safeError(`[Auth] Error verifying reset token:`, error);
+    return res.status(500).json({ message: "An error occurred while verifying the reset token" });
+  }
+});
+
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+    
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({ message: "Token, password, and confirmPassword are required" });
+    }
+    
+    // Validate password
+    const passwordValidation = passwordResetSchema.safeParse({ password, confirmPassword });
+    if (!passwordValidation.success) {
+      return res.status(400).json({ 
+        message: "Password validation failed", 
+        errors: passwordValidation.error.errors 
+      });
+    }
+    
+    safeLog(`[Auth] Resetting password with token: ${token.slice(0, 8)}...`);
+    const userId = await verifyPasswordResetToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Password reset failed - invalid or expired token`);
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+    
+    // Update password
+    const hashedPassword = await hashPassword(password);
+    await storage.updateUser(userId, { password: hashedPassword });
+    
+    // Consume the token
+    await consumePasswordResetToken(userId);
+    
+    safeLog(`[Auth] Password reset successful for user: ${userId}`);
+    return res.status(200).json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    safeError(`[Auth] Error during password reset:`, error);
+    return res.status(500).json({ message: "An error occurred during password reset" });
+  }
+});
+
 app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {

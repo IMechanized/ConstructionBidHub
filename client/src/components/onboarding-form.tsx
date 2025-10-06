@@ -360,8 +360,13 @@ export default function OnboardingForm() {
                       </div>
                       <Select
                         onValueChange={(value) => {
-                          if (!field.value.includes(value)) {
-                            field.onChange([...field.value, value]);
+                          if (value === "None") {
+                            field.onChange(["None"]);
+                          } else {
+                            const filteredValue = field.value.filter(cert => cert !== "None");
+                            if (!filteredValue.includes(value)) {
+                              field.onChange([...filteredValue, value]);
+                            }
                           }
                         }}
                       >

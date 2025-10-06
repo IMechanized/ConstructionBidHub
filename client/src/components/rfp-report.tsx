@@ -59,7 +59,7 @@ export default function RfpReport({ rfps }: RfpReportProps) {
                     {rfp.jobState}
                   </TableCell>
                   <TableCell className="hidden md:table-cell whitespace-nowrap">
-                    {format(new Date(rfp.deadline), "PP")}
+                    {format(new Date(rfp.deadline), "MM/dd/yyyy")}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     ${rfp.budgetMin?.toLocaleString() || "N/A"}

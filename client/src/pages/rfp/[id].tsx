@@ -232,9 +232,9 @@ export default function RfpPage() {
         <div id="rfp-content" className="max-w-4xl mx-auto">
           {/* Important Dates Section */}
           <div className="mb-8 text-right text-sm text-muted-foreground">
-            <div>Posted: {format(new Date(rfp.createdAt), "MMMM d, yyyy")}</div>
-            <div>RFI Due: {format(new Date(rfp.rfiDate), "MMMM d, yyyy")}</div>
-            <div>Deadline: {format(new Date(rfp.deadline), "MMMM d, yyyy")}</div>
+            <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
+            <div>RFI Due: {format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</div>
+            <div>Deadline: {format(new Date(rfp.deadline), "MM/dd/yyyy")}</div>
           </div>
 
           <hr className="my-6 border-muted" />
@@ -351,15 +351,15 @@ export default function RfpPage() {
             <div className="space-y-2">
               <div>
                 <span className="font-medium">Site Walkthrough: </span>
-                {format(new Date(rfp.walkthroughDate), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy 'at' h:mm a")}
               </div>
               <div>
                 <span className="font-medium">RFI Submission Deadline: </span>
-                {format(new Date(rfp.rfiDate), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.rfiDate), "MM/dd/yyyy 'at' h:mm a")}
               </div>
               <div>
                 <span className="font-medium">Proposal Due Date: </span>
-                {format(new Date(rfp.deadline), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.deadline), "MM/dd/yyyy 'at' h:mm a")}
               </div>
             </div>
           </div>

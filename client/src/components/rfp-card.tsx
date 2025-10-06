@@ -93,7 +93,7 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Deadline:</span>
-              <span>{format(new Date(rfp.deadline), 'MMM dd, yyyy')}</span>
+              <span>{format(new Date(rfp.deadline), 'MM/dd/yyyy')}</span>
             </div>
           </div>
         </div>

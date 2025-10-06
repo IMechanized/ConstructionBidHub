@@ -18,6 +18,8 @@ import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { z } from 'zod';
+import Mailjet from 'node-mailjet';
 
 /**
  * Stripe Payment Processing Integration
@@ -315,6 +317,12 @@ const loginLimiter = rateLimit({
 // Password hashing and comparison utilities
 const scryptAsync = promisify(scrypt);
 
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${buf.toString("hex")}.${salt}`;
+}
+
 async function comparePasswords(supplied, stored) {
   // Guard against null, undefined, or improperly formatted passwords
   if (!stored || typeof stored !== 'string' || !stored.includes('.')) {
@@ -336,6 +344,21 @@ async function comparePasswords(supplied, stored) {
     return false;
   }
 }
+
+// Rate limiter for registration endpoint
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 registration requests per hour
+  message: "Too many accounts created from this IP, please try again after an hour",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for registration from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many accounts created from this IP, please try again after an hour" 
+    });
+  },
+});
 
 // Configure WebSocket for Neon
 if (ws) {
@@ -478,6 +501,196 @@ const rfpViewSessions = pgTable("rfp_view_sessions", {
 
 // Initialize Drizzle ORM
 const db = drizzle(pool);
+
+// Validation Schemas
+const securePasswordSchema = z.string()
+  .min(7, "Password must be at least 7 characters long")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+  .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, "Password must contain at least one special character");
+
+const insertUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: securePasswordSchema,
+  companyName: z.string().min(1, "Company name is required"),
+});
+
+const passwordResetSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
+});
+
+// Token utilities
+const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const RESET_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour
+
+function generateToken() {
+  return randomBytes(32).toString("hex");
+}
+
+async function createVerificationToken(userId) {
+  const token = generateToken();
+  const expiryDate = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
+  
+  await storage.updateUser(userId, {
+    verificationToken: token,
+    verificationTokenExpiry: expiryDate,
+  });
+  
+  return token;
+}
+
+async function createPasswordResetToken(userId) {
+  const token = generateToken();
+  const expiryDate = new Date(Date.now() + RESET_TOKEN_EXPIRY);
+  
+  await storage.updateUser(userId, {
+    resetToken: token,
+    resetTokenExpiry: expiryDate,
+  });
+  
+  return token;
+}
+
+async function verifyEmailToken(token) {
+  const user = await storage.getUserByVerificationToken(token);
+  
+  if (!user) {
+    return null;
+  }
+  
+  const tokenExpiry = user.verificationTokenExpiry;
+  if (!tokenExpiry || new Date(tokenExpiry) < new Date()) {
+    return null;
+  }
+  
+  await storage.updateUser(user.id, {
+    emailVerified: true,
+    verificationToken: null,
+    verificationTokenExpiry: null,
+  });
+  
+  return user.id;
+}
+
+async function verifyPasswordResetToken(token) {
+  const user = await storage.getUserByResetToken(token);
+  
+  if (!user) {
+    return null;
+  }
+  
+  const tokenExpiry = user.resetTokenExpiry;
+  if (!tokenExpiry || new Date(tokenExpiry) < new Date()) {
+    return null;
+  }
+  
+  return user.id;
+}
+
+async function consumePasswordResetToken(userId) {
+  await storage.updateUser(userId, {
+    resetToken: null,
+    resetTokenExpiry: null,
+  });
+}
+
+// Email utilities
+const mailjet = new Mailjet({
+  apiKey: process.env.MAILJET_API_KEY || '',
+  apiSecret: process.env.MAILJET_SECRET_KEY || '',
+});
+
+function stripHtml(html) {
+  return html.replace(/<[^>]*>?/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function sendEmail(params) {
+  try {
+    const { to, subject, htmlContent, textContent, fromEmail, fromName } = params;
+    
+    const request = await mailjet.post('send', { version: 'v3.1' }).request({
+      Messages: [
+        {
+          From: {
+            Email: fromEmail || 'noreply@findconstructionbids.com',
+            Name: fromName || 'FindConstructionBids',
+          },
+          To: [
+            {
+              Email: to,
+            },
+          ],
+          Subject: subject,
+          TextPart: textContent || stripHtml(htmlContent),
+          HTMLPart: htmlContent,
+        },
+      ],
+    });
+    
+    console.log(`Email sent successfully to ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+}
+
+async function sendVerificationEmail(email, token, companyName) {
+  const verificationUrl = `${process.env.PUBLIC_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Welcome to FindConstructionBids!</h2>
+      <p>Hello ${companyName},</p>
+      <p>Thank you for registering with FindConstructionBids. To complete your registration and verify your email address, please click the button below:</p>
+      <p style="text-align: center; margin: 25px 0;">
+        <a href="${verificationUrl}" style="background-color: #4a7aff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
+      </p>
+      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+      <p>${verificationUrl}</p>
+      <p>This verification link will expire in 24 hours.</p>
+      <p>If you did not create an account, you can safely ignore this email.</p>
+      <p>Best regards,<br>The FindConstructionBids Team</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Verify Your Email Address - FindConstructionBids',
+    htmlContent,
+  });
+}
+
+async function sendPasswordResetEmail(email, token, companyName) {
+  const resetUrl = `${process.env.PUBLIC_URL || 'http://localhost:5000'}/reset-password?token=${token}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Reset Your Password</h2>
+      <p>Hello ${companyName},</p>
+      <p>We received a request to reset your password for your FindConstructionBids account. To proceed with resetting your password, please click the button below:</p>
+      <p style="text-align: center; margin: 25px 0;">
+        <a href="${resetUrl}" style="background-color: #4a7aff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+      </p>
+      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+      <p>${resetUrl}</p>
+      <p>This password reset link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.</p>
+      <p>Best regards,<br>The FindConstructionBids Team</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Reset Your Password - FindConstructionBids',
+    htmlContent,
+  });
+}
 
 // Storage implementation
 const storage = {

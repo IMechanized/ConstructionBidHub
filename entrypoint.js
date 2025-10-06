@@ -913,6 +913,36 @@ const storage = {
     }
   },
 
+  async createUser(data) {
+    try {
+      const [user] = await db.insert(users).values(data).returning();
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  },
+
+  async getUserByVerificationToken(token) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.verificationToken, token));
+      return user;
+    } catch (error) {
+      console.error("Error getting user by verification token:", error);
+      return null;
+    }
+  },
+
+  async getUserByResetToken(token) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.resetToken, token));
+      return user;
+    } catch (error) {
+      console.error("Error getting user by reset token:", error);
+      return null;
+    }
+  },
+
   get sessionStore() {
     const MemoryStore = createMemoryStore(session);
     return new MemoryStore({

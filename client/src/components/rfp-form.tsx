@@ -282,21 +282,42 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         <FormField
           control={form.control}
           name="budgetMin"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('rfp.minimumBudget')}</FormLabel>
-              <FormControl>
-                <Input
-                  data-testid="budget-input"
-                  type="number"
-                  placeholder={t('rfp.enterMinimumBudget')}
-                  {...field}
-                  onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                />
-              </FormControl>
-              <FormMessage role="alert" data-testid="budget-error" />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const formatNumber = (value: string) => {
+              const number = value.replace(/,/g, '');
+              if (!number || isNaN(Number(number))) return '';
+              return Number(number).toLocaleString();
+            };
+
+            const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+              const rawValue = e.target.value.replace(/,/g, '');
+              if (rawValue === '') {
+                field.onChange(undefined);
+              } else if (!isNaN(Number(rawValue))) {
+                field.onChange(Number(rawValue));
+              }
+            };
+
+            const displayValue = field.value !== undefined && field.value !== null 
+              ? (field.value as number).toLocaleString() 
+              : '';
+
+            return (
+              <FormItem>
+                <FormLabel>{t('rfp.minimumBudget')}</FormLabel>
+                <FormControl>
+                  <Input
+                    data-testid="budget-input"
+                    type="text"
+                    placeholder={t('rfp.enterMinimumBudget')}
+                    value={displayValue}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+                <FormMessage role="alert" data-testid="budget-error" />
+              </FormItem>
+            );
+          }}
         />
 
         {/* Job Address Section */}

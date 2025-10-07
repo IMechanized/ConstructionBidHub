@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
@@ -308,11 +308,33 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
 
         <div>
           <Label htmlFor="budgetMin">Budget estimate</Label>
-          <Input
-            id="budgetMin"
-            type="number"
-            {...form.register("budgetMin", { valueAsNumber: true })}
-            placeholder="Enter budget estimate"
+          <Controller
+            name="budgetMin"
+            control={form.control}
+            render={({ field }) => {
+              const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const rawValue = e.target.value.replace(/,/g, '');
+                if (rawValue === '') {
+                  field.onChange(undefined);
+                } else if (!isNaN(Number(rawValue))) {
+                  field.onChange(Number(rawValue));
+                }
+              };
+
+              const displayValue = field.value !== undefined && field.value !== null 
+                ? field.value.toLocaleString() 
+                : '';
+
+              return (
+                <Input
+                  id="budgetMin"
+                  type="text"
+                  value={displayValue}
+                  onChange={handleChange}
+                  placeholder="Enter budget estimate"
+                />
+              );
+            }}
           />
           {form.formState.errors.budgetMin && (
             <p className="text-sm text-destructive mt-1">

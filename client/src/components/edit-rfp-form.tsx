@@ -307,12 +307,12 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
         </div>
 
         <div>
-          <Label htmlFor="budgetMin">Budget (USD)</Label>
+          <Label htmlFor="budgetMin">Budget estimate</Label>
           <Input
             id="budgetMin"
             type="number"
             {...form.register("budgetMin", { valueAsNumber: true })}
-            placeholder="Enter minimum budget"
+            placeholder="Enter budget estimate"
           />
           {form.formState.errors.budgetMin && (
             <p className="text-sm text-destructive mt-1">

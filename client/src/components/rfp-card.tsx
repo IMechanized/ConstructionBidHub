@@ -7,6 +7,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { MapPreview } from "@/components/map-preview";
 
+function stripHtml(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
 interface RfpCardProps {
   rfp: Rfp & {
     organization?: {
@@ -70,7 +76,7 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
 
         {!compact && (
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {rfp.description}
+            {stripHtml(rfp.description)}
           </p>
         )}
 

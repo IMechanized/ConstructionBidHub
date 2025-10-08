@@ -24,6 +24,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
+import DOMPurify from 'dompurify';
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -289,7 +290,10 @@ export default function RfpPage() {
           {/* Project Overview */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Project Overview</h2>
-            <p className="text-justify leading-relaxed">{rfp.description}</p>
+            <div 
+              className="prose prose-sm max-w-none dark:prose-invert text-justify leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rfp.description) }}
+            />
           </div>
 
           <hr className="my-6 border-muted" />

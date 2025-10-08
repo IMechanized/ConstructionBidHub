@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -219,11 +219,16 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
 
         <div>
           <Label htmlFor="description">Project Description</Label>
-          <Textarea
-            id="description"
-            {...form.register("description")}
-            placeholder="Describe the project in detail"
-            rows={4}
+          <Controller
+            name="description"
+            control={form.control}
+            render={({ field }) => (
+              <RichTextEditor
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Describe the project in detail"
+              />
+            )}
           />
           {form.formState.errors.description && (
             <p className="text-sm text-destructive mt-1">

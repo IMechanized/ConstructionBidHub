@@ -26,7 +26,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -209,10 +209,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>{t('rfp.description')}</FormLabel>
               <FormControl>
-                <Textarea 
-                  data-testid="description-input"
+                <RichTextEditor 
+                  value={field.value}
+                  onChange={field.onChange}
                   placeholder={t('rfp.enterDescription')}
-                  {...field} 
+                  data-testid="description-input"
                 />
               </FormControl>
               <FormMessage role="alert" data-testid="description-error" />

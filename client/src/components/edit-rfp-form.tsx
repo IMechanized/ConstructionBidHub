@@ -68,6 +68,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
       certificationGoals: rfp.certificationGoals || [],
       portfolioLink: rfp.portfolioLink || "",
+      featured: rfp.featured,
     },
   });
 

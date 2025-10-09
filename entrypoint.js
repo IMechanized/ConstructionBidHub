@@ -433,6 +433,7 @@ const rfps = pgTable("rfps", {
   jobState: text("job_state").notNull(),
   jobZip: text("job_zip").notNull(),
   portfolioLink: text("portfolio_link"),
+  mandatoryWalkthrough: boolean("mandatory_walkthrough").default(false),
   status: text("status").default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),

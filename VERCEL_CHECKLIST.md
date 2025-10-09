@@ -18,7 +18,7 @@
 - ✅ Fixed session store implementation
   - Fixed "ReferenceError: SessionStore is not defined" error
   - Implemented memory-based session store instead of PostgreSQL store
-  - Resolved session store inconsistency by removing duplicate implementation.
+  - Resolved session store inconsistency by removing duplicate implementation
   - Used imported createMemoryStore function properly.
 - ✅ Fixed RFIs schema and database errors
   - Updated RFIs schema to match actual database structure.

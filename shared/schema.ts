@@ -71,6 +71,7 @@ export const rfps = pgTable("rfps", {
   jobState: text("job_state").notNull(),                   // State
   jobZip: text("job_zip").notNull(),                       // ZIP code
   portfolioLink: text("portfolio_link"),                    // Additional resources
+  mandatoryWalkthrough: boolean("mandatory_walkthrough").default(false), // Is walkthrough mandatory
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),             // Promoted/featured status
@@ -233,6 +234,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobState: true,
     jobZip: true,
     portfolioLink: true,
+    mandatoryWalkthrough: true,
     featured: true,
   })
   .extend({
@@ -246,6 +248,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobZip: z.string().min(1, "ZIP code is required"),
     certificationGoals: z.array(z.string()).nullish(),
     portfolioLink: z.string().nullish().or(z.literal("")),
+    mandatoryWalkthrough: z.boolean().default(false),
     featured: z.boolean().default(false),
   });
 

@@ -26,6 +26,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       jobState: "",
       jobZip: "",
       portfolioLink: "",
+      mandatoryWalkthrough: false,
       featured: false,
     },
   });
@@ -275,6 +277,28 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
                 />
               </FormControl>
               <FormMessage role="alert" data-testid="deadline-error" />
+            </FormItem>
+          )}
+        />
+
+        {/* Mandatory Walkthrough Checkbox */}
+        <FormField
+          control={form.control}
+          name="mandatoryWalkthrough"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  data-testid="mandatory-walkthrough-checkbox"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>
+                  {t('rfp.mandatoryWalkthrough')}
+                </FormLabel>
+              </div>
             </FormItem>
           )}
         />

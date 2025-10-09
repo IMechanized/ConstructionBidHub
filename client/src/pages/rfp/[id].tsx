@@ -326,6 +326,12 @@ export default function RfpPage() {
                     : "Not specified"}
                 </p>
               </div>
+              {rfp.mandatoryWalkthrough && (
+                <div>
+                  <h3 className="font-medium mb-2">Mandatory Walkthrough</h3>
+                  <p>Yes</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -395,7 +401,7 @@ export default function RfpPage() {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  View Portfolio Documents
+                  View RFP/Procurement Portal
                 </a>
               </div>
             </>

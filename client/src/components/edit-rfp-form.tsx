@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +69,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
       certificationGoals: rfp.certificationGoals || [],
       portfolioLink: rfp.portfolioLink || "",
+      mandatoryWalkthrough: rfp.mandatoryWalkthrough || false,
       featured: rfp.featured,
     },
   });
@@ -391,6 +393,25 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           )}
         </div>
 
+        {/* Mandatory Walkthrough Checkbox */}
+        <div className="flex items-center space-x-2">
+          <Controller
+            name="mandatoryWalkthrough"
+            control={form.control}
+            render={({ field }) => (
+              <Checkbox
+                id="mandatoryWalkthrough"
+                data-testid="mandatory-walkthrough-checkbox"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <Label htmlFor="mandatoryWalkthrough" className="text-sm font-normal cursor-pointer">
+            {t('rfp.mandatoryWalkthrough')}
+          </Label>
+        </div>
+
         {/* Certification Goals Field */}
         <div>
           <Label>Certification Requirements (Optional)</Label>
@@ -446,7 +467,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
         </div>
 
         <div>
-          <Label htmlFor="portfolioLink">Portfolio/Documents Link (Optional)</Label>
+          <Label htmlFor="portfolioLink">Link to RFP/Procurement portal (Optional)</Label>
           <Input
             id="portfolioLink"
             type="url"

@@ -7,7 +7,7 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq, and, desc } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
-import createMemoryStore from 'memorystore';
+import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
 import ws from 'ws';
 import path from 'path';
@@ -1157,9 +1157,12 @@ const storage = {
   },
 
   get sessionStore() {
-    const MemoryStore = createMemoryStore(session);
-    return new MemoryStore({
-      checkPeriod: 86400000
+    const PgSession = ConnectPgSimple(session);
+    return new PgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
     });
   }
 };

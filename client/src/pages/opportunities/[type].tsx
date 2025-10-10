@@ -24,11 +24,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
-import { CERTIFICATIONS } from "@shared/schema";
+import { CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
-type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
+type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline" | "trade";
 
 export default function OpportunitiesPage() {
   const { type } = useParams();
@@ -73,12 +73,14 @@ export default function OpportunitiesPage() {
   }
 
   // Apply multi-select filters
-  const budgetFilters = ["under50k", "50k-100k", "100k-250k", "250k-500k", "500k+"];
+  const budgetFilters = ["under100k", "100k-500k", "500k-1m", "1m+"];
   const deadlineFilters = ["next7days", "next30days", "next3months"];
+  const tradeFilters = TRADE_OPTIONS;
   
   const selectedBudgets = selectedFilters.filter(f => budgetFilters.includes(f));
   const selectedCerts = selectedFilters.filter(f => CERTIFICATIONS.includes(f));
   const selectedDeadlines = selectedFilters.filter(f => deadlineFilters.includes(f));
+  const selectedTrades = selectedFilters.filter(f => tradeFilters.includes(f));
   
   // Apply budget filters (OR within category)
   if (selectedBudgets.length > 0) {
@@ -88,16 +90,14 @@ export default function OpportunitiesPage() {
       
       return selectedBudgets.some(filter => {
         switch (filter) {
-          case "under50k":
-            return budgetMin < 50000;
-          case "50k-100k":
-            return budgetMin >= 50000 && budgetMin < 100000;
-          case "100k-250k":
-            return budgetMin >= 100000 && budgetMin < 250000;
-          case "250k-500k":
-            return budgetMin >= 250000 && budgetMin < 500000;
-          case "500k+":
-            return budgetMin >= 500000;
+          case "under100k":
+            return budgetMin < 100000;
+          case "100k-500k":
+            return budgetMin >= 100000 && budgetMin < 500000;
+          case "500k-1m":
+            return budgetMin >= 500000 && budgetMin < 1000000;
+          case "1m+":
+            return budgetMin >= 1000000;
           default:
             return false;
         }
@@ -110,6 +110,14 @@ export default function OpportunitiesPage() {
     filteredRfps = filteredRfps.filter(rfp => {
       if (!rfp.certificationGoals || rfp.certificationGoals.length === 0) return false;
       return selectedCerts.some(cert => rfp.certificationGoals.includes(cert));
+    });
+  }
+  
+  // Apply trade filters (OR within category)
+  if (selectedTrades.length > 0) {
+    filteredRfps = filteredRfps.filter(rfp => {
+      if (!rfp.desiredTrades || rfp.desiredTrades.length === 0) return false;
+      return selectedTrades.some(trade => rfp.desiredTrades.includes(trade));
     });
   }
   
@@ -134,7 +142,7 @@ export default function OpportunitiesPage() {
   }
 
   // Apply sorting
-  const sortOptions = ["priceAsc", "priceDesc", "deadline"];
+  const sortOptions = ["priceAsc", "priceDesc", "deadline", "trade"];
   const activeSort = selectedFilters.find(f => sortOptions.includes(f)) || "deadline";
   
   filteredRfps = [...filteredRfps].sort((a, b) => {
@@ -143,6 +151,10 @@ export default function OpportunitiesPage() {
         return (a.budgetMin || 0) - (b.budgetMin || 0);
       case "priceDesc":
         return (b.budgetMin || 0) - (a.budgetMin || 0);
+      case "trade":
+        const tradeA = a.desiredTrades?.[0] || "";
+        const tradeB = b.desiredTrades?.[0] || "";
+        return tradeA.localeCompare(tradeB);
       case "deadline":
       default:
         return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -211,6 +223,7 @@ export default function OpportunitiesPage() {
                     <div className="space-y-2">
                       {[
                         { value: "deadline", label: "Deadline" },
+                        { value: "trade", label: "Trade" },
                         { value: "priceAsc", label: "Price Low to High" },
                         { value: "priceDesc", label: "Price High to Low" }
                       ].map((option) => (
@@ -237,14 +250,39 @@ export default function OpportunitiesPage() {
                   </div>
 
                   <div>
+                    <h4 className="mb-2 text-sm font-semibold">TRADE</h4>
+                    <div className="space-y-2">
+                      {TRADE_OPTIONS.map((trade) => (
+                        <div key={trade} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={trade}
+                            checked={selectedFilters.includes(trade)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedFilters([...selectedFilters, trade]);
+                              } else {
+                                setSelectedFilters(selectedFilters.filter(f => f !== trade));
+                              }
+                              setCurrentPage(1);
+                            }}
+                            data-testid={`checkbox-${trade}`}
+                          />
+                          <Label htmlFor={trade} className="text-sm font-normal cursor-pointer">
+                            {trade}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <h4 className="mb-2 text-sm font-semibold">PROJECT SIZE</h4>
                     <div className="space-y-2">
                       {[
-                        { value: "under50k", label: "Under $50k" },
-                        { value: "50k-100k", label: "$50k - $100k" },
-                        { value: "100k-250k", label: "$100k - $250k" },
-                        { value: "250k-500k", label: "$250k - $500k" },
-                        { value: "500k+", label: "$500k+" }
+                        { value: "under100k", label: "Under $100,000" },
+                        { value: "100k-500k", label: "$100,000 to $500,000" },
+                        { value: "500k-1m", label: "$500,000 - $1 million" },
+                        { value: "1m+", label: "$1 million+" }
                       ].map((option) => (
                         <div key={option.value} className="flex items-center space-x-2">
                           <Checkbox

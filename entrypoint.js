@@ -428,6 +428,7 @@ const rfps = pgTable("rfps", {
   deadline: timestamp("deadline").notNull(),
   budgetMin: integer("budget_min"),
   certificationGoals: text("certification_goals").array(),
+  desiredTrades: text("desired_trades").array(),
   jobStreet: text("job_street").notNull(),
   jobCity: text("job_city").notNull(),
   jobState: text("job_state").notNull(),

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
+import { insertRfpSchema, type Rfp, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -18,6 +18,8 @@ import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
+
+const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -68,6 +70,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       rfiDate: format(new Date(rfp.rfiDate), "yyyy-MM-dd'T'HH:mm"),
       deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
       certificationGoals: rfp.certificationGoals || [],
+      desiredTrades: rfp.desiredTrades || [],
       portfolioLink: rfp.portfolioLink || "",
       mandatoryWalkthrough: rfp.mandatoryWalkthrough || false,
       featured: rfp.featured,
@@ -462,6 +465,60 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           {form.formState.errors.certificationGoals && (
             <p className="text-sm text-destructive mt-1">
               {form.formState.errors.certificationGoals.message}
+            </p>
+          )}
+        </div>
+
+        {/* Desired Trades Field */}
+        <div>
+          <Label>Desired Trades (Optional)</Label>
+          <div className="space-y-3">
+            {/* Display selected trades */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {form.watch("desiredTrades")?.map((trade, index) => (
+                <div 
+                  key={index} 
+                  className="px-3 py-1 rounded-full flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                >
+                  <span>{trade}</span>
+                  <X 
+                    className="h-4 w-4 cursor-pointer" 
+                    onClick={() => {
+                      const currentValue = form.getValues("desiredTrades") || [];
+                      const newValue = [...currentValue];
+                      newValue.splice(index, 1);
+                      form.setValue("desiredTrades", newValue);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Select dropdown for adding trades */}
+            <Select
+              onValueChange={(value: string) => {
+                const currentValue = form.getValues("desiredTrades") || [];
+                if (!currentValue.includes(value)) {
+                  form.setValue("desiredTrades", [...currentValue, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select trades to receive bids from" />
+              </SelectTrigger>
+              <SelectContent>
+                {RFP_TRADE_OPTIONS.filter(trade => !(form.watch("desiredTrades") || []).includes(trade)).map((trade) => (
+                  <SelectItem key={trade} value={trade}>
+                    {trade}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Select which trades you want to receive bids from</p>
+          </div>
+          {form.formState.errors.desiredTrades && (
+            <p className="text-sm text-destructive mt-1">
+              {form.formState.errors.desiredTrades.message}
             </p>
           )}
         </div>

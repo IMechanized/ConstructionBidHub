@@ -22,6 +22,28 @@ export const CERTIFICATIONS = [
   "DBE"
 ];
 
+// List of available trades
+export const TRADE_OPTIONS = [
+  "Owner",
+  "Construction Manager",
+  "General Contractor",
+  "Division 02 — Site Works",
+  "Division 03 — Concrete",
+  "Division 04 — Masonry",
+  "Division 05 — Metals",
+  "Division 06 — Wood and Plastics",
+  "Division 07 — Thermal and Moisture Protection",
+  "Division 08 — Doors and Windows",
+  "Division 09 — Finishes",
+  "Division 10 — Specialties",
+  "Division 11 — Equipment",
+  "Division 12 — Furnishings",
+  "Division 13 — Special Construction",
+  "Division 14 — Conveying Systems",
+  "Division 15 — Mechanical/Plumbing",
+  "Division 16 — Electrical",
+];
+
 /**
  * Users Table
  * Stores both contractor and government organization profiles
@@ -66,6 +88,7 @@ export const rfps = pgTable("rfps", {
   deadline: timestamp("deadline").notNull(),                 // Bid submission deadline
   budgetMin: integer("budget_min"),                         // Minimum budget (optional)
   certificationGoals: text("certification_goals").array(),   // Required certifications
+  desiredTrades: text("desired_trades").array(),            // Desired contractor trades
   jobStreet: text("job_street").notNull(),                 // Street address
   jobCity: text("job_city").notNull(),                     // City
   jobState: text("job_state").notNull(),                   // State
@@ -229,6 +252,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     deadline: true,
     budgetMin: true,
     certificationGoals: true,
+    desiredTrades: true,
     jobStreet: true,
     jobCity: true,
     jobState: true,
@@ -247,6 +271,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobState: z.string().min(1, "State is required"),
     jobZip: z.string().min(1, "ZIP code is required"),
     certificationGoals: z.array(z.string()).nullish(),
+    desiredTrades: z.array(z.string()).nullish(),
     portfolioLink: z.string().nullish().or(z.literal("")),
     mandatoryWalkthrough: z.boolean().default(false),
     featured: z.boolean().default(false),

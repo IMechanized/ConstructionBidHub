@@ -31,7 +31,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertRfpSchema, CERTIFICATIONS } from "@shared/schema";
+import { insertRfpSchema, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Loader2, Zap, X } from "lucide-react";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 import { getCertificationClasses } from "@/lib/utils";
@@ -40,6 +40,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
+
+const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
 interface RfpFormProps {
   onSuccess?: () => void;
@@ -91,6 +93,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       deadline: "",
       budgetMin: undefined,
       certificationGoals: [],
+      desiredTrades: [],
       jobStreet: "",
       jobCity: "",
       jobState: "",
@@ -109,6 +112,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
         portfolioLink: data.portfolioLink || null,
         certificationGoals: data.certificationGoals && data.certificationGoals.length > 0 ? data.certificationGoals : null,
+        desiredTrades: data.desiredTrades && data.desiredTrades.length > 0 ? data.desiredTrades : null,
         // Always set featured to false - we'll update it after payment if needed
         featured: false
       };
@@ -488,6 +492,64 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
                 <p className="text-xs text-muted-foreground">{t('rfp.certificationGoalsDescription')}</p>
               </div>
               <FormMessage role="alert" data-testid="certification-error" />
+            </FormItem>
+          )}
+        />
+
+        {/* Desired Trades Field */}
+        <FormField
+          control={form.control}
+          name="desiredTrades"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Desired Trades</FormLabel>
+              <div className="space-y-3">
+                {/* Display selected trades */}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {field.value?.map((trade, index) => (
+                    <div 
+                      key={index} 
+                      className="px-3 py-1 rounded-full flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                    >
+                      <span>{trade}</span>
+                      <X 
+                        className="h-4 w-4 cursor-pointer" 
+                        onClick={() => {
+                          const newValue = [...(field.value || [])];
+                          newValue.splice(index, 1);
+                          field.onChange(newValue);
+                        }}
+                        data-testid={`remove-trade-${index}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Select dropdown for adding trades */}
+                <Select
+                  onValueChange={(value: string) => {
+                    const currentValue = field.value as string[] || [];
+                    if (!currentValue.includes(value)) {
+                      field.onChange([...currentValue, value]);
+                    }
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="trades-select">
+                      <SelectValue placeholder="Select trades to receive bids from" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {RFP_TRADE_OPTIONS.filter(trade => !(field.value as string[] || []).includes(trade)).map((trade) => (
+                      <SelectItem key={trade} value={trade}>
+                        {trade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Select which trades you want to receive bids from (optional)</p>
+              </div>
+              <FormMessage role="alert" data-testid="trades-error" />
             </FormItem>
           )}
         />

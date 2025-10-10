@@ -24,7 +24,6 @@ export const CERTIFICATIONS = [
 
 // List of available trades
 export const TRADE_OPTIONS = [
-  "Owner",
   "Construction Manager",
   "General Contractor",
   "Division 02 — Site Works",

@@ -28,7 +28,7 @@ import { CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
-type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline" | "trade";
+type SortOption = "none" | "priceAsc" | "priceDesc" | "deadline";
 
 export default function OpportunitiesPage() {
   const { type } = useParams();
@@ -142,7 +142,7 @@ export default function OpportunitiesPage() {
   }
 
   // Apply sorting
-  const sortOptions = ["priceAsc", "priceDesc", "deadline", "trade"];
+  const sortOptions = ["priceAsc", "priceDesc", "deadline"];
   const activeSort = selectedFilters.find(f => sortOptions.includes(f)) || "deadline";
   
   filteredRfps = [...filteredRfps].sort((a, b) => {
@@ -151,10 +151,6 @@ export default function OpportunitiesPage() {
         return (a.budgetMin || 0) - (b.budgetMin || 0);
       case "priceDesc":
         return (b.budgetMin || 0) - (a.budgetMin || 0);
-      case "trade":
-        const tradeA = a.desiredTrades?.[0] || "";
-        const tradeB = b.desiredTrades?.[0] || "";
-        return tradeA.localeCompare(tradeB);
       case "deadline":
       default:
         return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
@@ -223,7 +219,6 @@ export default function OpportunitiesPage() {
                     <div className="space-y-2">
                       {[
                         { value: "deadline", label: "Deadline" },
-                        { value: "trade", label: "Trade" },
                         { value: "priceAsc", label: "Price Low to High" },
                         { value: "priceDesc", label: "Price High to Low" }
                       ].map((option) => (

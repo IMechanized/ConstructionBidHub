@@ -390,6 +390,22 @@ export default function RfpPage() {
             </>
           )}
 
+          {rfp.desiredTrades && rfp.desiredTrades.length > 0 && (
+            <>
+              <hr className="my-6 border-muted" />
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Desired Trades</h2>
+                <div className="flex flex-wrap gap-2">
+                  {rfp.desiredTrades.map((trade, index) => (
+                    <Badge key={index} className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50">
+                      {trade}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           {rfp.portfolioLink && (
             <>
               <hr className="my-6 border-muted" />

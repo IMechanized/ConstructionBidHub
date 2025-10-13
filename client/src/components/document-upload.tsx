@@ -20,10 +20,10 @@ interface DocumentUploadProps {
 
 export default function DocumentUpload({ documents, onDocumentsChange, disabled }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const uploadFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     setUploading(true);
@@ -47,8 +47,8 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
         const data = await response.json();
         return {
           filename: data.filename,
-          fileUrl: data.url,
-          documentType: "specification" as const, // Default type, user can change
+          fileUrl: data.url, // Map 'url' from upload response to 'fileUrl' for save endpoint
+          documentType: "specification" as const,
           fileSize: data.size,
           mimeType: data.mimeType,
         };
@@ -70,9 +70,40 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
       });
     } finally {
       setUploading(false);
-      // Reset file input
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      await uploadFiles(files);
       e.target.value = '';
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && !uploading) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (disabled || uploading) return;
+
+    const files = e.dataTransfer.files;
+    await uploadFiles(files);
   };
 
   const removeDocument = (index: number) => {
@@ -87,39 +118,56 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
 
   return (
     <div className="space-y-4">
-      <div>
-        <input
-          id="document-upload"
-          type="file"
-          multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-          onChange={handleFileUpload}
-          className="hidden"
-          disabled={disabled || uploading}
-          data-testid="input-document-upload"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => document.getElementById('document-upload')?.click()}
-          disabled={disabled || uploading}
-          data-testid="button-upload-document"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Documents
-            </>
-          )}
-        </Button>
-        <p className="text-sm text-muted-foreground mt-2">
-          Supported formats: PDF, Word, Excel, Text files (Max 5MB each)
-        </p>
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+          isDragging
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+        }`}
+        data-testid="dropzone-document-upload"
+      >
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Upload className={`h-8 w-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+          <p className="text-sm font-medium text-center">
+            {isDragging ? 'Drop files here' : 'Drag and drop files here, or click to browse'}
+          </p>
+          <input
+            id="document-upload"
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+            disabled={disabled || uploading}
+            data-testid="input-document-upload"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => document.getElementById('document-upload')?.click()}
+            disabled={disabled || uploading}
+            data-testid="button-upload-document"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Choose Files
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Supported formats: PDF, Word, Excel, Text files (Max 5MB each)
+          </p>
+        </div>
       </div>
 
       {documents.length > 0 && (

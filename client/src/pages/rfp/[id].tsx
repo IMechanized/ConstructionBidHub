@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { Rfp } from "@shared/schema";
+import { Rfp, type RfpDocument } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -18,7 +18,7 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2 } from "lucide-react";
+import { Download, Edit, Trash2, FileText, ExternalLink } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,12 @@ export default function RfpPage() {
     } | null;
   }>({
     queryKey: [`/api/rfps/${id}`],
+  });
+
+  // Fetch RFP documents
+  const { data: rfpDocuments = [] } = useQuery<RfpDocument[]>({
+    queryKey: [`/api/rfps/${id}/documents`],
+    enabled: !!id,
   });
   
   // Track view time when user leaves the page or when component unmounts
@@ -280,6 +286,40 @@ export default function RfpPage() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete RFP
                   </Button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* RFP Documents */}
+          {rfpDocuments.length > 0 && (
+            <>
+              <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+                <h3 className="text-lg font-semibold mb-3">RFP Documents</h3>
+                <div className="space-y-2">
+                  {rfpDocuments.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={doc.documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
+                      data-testid={`document-${doc.id}`}
+                    >
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate group-hover:text-primary">
+                          {doc.filename}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="capitalize">{doc.documentType}</span>
+                          <span>•</span>
+                          <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
+                        </div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                    </a>
+                  ))}
                 </div>
               </div>
             </>

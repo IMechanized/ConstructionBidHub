@@ -109,7 +109,7 @@ export function registerRoutes(app: Express): Server {
   // Then initialize authentication (depends on session)
   setupAuth(app);
 
-  // File upload endpoint
+  // File upload endpoint for images
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received');
@@ -145,6 +145,60 @@ export function registerRoutes(app: Express): Server {
       res.json({ url: result.secure_url });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
+    }
+  });
+
+  // Document upload endpoint for RFP documents
+  app.post("/api/upload-document", upload.single('file'), async (req, res) => {
+    try {
+      console.log('Document upload request received');
+
+      // Check authentication first
+      try {
+        requireAuth(req);
+      } catch (error) {
+        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
+      }
+
+      if (!req.file) {
+        return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
+      }
+
+      // Allowed document types: PDF, Word, Excel, text files
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+      ];
+
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return sendErrorResponse(res, new Error('Invalid file type. Allowed: PDF, Word, Excel, Text'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
+      }
+
+      console.log('Document received:', req.file.originalname, req.file.mimetype);
+
+      // Convert buffer to base64
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'raw',
+        folder: 'construction-bids/documents',
+      });
+
+      console.log('Document upload successful:', result.secure_url);
+      res.json({ 
+        url: result.secure_url,
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype
+      });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'DocumentUpload');
     }
   });
 

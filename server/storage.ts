@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import session from "express-session";
@@ -31,6 +31,11 @@ export interface IStorage {
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
   deleteRfp(id: number): Promise<void>;
+
+  // RFP Document Operations
+  createRfpDocument(document: InsertRfpDocument): Promise<RfpDocument>;
+  getRfpDocuments(rfpId: number): Promise<RfpDocument[]>;
+  deleteRfpDocument(id: number): Promise<void>;
 
   // Session Store
   sessionStore: Store;
@@ -514,7 +519,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteRfp(id: number): Promise<void> {
+    // First delete all documents associated with the RFP
+    await db.delete(rfpDocuments).where(eq(rfpDocuments.rfpId, id));
+    // Then delete the RFP itself
     await db.delete(rfps).where(eq(rfps.id, id));
+  }
+
+  /**
+   * RFP Document Operations
+   */
+  async createRfpDocument(document: InsertRfpDocument): Promise<RfpDocument> {
+    const [newDocument] = await db
+      .insert(rfpDocuments)
+      .values(document)
+      .returning();
+    return newDocument;
+  }
+
+  async getRfpDocuments(rfpId: number): Promise<RfpDocument[]> {
+    return db
+      .select()
+      .from(rfpDocuments)
+      .where(eq(rfpDocuments.rfpId, rfpId))
+      .orderBy(desc(rfpDocuments.uploadedAt));
+  }
+
+  async deleteRfpDocument(id: number): Promise<void> {
+    await db.delete(rfpDocuments).where(eq(rfpDocuments.id, id));
   }
 
   async getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined> {

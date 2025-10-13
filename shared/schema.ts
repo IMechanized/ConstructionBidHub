@@ -102,6 +102,21 @@ export const rfps = pgTable("rfps", {
 });
 
 /**
+ * RFP Documents Table
+ * Stores document attachments for RFPs (drawings, specifications, addenda)
+ */
+export const rfpDocuments = pgTable("rfp_documents", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(),
+  documentType: text("document_type", { enum: ["drawing", "specification", "addendum"] }).notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+/**
  * RFP Analytics Table
  * Tracks engagement metrics for RFPs
  */
@@ -310,11 +325,23 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
   relatedType: true,
 });
 
+// RFP document creation validation
+export const insertRfpDocumentSchema = createInsertSchema(rfpDocuments).pick({
+  rfpId: true,
+  filename: true,
+  fileUrl: true,
+  documentType: true,
+  fileSize: true,
+  mimeType: true,
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
 export type InsertRfp = z.infer<typeof insertRfpSchema>;
+export type RfpDocument = typeof rfpDocuments.$inferSelect;
+export type InsertRfpDocument = z.infer<typeof insertRfpDocumentSchema>;
 export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;

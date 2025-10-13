@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { insertRfpSchema, type Rfp, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
+import { insertRfpSchema, type Rfp, type RfpDocument, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -18,6 +18,8 @@ import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
+import DocumentUpload, { type UploadedDocument } from "./document-upload";
+import { apiRequest } from "@/lib/queryClient";
 
 const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
@@ -49,12 +51,31 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const queryClient = useQueryClient();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<RfpDocument[]>([]);
+  const [documentsToDelete, setDocumentsToDelete] = useState<number[]>([]);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
     queryKey: ['/api/payments/price'],
     queryFn: getFeaturedRfpPrice,
   });
+
+  // Fetch existing documents
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await fetch(`/api/rfps/${rfp.id}/documents`);
+        if (response.ok) {
+          const docs = await response.json();
+          setExistingDocuments(docs);
+        }
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+      }
+    };
+    fetchDocuments();
+  }, [rfp.id]);
 
   const form = useForm({
     resolver: zodResolver(editRfpSchema),
@@ -113,7 +134,33 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   // Main update mutation (with onSuccess side effects)
   const updateRfpMutation = useMutation({
     mutationFn: updateRfpMutationFn,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Delete removed documents
+      if (documentsToDelete.length > 0) {
+        try {
+          await Promise.all(
+            documentsToDelete.map(docId =>
+              apiRequest("DELETE", `/api/rfp-documents/${docId}`, {})
+            )
+          );
+        } catch (error) {
+          console.error("Error deleting documents:", error);
+        }
+      }
+
+      // Save new documents
+      if (documents.length > 0) {
+        try {
+          await Promise.all(
+            documents.map(doc =>
+              apiRequest("POST", `/api/rfps/${rfp.id}/documents`, doc)
+            )
+          );
+        } catch (error) {
+          console.error("Error saving new documents:", error);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: [`/api/rfps/${rfp.id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
       toast({
@@ -536,6 +583,51 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
               {form.formState.errors.portfolioLink.message}
             </p>
           )}
+        </div>
+
+        {/* Document Management Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">RFP Documents</h3>
+          
+          {/* Existing Documents */}
+          {existingDocuments.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Existing Documents</h4>
+              {existingDocuments.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.filename}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{doc.documentType}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setExistingDocuments(existingDocuments.filter(d => d.id !== doc.id));
+                      setDocumentsToDelete([...documentsToDelete, doc.id]);
+                    }}
+                    disabled={updateRfpMutation.isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New Document Upload */}
+          <div>
+            <h4 className="text-sm font-medium mb-2">Add New Documents</h4>
+            <DocumentUpload
+              documents={documents}
+              onDocumentsChange={setDocuments}
+              disabled={updateRfpMutation.isPending}
+            />
+          </div>
         </div>
 
         {/* RFP Boosting Benefits Section - Only show if RFP is not featured */}

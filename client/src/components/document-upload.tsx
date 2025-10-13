@@ -20,8 +20,10 @@ interface DocumentUploadProps {
 
 export default function DocumentUpload({ documents, onDocumentsChange, disabled }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
   const { toast } = useToast();
+  
+  const isDragging = dragCounter > 0;
 
   const uploadFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
@@ -81,24 +83,31 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled && !uploading) {
-      setIsDragging(true);
+      setDragCounter(prev => prev + 1);
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    if (!disabled && !uploading) {
+      setDragCounter(prev => Math.max(0, prev - 1));
+    }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    setDragCounter(0);
 
     if (disabled || uploading) return;
 
@@ -119,6 +128,7 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
   return (
     <div className="space-y-4">
       <div
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

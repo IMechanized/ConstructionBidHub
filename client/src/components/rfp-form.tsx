@@ -40,6 +40,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
+import DocumentUpload, { type UploadedDocument } from "./document-upload";
 
 const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
@@ -56,6 +57,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const [pendingRfpData, setPendingRfpData] = useState<any>(null);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -119,8 +121,27 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
-    onSuccess: (newRfp) => {
+    onSuccess: async (newRfp) => {
       setCreatedRfpId(newRfp.id);
+      
+      // Save documents if any
+      if (documents.length > 0) {
+        try {
+          await Promise.all(
+            documents.map(doc =>
+              apiRequest("POST", `/api/rfps/${newRfp.id}/documents`, doc)
+            )
+          );
+        } catch (error) {
+          console.error("Error saving documents:", error);
+          toast({
+            title: t('common.error'),
+            description: "RFP created but some documents failed to upload",
+            variant: "destructive",
+          });
+        }
+      }
+      
       // For regular (non-boosted) RFPs, finish submission right away
       if (!isBoosting) {
         finishSubmission();
@@ -141,6 +162,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     // Invalidate cache and reset form
     queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
     form.reset();
+    setDocuments([]);
     setCreatedRfpId(null);
     setPendingRfpData(null);
     setIsBoosting(false);
@@ -573,6 +595,17 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Document Upload Section */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">RFP Documents</h3>
+          <p className="text-sm text-muted-foreground">Upload drawings, specifications, or addenda for your RFP</p>
+          <DocumentUpload
+            documents={documents}
+            onDocumentsChange={setDocuments}
+            disabled={createRfpMutation.isPending}
+          />
+        </div>
 
         {/* RFP Boosting Benefits Section */}
         <div 

@@ -35,6 +35,7 @@ export interface IStorage {
   // RFP Document Operations
   createRfpDocument(document: InsertRfpDocument): Promise<RfpDocument>;
   getRfpDocuments(rfpId: number): Promise<RfpDocument[]>;
+  getRfpDocumentById(id: number): Promise<RfpDocument | undefined>;
   deleteRfpDocument(id: number): Promise<void>;
 
   // Session Store
@@ -542,6 +543,14 @@ export class DatabaseStorage implements IStorage {
       .from(rfpDocuments)
       .where(eq(rfpDocuments.rfpId, rfpId))
       .orderBy(desc(rfpDocuments.uploadedAt));
+  }
+
+  async getRfpDocumentById(id: number): Promise<RfpDocument | undefined> {
+    const [document] = await db
+      .select()
+      .from(rfpDocuments)
+      .where(eq(rfpDocuments.id, id));
+    return document;
   }
 
   async deleteRfpDocument(id: number): Promise<void> {

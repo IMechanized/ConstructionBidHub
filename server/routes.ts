@@ -361,6 +361,76 @@ export function registerRoutes(app: Express): Server {
     res.sendStatus(200);
   });
 
+  // RFP Document routes
+  app.get("/api/rfps/:id/documents", async (req, res) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const documents = await storage.getRfpDocuments(id);
+      res.json(documents);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocuments');
+    }
+  });
+
+  app.post("/api/rfps/:id/documents", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (rfpId === null) return;
+
+      // Verify the user owns this RFP
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'add document', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentCreate');
+      }
+
+      const document = await storage.createRfpDocument({
+        rfpId,
+        filename: req.body.filename,
+        fileUrl: req.body.fileUrl,
+        documentType: req.body.documentType,
+        fileSize: req.body.fileSize,
+        mimeType: req.body.mimeType,
+      });
+
+      res.status(201).json(document);
+    } catch (error) {
+      sendErrorResponse(res, error, 400, ErrorMessages.CREATE_FAILED, 'RFPDocumentCreate');
+    }
+  });
+
+  app.delete("/api/rfp-documents/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const id = validatePositiveInt(req.params.id, 'Document ID', res);
+      if (id === null) return;
+
+      // Get the document to verify ownership
+      const document = await storage.getRfpDocumentById(id);
+      
+      if (!document) {
+        return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+      }
+
+      // Verify the user owns the RFP this document belongs to
+      const rfp = await storage.getRfpById(document.rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `Document ${req.params.id}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentDelete');
+      }
+
+      await storage.deleteRfpDocument(id);
+      res.sendStatus(200);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFPDocumentDelete');
+    }
+  });
+
   // Update user settings
   app.post("/api/user/settings", async (req, res) => {
     requireAuth(req);

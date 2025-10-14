@@ -2032,16 +2032,9 @@ app.post("/api/upload", requireAuth, upload.single('file'), async (req, res) => 
 });
 
 // Document upload endpoint for RFP documents
-app.post("/api/upload-document", upload.single('file'), async (req, res) => {
+app.post("/api/upload-document", requireAuth, upload.single('file'), async (req, res) => {
   try {
     console.log('Document upload request received');
-
-    // Check authentication first
-    try {
-      requireAuth(req);
-    } catch (error) {
-      return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
-    }
 
     if (!req.file) {
       return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');

@@ -1806,6 +1806,35 @@ app.delete("/api/rfp-documents/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Download RFP document endpoint
+app.get("/api/rfp-documents/:id/download", async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Document ID', res);
+    if (id === null) return;
+
+    const document = await storage.getRfpDocumentById(id);
+    if (!document) {
+      return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+    }
+
+    // Fetch the file from Cloudinary
+    const response = await fetch(document.fileUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch document from storage');
+    }
+
+    // Set headers to force download
+    res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    
+    // Stream the file to the response
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocumentDownload');
+  }
+});
+
 // RFI routes
 app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
   try {

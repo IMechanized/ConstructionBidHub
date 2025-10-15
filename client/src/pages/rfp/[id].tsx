@@ -411,8 +411,7 @@ export default function RfpPage() {
               {rfpDocuments.map((doc) => (
                 <a
                   key={doc.id}
-                  href={doc.documentUrl}
-                  download={doc.filename}
+                  href={`/api/rfp-documents/${doc.id}/download`}
                   className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
                   data-testid={`document-${doc.id}`}
                 >

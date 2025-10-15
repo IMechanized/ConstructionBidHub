@@ -236,63 +236,6 @@ export default function RfpPage() {
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
 
-        {/* Owner Controls - Outside PDF content */}
-        {isOwner && (
-          <div className="max-w-4xl mx-auto mb-6 p-4 bg-muted/50 rounded-lg border">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
-            <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit RFP
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete RFP
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* RFP Documents - Outside PDF content */}
-        {rfpDocuments.length > 0 && (
-          <div className="max-w-4xl mx-auto mb-6 p-4 bg-muted/50 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-3">RFP Documents</h3>
-            <div className="space-y-2">
-              {rfpDocuments.map((doc) => (
-                <a
-                  key={doc.id}
-                  href={doc.documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
-                  data-testid={`document-${doc.id}`}
-                >
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate group-hover:text-primary">
-                      {doc.filename}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="capitalize">{doc.documentType}</span>
-                      <span>•</span>
-                      <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div id="rfp-content" className="max-w-4xl mx-auto">
           {/* Important Dates Section */}
           <div className="mb-8 text-right text-sm text-muted-foreground">
@@ -459,6 +402,63 @@ export default function RfpPage() {
             </>
           )}
         </div>
+
+        {/* RFP Documents - Outside PDF content */}
+        {rfpDocuments.length > 0 && (
+          <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-3">RFP Documents</h3>
+            <div className="space-y-2">
+              {rfpDocuments.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={doc.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
+                  data-testid={`document-${doc.id}`}
+                >
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate group-hover:text-primary">
+                      {doc.filename}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{doc.documentType}</span>
+                      <span>•</span>
+                      <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
+                    </div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Owner Controls - Outside PDF content */}
+        {isOwner && (
+          <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit RFP
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete RFP
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Bid Button - Outside of downloadable content */}
         {!isOwner && (

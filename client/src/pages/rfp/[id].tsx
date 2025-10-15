@@ -18,7 +18,7 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2, FileText, ExternalLink } from "lucide-react";
+import { Download, Edit, Trash2, FileText } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
@@ -412,8 +412,7 @@ export default function RfpPage() {
                 <a
                   key={doc.id}
                   href={doc.documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  download={doc.filename}
                   className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
                   data-testid={`document-${doc.id}`}
                 >
@@ -428,7 +427,7 @@ export default function RfpPage() {
                       <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
                     </div>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                  <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                 </a>
               ))}
             </div>

@@ -97,12 +97,12 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
-        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2">
+        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2 md:gap-3">
           {navItems.map((item) => (
             <Button
               key={item.href}
               variant={currentPath === item.href ? "default" : "ghost"}
-              className="w-full justify-start gap-3"
+              className="w-full justify-start gap-3 md:py-6"
               asChild
             >
               <Link href={item.href}>

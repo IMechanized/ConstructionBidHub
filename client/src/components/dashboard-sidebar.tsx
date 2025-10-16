@@ -102,7 +102,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
             <Button
               key={item.href}
               variant={currentPath === item.href ? "default" : "ghost"}
-              className="w-full justify-start gap-3 md:py-6"
+              className="w-full justify-start gap-3 md:py-3"
               asChild
             >
               <Link href={item.href}>

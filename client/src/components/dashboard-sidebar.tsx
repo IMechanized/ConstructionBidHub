@@ -97,7 +97,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
-        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2 md:gap-3">
+        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2 md:gap-1.5">
           {navItems.map((item) => (
             <Button
               key={item.href}

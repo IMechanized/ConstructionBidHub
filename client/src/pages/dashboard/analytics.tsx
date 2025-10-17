@@ -117,16 +117,8 @@ export default function AnalyticsDashboard() {
     }
   }, [isLoading, analytics?.length]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin">Loading...</div>
-      </div>
-    );
-  }
-  
   // Handle case when there are no analytics to display
-  if (!analytics || analytics.length === 0) {
+  if ((!analytics || analytics.length === 0) && !isLoading) {
     return (
       <div className="flex min-h-screen bg-background">
         <DashboardSidebar currentPath={location} />
@@ -182,7 +174,7 @@ export default function AnalyticsDashboard() {
     uniqueViews: item.uniqueViews || 0,
     bids: item.totalBids || 0,
     ctr: item.clickThroughRate || 0,
-  }));
+  })) || [];
 
   return (
     <div className="flex min-h-screen bg-background">

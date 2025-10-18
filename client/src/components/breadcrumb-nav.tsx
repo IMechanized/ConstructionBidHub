@@ -28,13 +28,18 @@ export function BreadcrumbNav({ items, className }: BreadcrumbNavProps) {
         {items.map((item, index) => (
           <BreadcrumbItem key={item.href}>
             {index === items.length - 1 ? (
-              <BreadcrumbPage>{item.label}</BreadcrumbPage>
+              <BreadcrumbPage className="font-medium text-foreground">{item.label}</BreadcrumbPage>
             ) : (
               <>
                 <BreadcrumbLink asChild>
-                  <Link href={item.href}>{item.label}</Link>
+                  <Link 
+                    href={item.href}
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium hover:underline underline-offset-4"
+                  >
+                    {item.label}
+                  </Link>
                 </BreadcrumbLink>
-                <BreadcrumbSeparator />
+                <BreadcrumbSeparator className="text-muted-foreground/50" />
               </>
             )}
           </BreadcrumbItem>

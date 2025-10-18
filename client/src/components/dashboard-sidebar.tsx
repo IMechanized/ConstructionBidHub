@@ -93,19 +93,16 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <Building className="h-6 w-6" />
           <span className="font-semibold text-lg">{t('common.appName')}</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <NotificationCenter />
-          <ThemeToggle variant="ghost" />
-        </div>
+        <NotificationCenter />
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
-        <div className="grid gap-1">
+        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2 md:gap-1">
           {navItems.map((item) => (
             <Button
               key={item.href}
               variant={currentPath === item.href ? "default" : "ghost"}
-              className="w-full justify-start gap-3"
+              className="w-full justify-start gap-3 md:py-2"
               asChild
             >
               <Link href={item.href}>
@@ -130,13 +127,16 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           )}
           <span className="font-medium">{user?.companyName}</span>
         </div>
-        <Button
-          variant="outline"
-          className="w-full justify-start mt-2"
-          onClick={() => logoutMutation.mutate()}
-        >
-          {t('auth.logout')}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1 justify-start"
+            onClick={() => logoutMutation.mutate()}
+          >
+            {t('auth.logout')}
+          </Button>
+          <ThemeToggle variant="outline" />
+        </div>
       </div>
     </div>
   );

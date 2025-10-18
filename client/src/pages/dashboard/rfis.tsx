@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { type Rfi, type Rfp, type User } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
-import { DashboardSectionSkeleton } from "@/components/skeletons";
 import { format } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useToast } from "@/hooks/use-toast";
@@ -113,8 +112,6 @@ export default function RfiPage() {
                 rfi={selectedRfi as Rfi & { organization?: User }}
                 onClose={() => setSelectedRfi(null)}
               />
-            ) : isLoading ? (
-              <DashboardSectionSkeleton count={5} />
             ) : error ? (
               <div className="text-center py-8 text-destructive">
                 Failed to load RFIs. Please try again.
@@ -153,7 +150,7 @@ export default function RfiPage() {
 
                     return (
                       <>
-                        {sentRfis.length === 0 ? (
+                        {sentRfis.length === 0 && !sentLoading ? (
                           <div className="text-center py-8 text-muted-foreground">
                             You haven't requested any information yet.
                           </div>
@@ -264,7 +261,7 @@ export default function RfiPage() {
 
                     return (
                       <>
-                        {receivedRfis.length === 0 ? (
+                        {receivedRfis.length === 0 && !receivedLoading ? (
                           <div className="text-center py-8 text-muted-foreground">
                             No RFI requests on your RFPs yet.
                           </div>

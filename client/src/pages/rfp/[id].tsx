@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
-import { Rfp } from "@shared/schema";
+import { Rfp, type RfpDocument } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
@@ -18,12 +18,13 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2 } from "lucide-react";
+import { Download, Edit, Trash2, FileText } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
+import DOMPurify from 'dompurify';
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -43,6 +44,12 @@ export default function RfpPage() {
     } | null;
   }>({
     queryKey: [`/api/rfps/${id}`],
+  });
+
+  // Fetch RFP documents
+  const { data: rfpDocuments = [] } = useQuery<RfpDocument[]>({
+    queryKey: [`/api/rfps/${id}/documents`],
+    enabled: !!id,
   });
   
   // Track view time when user leaves the page or when component unmounts
@@ -232,9 +239,9 @@ export default function RfpPage() {
         <div id="rfp-content" className="max-w-4xl mx-auto">
           {/* Important Dates Section */}
           <div className="mb-8 text-right text-sm text-muted-foreground">
-            <div>Posted: {format(new Date(rfp.createdAt), "MMMM d, yyyy")}</div>
-            <div>RFI Due: {format(new Date(rfp.rfiDate), "MMMM d, yyyy")}</div>
-            <div>Deadline: {format(new Date(rfp.deadline), "MMMM d, yyyy")}</div>
+            <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
+            <div>RFI Due: {format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</div>
+            <div>Deadline: {format(new Date(rfp.deadline), "MM/dd/yyyy")}</div>
           </div>
 
           <hr className="my-6 border-muted" />
@@ -257,39 +264,15 @@ export default function RfpPage() {
             </div>
           </div>
 
-          {/* Owner Controls */}
-          {isOwner && (
-            <>
-              <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
-                <div className="flex space-x-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditModalOpen(true)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit RFP
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete RFP
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-
           <hr className="my-6 border-muted" />
 
           {/* Project Overview */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Project Overview</h2>
-            <p className="text-justify leading-relaxed">{rfp.description}</p>
+            <div 
+              className="prose prose-sm max-w-none dark:prose-invert text-justify leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rfp.description) }}
+            />
           </div>
 
           <hr className="my-6 border-muted" />
@@ -322,6 +305,12 @@ export default function RfpPage() {
                     : "Not specified"}
                 </p>
               </div>
+              {rfp.mandatoryWalkthrough && (
+                <div>
+                  <h3 className="font-medium mb-2">Mandatory Walkthrough</h3>
+                  <p>Yes</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -351,15 +340,15 @@ export default function RfpPage() {
             <div className="space-y-2">
               <div>
                 <span className="font-medium">Site Walkthrough: </span>
-                {format(new Date(rfp.walkthroughDate), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy 'at' h:mm a")}
               </div>
               <div>
                 <span className="font-medium">RFI Submission Deadline: </span>
-                {format(new Date(rfp.rfiDate), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.rfiDate), "MM/dd/yyyy 'at' h:mm a")}
               </div>
               <div>
                 <span className="font-medium">Proposal Due Date: </span>
-                {format(new Date(rfp.deadline), "MMMM d, yyyy 'at' h:mm a")}
+                {format(new Date(rfp.deadline), "MM/dd/yyyy 'at' h:mm a")}
               </div>
             </div>
           </div>
@@ -380,6 +369,22 @@ export default function RfpPage() {
             </>
           )}
 
+          {rfp.desiredTrades && rfp.desiredTrades.length > 0 && (
+            <>
+              <hr className="my-6 border-muted" />
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Desired Trades</h2>
+                <div className="flex flex-wrap gap-2">
+                  {rfp.desiredTrades.map((trade, index) => (
+                    <Badge key={index} className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50">
+                      {trade}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           {rfp.portfolioLink && (
             <>
               <hr className="my-6 border-muted" />
@@ -391,12 +396,67 @@ export default function RfpPage() {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  View Portfolio Documents
+                  View RFP/Procurement Portal
                 </a>
               </div>
             </>
           )}
         </div>
+
+        {/* RFP Documents - Outside PDF content */}
+        {rfpDocuments.length > 0 && (
+          <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-3">RFP Documents</h3>
+            <div className="space-y-2">
+              {rfpDocuments.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={`/api/rfp-documents/${doc.id}/download`}
+                  className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
+                  data-testid={`document-${doc.id}`}
+                >
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate group-hover:text-primary">
+                      {doc.filename}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{doc.documentType}</span>
+                      <span>•</span>
+                      <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
+                    </div>
+                  </div>
+                  <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Owner Controls - Outside PDF content */}
+        {isOwner && (
+          <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit RFP
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete RFP
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Bid Button - Outside of downloadable content */}
         {!isOwner && (

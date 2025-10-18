@@ -118,14 +118,14 @@ export default function DetailedReportPage() {
                 <div className="space-y-2">
                   <p><strong>Location:</strong> {rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}</p>
                   <p><strong>Budget:</strong> ${rfp.budgetMin?.toLocaleString() || "Not specified"}</p>
-                  <p><strong>Due Date:</strong> {format(new Date(rfp.deadline), "PPp")}</p>
+                  <p><strong>Due Date:</strong> {format(new Date(rfp.deadline), "MM/dd/yyyy h:mm a")}</p>
                 </div>
               </div>
               <div>
                 <h2 className="text-lg font-semibold mb-2">Key Dates</h2>
                 <div className="space-y-2">
-                  <p><strong>Walkthrough:</strong> {format(new Date(rfp.walkthroughDate), "PPp")}</p>
-                  <p><strong>RFI Due:</strong> {format(new Date(rfp.rfiDate), "PPp")}</p>
+                  <p><strong>Walkthrough:</strong> {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy h:mm a")}</p>
+                  <p><strong>RFI Due:</strong> {format(new Date(rfp.rfiDate), "MM/dd/yyyy h:mm a")}</p>
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function DetailedReportPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{format(new Date(rfi.createdAt), "PP")}</TableCell>
+                      <TableCell>{format(new Date(rfi.createdAt), "MM/dd/yyyy")}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{rfi.message}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${

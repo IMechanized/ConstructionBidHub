@@ -7,7 +7,7 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq, and, desc } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
-import createMemoryStore from 'memorystore';
+import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
 import ws from 'ws';
 import path from 'path';
@@ -18,6 +18,9 @@ import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import { z } from 'zod';
+import Mailjet from 'node-mailjet';
+import { v2 as cloudinary } from 'cloudinary';
 
 /**
  * Stripe Payment Processing Integration
@@ -69,6 +72,13 @@ try {
 } catch (error) {
   console.error(`❌ Failed to initialize Stripe: ${error.message}`);
 }
+
+// Configure Cloudinary for file uploads
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Safe logging utilities for authentication (Vercel deployment version matching server/lib/safe-logging.ts)
 const SENSITIVE_FIELDS = [
@@ -315,6 +325,12 @@ const loginLimiter = rateLimit({
 // Password hashing and comparison utilities
 const scryptAsync = promisify(scrypt);
 
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${buf.toString("hex")}.${salt}`;
+}
+
 async function comparePasswords(supplied, stored) {
   // Guard against null, undefined, or improperly formatted passwords
   if (!stored || typeof stored !== 'string' || !stored.includes('.')) {
@@ -336,6 +352,21 @@ async function comparePasswords(supplied, stored) {
     return false;
   }
 }
+
+// Rate limiter for registration endpoint
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 registration requests per hour
+  message: "Too many accounts created from this IP, please try again after an hour",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for registration from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many accounts created from this IP, please try again after an hour" 
+    });
+  },
+});
 
 // Configure WebSocket for Neon
 if (ws) {
@@ -405,11 +436,13 @@ const rfps = pgTable("rfps", {
   deadline: timestamp("deadline").notNull(),
   budgetMin: integer("budget_min"),
   certificationGoals: text("certification_goals").array(),
+  desiredTrades: text("desired_trades").array(),
   jobStreet: text("job_street").notNull(),
   jobCity: text("job_city").notNull(),
   jobState: text("job_state").notNull(),
   jobZip: text("job_zip").notNull(),
   portfolioLink: text("portfolio_link"),
+  mandatoryWalkthrough: boolean("mandatory_walkthrough").default(false),
   status: text("status").default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),
@@ -476,8 +509,209 @@ const rfpViewSessions = pgTable("rfp_view_sessions", {
   convertedToBid: boolean("converted_to_bid").default(false),
 });
 
+const rfpDocuments = pgTable("rfp_documents", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(),
+  documentType: text("document_type", { enum: ["drawing", "specification", "addendum"] }).notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
 // Initialize Drizzle ORM
 const db = drizzle(pool);
+
+// Validation Schemas
+const securePasswordSchema = z.string()
+  .min(7, "Password must be at least 7 characters long")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+  .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, "Password must contain at least one special character");
+
+const insertUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: securePasswordSchema,
+  companyName: z.string().min(1, "Company name is required"),
+});
+
+const passwordResetSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
+});
+
+// Token utilities
+const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const RESET_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour
+
+function generateToken() {
+  return randomBytes(32).toString("hex");
+}
+
+async function createVerificationToken(userId) {
+  const token = generateToken();
+  const expiryDate = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
+  
+  await storage.updateUser(userId, {
+    verificationToken: token,
+    verificationTokenExpiry: expiryDate,
+  });
+  
+  return token;
+}
+
+async function createPasswordResetToken(userId) {
+  const token = generateToken();
+  const expiryDate = new Date(Date.now() + RESET_TOKEN_EXPIRY);
+  
+  await storage.updateUser(userId, {
+    resetToken: token,
+    resetTokenExpiry: expiryDate,
+  });
+  
+  return token;
+}
+
+async function verifyEmailToken(token) {
+  const user = await storage.getUserByVerificationToken(token);
+  
+  if (!user) {
+    return null;
+  }
+  
+  const tokenExpiry = user.verificationTokenExpiry;
+  if (!tokenExpiry || new Date(tokenExpiry) < new Date()) {
+    return null;
+  }
+  
+  await storage.updateUser(user.id, {
+    emailVerified: true,
+    verificationToken: null,
+    verificationTokenExpiry: null,
+  });
+  
+  return user.id;
+}
+
+async function verifyPasswordResetToken(token) {
+  const user = await storage.getUserByResetToken(token);
+  
+  if (!user) {
+    return null;
+  }
+  
+  const tokenExpiry = user.resetTokenExpiry;
+  if (!tokenExpiry || new Date(tokenExpiry) < new Date()) {
+    return null;
+  }
+  
+  return user.id;
+}
+
+async function consumePasswordResetToken(userId) {
+  await storage.updateUser(userId, {
+    resetToken: null,
+    resetTokenExpiry: null,
+  });
+}
+
+// Email utilities
+const mailjet = new Mailjet({
+  apiKey: process.env.MAILJET_API_KEY || '',
+  apiSecret: process.env.MAILJET_SECRET_KEY || '',
+});
+
+function stripHtml(html) {
+  return html.replace(/<[^>]*>?/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function sendEmail(params) {
+  try {
+    const { to, subject, htmlContent, textContent, fromEmail, fromName } = params;
+    
+    const request = await mailjet.post('send', { version: 'v3.1' }).request({
+      Messages: [
+        {
+          From: {
+            Email: fromEmail || 'noreply@findconstructionbids.com',
+            Name: fromName || 'FindConstructionBids',
+          },
+          To: [
+            {
+              Email: to,
+            },
+          ],
+          Subject: subject,
+          TextPart: textContent || stripHtml(htmlContent),
+          HTMLPart: htmlContent,
+        },
+      ],
+    });
+    
+    console.log(`Email sent successfully to ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+}
+
+async function sendVerificationEmail(email, token, companyName) {
+  const verificationUrl = `${process.env.PUBLIC_URL || 'http://localhost:5000'}/verify-email?token=${token}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Welcome to FindConstructionBids!</h2>
+      <p>Hello ${companyName},</p>
+      <p>Thank you for registering with FindConstructionBids. To complete your registration and verify your email address, please click the button below:</p>
+      <p style="text-align: center; margin: 25px 0;">
+        <a href="${verificationUrl}" style="background-color: #4a7aff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
+      </p>
+      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+      <p>${verificationUrl}</p>
+      <p>This verification link will expire in 24 hours.</p>
+      <p>If you did not create an account, you can safely ignore this email.</p>
+      <p>Best regards,<br>The FindConstructionBids Team</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Verify Your Email Address - FindConstructionBids',
+    htmlContent,
+  });
+}
+
+async function sendPasswordResetEmail(email, token, companyName) {
+  const resetUrl = `${process.env.PUBLIC_URL || 'http://localhost:5000'}/reset-password?token=${token}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Reset Your Password</h2>
+      <p>Hello ${companyName},</p>
+      <p>We received a request to reset your password for your FindConstructionBids account. To proceed with resetting your password, please click the button below:</p>
+      <p style="text-align: center; margin: 25px 0;">
+        <a href="${resetUrl}" style="background-color: #4a7aff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+      </p>
+      <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+      <p>${resetUrl}</p>
+      <p>This password reset link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.</p>
+      <p>Best regards,<br>The FindConstructionBids Team</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Reset Your Password - FindConstructionBids',
+    htmlContent,
+  });
+}
 
 // Storage implementation
 const storage = {
@@ -913,10 +1147,91 @@ const storage = {
     }
   },
 
+  async createUser(data) {
+    try {
+      const [user] = await db.insert(users).values(data).returning();
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  },
+
+  async getUserByVerificationToken(token) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.verificationToken, token));
+      return user;
+    } catch (error) {
+      console.error("Error getting user by verification token:", error);
+      return null;
+    }
+  },
+
+  async getUserByResetToken(token) {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.resetToken, token));
+      return user;
+    } catch (error) {
+      console.error("Error getting user by reset token:", error);
+      return null;
+    }
+  },
+
+  async createRfpDocument(document) {
+    try {
+      const [newDocument] = await db
+        .insert(rfpDocuments)
+        .values(document)
+        .returning();
+      return newDocument;
+    } catch (error) {
+      console.error("Error creating RFP document:", error);
+      throw error;
+    }
+  },
+
+  async getRfpDocuments(rfpId) {
+    try {
+      return await db
+        .select()
+        .from(rfpDocuments)
+        .where(eq(rfpDocuments.rfpId, rfpId))
+        .orderBy(desc(rfpDocuments.uploadedAt));
+    } catch (error) {
+      console.error("Error getting RFP documents:", error);
+      return [];
+    }
+  },
+
+  async getRfpDocumentById(id) {
+    try {
+      const [document] = await db
+        .select()
+        .from(rfpDocuments)
+        .where(eq(rfpDocuments.id, id));
+      return document;
+    } catch (error) {
+      console.error("Error getting RFP document by ID:", error);
+      return null;
+    }
+  },
+
+  async deleteRfpDocument(id) {
+    try {
+      await db.delete(rfpDocuments).where(eq(rfpDocuments.id, id));
+    } catch (error) {
+      console.error("Error deleting RFP document:", error);
+      throw error;
+    }
+  },
+
   get sessionStore() {
-    const MemoryStore = createMemoryStore(session);
-    return new MemoryStore({
-      checkPeriod: 86400000
+    const PgSession = ConnectPgSimple(session);
+    return new PgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
     });
   }
 };
@@ -1427,6 +1742,99 @@ app.delete("/api/rfps/:id", requireAuth, async (req, res) => {
   }
 });
 
+// RFP Document routes
+app.get("/api/rfps/:id/documents", async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const documents = await storage.getRfpDocuments(id);
+    res.json(documents);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocuments');
+  }
+});
+
+app.post("/api/rfps/:id/documents", requireAuth, async (req, res) => {
+  try {
+    const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (rfpId === null) return;
+
+    // Verify the user owns this RFP
+    const rfp = await storage.getRfpById(rfpId);
+    if (!rfp || rfp.organizationId !== req.user.id) {
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentCreate');
+    }
+
+    const document = await storage.createRfpDocument({
+      rfpId,
+      filename: req.body.filename,
+      fileUrl: req.body.fileUrl,
+      documentType: req.body.documentType,
+      fileSize: req.body.fileSize,
+      mimeType: req.body.mimeType,
+    });
+
+    res.status(201).json(document);
+  } catch (error) {
+    sendErrorResponse(res, error, 400, ErrorMessages.CREATE_FAILED, 'RFPDocumentCreate');
+  }
+});
+
+app.delete("/api/rfp-documents/:id", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Document ID', res);
+    if (id === null) return;
+
+    // Get the document to verify ownership
+    const document = await storage.getRfpDocumentById(id);
+    
+    if (!document) {
+      return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+    }
+
+    // Verify the user owns the RFP this document belongs to
+    const rfp = await storage.getRfpById(document.rfpId);
+    if (!rfp || rfp.organizationId !== req.user.id) {
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentDelete');
+    }
+
+    await storage.deleteRfpDocument(id);
+    res.sendStatus(200);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFPDocumentDelete');
+  }
+});
+
+// Download RFP document endpoint
+app.get("/api/rfp-documents/:id/download", async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'Document ID', res);
+    if (id === null) return;
+
+    const document = await storage.getRfpDocumentById(id);
+    if (!document) {
+      return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+    }
+
+    // Fetch the file from Cloudinary
+    const response = await fetch(document.fileUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch document from storage');
+    }
+
+    // Set headers to force download
+    res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    
+    // Stream the file to the response
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocumentDownload');
+  }
+});
+
 // RFI routes
 app.post("/api/rfps/:id/rfi", requireAuth, async (req, res) => {
   try {
@@ -1622,20 +2030,80 @@ app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
   }
 });
 
-// File upload endpoint
+// File upload endpoint for images
 app.post("/api/upload", requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
     }
 
     if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ message: "Only image files are allowed" });
+      return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
     }
 
-    // Mock successful upload
-    res.json({ url: `https://example.com/mock-upload/${Date.now()}` });
-  } catch (error) {    res.status(500).json({ message: "Failed to upload file" });
+    console.log('File received:', req.file.originalname, req.file.mimetype);
+
+    // Convert buffer to base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataURI, {
+      resource_type: 'auto',
+      folder: 'construction-bids',
+    });
+
+    console.log('Upload successful:', result.secure_url);
+    res.json({ url: result.secure_url });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
+  }
+});
+
+// Document upload endpoint for RFP documents
+app.post("/api/upload-document", requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    console.log('Document upload request received');
+
+    if (!req.file) {
+      return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
+    }
+
+    // Allowed document types: PDF, Word, Excel, text files
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+    ];
+
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      return sendErrorResponse(res, new Error('Invalid file type. Allowed: PDF, Word, Excel, Text'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
+    }
+
+    console.log('Document received:', req.file.originalname, req.file.mimetype);
+
+    // Convert buffer to base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataURI, {
+      resource_type: 'raw',
+      folder: 'construction-bids/documents',
+    });
+
+    console.log('Document upload successful:', result.secure_url);
+    res.json({ 
+      url: result.secure_url,
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimeType: req.file.mimetype
+    });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'DocumentUpload');
   }
 });
 
@@ -1968,6 +2436,229 @@ app.get("/api/user", requireAuth, (req, res) => {
 });
 
 // Auth routes
+app.post("/api/register", registerLimiter, async (req, res, next) => {
+  try {
+    safeLog(`[Auth] Registration attempt for email: ${maskEmail(req.body.email)}`);
+    
+    // Validate request body against schema
+    const validationResult = insertUserSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      safeLog(`[Auth] Registration validation failed:`, validationResult.error.issues);
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message
+        }))
+      });
+    }
+    
+    const existingUser = await storage.getUserByUsername(req.body.email);
+    if (existingUser) {
+      safeLog(`[Auth] Registration failed - email already exists: ${maskEmail(req.body.email)}`);
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const hashedPassword = await hashPassword(req.body.password);
+    safeLog(`[Auth] Password hashed for new registration`);
+
+    const user = await storage.createUser({
+      ...req.body,
+      password: hashedPassword,
+      emailVerified: false,
+    });
+    
+    safeLog(`[Auth] User created successfully, id: ${user.id}`);
+    
+    // Generate and send verification email
+    try {
+      const token = await createVerificationToken(user.id);
+      const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
+      
+      if (emailSent) {
+        safeLog(`[Auth] Verification email sent to: ${maskEmail(user.email)}`);
+      } else {
+        safeError(`[Auth] Failed to send verification email to: ${maskEmail(user.email)}`);
+      }
+    } catch (emailError) {
+      safeError(`[Auth] Error sending verification email:`, emailError);
+    }
+    
+    req.login(user, (err) => {
+      if (err) {
+        safeError(`[Auth] Error during login after registration:`, err);
+        return next(err);
+      }
+      res.status(201).json(user);
+    });
+  } catch (error) {
+    safeError(`[Auth] Error during registration:`, error);
+    next(error);
+  }
+});
+
+app.get("/api/verify-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: "Invalid verification token" });
+    }
+    
+    safeLog(`[Auth] Email verification attempt with token: ${token.slice(0, 8)}...`);
+    const userId = await verifyEmailToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Email verification failed - invalid or expired token`);
+      return res.status(400).json({ message: "Invalid or expired verification token" });
+    }
+    
+    safeLog(`[Auth] Email verified successfully for user: ${userId}`);
+    
+    // If user is already logged in, update the session
+    if (req.isAuthenticated() && req.user.id === userId) {
+      const updatedUser = await storage.getUser(userId);
+      if (updatedUser) {
+        req.login(updatedUser, (err) => {
+          if (err) {
+            safeError(`[Auth] Error updating user session after verification:`, err);
+          }
+        });
+      }
+    }
+    
+    return res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    safeError(`[Auth] Error during email verification:`, error);
+    return res.status(500).json({ message: "An error occurred during email verification" });
+  }
+});
+
+app.post("/api/resend-verification", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Please log in to resend verification email" });
+    }
+    
+    const user = req.user;
+    
+    if (user.emailVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+    
+    safeLog(`[Auth] Resending verification email to user: ${user.id}`);
+    const token = await createVerificationToken(user.id);
+    const emailSent = await sendVerificationEmail(user.email, token, user.companyName);
+    
+    if (emailSent) {
+      safeLog(`[Auth] Verification email resent to: ${maskEmail(user.email)}`);
+      return res.status(200).json({ message: "Verification email sent successfully" });
+    } else {
+      safeError(`[Auth] Failed to resend verification email to: ${maskEmail(user.email)}`);
+      return res.status(500).json({ message: "Failed to send verification email" });
+    }
+  } catch (error) {
+    safeError(`[Auth] Error resending verification email:`, error);
+    return res.status(500).json({ message: "An error occurred while resending the verification email" });
+  }
+});
+
+app.post("/api/request-password-reset", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    safeLog(`[Auth] Password reset requested for email: ${maskEmail(email)}`);
+    const user = await storage.getUserByUsername(email);
+    
+    if (!user) {
+      safeLog(`[Auth] Password reset requested for non-existent email: ${maskEmail(email)}`);
+      return res.status(200).json({ message: "If your email is registered, you will receive a password reset link" });
+    }
+    
+    const token = await createPasswordResetToken(user.id);
+    const emailSent = await sendPasswordResetEmail(user.email, token, user.companyName);
+    
+    if (emailSent) {
+      safeLog(`[Auth] Password reset email sent to: ${maskEmail(user.email)}`);
+      return res.status(200).json({ message: "Password reset email sent successfully" });
+    } else {
+      safeError(`[Auth] Failed to send password reset email to: ${maskEmail(user.email)}`);
+      return res.status(500).json({ message: "Failed to send password reset email" });
+    }
+  } catch (error) {
+    safeError(`[Auth] Error during password reset request:`, error);
+    return res.status(500).json({ message: "An error occurred while processing your request" });
+  }
+});
+
+app.get("/api/verify-reset-token", async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: "Invalid reset token" });
+    }
+    
+    safeLog(`[Auth] Verifying password reset token: ${token.slice(0, 8)}...`);
+    const userId = await verifyPasswordResetToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Invalid or expired password reset token`);
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+    
+    safeLog(`[Auth] Valid password reset token for user: ${userId}`);
+    return res.status(200).json({ message: "Valid reset token", token });
+  } catch (error) {
+    safeError(`[Auth] Error verifying reset token:`, error);
+    return res.status(500).json({ message: "An error occurred while verifying the reset token" });
+  }
+});
+
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+    
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({ message: "Token, password, and confirmPassword are required" });
+    }
+    
+    // Validate password
+    const passwordValidation = passwordResetSchema.safeParse({ password, confirmPassword });
+    if (!passwordValidation.success) {
+      return res.status(400).json({ 
+        message: "Password validation failed", 
+        errors: passwordValidation.error.errors 
+      });
+    }
+    
+    safeLog(`[Auth] Resetting password with token: ${token.slice(0, 8)}...`);
+    const userId = await verifyPasswordResetToken(token);
+    
+    if (!userId) {
+      safeLog(`[Auth] Password reset failed - invalid or expired token`);
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+    
+    // Update password
+    const hashedPassword = await hashPassword(password);
+    await storage.updateUser(userId, { password: hashedPassword });
+    
+    // Consume the token
+    await consumePasswordResetToken(userId);
+    
+    safeLog(`[Auth] Password reset successful for user: ${userId}`);
+    return res.status(200).json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    safeError(`[Auth] Error during password reset:`, error);
+    return res.status(500).json({ message: "An error occurred during password reset" });
+  }
+});
+
 app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {

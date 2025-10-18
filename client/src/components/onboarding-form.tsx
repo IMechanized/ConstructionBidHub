@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { onboardingSchema, CERTIFICATIONS } from "@shared/schema";
+import { onboardingSchema, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,27 +16,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Upload, Loader2, X } from "lucide-react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getCertificationClasses } from "@/lib/utils";
-
-const TRADE_OPTIONS = [
-  "Owner",
-  "Construction Manager",
-  "General Contractor",
-  "Division 02 — Site Works",
-  "Division 03 — Concrete",
-  "Division 04 — Masonry",
-  "Division 05 — Metals",
-  "Division 06 — Wood and Plastics",
-  "Division 07 — Thermal and Moisture Protection",
-  "Division 08 — Doors and Windows",
-  "Division 09 — Finishes",
-  "Division 10 — Specialties",
-  "Division 11 — Equipment",
-  "Division 12 — Furnishings",
-  "Division 13 — Special Construction",
-  "Division 14 — Conveying Systems",
-  "Division 15 — Mechanical/Plumbing",
-  "Division 16 — Electrical",
-];
 
 // Phone number formatting utility
 const formatPhoneNumber = (value: string) => {
@@ -360,8 +339,13 @@ export default function OnboardingForm() {
                       </div>
                       <Select
                         onValueChange={(value) => {
-                          if (!field.value.includes(value)) {
-                            field.onChange([...field.value, value]);
+                          if (value === "None") {
+                            field.onChange(["None"]);
+                          } else {
+                            const filteredValue = field.value.filter(cert => cert !== "None");
+                            if (!filteredValue.includes(value)) {
+                              field.onChange([...filteredValue, value]);
+                            }
                           }
                         }}
                       >

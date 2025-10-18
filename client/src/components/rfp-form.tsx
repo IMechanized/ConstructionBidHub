@@ -26,11 +26,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertRfpSchema, CERTIFICATIONS } from "@shared/schema";
+import { insertRfpSchema, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Loader2, Zap, X } from "lucide-react";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 import { getCertificationClasses } from "@/lib/utils";
@@ -39,6 +40,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
+import DocumentUpload, { type UploadedDocument } from "./document-upload";
+
+const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
 interface RfpFormProps {
   onSuccess?: () => void;
@@ -53,6 +57,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const [createdRfpId, setCreatedRfpId] = useState<number | null>(null);
   const [pendingRfpData, setPendingRfpData] = useState<any>(null);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -90,11 +95,13 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       deadline: "",
       budgetMin: undefined,
       certificationGoals: [],
+      desiredTrades: [],
       jobStreet: "",
       jobCity: "",
       jobState: "",
       jobZip: "",
       portfolioLink: "",
+      mandatoryWalkthrough: false,
       featured: false,
     },
   });
@@ -107,14 +114,34 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         budgetMin: data.budgetMin ? Number(data.budgetMin) : null,
         portfolioLink: data.portfolioLink || null,
         certificationGoals: data.certificationGoals && data.certificationGoals.length > 0 ? data.certificationGoals : null,
+        desiredTrades: data.desiredTrades && data.desiredTrades.length > 0 ? data.desiredTrades : null,
         // Always set featured to false - we'll update it after payment if needed
         featured: false
       };
       const res = await apiRequest("POST", "/api/rfps", formattedData);
       return res.json();
     },
-    onSuccess: (newRfp) => {
+    onSuccess: async (newRfp) => {
       setCreatedRfpId(newRfp.id);
+      
+      // Save documents if any
+      if (documents.length > 0) {
+        try {
+          await Promise.all(
+            documents.map(doc =>
+              apiRequest("POST", `/api/rfps/${newRfp.id}/documents`, doc)
+            )
+          );
+        } catch (error) {
+          console.error("Error saving documents:", error);
+          toast({
+            title: t('common.error'),
+            description: "RFP created but some documents failed to upload",
+            variant: "destructive",
+          });
+        }
+      }
+      
       // For regular (non-boosted) RFPs, finish submission right away
       if (!isBoosting) {
         finishSubmission();
@@ -135,6 +162,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     // Invalidate cache and reset form
     queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
     form.reset();
+    setDocuments([]);
     setCreatedRfpId(null);
     setPendingRfpData(null);
     setIsBoosting(false);
@@ -209,10 +237,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             <FormItem>
               <FormLabel>{t('rfp.description')}</FormLabel>
               <FormControl>
-                <Textarea 
-                  data-testid="description-input"
+                <RichTextEditor 
+                  value={field.value}
+                  onChange={field.onChange}
                   placeholder={t('rfp.enterDescription')}
-                  {...field} 
+                  data-testid="description-input"
                 />
               </FormControl>
               <FormMessage role="alert" data-testid="description-error" />
@@ -278,25 +307,68 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Mandatory Walkthrough Checkbox */}
+        <FormField
+          control={form.control}
+          name="mandatoryWalkthrough"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  data-testid="mandatory-walkthrough-checkbox"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>
+                  {t('rfp.mandatoryWalkthrough')}
+                </FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+
         {/* Budget Field */}
         <FormField
           control={form.control}
           name="budgetMin"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('rfp.minimumBudget')}</FormLabel>
-              <FormControl>
-                <Input
-                  data-testid="budget-input"
-                  type="number"
-                  placeholder={t('rfp.enterMinimumBudget')}
-                  {...field}
-                  onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                />
-              </FormControl>
-              <FormMessage role="alert" data-testid="budget-error" />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const formatNumber = (value: string) => {
+              const number = value.replace(/,/g, '');
+              if (!number || isNaN(Number(number))) return '';
+              return Number(number).toLocaleString();
+            };
+
+            const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+              const rawValue = e.target.value.replace(/,/g, '');
+              if (rawValue === '') {
+                field.onChange(undefined);
+              } else if (!isNaN(Number(rawValue))) {
+                field.onChange(Number(rawValue));
+              }
+            };
+
+            const displayValue = field.value !== undefined && field.value !== null 
+              ? (field.value as number).toLocaleString() 
+              : '';
+
+            return (
+              <FormItem>
+                <FormLabel>{t('rfp.minimumBudget')}</FormLabel>
+                <FormControl>
+                  <Input
+                    data-testid="budget-input"
+                    type="text"
+                    placeholder={t('rfp.enterMinimumBudget')}
+                    value={displayValue}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+                <FormMessage role="alert" data-testid="budget-error" />
+              </FormItem>
+            );
+          }}
         />
 
         {/* Job Address Section */}
@@ -446,6 +518,64 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           )}
         />
 
+        {/* Desired Trades Field */}
+        <FormField
+          control={form.control}
+          name="desiredTrades"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Desired Trades</FormLabel>
+              <div className="space-y-3">
+                {/* Display selected trades */}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {field.value?.map((trade, index) => (
+                    <div 
+                      key={index} 
+                      className="px-3 py-1 rounded-full flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                    >
+                      <span>{trade}</span>
+                      <X 
+                        className="h-4 w-4 cursor-pointer" 
+                        onClick={() => {
+                          const newValue = [...(field.value || [])];
+                          newValue.splice(index, 1);
+                          field.onChange(newValue);
+                        }}
+                        data-testid={`remove-trade-${index}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Select dropdown for adding trades */}
+                <Select
+                  onValueChange={(value: string) => {
+                    const currentValue = field.value as string[] || [];
+                    if (!currentValue.includes(value)) {
+                      field.onChange([...currentValue, value]);
+                    }
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="trades-select">
+                      <SelectValue placeholder="Select trades to receive bids from" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {RFP_TRADE_OPTIONS.filter(trade => !(field.value as string[] || []).includes(trade)).map((trade) => (
+                      <SelectItem key={trade} value={trade}>
+                        {trade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Select which trades you want to receive bids from (optional)</p>
+              </div>
+              <FormMessage role="alert" data-testid="trades-error" />
+            </FormItem>
+          )}
+        />
+
         {/* Portfolio Link Field */}
         <FormField
           control={form.control}
@@ -465,6 +595,17 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Document Upload Section */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">RFP Documents</h3>
+          <p className="text-sm text-muted-foreground">Upload drawings, specifications, or addenda for your RFP</p>
+          <DocumentUpload
+            documents={documents}
+            onDocumentsChange={setDocuments}
+            disabled={createRfpMutation.isPending}
+          />
+        </div>
 
         {/* RFP Boosting Benefits Section */}
         <div 
@@ -492,20 +633,6 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <div>
                 <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.moreResponses.title')}</strong>
                 <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.moreResponses.description')}</p>
-              </div>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
-              <div>
-                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.fasterMatching.title')}</strong>
-                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.fasterMatching.description')}</p>
-              </div>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
-              <div>
-                <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.professionalBadge.title')}</strong>
-                <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.professionalBadge.description')}</p>
               </div>
             </li>
           </ul>

@@ -9,6 +9,7 @@ import { z } from "zod";
 
 // List of available certifications
 export const CERTIFICATIONS = [
+  "None",
   "Women-owned",
   "Native American-owned",
   "Veteran-owned",
@@ -19,6 +20,27 @@ export const CERTIFICATIONS = [
   "Section 3",
   "SBE",
   "DBE"
+];
+
+// List of available trades
+export const TRADE_OPTIONS = [
+  "Construction Manager",
+  "General Contractor",
+  "Division 02 — Site Works",
+  "Division 03 — Concrete",
+  "Division 04 — Masonry",
+  "Division 05 — Metals",
+  "Division 06 — Wood and Plastics",
+  "Division 07 — Thermal and Moisture Protection",
+  "Division 08 — Doors and Windows",
+  "Division 09 — Finishes",
+  "Division 10 — Specialties",
+  "Division 11 — Equipment",
+  "Division 12 — Furnishings",
+  "Division 13 — Special Construction",
+  "Division 14 — Conveying Systems",
+  "Division 15 — Mechanical/Plumbing",
+  "Division 16 — Electrical",
 ];
 
 /**
@@ -65,16 +87,33 @@ export const rfps = pgTable("rfps", {
   deadline: timestamp("deadline").notNull(),                 // Bid submission deadline
   budgetMin: integer("budget_min"),                         // Minimum budget (optional)
   certificationGoals: text("certification_goals").array(),   // Required certifications
+  desiredTrades: text("desired_trades").array(),            // Desired contractor trades
   jobStreet: text("job_street").notNull(),                 // Street address
   jobCity: text("job_city").notNull(),                     // City
   jobState: text("job_state").notNull(),                   // State
   jobZip: text("job_zip").notNull(),                       // ZIP code
   portfolioLink: text("portfolio_link"),                    // Additional resources
+  mandatoryWalkthrough: boolean("mandatory_walkthrough").default(false), // Is walkthrough mandatory
   status: text("status", { enum: ["open", "closed"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),             // Promoted/featured status
   featuredAt: timestamp("featured_at"),                    // When the RFP was featured
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * RFP Documents Table
+ * Stores document attachments for RFPs (drawings, specifications, addenda)
+ */
+export const rfpDocuments = pgTable("rfp_documents", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  filename: text("filename").notNull(),
+  fileUrl: text("file_url").notNull(),
+  documentType: text("document_type", { enum: ["drawing", "specification", "addendum"] }).notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
 /**
@@ -227,11 +266,13 @@ export const insertRfpSchema = createInsertSchema(rfps)
     deadline: true,
     budgetMin: true,
     certificationGoals: true,
+    desiredTrades: true,
     jobStreet: true,
     jobCity: true,
     jobState: true,
     jobZip: true,
     portfolioLink: true,
+    mandatoryWalkthrough: true,
     featured: true,
   })
   .extend({
@@ -244,7 +285,9 @@ export const insertRfpSchema = createInsertSchema(rfps)
     jobState: z.string().min(1, "State is required"),
     jobZip: z.string().min(1, "ZIP code is required"),
     certificationGoals: z.array(z.string()).nullish(),
+    desiredTrades: z.array(z.string()).nullish(),
     portfolioLink: z.string().nullish().or(z.literal("")),
+    mandatoryWalkthrough: z.boolean().default(false),
     featured: z.boolean().default(false),
   });
 
@@ -282,11 +325,23 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
   relatedType: true,
 });
 
+// RFP document creation validation
+export const insertRfpDocumentSchema = createInsertSchema(rfpDocuments).pick({
+  rfpId: true,
+  filename: true,
+  fileUrl: true,
+  documentType: true,
+  fileSize: true,
+  mimeType: true,
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Rfp = typeof rfps.$inferSelect;
 export type InsertRfp = z.infer<typeof insertRfpSchema>;
+export type RfpDocument = typeof rfpDocuments.$inferSelect;
+export type InsertRfpDocument = z.infer<typeof insertRfpDocumentSchema>;
 export type RfpAnalytics = typeof rfpAnalytics.$inferSelect;
 export type RfpViewSession = typeof rfpViewSessions.$inferSelect;
 export type Rfi = typeof rfis.$inferSelect;

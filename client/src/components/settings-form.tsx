@@ -440,8 +440,14 @@ export default function SettingsForm() {
                     </div>
                     <Select
                       onValueChange={(value) => {
-                        if (!(field.value || []).includes(value)) {
-                          field.onChange([...(field.value || []), value]);
+                        if (value === "None") {
+                          field.onChange(["None"]);
+                        } else {
+                          const currentValue = field.value || [];
+                          const filteredValue = currentValue.filter(cert => cert !== "None");
+                          if (!filteredValue.includes(value)) {
+                            field.onChange([...filteredValue, value]);
+                          }
                         }
                       }}
                     >

@@ -109,7 +109,7 @@ export function registerRoutes(app: Express): Server {
   // Then initialize authentication (depends on session)
   setupAuth(app);
 
-  // File upload endpoint
+  // File upload endpoint for images
   app.post("/api/upload", upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received');
@@ -145,6 +145,60 @@ export function registerRoutes(app: Express): Server {
       res.json({ url: result.secure_url });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
+    }
+  });
+
+  // Document upload endpoint for RFP documents
+  app.post("/api/upload-document", upload.single('file'), async (req, res) => {
+    try {
+      console.log('Document upload request received');
+
+      // Check authentication first
+      try {
+        requireAuth(req);
+      } catch (error) {
+        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
+      }
+
+      if (!req.file) {
+        return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
+      }
+
+      // Allowed document types: PDF, Word, Excel, text files
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+      ];
+
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return sendErrorResponse(res, new Error('Invalid file type. Allowed: PDF, Word, Excel, Text'), 400, ErrorMessages.BAD_REQUEST, 'UploadInvalidType');
+      }
+
+      console.log('Document received:', req.file.originalname, req.file.mimetype);
+
+      // Convert buffer to base64
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'raw',
+        folder: 'construction-bids/documents',
+      });
+
+      console.log('Document upload successful:', result.secure_url);
+      res.json({ 
+        url: result.secure_url,
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype
+      });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'DocumentUpload');
     }
   });
 
@@ -305,6 +359,105 @@ export function registerRoutes(app: Express): Server {
 
     await storage.deleteRfp(id);
     res.sendStatus(200);
+  });
+
+  // RFP Document routes
+  app.get("/api/rfps/:id/documents", async (req, res) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+
+      const documents = await storage.getRfpDocuments(id);
+      res.json(documents);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocuments');
+    }
+  });
+
+  app.post("/api/rfps/:id/documents", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (rfpId === null) return;
+
+      // Verify the user owns this RFP
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'add document', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentCreate');
+      }
+
+      const document = await storage.createRfpDocument({
+        rfpId,
+        filename: req.body.filename,
+        fileUrl: req.body.fileUrl,
+        documentType: req.body.documentType,
+        fileSize: req.body.fileSize,
+        mimeType: req.body.mimeType,
+      });
+
+      res.status(201).json(document);
+    } catch (error) {
+      sendErrorResponse(res, error, 400, ErrorMessages.CREATE_FAILED, 'RFPDocumentCreate');
+    }
+  });
+
+  app.delete("/api/rfp-documents/:id", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const id = validatePositiveInt(req.params.id, 'Document ID', res);
+      if (id === null) return;
+
+      // Get the document to verify ownership
+      const document = await storage.getRfpDocumentById(id);
+      
+      if (!document) {
+        return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+      }
+
+      // Verify the user owns the RFP this document belongs to
+      const rfp = await storage.getRfpById(document.rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `Document ${req.params.id}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPDocumentDelete');
+      }
+
+      await storage.deleteRfpDocument(id);
+      res.sendStatus(200);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'RFPDocumentDelete');
+    }
+  });
+
+  // Download RFP document endpoint
+  app.get("/api/rfp-documents/:id/download", async (req, res) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'Document ID', res);
+      if (id === null) return;
+
+      const document = await storage.getRfpDocumentById(id);
+      if (!document) {
+        return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
+      }
+
+      // Fetch the file from Cloudinary
+      const response = await fetch(document.fileUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch document from storage');
+      }
+
+      // Set headers to force download
+      res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
+      res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+      
+      // Stream the file to the response
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPDocumentDownload');
+    }
   });
 
   // Update user settings

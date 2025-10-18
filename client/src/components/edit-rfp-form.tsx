@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { insertRfpSchema, type Rfp, CERTIFICATIONS } from "@shared/schema";
+import { insertRfpSchema, type Rfp, type RfpDocument, CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +18,10 @@ import PaymentDialog from "./payment-dialog";
 import { getFeaturedRfpPrice, formatPrice } from "@/lib/stripe";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
+import DocumentUpload, { type UploadedDocument } from "./document-upload";
+import { apiRequest } from "@/lib/queryClient";
+
+const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
@@ -46,12 +51,31 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const queryClient = useQueryClient();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<RfpDocument[]>([]);
+  const [documentsToDelete, setDocumentsToDelete] = useState<number[]>([]);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
     queryKey: ['/api/payments/price'],
     queryFn: getFeaturedRfpPrice,
   });
+
+  // Fetch existing documents
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await fetch(`/api/rfps/${rfp.id}/documents`);
+        if (response.ok) {
+          const docs = await response.json();
+          setExistingDocuments(docs);
+        }
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+      }
+    };
+    fetchDocuments();
+  }, [rfp.id]);
 
   const form = useForm({
     resolver: zodResolver(editRfpSchema),
@@ -67,7 +91,10 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       rfiDate: format(new Date(rfp.rfiDate), "yyyy-MM-dd'T'HH:mm"),
       deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
       certificationGoals: rfp.certificationGoals || [],
+      desiredTrades: rfp.desiredTrades || [],
       portfolioLink: rfp.portfolioLink || "",
+      mandatoryWalkthrough: rfp.mandatoryWalkthrough || false,
+      featured: rfp.featured,
     },
   });
 
@@ -107,7 +134,33 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   // Main update mutation (with onSuccess side effects)
   const updateRfpMutation = useMutation({
     mutationFn: updateRfpMutationFn,
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Delete removed documents
+      if (documentsToDelete.length > 0) {
+        try {
+          await Promise.all(
+            documentsToDelete.map(docId =>
+              apiRequest("DELETE", `/api/rfp-documents/${docId}`, {})
+            )
+          );
+        } catch (error) {
+          console.error("Error deleting documents:", error);
+        }
+      }
+
+      // Save new documents
+      if (documents.length > 0) {
+        try {
+          await Promise.all(
+            documents.map(doc =>
+              apiRequest("POST", `/api/rfps/${rfp.id}/documents`, doc)
+            )
+          );
+        } catch (error) {
+          console.error("Error saving new documents:", error);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: [`/api/rfps/${rfp.id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
       toast({
@@ -219,11 +272,16 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
 
         <div>
           <Label htmlFor="description">Project Description</Label>
-          <Textarea
-            id="description"
-            {...form.register("description")}
-            placeholder="Describe the project in detail"
-            rows={4}
+          <Controller
+            name="description"
+            control={form.control}
+            render={({ field }) => (
+              <RichTextEditor
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Describe the project in detail"
+              />
+            )}
           />
           {form.formState.errors.description && (
             <p className="text-sm text-destructive mt-1">
@@ -307,12 +365,34 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
         </div>
 
         <div>
-          <Label htmlFor="budgetMin">Budget (USD)</Label>
-          <Input
-            id="budgetMin"
-            type="number"
-            {...form.register("budgetMin", { valueAsNumber: true })}
-            placeholder="Enter minimum budget"
+          <Label htmlFor="budgetMin">Budget estimate</Label>
+          <Controller
+            name="budgetMin"
+            control={form.control}
+            render={({ field }) => {
+              const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const rawValue = e.target.value.replace(/,/g, '');
+                if (rawValue === '') {
+                  field.onChange(undefined);
+                } else if (!isNaN(Number(rawValue))) {
+                  field.onChange(Number(rawValue));
+                }
+              };
+
+              const displayValue = field.value !== undefined && field.value !== null 
+                ? field.value.toLocaleString() 
+                : '';
+
+              return (
+                <Input
+                  id="budgetMin"
+                  type="text"
+                  value={displayValue}
+                  onChange={handleChange}
+                  placeholder="Enter budget estimate"
+                />
+              );
+            }}
           />
           {form.formState.errors.budgetMin && (
             <p className="text-sm text-destructive mt-1">
@@ -361,6 +441,25 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
               {form.formState.errors.deadline.message}
             </p>
           )}
+        </div>
+
+        {/* Mandatory Walkthrough Checkbox */}
+        <div className="flex items-center space-x-2">
+          <Controller
+            name="mandatoryWalkthrough"
+            control={form.control}
+            render={({ field }) => (
+              <Checkbox
+                id="mandatoryWalkthrough"
+                data-testid="mandatory-walkthrough-checkbox"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <Label htmlFor="mandatoryWalkthrough" className="text-sm font-normal cursor-pointer">
+            {t('rfp.mandatoryWalkthrough')}
+          </Label>
         </div>
 
         {/* Certification Goals Field */}
@@ -417,8 +516,62 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           )}
         </div>
 
+        {/* Desired Trades Field */}
         <div>
-          <Label htmlFor="portfolioLink">Portfolio/Documents Link (Optional)</Label>
+          <Label>Desired Trades (Optional)</Label>
+          <div className="space-y-3">
+            {/* Display selected trades */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {form.watch("desiredTrades")?.map((trade, index) => (
+                <div 
+                  key={index} 
+                  className="px-3 py-1 rounded-full flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                >
+                  <span>{trade}</span>
+                  <X 
+                    className="h-4 w-4 cursor-pointer" 
+                    onClick={() => {
+                      const currentValue = form.getValues("desiredTrades") || [];
+                      const newValue = [...currentValue];
+                      newValue.splice(index, 1);
+                      form.setValue("desiredTrades", newValue);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* Select dropdown for adding trades */}
+            <Select
+              onValueChange={(value: string) => {
+                const currentValue = form.getValues("desiredTrades") || [];
+                if (!currentValue.includes(value)) {
+                  form.setValue("desiredTrades", [...currentValue, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select trades to receive bids from" />
+              </SelectTrigger>
+              <SelectContent>
+                {RFP_TRADE_OPTIONS.filter(trade => !(form.watch("desiredTrades") || []).includes(trade)).map((trade) => (
+                  <SelectItem key={trade} value={trade}>
+                    {trade}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Select which trades you want to receive bids from</p>
+          </div>
+          {form.formState.errors.desiredTrades && (
+            <p className="text-sm text-destructive mt-1">
+              {form.formState.errors.desiredTrades.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="portfolioLink">Link to RFP/Procurement portal (Optional)</Label>
           <Input
             id="portfolioLink"
             type="url"
@@ -430,6 +583,51 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
               {form.formState.errors.portfolioLink.message}
             </p>
           )}
+        </div>
+
+        {/* Document Management Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">RFP Documents</h3>
+          
+          {/* Existing Documents */}
+          {existingDocuments.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Existing Documents</h4>
+              {existingDocuments.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.filename}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{doc.documentType}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setExistingDocuments(existingDocuments.filter(d => d.id !== doc.id));
+                      setDocumentsToDelete([...documentsToDelete, doc.id]);
+                    }}
+                    disabled={updateRfpMutation.isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New Document Upload */}
+          <div>
+            <h4 className="text-sm font-medium mb-2">Add New Documents</h4>
+            <DocumentUpload
+              documents={documents}
+              onDocumentsChange={setDocuments}
+              disabled={updateRfpMutation.isPending}
+            />
+          </div>
         </div>
 
         {/* RFP Boosting Benefits Section - Only show if RFP is not featured */}

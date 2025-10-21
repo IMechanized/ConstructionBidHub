@@ -366,6 +366,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
                   />
                 </FormControl>
                 <FormMessage role="alert" data-testid="budget-error" />
+                <p className="text-sm text-muted-foreground">This for Bonding Purposes</p>
               </FormItem>
             );
           }}
@@ -599,7 +600,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         {/* Document Upload Section */}
         <div className="space-y-2">
           <h3 className="text-lg font-medium">RFP Documents</h3>
-          <p className="text-sm text-muted-foreground">Upload drawings, specifications, or addenda for your RFP</p>
+          <p className="text-sm text-muted-foreground">Upload drawings, specifications, or addenda for your RFP. RFP Documents can also be included in the RFP Link location above.</p>
           <DocumentUpload
             documents={documents}
             onDocumentsChange={setDocuments}

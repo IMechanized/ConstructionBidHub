@@ -399,6 +399,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
               {form.formState.errors.budgetMin.message}
             </p>
           )}
+          <p className="text-sm text-muted-foreground mt-1">This for Bonding Purposes</p>
         </div>
 
         <div>
@@ -588,6 +589,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
         {/* Document Management Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">RFP Documents</h3>
+          <p className="text-sm text-muted-foreground">Upload drawings, specifications, or addenda for your RFP. RFP Documents can also be included in the RFP Link location above.</p>
           
           {/* Existing Documents */}
           {existingDocuments.length > 0 && (

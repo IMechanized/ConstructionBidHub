@@ -575,9 +575,9 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           <Label htmlFor="portfolioLink">Link to RFP/Procurement portal (Optional)</Label>
           <Input
             id="portfolioLink"
-            type="url"
+            type="text"
             {...form.register("portfolioLink")}
-            placeholder="https://example.com/documents"
+            placeholder="www.example.com or https://example.com/documents"
           />
           {form.formState.errors.portfolioLink && (
             <p className="text-sm text-destructive mt-1">
@@ -659,20 +659,6 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
                 <div>
                   <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.moreResponses.title')}</strong>
                   <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.moreResponses.description')}</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
-                <div>
-                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.fasterMatching.title')}</strong>
-                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.fasterMatching.description')}</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full mt-2 flex-shrink-0" aria-hidden="true"></div>
-                <div>
-                  <strong className="text-yellow-800 dark:text-yellow-200">{t('rfp.boost.professionalBadge.title')}</strong>
-                  <p className="text-yellow-700 dark:text-yellow-300">{t('rfp.boost.professionalBadge.description')}</p>
                 </div>
               </li>
             </ul>

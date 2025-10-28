@@ -107,7 +107,7 @@ export const rfps = pgTable("rfps", {
  */
 export const rfpDocuments = pgTable("rfp_documents", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'cascade' }).notNull(),
   filename: text("filename").notNull(),
   fileUrl: text("file_url").notNull(),
   documentType: text("document_type", { enum: ["drawing", "specification", "addendum"] }).notNull(),
@@ -122,7 +122,7 @@ export const rfpDocuments = pgTable("rfp_documents", {
  */
 export const rfpAnalytics = pgTable("rfp_analytics", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id),
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'cascade' }),
   date: date("date").notNull(),                            // Analytics date
   totalViews: integer("total_views").default(0),           // Total page views
   uniqueViews: integer("unique_views").default(0),         // Unique visitors
@@ -137,7 +137,7 @@ export const rfpAnalytics = pgTable("rfp_analytics", {
  */
 export const rfpViewSessions = pgTable("rfp_view_sessions", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id),
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'cascade' }),
   userId: integer("user_id").references(() => users.id),
   viewDate: timestamp("view_date").notNull(),
   duration: integer("duration").default(0),                 // Session duration (seconds)
@@ -150,7 +150,7 @@ export const rfpViewSessions = pgTable("rfp_view_sessions", {
  */
 export const rfis = pgTable("rfis", {
   id: serial("id").primaryKey(),
-  rfpId: integer("rfp_id").references(() => rfps.id),
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'cascade' }),
   email: text("email").notNull(),                          // Requester's email
   message: text("message").notNull(),                      // Question/request
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -165,7 +165,7 @@ export const rfis = pgTable("rfis", {
  */
 export const rfiMessages = pgTable("rfi_messages", {
   id: serial("id").primaryKey(),
-  rfiId: integer("rfi_id").references(() => rfis.id).notNull(),
+  rfiId: integer("rfi_id").references(() => rfis.id, { onDelete: 'cascade' }).notNull(),
   senderId: integer("sender_id").references(() => users.id).notNull(),
   message: text("message"), // Optional - can be null if message is attachment-only
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -177,7 +177,7 @@ export const rfiMessages = pgTable("rfi_messages", {
  */
 export const rfiAttachments = pgTable("rfi_attachments", {
   id: serial("id").primaryKey(),
-  messageId: integer("message_id").references(() => rfiMessages.id).notNull(),
+  messageId: integer("message_id").references(() => rfiMessages.id, { onDelete: 'cascade' }).notNull(),
   filename: text("filename").notNull(),
   fileUrl: text("file_url").notNull(), // Cloudinary URL or storage URL
   fileSize: integer("file_size"), // File size in bytes

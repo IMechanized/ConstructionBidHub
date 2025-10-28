@@ -575,9 +575,9 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           <Label htmlFor="portfolioLink">Link to RFP/Procurement portal (Optional)</Label>
           <Input
             id="portfolioLink"
-            type="url"
+            type="text"
             {...form.register("portfolioLink")}
-            placeholder="https://example.com/documents"
+            placeholder="www.example.com or https://example.com/documents"
           />
           {form.formState.errors.portfolioLink && (
             <p className="text-sm text-destructive mt-1">

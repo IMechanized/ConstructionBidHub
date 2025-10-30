@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
+import { ParagraphSpacingExtension, type LineHeight, type ParagraphSpacing } from './paragraph-spacing-extension';
 import { 
   Bold, 
   Italic, 
@@ -20,6 +21,7 @@ import {
   IndentDecrease
 } from 'lucide-react';
 import { Button } from './button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 import { useEffect } from 'react';
 
 interface RichTextEditorProps {
@@ -36,7 +38,9 @@ export function RichTextEditor({ value, onChange, placeholder, 'data-testid': te
         heading: {
           levels: [2, 3],
         },
+        paragraph: false,
       }),
+      ParagraphSpacingExtension,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -205,6 +209,33 @@ export function RichTextEditor({ value, onChange, placeholder, 'data-testid': te
         >
           <IndentDecrease className="h-4 w-4" />
         </Button>
+        <div className="w-px h-6 bg-border mx-1" />
+        <Select
+          value={editor.getAttributes('paragraph').lineHeight || 'normal'}
+          onValueChange={(value) => editor.chain().focus().setLineHeight(value as LineHeight).run()}
+        >
+          <SelectTrigger className="h-8 w-[110px]" data-testid="editor-line-height">
+            <SelectValue placeholder="Line height" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="normal">Normal (1.6)</SelectItem>
+            <SelectItem value="relaxed">Relaxed (1.8)</SelectItem>
+            <SelectItem value="loose">Loose (2.0)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={editor.getAttributes('paragraph').spacing || 'normal'}
+          onValueChange={(value) => editor.chain().focus().setParagraphSpacing(value as ParagraphSpacing).run()}
+        >
+          <SelectTrigger className="h-8 w-[110px]" data-testid="editor-spacing">
+            <SelectValue placeholder="Spacing" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tight">Tight</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="wide">Wide</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex-1" />
         <Button
           type="button"

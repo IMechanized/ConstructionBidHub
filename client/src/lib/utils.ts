@@ -69,3 +69,17 @@ export function getCertificationClasses(certification: string, hover: boolean = 
   
   return baseClasses;
 }
+
+export function normalizeUrl(url: string): string {
+  if (!url || url.trim() === '') {
+    return '';
+  }
+  
+  const trimmedUrl = url.trim();
+  
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    return trimmedUrl;
+  }
+  
+  return `https://${trimmedUrl}`;
+}

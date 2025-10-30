@@ -22,7 +22,7 @@ import { Download, Edit, Trash2, FileText } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
-import { getCertificationClasses } from "@/lib/utils";
+import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
 
@@ -391,7 +391,7 @@ export default function RfpPage() {
               <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
                 <a
-                  href={rfp.portfolioLink}
+                  href={normalizeUrl(rfp.portfolioLink)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { Upload, Loader2, X } from "lucide-react";
-import { uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadFile } from "@/lib/upload";
 import { getCertificationClasses } from "@/lib/utils";
 
 // Phone number formatting utility
@@ -124,7 +124,7 @@ export default function OnboardingForm() {
       if (data.logo instanceof File) {
         setIsUploading(true);
         console.log("Uploading logo file...");
-        logoUrl = await uploadToCloudinary(data.logo);
+        logoUrl = await uploadFile(data.logo);
         console.log("Logo uploaded successfully:", logoUrl);
       }
 

@@ -1,4 +1,4 @@
-export async function uploadToCloudinary(file: File): Promise<string> {
+export async function uploadFile(file: File): Promise<string> {
   try {
     console.log('Starting file upload:', file.name);
     const formData = new FormData();
@@ -7,19 +7,19 @@ export async function uploadToCloudinary(file: File): Promise<string> {
     const response = await fetch('/api/upload', {
       method: 'POST',
       body: formData,
-      credentials: 'include', // Add this to send cookies with the request
+      credentials: 'include',
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload image');
+      throw new Error(errorData.message || 'Failed to upload file');
     }
 
     const data = await response.json();
     console.log('Upload successful:', data.url);
     return data.url;
   } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
+    console.error('Error uploading file:', error);
     throw error;
   }
 }

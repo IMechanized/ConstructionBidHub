@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@/test/utils';
 import userEvent from '@testing-library/user-event';
 import OnboardingForm from './onboarding-form';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadFile } from '@/lib/upload';
 
-// Mock cloudinary upload
-vi.mock('@/lib/cloudinary', () => ({
-  uploadToCloudinary: vi.fn()
+// Mock file upload
+vi.mock('@/lib/upload', () => ({
+  uploadFile: vi.fn()
 }));
 
 describe('OnboardingForm', () => {
@@ -55,7 +55,7 @@ describe('OnboardingForm', () => {
 
   it('handles successful form submission', async () => {
     const user = userEvent.setup();
-    (uploadToCloudinary as any).mockResolvedValue('https://example.com/logo.jpg');
+    (uploadFile as any).mockResolvedValue('https://example.com/logo.jpg');
 
     render(<OnboardingForm />);
 
@@ -79,13 +79,13 @@ describe('OnboardingForm', () => {
 
     // Verify form submission
     await waitFor(() => {
-      expect(uploadToCloudinary).toHaveBeenCalledWith(file);
+      expect(uploadFile).toHaveBeenCalledWith(file);
     });
   });
 
   it('handles file upload errors', async () => {
     const user = userEvent.setup();
-    (uploadToCloudinary as any).mockRejectedValue(new Error('Upload failed'));
+    (uploadFile as any).mockRejectedValue(new Error('Upload failed'));
 
     render(<OnboardingForm />);
 
@@ -103,7 +103,7 @@ describe('OnboardingForm', () => {
 
   it('handles API submission errors', async () => {
     const user = userEvent.setup();
-    (uploadToCloudinary as any).mockResolvedValue('https://example.com/logo.jpg');
+    (uploadFile as any).mockResolvedValue('https://example.com/logo.jpg');
 
     render(<OnboardingForm />);
 

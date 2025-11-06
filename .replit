@@ -42,3 +42,7 @@ integrations = ["javascript_stripe:1.0.0", "javascript_websocket:1.0.0"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 43071
+externalPort = 3000

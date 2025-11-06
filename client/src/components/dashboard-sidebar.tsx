@@ -11,6 +11,7 @@ import {
   Star,
   Clock,
   Layout,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,8 +41,13 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   const navItems = [
     {
-      label: t('sidebar.myRfps'),
+      label: "Dashboard",
       href: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      label: t('sidebar.myRfps'),
+      href: "/dashboard/my-rfps",
       icon: FileText,
     },
     {

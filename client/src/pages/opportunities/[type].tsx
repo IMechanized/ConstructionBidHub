@@ -25,6 +25,9 @@ import { Label } from "@/components/ui/label";
 import { OfflineIndicator, OfflineBanner } from "@/components/offline-status";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 import { CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
+import { AdvancedSearch, SearchFilter } from "@/components/advanced-search";
+import { QuickFilterChips, QUICK_FILTERS } from "@/components/quick-filter-chips";
+import { SavedFilters } from "@/components/saved-filters";
 
 const ITEMS_PER_PAGE = 16; // 4x4 grid
 
@@ -36,6 +39,8 @@ export default function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [selectedFilters, setSelectedFilters] = useState<string[]>(["deadline"]);
+  const [advancedFilters, setAdvancedFilters] = useState<SearchFilter[]>([]);
+  const [quickFilter, setQuickFilter] = useState<string | null>(null);
   
   const { data: rfps, isLoading, error } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
@@ -141,6 +146,37 @@ export default function OpportunitiesPage() {
     });
   }
 
+  // Apply advanced filters from AdvancedSearch component
+  if (advancedFilters.length > 0) {
+    advancedFilters.forEach(filter => {
+      switch (filter.type) {
+        case "location":
+          filteredRfps = filteredRfps.filter(rfp =>
+            rfp.jobState.toLowerCase().includes(filter.value.toLowerCase())
+          );
+          break;
+        case "trade":
+          filteredRfps = filteredRfps.filter(rfp =>
+            rfp.desiredTrades?.includes(filter.value)
+          );
+          break;
+        case "certification":
+          filteredRfps = filteredRfps.filter(rfp =>
+            rfp.certificationGoals?.includes(filter.value)
+          );
+          break;
+      }
+    });
+  }
+
+  // Apply quick filter
+  if (quickFilter) {
+    const filter = QUICK_FILTERS.find(f => f.id === quickFilter);
+    if (filter) {
+      filteredRfps = filteredRfps.filter(filter.filterFn);
+    }
+  }
+
   // Apply sorting
   const sortOptions = ["priceAsc", "priceDesc", "deadline"];
   const activeSort = selectedFilters.find(f => sortOptions.includes(f)) || "deadline";
@@ -183,6 +219,15 @@ export default function OpportunitiesPage() {
         <OfflineBanner />
 
         <div className="mb-8 space-y-4">
+          {/* Quick filter chips */}
+          <QuickFilterChips
+            activeFilter={quickFilter}
+            onFilterChange={(filterId) => {
+              setQuickFilter(filterId);
+              setCurrentPage(1);
+            }}
+          />
+
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -379,6 +424,26 @@ export default function OpportunitiesPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Advanced Search and Saved Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="flex-1">
+              <AdvancedSearch
+                filters={advancedFilters}
+                onFiltersChange={(filters) => {
+                  setAdvancedFilters(filters);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <SavedFilters
+              currentFilters={advancedFilters}
+              onLoadFilters={(filters) => {
+                setAdvancedFilters(filters);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
 

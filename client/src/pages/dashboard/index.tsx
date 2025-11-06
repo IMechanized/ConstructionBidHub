@@ -5,7 +5,12 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
 import { DashboardWidgets, Widget } from "@/components/dashboard-widgets";
-import { DashboardStatWidgets } from "@/components/dashboard-stat-widgets";
+import { 
+  RfpsExpiringSoonWidget, 
+  UnreadRfisWidget, 
+  ResponseRateWidget, 
+  ActiveRfpsWidget 
+} from "@/components/dashboard-stat-widgets";
 import { CalendarWidget } from "@/components/calendar-widget";
 
 export default function Dashboard() {
@@ -28,11 +33,32 @@ export default function Dashboard() {
 
   const widgets: Widget[] = useMemo(() => [
     {
-      id: "stats",
-      title: "Quick Stats",
-      component: <DashboardStatWidgets />,
-      defaultSize: { w: 12, h: 4 },
-      minSize: { w: 6, h: 3 },
+      id: "rfps-expiring",
+      title: "RFPs Expiring Soon",
+      component: <RfpsExpiringSoonWidget />,
+      defaultSize: { w: 3, h: 3 },
+      minSize: { w: 2, h: 2 },
+    },
+    {
+      id: "unread-rfis",
+      title: "Unread RFIs",
+      component: <UnreadRfisWidget />,
+      defaultSize: { w: 3, h: 3 },
+      minSize: { w: 2, h: 2 },
+    },
+    {
+      id: "response-rate",
+      title: "Response Rate",
+      component: <ResponseRateWidget />,
+      defaultSize: { w: 3, h: 3 },
+      minSize: { w: 2, h: 2 },
+    },
+    {
+      id: "active-rfps",
+      title: "Active RFPs",
+      component: <ActiveRfpsWidget />,
+      defaultSize: { w: 3, h: 3 },
+      minSize: { w: 2, h: 2 },
     },
     {
       id: "calendar",

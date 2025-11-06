@@ -13,9 +13,9 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
-import { AdvancedSearch } from "@/components/advanced-search";
+import { AdvancedSearch, SearchFilter } from "@/components/advanced-search";
 import { SavedFilters } from "@/components/saved-filters";
-import { QuickFilterChips } from "@/components/quick-filter-chips";
+import { QuickFilterChips, QUICK_FILTERS } from "@/components/quick-filter-chips";
 
 export default function MyRfpsPage() {
   const { user } = useAuth();
@@ -26,7 +26,7 @@ export default function MyRfpsPage() {
   const itemsPerPage = 9;
   
   // Advanced search state
-  const [searchFilters, setSearchFilters] = useState<import("@/components/advanced-search").SearchFilter[]>([]);
+  const [searchFilters, setSearchFilters] = useState<SearchFilter[]>([]);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,9 +87,7 @@ export default function MyRfpsPage() {
 
     // Apply quick filter if active
     if (activeQuickFilter) {
-      const quickFilter = import("@/components/quick-filter-chips").QUICK_FILTERS.find(
-        f => f.id === activeQuickFilter
-      );
+      const quickFilter = QUICK_FILTERS.find(f => f.id === activeQuickFilter);
       if (quickFilter) {
         filtered = filtered.filter(quickFilter.filterFn);
       }
@@ -110,7 +108,7 @@ export default function MyRfpsPage() {
     currentPage * itemsPerPage
   );
 
-  const handleFilterChange = (newFilters: import("@/components/advanced-search").SearchFilter[]) => {
+  const handleFilterChange = (newFilters: SearchFilter[]) => {
     setSearchFilters(newFilters);
     setCurrentPage(1);
   };

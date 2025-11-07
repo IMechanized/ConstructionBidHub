@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download, GitCompare, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download, GitCompare, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToCSV } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +44,7 @@ export default function AnalyticsDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedRfpIds, setSelectedRfpIds] = useState<number[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
+  const [drillDownRfp, setDrillDownRfp] = useState<(RfpAnalytics & { rfp: Rfp }) | null>(null);
   
   const breadcrumbItems = [
     {
@@ -300,7 +301,19 @@ export default function AnalyticsDashboard() {
     uniqueViews: item.uniqueViews || 0,
     bids: item.totalBids || 0,
     ctr: item.clickThroughRate || 0,
+    rfpId: item.rfp.id,
   })) || [];
+
+  // Handle chart bar click for drill-down
+  const handleChartClick = (data: any) => {
+    if (data && data.activePayload && data.activePayload[0]) {
+      const rfpId = data.activePayload[0].payload.rfpId;
+      const selectedRfpData = analytics?.find(item => item.rfp.id === rfpId);
+      if (selectedRfpData) {
+        setDrillDownRfp(selectedRfpData);
+      }
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -434,34 +447,41 @@ export default function AnalyticsDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Performance Overview</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Click on any bar to see detailed information
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
+                      <BarChart data={chartData} onClick={handleChartClick}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Tooltip />
+                        <Tooltip cursor={{ fill: 'rgba(136, 132, 216, 0.1)' }} />
                         <Bar 
                           dataKey="views" 
                           fill={theme === 'dark' ? "#8884d8" : "#8884d8"} 
-                          name="Total Views" 
+                          name="Total Views"
+                          cursor="pointer"
                         />
                         <Bar 
                           dataKey="uniqueViews" 
                           fill={theme === 'dark' ? "#82ca9d" : "#82ca9d"} 
-                          name="Unique Views" 
+                          name="Unique Views"
+                          cursor="pointer"
                         />
                         <Bar 
                           dataKey="bids" 
                           fill={theme === 'dark' ? "#ffc658" : "#ffc658"} 
-                          name="Bids" 
+                          name="Bids"
+                          cursor="pointer"
                         />
                         <Bar 
                           dataKey="ctr" 
                           fill={theme === 'dark' ? "#ff8042" : "#ff8042"} 
-                          name="CTR (%)" 
+                          name="CTR (%)"
+                          cursor="pointer"
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -594,6 +614,170 @@ export default function AnalyticsDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            <Dialog open={!!drillDownRfp} onOpenChange={() => setDrillDownRfp(null)}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Detailed Analytics</DialogTitle>
+                  <DialogDescription>
+                    {drillDownRfp?.rfp.title}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {drillDownRfp && (
+                  <div className="space-y-6 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Total Views</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold">{drillDownRfp.totalViews || 0}</div>
+                          <p className="text-xs text-muted-foreground mt-1">All page visits</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Unique Visitors</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold">{drillDownRfp.uniqueViews || 0}</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(drillDownRfp.totalViews || 0) > 0 
+                              ? `${Math.round(((drillDownRfp.uniqueViews || 0) / (drillDownRfp.totalViews || 1)) * 100)}% of total views`
+                              : 'No views yet'}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Avg. View Time</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold">{drillDownRfp.averageViewTime || 0}s</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(drillDownRfp.averageViewTime || 0) > 60 ? 'Strong engagement' : 'Normal engagement'}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Total Bids</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold">{drillDownRfp.totalBids || 0}</div>
+                          <p className="text-xs text-muted-foreground mt-1">Bid submissions</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Click-Through Rate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-3xl font-bold">{drillDownRfp.clickThroughRate || 0}%</div>
+                          <p className="text-xs text-muted-foreground mt-1">Views to bids conversion</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold capitalize">{drillDownRfp.rfp.status}</div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Created {format(new Date(drillDownRfp.rfp.createdAt), 'MMM dd, yyyy')}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">RFP Details</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Location:</span>{' '}
+                            {drillDownRfp.rfp.jobCity}, {drillDownRfp.rfp.jobState}
+                          </div>
+                          <div>
+                            <span className="font-medium">Deadline:</span>{' '}
+                            {format(new Date(drillDownRfp.rfp.deadline), 'MMM dd, yyyy')}
+                          </div>
+                          {drillDownRfp.rfp.budgetMin && (
+                            <div>
+                              <span className="font-medium">Budget:</span>{' '}
+                              ${drillDownRfp.rfp.budgetMin.toLocaleString()}+
+                            </div>
+                          )}
+                          <div>
+                            <span className="font-medium">Featured:</span>{' '}
+                            {drillDownRfp.rfp.featured ? 'Yes' : 'No'}
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <Button 
+                            onClick={() => {
+                              setDrillDownRfp(null);
+                              setLocation(`/rfp/${drillDownRfp.rfp.id}`);
+                            }}
+                            className="w-full"
+                          >
+                            View Full RFP
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Performance Insights</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          {(drillDownRfp.totalViews || 0) > 50 && (
+                            <div className="flex items-start gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                              <span>High visibility - Your RFP is getting good exposure</span>
+                            </div>
+                          )}
+                          {(drillDownRfp.clickThroughRate || 0) > 5 && (
+                            <div className="flex items-start gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                              <span>Strong conversion rate - Contractors are interested</span>
+                            </div>
+                          )}
+                          {(drillDownRfp.averageViewTime || 0) > 120 && (
+                            <div className="flex items-start gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                              <span>High engagement - Visitors are reading your RFP thoroughly</span>
+                            </div>
+                          )}
+                          {(drillDownRfp.totalViews || 0) < 10 && (drillDownRfp.totalBids || 0) === 0 && (
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5" />
+                              <span>Low visibility - Consider boosting this RFP for more exposure</span>
+                            </div>
+                          )}
+                          {(drillDownRfp.totalViews || 0) > 20 && (drillDownRfp.totalBids || 0) === 0 && (
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5" />
+                              <span>Views but no bids - Consider reviewing your requirements or budget</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={showComparisonModal} onOpenChange={setShowComparisonModal}>
               <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">

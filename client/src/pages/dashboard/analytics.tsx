@@ -21,8 +21,9 @@ import { format } from "date-fns";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { exportToCSV } from "@/lib/utils";
 
 export default function AnalyticsDashboard() {
   const [location, setLocation] = useLocation();
@@ -91,6 +92,53 @@ export default function AnalyticsDashboard() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Function to export analytics data to CSV
+  const handleExportCSV = () => {
+    if (!analytics || analytics.length === 0) {
+      toast({
+        title: "No Data to Export",
+        description: "There are no analytics to export",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const exportData = analytics.map(item => ({
+      rfpTitle: item.rfp.title,
+      totalViews: item.totalViews || 0,
+      uniqueViews: item.uniqueViews || 0,
+      averageViewTime: item.averageViewTime || 0,
+      totalBids: item.totalBids || 0,
+      clickThroughRate: item.clickThroughRate || 0,
+      rfpCreated: format(new Date(item.rfp.createdAt), 'yyyy-MM-dd'),
+      dataDate: format(new Date(item.date), 'yyyy-MM-dd'),
+      status: item.rfp.status,
+      location: `${item.rfp.jobCity}, ${item.rfp.jobState}`,
+    }));
+
+    const columns = {
+      rfpTitle: 'RFP Title',
+      totalViews: 'Total Views',
+      uniqueViews: 'Unique Views',
+      averageViewTime: 'Avg. View Time (seconds)',
+      totalBids: 'Total Bids',
+      clickThroughRate: 'Click-Through Rate (%)',
+      rfpCreated: 'RFP Created Date',
+      dataDate: 'Analytics Date',
+      status: 'Status',
+      location: 'Location',
+    };
+
+    const filename = `analytics-export-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.csv`;
+    
+    exportToCSV(exportData, filename, columns);
+    
+    toast({
+      title: "Export Successful",
+      description: `Downloaded ${analytics.length} analytics records`,
+    });
   };
   
   // Log analytics data for troubleshooting
@@ -184,7 +232,7 @@ export default function AnalyticsDashboard() {
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Boosted RFPs Analytics</h1>
                 <p className="text-muted-foreground">
@@ -192,15 +240,27 @@ export default function AnalyticsDashboard() {
                   <strong> Only boosted RFPs you own are shown here.</strong>
                 </p>
               </div>
-              <Button 
-                onClick={refreshAnalytics} 
-                disabled={isRefreshing} 
-                className="self-start flex items-center gap-2"
-                variant="outline"
-              >
-                <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh Analytics'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-2"
+                  variant="outline"
+                  data-testid="export-csv-button"
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button 
+                  onClick={refreshAnalytics} 
+                  disabled={isRefreshing} 
+                  className="flex items-center gap-2"
+                  variant="outline"
+                  data-testid="refresh-analytics-button"
+                >
+                  <RefreshCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
+              </div>
             </div>
             <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-8 text-sm">
               <p className="text-yellow-800 dark:text-yellow-200">

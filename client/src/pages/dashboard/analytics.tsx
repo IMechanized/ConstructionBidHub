@@ -16,14 +16,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
 import { format } from "date-fns";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download, GitCompare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { exportToCSV } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function AnalyticsDashboard() {
   const [location, setLocation] = useLocation();
@@ -34,6 +42,8 @@ export default function AnalyticsDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedRfpIds, setSelectedRfpIds] = useState<number[]>([]);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
   
   const breadcrumbItems = [
     {
@@ -140,6 +150,74 @@ export default function AnalyticsDashboard() {
       description: `Downloaded ${analytics.length} analytics records`,
     });
   };
+
+  // Toggle RFP selection for comparison
+  const toggleRfpSelection = (rfpId: number) => {
+    setSelectedRfpIds(prev => {
+      if (prev.includes(rfpId)) {
+        return prev.filter(id => id !== rfpId);
+      } else {
+        if (prev.length >= 5) {
+          toast({
+            title: "Maximum Reached",
+            description: "You can compare up to 5 RFPs at a time",
+            variant: "destructive"
+          });
+          return prev;
+        }
+        return [...prev, rfpId];
+      }
+    });
+  };
+
+  // Get selected RFPs data for comparison
+  const selectedRfpsData = analytics?.filter(item => 
+    selectedRfpIds.includes(item.rfp.id)
+  ) || [];
+
+  // Prepare comparison data
+  const comparisonData = selectedRfpsData.map(item => ({
+    name: item.rfp.title.substring(0, 15) + "...",
+    fullName: item.rfp.title,
+    views: item.totalViews || 0,
+    uniqueViews: item.uniqueViews || 0,
+    avgTime: item.averageViewTime || 0,
+    bids: item.totalBids || 0,
+    ctr: item.clickThroughRate || 0,
+  }));
+
+  // Radar chart data
+  const radarData = [{
+    metric: 'Views',
+    ...Object.fromEntries(selectedRfpsData.map((item, idx) => [
+      `rfp${idx}`,
+      (item.totalViews || 0) / 10 // Normalize to 0-100 scale
+    ]))
+  }, {
+    metric: 'Unique',
+    ...Object.fromEntries(selectedRfpsData.map((item, idx) => [
+      `rfp${idx}`,
+      (item.uniqueViews || 0) / 10
+    ]))
+  }, {
+    metric: 'Avg Time',
+    ...Object.fromEntries(selectedRfpsData.map((item, idx) => [
+      `rfp${idx}`,
+      (item.averageViewTime || 0) / 5
+    ]))
+  }, {
+    metric: 'Bids',
+    ...Object.fromEntries(selectedRfpsData.map((item, idx) => [
+      `rfp${idx}`,
+      (item.totalBids || 0) * 20
+    ]))
+  }, {
+    metric: 'CTR',
+    ...Object.fromEntries(selectedRfpsData.map((item, idx) => [
+      `rfp${idx}`,
+      item.clickThroughRate || 0
+    ]))
+  }];
   
   // Log analytics data for troubleshooting
   useEffect(() => {
@@ -240,7 +318,17 @@ export default function AnalyticsDashboard() {
                   <strong> Only boosted RFPs you own are shown here.</strong>
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {selectedRfpIds.length > 0 && (
+                  <Button 
+                    onClick={() => setShowComparisonModal(true)}
+                    className="flex items-center gap-2"
+                    data-testid="compare-rfps-button"
+                  >
+                    <GitCompare className="h-4 w-4" />
+                    Compare ({selectedRfpIds.length})
+                  </Button>
+                )}
                 <Button 
                   onClick={handleExportCSV}
                   className="flex items-center gap-2"
@@ -395,6 +483,9 @@ export default function AnalyticsDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-[50px]">
+                            <span className="sr-only">Select</span>
+                          </TableHead>
                           <TableHead className="w-[180px] sm:w-[220px]">RFP Title</TableHead>
                           <TableHead className="text-center w-[80px] sm:w-[100px]">Views</TableHead>
                           <TableHead className="hidden md:table-cell text-center w-[100px]">Unique</TableHead>
@@ -409,6 +500,13 @@ export default function AnalyticsDashboard() {
                       <TableBody>
                         {currentData.map((item) => (
                           <TableRow key={item.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedRfpIds.includes(item.rfp.id)}
+                                onCheckedChange={() => toggleRfpSelection(item.rfp.id)}
+                                data-testid={`select-rfp-${item.rfp.id}`}
+                              />
+                            </TableCell>
                             <TableCell className="font-medium">
                               <div className="truncate max-w-[180px] sm:max-w-[220px]">
                                 {item.rfp.title}
@@ -496,6 +594,137 @@ export default function AnalyticsDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            <Dialog open={showComparisonModal} onOpenChange={setShowComparisonModal}>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between">
+                    <span>RFP Performance Comparison</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedRfpIds([])}
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear Selection
+                    </Button>
+                  </DialogTitle>
+                  <DialogDescription>
+                    Comparing {selectedRfpIds.length} RFPs side by side
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 mt-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Views Comparison</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={comparisonData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="views" fill="#8884d8" name="Total Views" />
+                              <Bar dataKey="uniqueViews" fill="#82ca9d" name="Unique Views" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Engagement Metrics</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={comparisonData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="avgTime" fill="#ffc658" name="Avg Time (s)" />
+                              <Bar dataKey="bids" fill="#ff8042" name="Bids" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {selectedRfpsData.length >= 2 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Overall Performance Radar</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[400px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart data={radarData}>
+                              <PolarGrid />
+                              <PolarAngleAxis dataKey="metric" />
+                              <PolarRadiusAxis />
+                              <Tooltip />
+                              <Legend />
+                              {selectedRfpsData.map((item, idx) => (
+                                <Radar
+                                  key={idx}
+                                  name={item.rfp.title.substring(0, 20)}
+                                  dataKey={`rfp${idx}`}
+                                  stroke={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'][idx]}
+                                  fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'][idx]}
+                                  fillOpacity={0.3}
+                                />
+                              ))}
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Detailed Comparison</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>RFP Title</TableHead>
+                            <TableHead className="text-right">Views</TableHead>
+                            <TableHead className="text-right">Unique</TableHead>
+                            <TableHead className="text-right">Avg Time</TableHead>
+                            <TableHead className="text-right">Bids</TableHead>
+                            <TableHead className="text-right">CTR (%)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedRfpsData.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">{item.rfp.title}</TableCell>
+                              <TableCell className="text-right">{item.totalViews || 0}</TableCell>
+                              <TableCell className="text-right">{item.uniqueViews || 0}</TableCell>
+                              <TableCell className="text-right">{item.averageViewTime || 0}s</TableCell>
+                              <TableCell className="text-right">{item.totalBids || 0}</TableCell>
+                              <TableCell className="text-right">{item.clickThroughRate || 0}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       </div>

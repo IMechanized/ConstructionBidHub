@@ -825,6 +825,81 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Bulk update RFI status
+  app.put("/api/rfis/bulk-status", async (req, res) => {
+    try {
+      requireAuth(req);
+
+      const { ids, status } = req.body;
+      
+      // Validate inputs
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "ids must be a non-empty array" });
+      }
+      
+      if (status !== "pending" && status !== "responded") {
+        return res.status(400).json({ message: "Invalid status value. Must be 'pending' or 'responded'" });
+      }
+
+      // Get all RFPs owned by the user
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+      const userRfpIds = userRfps.map(rfp => rfp.id);
+
+      // Get all RFIs for user's RFPs
+      const allUserRfis = await Promise.all(
+        userRfpIds.map(rfpId => storage.getRfisByRfp(rfpId))
+      );
+      const flattenedRfis = allUserRfis.flat();
+      
+      // Verify all IDs belong to user's RFPs
+      const validRfiIds = flattenedRfis.map(rfi => rfi.id);
+      const unauthorizedIds = ids.filter(id => !validRfiIds.includes(id));
+      
+      if (unauthorizedIds.length > 0) {
+        logAuthorizationFailure(req.user?.id, `RFIs ${unauthorizedIds.join(', ')}`, 'bulk update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'BulkRFIUpdate');
+      }
+
+      // Perform bulk update
+      const updatedRfis = await storage.bulkUpdateRfiStatus(ids, status);
+      
+      // Create notifications for responded RFIs if status changed to "responded"
+      if (status === "responded") {
+        for (const rfi of flattenedRfis.filter(r => ids.includes(r.id))) {
+          if (rfi.organization) {
+            const rfp = userRfps.find(r => r.id === rfi.rfpId);
+            if (rfp) {
+              const notification = await storage.createNotification({
+                userId: rfi.organization.id,
+                type: "rfi_response",
+                title: "RFI Response Available",
+                message: `Your question about "${rfp.title}" has been answered.`,
+                relatedId: rfi.id,
+                relatedType: "rfi"
+              });
+              
+              // Send real-time notification
+              if ((global as any).sendNotificationToUser) {
+                (global as any).sendNotificationToUser(rfi.organization.id, notification);
+              }
+            }
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Successfully updated ${updatedRfis.length} RFI(s)`,
+        updatedRfis 
+      });
+    } catch (error) {
+      console.error('Error in bulk RFI status update:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to bulk update RFI status"
+      });
+    }
+  });
+
   // RFI Conversation Endpoints
   
   // Get conversation messages for an RFI

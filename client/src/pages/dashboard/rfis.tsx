@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowLeft, Send, Inbox, Search, Filter, X, Clock, AlertCircle, CheckCircle, TrendingUp } from "lucide-react";
+import { MessageSquare, ArrowLeft, Send, Inbox, Search, Filter, X, Clock, AlertCircle, CheckCircle, TrendingUp, CheckSquare } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Pagination,
@@ -41,6 +41,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 type RfiWithRfp = Rfi & { rfp: Rfp | null };
 
@@ -59,6 +61,8 @@ export default function RfiPage() {
   const [receivedSearchTerm, setReceivedSearchTerm] = useState("");
   const [receivedStatusFilter, setReceivedStatusFilter] = useState<string>("all");
   const [receivedDateFilter, setReceivedDateFilter] = useState<string>("all");
+  const [selectedReceivedRfiIds, setSelectedReceivedRfiIds] = useState<number[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const breadcrumbItems = [
     {
@@ -163,6 +167,66 @@ export default function RfiPage() {
 
   const hasActiveSentFilters = sentSearchTerm || sentStatusFilter !== "all" || sentDateFilter !== "all";
   const hasActiveReceivedFilters = receivedSearchTerm || receivedStatusFilter !== "all" || receivedDateFilter !== "all";
+
+  // Bulk action handlers
+  const toggleRfiSelection = (rfiId: number) => {
+    setSelectedReceivedRfiIds(prev => {
+      if (prev.includes(rfiId)) {
+        return prev.filter(id => id !== rfiId);
+      } else {
+        return [...prev, rfiId];
+      }
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReceivedRfiIds.length === filteredReceivedRfis.length) {
+      setSelectedReceivedRfiIds([]);
+    } else {
+      setSelectedReceivedRfiIds(filteredReceivedRfis.map(rfi => rfi.id));
+    }
+  };
+
+  const handleBulkStatusUpdate = async (status: "pending" | "responded") => {
+    if (selectedReceivedRfiIds.length === 0) {
+      toast({
+        title: "No RFIs Selected",
+        description: "Please select at least one RFI to update",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsBulkUpdating(true);
+    try {
+      await apiRequest(`/api/rfis/bulk-status`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ids: selectedReceivedRfiIds,
+          status
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/rfis/received"] });
+      
+      setSelectedReceivedRfiIds([]);
+      toast({
+        title: "Success",
+        description: `Updated ${selectedReceivedRfiIds.length} RFI(s) to ${status}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update RFIs",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
 
   // Calculate analytics metrics
   const totalReceivedRfis = receivedRfis.length;
@@ -480,6 +544,49 @@ export default function RfiPage() {
                 </TabsContent>
 
                 <TabsContent value="rfi-requests" className="space-y-4">
+                  {selectedReceivedRfiIds.length > 0 && (
+                    <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-medium">
+                              {selectedReceivedRfiIds.length} RFI{selectedReceivedRfiIds.length !== 1 ? 's' : ''} selected
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleBulkStatusUpdate("responded")}
+                              disabled={isBulkUpdating}
+                              data-testid="bulk-mark-responded"
+                            >
+                              Mark as Responded
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleBulkStatusUpdate("pending")}
+                              disabled={isBulkUpdating}
+                              data-testid="bulk-mark-pending"
+                            >
+                              Mark as Pending
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedReceivedRfiIds([])}
+                              data-testid="clear-selection"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Filter & Search</CardTitle>
@@ -561,6 +668,13 @@ export default function RfiPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
+                                      <TableHead className="w-[50px]">
+                                        <Checkbox
+                                          checked={selectedReceivedRfiIds.length === filteredReceivedRfis.length && filteredReceivedRfis.length > 0}
+                                          onCheckedChange={toggleSelectAll}
+                                          data-testid="select-all-rfis"
+                                        />
+                                      </TableHead>
                                       <TableHead className="w-[140px] sm:w-[200px]">RFP Title</TableHead>
                                       <TableHead className="hidden lg:table-cell max-w-[180px]">Message</TableHead>
                                       <TableHead className="hidden md:table-cell w-[120px]">From</TableHead>
@@ -572,6 +686,13 @@ export default function RfiPage() {
                                   <TableBody>
                                     {currentRfis.map((rfi: RfiWithRfp) => (
                                       <TableRow key={`received-${rfi.id}`} data-testid={`received-rfi-row-${rfi.id}`}>
+                                        <TableCell>
+                                          <Checkbox
+                                            checked={selectedReceivedRfiIds.includes(rfi.id)}
+                                            onCheckedChange={() => toggleRfiSelection(rfi.id)}
+                                            data-testid={`select-rfi-${rfi.id}`}
+                                          />
+                                        </TableCell>
                                         <TableCell className="font-medium">
                                           <div className="truncate max-w-[140px] sm:max-w-[200px]">
                                             {rfi.rfp?.title || "Unknown RFP"}

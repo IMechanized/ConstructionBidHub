@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowLeft, Send, Inbox, Search, Filter, X } from "lucide-react";
+import { MessageSquare, ArrowLeft, Send, Inbox, Search, Filter, X, Clock, AlertCircle, CheckCircle, TrendingUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Pagination,
@@ -164,6 +164,18 @@ export default function RfiPage() {
   const hasActiveSentFilters = sentSearchTerm || sentStatusFilter !== "all" || sentDateFilter !== "all";
   const hasActiveReceivedFilters = receivedSearchTerm || receivedStatusFilter !== "all" || receivedDateFilter !== "all";
 
+  // Calculate analytics metrics
+  const totalReceivedRfis = receivedRfis.length;
+  const pendingReceivedRfis = receivedRfis.filter(rfi => rfi.status === "pending").length;
+  const respondedReceivedRfis = receivedRfis.filter(rfi => rfi.status === "responded").length;
+  const responseRate = totalReceivedRfis > 0 
+    ? Math.round((respondedReceivedRfis / totalReceivedRfis) * 100) 
+    : 0;
+  
+  const totalSentRfis = sentRfis.length;
+  const pendingSentRfis = sentRfis.filter(rfi => rfi.status === "pending").length;
+  const respondedSentRfis = sentRfis.filter(rfi => rfi.status === "responded").length;
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
@@ -191,6 +203,74 @@ export default function RfiPage() {
                 {selectedRfi ? "RFI Conversation" : "RFIs"}
               </h1>
             </div>
+
+            {!selectedRfi && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      Sent RFIs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalSentRfis}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {pendingSentRfis} pending, {respondedSentRfis} responded
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Inbox className="h-4 w-4" />
+                      Received RFIs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalReceivedRfis}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {pendingReceivedRfis} pending, {respondedReceivedRfis} responded
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Pending Responses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {pendingReceivedRfis}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Require your attention
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Response Rate
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {responseRate}%
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {respondedReceivedRfis} of {totalReceivedRfis} RFIs
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {selectedRfi ? (
               <RfiConversation

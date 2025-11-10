@@ -95,7 +95,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between py-4 px-2 border-b">
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <img src="/fcb-logo.png" alt="FCB Logo" className="h-8" />
+          <img src="/fcb-logo.png" alt="FCB Logo" className="h-10" />
         </Link>
         <NotificationCenter />
       </div>

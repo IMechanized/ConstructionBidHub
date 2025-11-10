@@ -204,12 +204,12 @@ export default function OpportunitiesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
+      <main className="container mx-auto px-4 py-4 md:py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-6 md:mb-8">
           <Link href="/">
-            <Button variant="ghost">← Back to Home</Button>
+            <Button variant="ghost" size="sm" className="h-9">← Back</Button>
           </Link>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
             {type === "featured" ? "Featured Opportunities" : "New Opportunities"}
           </h1>
           <OfflineIndicator />
@@ -218,7 +218,7 @@ export default function OpportunitiesPage() {
         {/* Display the offline banner when offline */}
         <OfflineBanner />
 
-        <div className="mb-8 space-y-4">
+        <div className="mb-6 md:mb-8 space-y-3 md:space-y-4">
           {/* Quick filter chips */}
           <QuickFilterChips
             activeFilter={quickFilter}
@@ -228,12 +228,12 @@ export default function OpportunitiesPage() {
             }}
           />
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search opportunities..."
-                className="pl-10"
+                className="pl-10 h-10"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -245,7 +245,7 @@ export default function OpportunitiesPage() {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-between" data-testid="button-filter">
+                <Button variant="outline" className="w-full sm:w-[180px] justify-between h-10" data-testid="button-filter">
                   <span className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     Sort & Filter
@@ -412,7 +412,7 @@ export default function OpportunitiesPage() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-[200px]" data-testid="select-location">
+              <SelectTrigger className="w-full sm:w-[180px] h-10" data-testid="select-location">
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
@@ -427,8 +427,8 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Advanced Search and Saved Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start">
+            <div className="flex-1 w-full">
               <AdvancedSearch
                 filters={advancedFilters}
                 onFiltersChange={(filters) => {
@@ -460,7 +460,7 @@ export default function OpportunitiesPage() {
           </div>
         ) : displayedRfps.length > 0 ? (
           <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {displayedRfps.map((rfp) => (
                 <RfpCard
                   key={rfp.id}
@@ -472,19 +472,23 @@ export default function OpportunitiesPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
+              <div className="mt-6 md:mt-8 flex justify-center gap-2 flex-wrap">
                 <Button
                   variant="outline"
+                  size="sm"
+                  className="h-9"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
                   Previous
                 </Button>
-                <span className="flex items-center px-4">
+                <span className="flex items-center px-3 text-sm">
                   Page {currentPage} of {totalPages}
                 </span>
                 <Button
                   variant="outline"
+                  size="sm"
+                  className="h-9"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
@@ -494,7 +498,7 @@ export default function OpportunitiesPage() {
             )}
           </>
         ) : (
-          <p className="text-center text-muted-foreground">
+          <p className="text-center text-muted-foreground text-sm md:text-base px-4">
             No opportunities found matching your criteria.
           </p>
         )}

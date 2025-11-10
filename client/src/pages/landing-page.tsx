@@ -103,19 +103,19 @@ export default function LandingPage() {
 
 
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4">
+      <section className="py-8 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-4 md:mb-6">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-6 px-2">
             Streamline Your Construction Bidding Process
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-5 md:mb-8 max-w-2xl mx-auto px-2">
             Connect government organizations with qualified contractors. Make the bidding process efficient and transparent.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg" className="text-base md:text-lg px-6 md:px-8">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
+            <Button asChild size="lg" className="text-base md:text-lg px-8 md:px-8 h-12 md:h-11">
               <Link href="/opportunities/featured">Find RFPs</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-base md:text-lg px-6 md:px-8">
+            <Button asChild size="lg" variant="outline" className="text-base md:text-lg px-8 md:px-8 h-12 md:h-11">
               {user ? (
                 <Link href="/dashboard">Back to Dashboard</Link>
               ) : (
@@ -127,13 +127,13 @@ export default function LandingPage() {
       </section>
 
       {/* Featured RFPs Section */}
-      <section className="py-12 md:py-16 px-4 bg-muted/30">
+      <section className="py-8 md:py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <div className="flex justify-between items-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold">Featured Opportunities</h2>
+          <div className="flex justify-between items-center mb-6 md:mb-12 gap-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Featured Opportunities</h2>
             {featuredRfps.length > INITIAL_DISPLAY && (
-              <Button variant="outline" size="sm" className="md:text-base" asChild>
-                <Link href="/opportunities/featured">View All Featured</Link>
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap" asChild>
+                <Link href="/opportunities/featured">View All</Link>
               </Button>
             )}
           </div>
@@ -162,13 +162,13 @@ export default function LandingPage() {
 
       {/* New RFPs Section */}
       {newRfps.length > 0 && (
-        <section className="py-12 md:py-16 px-4 bg-muted/10">
+        <section className="py-8 md:py-16 px-4 bg-muted/10">
           <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-8 md:mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold">New Opportunities</h2>
+            <div className="flex justify-between items-center mb-6 md:mb-12 gap-2">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">New Opportunities</h2>
               {newRfps.length > INITIAL_DISPLAY && (
-                <Button variant="outline" size="sm" className="md:text-base" asChild>
-                  <Link href="/opportunities/new">View All New</Link>
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap" asChild>
+                  <Link href="/opportunities/new">View All</Link>
                 </Button>
               )}
             </div>

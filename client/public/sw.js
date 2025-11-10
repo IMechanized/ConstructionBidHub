@@ -1,17 +1,17 @@
-const CACHE_NAME = 'findconstructionbids-v2';
-const STATIC_CACHE_NAME = 'findconstructionbids-static-v2';
-const DATA_CACHE_NAME = 'findconstructionbids-data-v2';
+// Update this version number whenever you deploy changes
+const VERSION = '1.1.1';
+const CACHE_NAME = `findconstructionbids-v${VERSION}`;
+const STATIC_CACHE_NAME = `findconstructionbids-static-v${VERSION}`;
+const DATA_CACHE_NAME = `findconstructionbids-data-v${VERSION}`;
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/offline.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
 ];
 
-console.log('Service Worker: File loaded');
+console.log(`Service Worker: File loaded (version ${VERSION})`);
 
 // Helper function to check if a request is an API request
 const isApiRequest = (request) => {
@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Different strategies for API requests vs static assets
+  // Different strategies for different types of requests
   if (isApiRequest(event.request)) {
     // Network first, falling back to cached data for API requests
     event.respondWith(
@@ -101,8 +101,38 @@ self.addEventListener('fetch', (event) => {
             });
         })
     );
+  } else if (event.request.mode === 'navigate') {
+    // Network-first for HTML navigation to prevent blank screens with stale cache
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache the fresh HTML
+          if (response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(STATIC_CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch((error) => {
+          console.log('Service Worker: Navigation fetch failed, falling back to cache', error);
+          
+          // Try to return cached HTML
+          return caches.match(event.request)
+            .then((cachedResponse) => {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              
+              // Last resort: return offline page
+              return caches.match('/offline.html');
+            });
+        })
+    );
   } else {
-    // Cache first, falling back to network for static assets and non-API requests
+    // Cache first for static assets (JS, CSS, images, etc.)
     event.respondWith(
       caches.match(event.request)
         .then((cachedResponse) => {
@@ -116,10 +146,6 @@ self.addEventListener('fetch', (event) => {
             .then((response) => {
               // Check if we received a valid response
               if (!response || response.status !== 200 || response.type !== 'basic') {
-                // For navigation requests, show offline page if network failed
-                if (event.request.mode === 'navigate' && !isOnline()) {
-                  return caches.match('/offline.html');
-                }
                 return response;
               }
               
@@ -137,13 +163,7 @@ self.addEventListener('fetch', (event) => {
             .catch((error) => {
               console.error('Service Worker: Fetch failed:', error);
               
-              // For navigation requests, return offline page
-              if (event.request.mode === 'navigate') {
-                return caches.match('/offline.html');
-              }
-              
-              // For static assets, return a placeholder if available
-              // (e.g., placeholder image)
+              // For images, return a placeholder
               if (event.request.destination === 'image') {
                 return new Response(
                   '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#999">Offline</text></svg>',
@@ -159,10 +179,9 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating');
+  console.log(`Service Worker: Activating (version ${VERSION})`);
   const cacheWhitelist = [CACHE_NAME, STATIC_CACHE_NAME, DATA_CACHE_NAME];
   
-  // Take control immediately without waiting for reload
   event.waitUntil(
     Promise.all([
       // Delete old caches
@@ -176,10 +195,33 @@ self.addEventListener('activate', (event) => {
           })
         );
       }),
-      // Take control of all clients
+      // Take control of all clients immediately
       self.clients.claim()
     ])
+    .then(() => {
+      // Notify all clients that the service worker has been updated
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: VERSION
+          });
+        });
+      });
+    })
   );
 });
 
-console.log('Service Worker: Script loaded');
+// Listen for messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Service Worker: Received SKIP_WAITING message');
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: VERSION });
+  }
+});
+
+console.log(`Service Worker: Script loaded (version ${VERSION})`);

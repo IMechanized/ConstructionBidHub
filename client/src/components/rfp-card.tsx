@@ -37,10 +37,10 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
       }`}
       onClick={() => setLocation(`/rfp/${rfp.id}`)}
     >
-      <CardContent className={compact ? "p-4" : "p-6"}>
+      <CardContent className={compact ? "p-3 sm:p-4" : "p-4 sm:p-6"}>
         {/* Organization Header */}
-        <div className="flex flex-col items-center gap-3 mb-4 text-center">
-          <Avatar className="h-12 w-12">
+        <div className="flex flex-col items-center gap-2 mb-3 text-center">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
             {rfp.organization?.logo ? (
               <img
                 src={rfp.organization.logo}
@@ -48,44 +48,44 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
                 className="object-cover"
               />
             ) : (
-              <span className="text-lg">
+              <span className="text-base sm:text-lg">
                 {rfp.organization?.companyName?.charAt(0)}
               </span>
             )}
           </Avatar>
-          <span className="font-medium">
+          <span className="font-medium text-sm sm:text-base line-clamp-1">
             {rfp.organization?.companyName || "Unknown Organization"}
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 flex-wrap justify-center">
             {rfp.featured && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                 Featured
               </span>
             )}
             {isNew && !rfp.featured && (
-              <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+              <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
                 New
               </span>
             )}
           </div>
         </div>
 
-        <h3 className={`font-semibold ${compact ? 'text-base' : 'text-lg'} mb-2`}>
+        <h3 className={`font-semibold ${compact ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} mb-2 line-clamp-2`}>
           {rfp.title}
         </h3>
 
         {!compact && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
             {stripHtml(rfp.description)}
           </p>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Location Map Preview */}
           <div className="w-full">
             <MapPreview
               address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
-              className="w-full h-24 rounded-md"
+              className="w-full h-20 sm:h-24 rounded-md"
               onClick={() => {
                 setLocation(`/rfp/${rfp.id}`);
               }}
@@ -93,11 +93,11 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
           </div>
           
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm gap-2">
               <span className="text-muted-foreground">Location:</span>
-              <span className="text-right text-xs">{rfp.jobCity}, {rfp.jobState}</span>
+              <span className="text-right truncate">{rfp.jobCity}, {rfp.jobState}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm gap-2">
               <span className="text-muted-foreground">Deadline:</span>
               <span>{format(new Date(rfp.deadline), 'MM/dd/yyyy')}</span>
             </div>
@@ -105,8 +105,8 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
         </div>
 
         {!compact && !isOwner && !currentUser && (
-          <div className="mt-4">
-            <Button variant="outline" className="w-full" onClick={(e) => {
+          <div className="mt-3">
+            <Button variant="outline" size="sm" className="w-full h-9 text-sm" onClick={(e) => {
               e.stopPropagation();
               setLocation('/auth');
             }}>

@@ -58,14 +58,14 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center px-4">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8">
         <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <BreadcrumbNav items={breadcrumbItems} className="mb-6" />
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
+            <BreadcrumbNav items={breadcrumbItems} className="mb-4 sm:mb-6" />
             <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 h-10">
+                <TabsTrigger value="login" className="text-sm sm:text-base">Login</TabsTrigger>
+                <TabsTrigger value="register" className="text-sm sm:text-base">Register</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -80,10 +80,10 @@ export default function AuthPage() {
                       control={loginForm.control}
                       name="email"
                       render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Email</FormLabel>
+                        <FormItem className="mb-3 sm:mb-4">
+                          <FormLabel className="text-sm">Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Enter your email" {...field} />
+                            <Input type="email" placeholder="Enter your email" className="h-10" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -93,20 +93,19 @@ export default function AuthPage() {
                       control={loginForm.control}
                       name="password"
                       render={({ field }) => (
-                        <FormItem className="mb-6">
-                          <FormLabel>Password</FormLabel>
+                        <FormItem className="mb-4 sm:mb-6">
+                          <FormLabel className="text-sm">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Enter your password" {...field} />
+                            <Input type="password" placeholder="Enter your password" className="h-10" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-between items-center mb-4">
-                      <div></div> {/* Empty div for flexbox alignment */}
+                    <div className="flex justify-end mb-4">
                       <Button 
                         variant="link" 
-                        className="p-0 h-auto text-sm text-primary dark:text-white"
+                        className="p-0 h-auto text-xs sm:text-sm text-primary dark:text-white"
                         type="button"
                         onClick={() => navigate("/forgot-password")}
                       >
@@ -115,7 +114,7 @@ export default function AuthPage() {
                     </div>
                     <Button 
                       type="submit" 
-                      className="w-full"
+                      className="w-full h-10 text-sm sm:text-base"
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? "Logging in..." : "Login"}

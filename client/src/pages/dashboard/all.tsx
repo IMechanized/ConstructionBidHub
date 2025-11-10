@@ -41,7 +41,7 @@ export default function AllRfps() {
       href: "/dashboard",
     },
     {
-      label: "All RFPs",
+      label: "Search All RFPs",
       href: "/dashboard/all",
     },
   ];
@@ -220,7 +220,7 @@ export default function AllRfps() {
 
             <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <h2 className="text-xl sm:text-2xl font-bold">All RFPs</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Search All RFPs</h2>
               </div>
 
               <SavedFilters

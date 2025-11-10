@@ -43,7 +43,7 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
       icon: Clock,
     },
     {
-      label: "All RFPs",
+      label: "Search All RFPs",
       href: "/dashboard/all",
       icon: Layout,
     },

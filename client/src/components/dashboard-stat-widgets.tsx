@@ -173,7 +173,7 @@ export function ActiveRfpsWidget() {
 
       <Link href="/dashboard/all">
         <Button variant="outline" size="sm" className="w-full">
-          View All RFPs
+          Search All RFPs
         </Button>
       </Link>
     </div>

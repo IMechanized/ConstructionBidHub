@@ -4,7 +4,6 @@ import {
   FileText,
   MessageSquare,
   Settings,
-  Building,
   FileBarChart,
   HelpCircle,
   BarChart3,
@@ -95,9 +94,8 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const NavigationContent = () => (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between py-4 px-2 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <Building className="h-6 w-6" />
-          <span className="font-semibold text-lg">{t('common.appName')}</span>
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <img src="/fcb-logo.png" alt="FCB Logo" className="h-8" />
         </Link>
         <NotificationCenter />
       </div>

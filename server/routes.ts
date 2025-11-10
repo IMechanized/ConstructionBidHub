@@ -7,8 +7,8 @@ import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
-import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
+import { uploadImageToS3, uploadDocumentToS3, uploadAttachmentToS3 } from './lib/s3.js';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
 import cookie from 'cookie';
@@ -18,13 +18,6 @@ import helmet from 'helmet';
 import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
 import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
 import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // Configure multer for handling file uploads
 const upload = multer({ 
@@ -72,8 +65,9 @@ export function registerRoutes(app: Express): Server {
           "https://maps.gstatic.com",
           "https://maps.googleapis.com",
           "https://*.google.com",
-          "https://res.cloudinary.com",
-          "https://*.cloudinary.com"
+          "https://*.s3.*.amazonaws.com",
+          "https://*.s3.amazonaws.com",
+          "https://s3.*.amazonaws.com"
         ],
         fontSrc: [
           "'self'",
@@ -87,9 +81,9 @@ export function registerRoutes(app: Express): Server {
           "https://maps.googleapis.com",
           "https://*.googleapis.com",
           "https://*.google.com",
-          "https://api.cloudinary.com",
-          "https://res.cloudinary.com",
-          "https://*.cloudinary.com"
+          "https://*.s3.*.amazonaws.com",
+          "https://*.s3.amazonaws.com",
+          "https://s3.*.amazonaws.com"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],
@@ -131,18 +125,11 @@ export function registerRoutes(app: Express): Server {
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
 
-      // Convert buffer to base64
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      // Upload to S3
+      const url = await uploadImageToS3(req.file.buffer, req.file.originalname);
 
-      // Upload to Cloudinary
-      const result = await cloudinary.uploader.upload(dataURI, {
-        resource_type: 'auto',
-        folder: 'construction-bids',
-      });
-
-      console.log('Upload successful:', result.secure_url);
-      res.json({ url: result.secure_url });
+      console.log('Upload successful:', url);
+      res.json({ url });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.UPLOAD_FAILED, 'Upload');
     }
@@ -180,19 +167,12 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Document received:', req.file.originalname, req.file.mimetype);
 
-      // Convert buffer to base64
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      // Upload to S3
+      const url = await uploadDocumentToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
 
-      // Upload to Cloudinary
-      const result = await cloudinary.uploader.upload(dataURI, {
-        resource_type: 'raw',
-        folder: 'construction-bids/documents',
-      });
-
-      console.log('Document upload successful:', result.secure_url);
+      console.log('Document upload successful:', url);
       res.json({ 
-        url: result.secure_url,
+        url,
         filename: req.file.originalname,
         size: req.file.size,
         mimeType: req.file.mimetype
@@ -442,7 +422,7 @@ export function registerRoutes(app: Express): Server {
         return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
       }
 
-      // Fetch the file from Cloudinary
+      // Fetch the file from S3
       const response = await fetch(document.fileUrl);
       if (!response.ok) {
         throw new Error('Failed to fetch document from storage');
@@ -845,6 +825,81 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Bulk update RFI status
+  app.put("/api/rfis/bulk-status", async (req, res) => {
+    try {
+      requireAuth(req);
+
+      const { ids, status } = req.body;
+      
+      // Validate inputs
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "ids must be a non-empty array" });
+      }
+      
+      if (status !== "pending" && status !== "responded") {
+        return res.status(400).json({ message: "Invalid status value. Must be 'pending' or 'responded'" });
+      }
+
+      // Get all RFPs owned by the user
+      const allRfps = await storage.getRfps();
+      const userRfps = allRfps.filter(rfp => rfp.organizationId === req.user!.id);
+      const userRfpIds = userRfps.map(rfp => rfp.id);
+
+      // Get all RFIs for user's RFPs
+      const allUserRfis = await Promise.all(
+        userRfpIds.map(rfpId => storage.getRfisByRfp(rfpId))
+      );
+      const flattenedRfis = allUserRfis.flat();
+      
+      // Verify all IDs belong to user's RFPs
+      const validRfiIds = flattenedRfis.map(rfi => rfi.id);
+      const unauthorizedIds = ids.filter(id => !validRfiIds.includes(id));
+      
+      if (unauthorizedIds.length > 0) {
+        logAuthorizationFailure(req.user?.id, `RFIs ${unauthorizedIds.join(', ')}`, 'bulk update', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'BulkRFIUpdate');
+      }
+
+      // Perform bulk update
+      const updatedRfis = await storage.bulkUpdateRfiStatus(ids, status);
+      
+      // Create notifications for responded RFIs if status changed to "responded"
+      if (status === "responded") {
+        for (const rfi of flattenedRfis.filter(r => ids.includes(r.id))) {
+          if (rfi.organization) {
+            const rfp = userRfps.find(r => r.id === rfi.rfpId);
+            if (rfp) {
+              const notification = await storage.createNotification({
+                userId: rfi.organization.id,
+                type: "rfi_response",
+                title: "RFI Response Available",
+                message: `Your question about "${rfp.title}" has been answered.`,
+                relatedId: rfi.id,
+                relatedType: "rfi"
+              });
+              
+              // Send real-time notification
+              if ((global as any).sendNotificationToUser) {
+                (global as any).sendNotificationToUser(rfi.organization.id, notification);
+              }
+            }
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Successfully updated ${updatedRfis.length} RFI(s)`,
+        updatedRfis 
+      });
+    } catch (error) {
+      console.error('Error in bulk RFI status update:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to bulk update RFI status"
+      });
+    }
+  });
+
   // RFI Conversation Endpoints
   
   // Get conversation messages for an RFI
@@ -985,20 +1040,13 @@ export function registerRoutes(app: Express): Server {
             // SECURITY: Sanitize filename - remove dangerous characters
             const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
             
-            // Convert buffer to base64 data URI for Cloudinary upload
-            const dataURI = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-            
-            const uploadResult = await cloudinary.uploader.upload(dataURI, {
-              resource_type: "auto",
-              folder: "rfi-attachments",
-              allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "txt", "xls", "xlsx"],
-              public_id: `${Date.now()}_${sanitizedFilename}`
-            });
+            // Upload to S3
+            const fileUrl = await uploadAttachmentToS3(file.buffer, sanitizedFilename, file.mimetype);
             
             await storage.createRfiAttachment({
               messageId: newMessage.id,
               filename: sanitizedFilename,
-              fileUrl: uploadResult.secure_url,
+              fileUrl,
               fileSize: file.size,
               mimeType: file.mimetype
             });
@@ -1170,7 +1218,7 @@ export function registerRoutes(app: Express): Server {
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
       }
       
-      // Redirect to the Cloudinary URL (this maintains authentication context)
+      // Redirect to the S3 URL (this maintains authentication context)
       res.redirect(attachment.fileUrl);
       
     } catch (error) {

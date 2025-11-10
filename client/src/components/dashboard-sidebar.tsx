@@ -4,13 +4,13 @@ import {
   FileText,
   MessageSquare,
   Settings,
-  Building,
   FileBarChart,
   HelpCircle,
   BarChart3,
   Star,
   Clock,
   Layout,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,8 +40,13 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   const navItems = [
     {
-      label: t('sidebar.myRfps'),
+      label: "Dashboard",
       href: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      label: t('sidebar.myRfps'),
+      href: "/dashboard/my-rfps",
       icon: FileText,
     },
     {
@@ -89,9 +94,8 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const NavigationContent = () => (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between py-4 px-2 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <Building className="h-6 w-6" />
-          <span className="font-semibold text-lg">{t('common.appName')}</span>
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <img src="/fcb-logo.png" alt="FCB Logo" className="h-14" />
         </Link>
         <NotificationCenter />
       </div>

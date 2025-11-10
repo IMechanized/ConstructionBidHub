@@ -36,9 +36,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-        <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
-          <Link href="/" className="text-lg md:text-xl font-bold hover:text-primary transition-colors">
-            FindConstructionBids
+        <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <img src="/fcb-logo.png" alt="FCB Logo" className="h-12 md:h-16" />
           </Link>
           
           {/* Desktop Navigation */}

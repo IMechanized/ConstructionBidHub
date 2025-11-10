@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type Rfi, type Rfp, type User } from "@shared/schema";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
-import { format } from "date-fns";
+import { format, isWithinInterval, subDays, startOfDay, endOfDay } from "date-fns";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowLeft, Send, Inbox } from "lucide-react";
+import { MessageSquare, ArrowLeft, Send, Inbox, Search, Filter, X, Clock, AlertCircle, CheckCircle, TrendingUp, CheckSquare } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Pagination,
@@ -28,6 +28,21 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { RfiConversation } from "@/components/rfi-conversation";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 type RfiWithRfp = Rfi & { rfp: Rfp | null };
 
@@ -38,6 +53,16 @@ export default function RfiPage() {
   const [sentCurrentPage, setSentCurrentPage] = useState(1);
   const [receivedCurrentPage, setReceivedCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Filter and search state
+  const [sentSearchTerm, setSentSearchTerm] = useState("");
+  const [sentStatusFilter, setSentStatusFilter] = useState<string>("all");
+  const [sentDateFilter, setSentDateFilter] = useState<string>("all");
+  const [receivedSearchTerm, setReceivedSearchTerm] = useState("");
+  const [receivedStatusFilter, setReceivedStatusFilter] = useState<string>("all");
+  const [receivedDateFilter, setReceivedDateFilter] = useState<string>("all");
+  const [selectedReceivedRfiIds, setSelectedReceivedRfiIds] = useState<number[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const breadcrumbItems = [
     {
@@ -79,6 +104,142 @@ export default function RfiPage() {
     }
   }, [error, setLocation, toast]);
 
+  // Filter function
+  const filterRfis = (rfis: RfiWithRfp[], searchTerm: string, statusFilter: string, dateFilter: string) => {
+    return rfis.filter(rfi => {
+      // Search filter
+      const matchesSearch = !searchTerm || 
+        rfi.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rfi.rfp?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rfi.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Status filter
+      const matchesStatus = statusFilter === "all" || rfi.status === statusFilter;
+
+      // Date filter
+      let matchesDate = true;
+      if (dateFilter !== "all") {
+        const rfiDate = new Date(rfi.createdAt);
+        const now = new Date();
+        
+        switch (dateFilter) {
+          case "today":
+            matchesDate = isWithinInterval(rfiDate, {
+              start: startOfDay(now),
+              end: endOfDay(now)
+            });
+            break;
+          case "week":
+            matchesDate = isWithinInterval(rfiDate, {
+              start: subDays(now, 7),
+              end: now
+            });
+            break;
+          case "month":
+            matchesDate = isWithinInterval(rfiDate, {
+              start: subDays(now, 30),
+              end: now
+            });
+            break;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  };
+
+  // Apply filters
+  const filteredSentRfis = filterRfis(sentRfis, sentSearchTerm, sentStatusFilter, sentDateFilter);
+  const filteredReceivedRfis = filterRfis(receivedRfis, receivedSearchTerm, receivedStatusFilter, receivedDateFilter);
+
+  // Clear all filters
+  const clearSentFilters = () => {
+    setSentSearchTerm("");
+    setSentStatusFilter("all");
+    setSentDateFilter("all");
+  };
+
+  const clearReceivedFilters = () => {
+    setReceivedSearchTerm("");
+    setReceivedStatusFilter("all");
+    setReceivedDateFilter("all");
+  };
+
+  const hasActiveSentFilters = sentSearchTerm || sentStatusFilter !== "all" || sentDateFilter !== "all";
+  const hasActiveReceivedFilters = receivedSearchTerm || receivedStatusFilter !== "all" || receivedDateFilter !== "all";
+
+  // Bulk action handlers
+  const toggleRfiSelection = (rfiId: number) => {
+    setSelectedReceivedRfiIds(prev => {
+      if (prev.includes(rfiId)) {
+        return prev.filter(id => id !== rfiId);
+      } else {
+        return [...prev, rfiId];
+      }
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReceivedRfiIds.length === filteredReceivedRfis.length) {
+      setSelectedReceivedRfiIds([]);
+    } else {
+      setSelectedReceivedRfiIds(filteredReceivedRfis.map(rfi => rfi.id));
+    }
+  };
+
+  const handleBulkStatusUpdate = async (status: "pending" | "responded") => {
+    if (selectedReceivedRfiIds.length === 0) {
+      toast({
+        title: "No RFIs Selected",
+        description: "Please select at least one RFI to update",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsBulkUpdating(true);
+    try {
+      await apiRequest(`/api/rfis/bulk-status`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ids: selectedReceivedRfiIds,
+          status
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/rfis/received"] });
+      
+      setSelectedReceivedRfiIds([]);
+      toast({
+        title: "Success",
+        description: `Updated ${selectedReceivedRfiIds.length} RFI(s) to ${status}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update RFIs",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
+  // Calculate analytics metrics
+  const totalReceivedRfis = receivedRfis.length;
+  const pendingReceivedRfis = receivedRfis.filter(rfi => rfi.status === "pending").length;
+  const respondedReceivedRfis = receivedRfis.filter(rfi => rfi.status === "responded").length;
+  const responseRate = totalReceivedRfis > 0 
+    ? Math.round((respondedReceivedRfis / totalReceivedRfis) * 100) 
+    : 0;
+  
+  const totalSentRfis = sentRfis.length;
+  const pendingSentRfis = sentRfis.filter(rfi => rfi.status === "pending").length;
+  const respondedSentRfis = sentRfis.filter(rfi => rfi.status === "responded").length;
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
@@ -106,6 +267,74 @@ export default function RfiPage() {
                 {selectedRfi ? "RFI Conversation" : "RFIs"}
               </h1>
             </div>
+
+            {!selectedRfi && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      Sent RFIs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalSentRfis}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {pendingSentRfis} pending, {respondedSentRfis} responded
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Inbox className="h-4 w-4" />
+                      Received RFIs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalReceivedRfis}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {pendingReceivedRfis} pending, {respondedReceivedRfis} responded
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Pending Responses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {pendingReceivedRfis}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Require your attention
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Response Rate
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {responseRate}%
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {respondedReceivedRfis} of {totalReceivedRfis} RFIs
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {selectedRfi ? (
               <RfiConversation
@@ -142,17 +371,79 @@ export default function RfiPage() {
                 </TabsList>
 
                 <TabsContent value="my-rfis" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Filter & Search</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search by message, RFP title, or email..."
+                              value={sentSearchTerm}
+                              onChange={(e) => setSentSearchTerm(e.target.value)}
+                              className="pl-10"
+                              data-testid="sent-rfis-search"
+                            />
+                          </div>
+                        </div>
+                        <Select value={sentStatusFilter} onValueChange={setSentStatusFilter}>
+                          <SelectTrigger className="w-full md:w-[180px]" data-testid="sent-status-filter">
+                            <SelectValue placeholder="Filter by status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="responded">Responded</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={sentDateFilter} onValueChange={setSentDateFilter}>
+                          <SelectTrigger className="w-full md:w-[180px]" data-testid="sent-date-filter">
+                            <SelectValue placeholder="Filter by date" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Time</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">Last 7 Days</SelectItem>
+                            <SelectItem value="month">Last 30 Days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {hasActiveSentFilters && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSentFilters}
+                            className="gap-2"
+                            data-testid="clear-sent-filters"
+                          >
+                            <X className="h-4 w-4" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      {hasActiveSentFilters && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          Showing {filteredSentRfis.length} of {sentRfis.length} RFIs
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {(() => {
-                    const totalPages = Math.ceil(sentRfis.length / itemsPerPage);
+                    const totalPages = Math.ceil(filteredSentRfis.length / itemsPerPage);
                     const startIndex = (sentCurrentPage - 1) * itemsPerPage;
                     const endIndex = startIndex + itemsPerPage;
-                    const currentRfis = sentRfis.slice(startIndex, endIndex);
+                    const currentRfis = filteredSentRfis.slice(startIndex, endIndex);
 
                     return (
                       <>
-                        {sentRfis.length === 0 && !sentLoading ? (
+                        {filteredSentRfis.length === 0 && !sentLoading ? (
                           <div className="text-center py-8 text-muted-foreground">
-                            You haven't requested any information yet.
+                            {hasActiveSentFilters 
+                              ? "No RFIs match your filters."
+                              : "You haven't requested any information yet."}
                           </div>
                         ) : (
                           <>
@@ -253,17 +544,122 @@ export default function RfiPage() {
                 </TabsContent>
 
                 <TabsContent value="rfi-requests" className="space-y-4">
+                  {selectedReceivedRfiIds.length > 0 && (
+                    <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-medium">
+                              {selectedReceivedRfiIds.length} RFI{selectedReceivedRfiIds.length !== 1 ? 's' : ''} selected
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleBulkStatusUpdate("responded")}
+                              disabled={isBulkUpdating}
+                              data-testid="bulk-mark-responded"
+                            >
+                              Mark as Responded
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleBulkStatusUpdate("pending")}
+                              disabled={isBulkUpdating}
+                              data-testid="bulk-mark-pending"
+                            >
+                              Mark as Pending
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedReceivedRfiIds([])}
+                              data-testid="clear-selection"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Filter & Search</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search by message, RFP title, or email..."
+                              value={receivedSearchTerm}
+                              onChange={(e) => setReceivedSearchTerm(e.target.value)}
+                              className="pl-10"
+                              data-testid="received-rfis-search"
+                            />
+                          </div>
+                        </div>
+                        <Select value={receivedStatusFilter} onValueChange={setReceivedStatusFilter}>
+                          <SelectTrigger className="w-full md:w-[180px]" data-testid="received-status-filter">
+                            <SelectValue placeholder="Filter by status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="responded">Responded</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={receivedDateFilter} onValueChange={setReceivedDateFilter}>
+                          <SelectTrigger className="w-full md:w-[180px]" data-testid="received-date-filter">
+                            <SelectValue placeholder="Filter by date" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Time</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">Last 7 Days</SelectItem>
+                            <SelectItem value="month">Last 30 Days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {hasActiveReceivedFilters && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearReceivedFilters}
+                            className="gap-2"
+                            data-testid="clear-received-filters"
+                          >
+                            <X className="h-4 w-4" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      {hasActiveReceivedFilters && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          Showing {filteredReceivedRfis.length} of {receivedRfis.length} RFIs
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {(() => {
-                    const totalPages = Math.ceil(receivedRfis.length / itemsPerPage);
+                    const totalPages = Math.ceil(filteredReceivedRfis.length / itemsPerPage);
                     const startIndex = (receivedCurrentPage - 1) * itemsPerPage;
                     const endIndex = startIndex + itemsPerPage;
-                    const currentRfis = receivedRfis.slice(startIndex, endIndex);
+                    const currentRfis = filteredReceivedRfis.slice(startIndex, endIndex);
 
                     return (
                       <>
-                        {receivedRfis.length === 0 && !receivedLoading ? (
+                        {filteredReceivedRfis.length === 0 && !receivedLoading ? (
                           <div className="text-center py-8 text-muted-foreground">
-                            No RFI requests on your RFPs yet.
+                            {hasActiveReceivedFilters
+                              ? "No RFIs match your filters."
+                              : "No RFI requests on your RFPs yet."}
                           </div>
                         ) : (
                           <>
@@ -272,6 +668,13 @@ export default function RfiPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
+                                      <TableHead className="w-[50px]">
+                                        <Checkbox
+                                          checked={selectedReceivedRfiIds.length === filteredReceivedRfis.length && filteredReceivedRfis.length > 0}
+                                          onCheckedChange={toggleSelectAll}
+                                          data-testid="select-all-rfis"
+                                        />
+                                      </TableHead>
                                       <TableHead className="w-[140px] sm:w-[200px]">RFP Title</TableHead>
                                       <TableHead className="hidden lg:table-cell max-w-[180px]">Message</TableHead>
                                       <TableHead className="hidden md:table-cell w-[120px]">From</TableHead>
@@ -283,6 +686,13 @@ export default function RfiPage() {
                                   <TableBody>
                                     {currentRfis.map((rfi: RfiWithRfp) => (
                                       <TableRow key={`received-${rfi.id}`} data-testid={`received-rfi-row-${rfi.id}`}>
+                                        <TableCell>
+                                          <Checkbox
+                                            checked={selectedReceivedRfiIds.includes(rfi.id)}
+                                            onCheckedChange={() => toggleRfiSelection(rfi.id)}
+                                            data-testid={`select-rfi-${rfi.id}`}
+                                          />
+                                        </TableCell>
                                         <TableCell className="font-medium">
                                           <div className="truncate max-w-[140px] sm:max-w-[200px]">
                                             {rfi.rfp?.title || "Unknown RFP"}

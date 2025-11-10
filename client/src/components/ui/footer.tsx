@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">FindConstructionBids</h3>
+            <img src="/fcb-logo.png" alt="FCB Logo" className="h-16" />
             <p className="text-muted-foreground text-sm">
               Streamlining government contracting through intelligent RFP management.
             </p>
@@ -99,7 +99,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t">
           <p className="text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} FindConstructionBids. All rights reserved.
+            © {new Date().getFullYear()} FCB. All rights reserved.
           </p>
         </div>
       </div>

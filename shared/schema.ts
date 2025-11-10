@@ -179,7 +179,7 @@ export const rfiAttachments = pgTable("rfi_attachments", {
   id: serial("id").primaryKey(),
   messageId: integer("message_id").references(() => rfiMessages.id, { onDelete: 'cascade' }).notNull(),
   filename: text("filename").notNull(),
-  fileUrl: text("file_url").notNull(), // Cloudinary URL or storage URL
+  fileUrl: text("file_url").notNull(), // S3 URL or storage URL
   fileSize: integer("file_size"), // File size in bytes
   mimeType: text("mime_type"), // File MIME type
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),

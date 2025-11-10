@@ -52,6 +52,7 @@ export interface IStorage {
   getRfisByRfp(rfpId: number): Promise<(Rfi & { organization?: User })[]>;
   getRfisByEmail(email: string): Promise<Rfi[]>;
   updateRfiStatus(id: number, status: "pending" | "responded"): Promise<Rfi>;
+  bulkUpdateRfiStatus(ids: number[], status: "pending" | "responded"): Promise<Rfi[]>;
   deleteRfi(id: number): Promise<void>;
   
   // RFI Conversation Operations
@@ -410,6 +411,15 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updatedRfi) throw new Error("RFI not found");
     return updatedRfi;
+  }
+
+  async bulkUpdateRfiStatus(ids: number[], status: "pending" | "responded"): Promise<Rfi[]> {
+    const updatedRfis = await db
+      .update(rfis)
+      .set({ status })
+      .where(inArray(rfis.id, ids))
+      .returning();
+    return updatedRfis;
   }
 
   async deleteRfi(id: number): Promise<void> {

@@ -21,12 +21,17 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { AdvancedSearch, SearchFilter } from "@/components/advanced-search";
+import { SavedFilters } from "@/components/saved-filters";
+import { QuickFilterChips, QUICK_FILTERS } from "@/components/quick-filter-chips";
 
 export default function FeaturedRfps() {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [selectedFilters, setSelectedFilters] = useState<string[]>(["deadline"]);
+  const [searchFilters, setSearchFilters] = useState<SearchFilter[]>([]);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
@@ -141,6 +146,39 @@ export default function FeaturedRfps() {
     });
   }
 
+  // Apply advanced search filters
+  const locationFilters = searchFilters.filter(f => f.type === "location");
+  const tradeFilters = searchFilters.filter(f => f.type === "trade");
+  const certFilters = searchFilters.filter(f => f.type === "certification");
+
+  if (locationFilters.length > 0) {
+    featuredRfps = featuredRfps.filter(rfp =>
+      locationFilters.some(f => rfp.jobState.toLowerCase().includes(f.value.toLowerCase()))
+    );
+  }
+
+  if (tradeFilters.length > 0) {
+    featuredRfps = featuredRfps.filter(rfp => {
+      if (!rfp.desiredTrades || rfp.desiredTrades.length === 0) return false;
+      return tradeFilters.some(f => rfp.desiredTrades?.includes(f.value));
+    });
+  }
+
+  if (certFilters.length > 0) {
+    featuredRfps = featuredRfps.filter(rfp => {
+      if (!rfp.certificationGoals || rfp.certificationGoals.length === 0) return false;
+      return certFilters.some(f => rfp.certificationGoals?.includes(f.value));
+    });
+  }
+
+  // Apply quick filter if active
+  if (activeQuickFilter) {
+    const quickFilter = QUICK_FILTERS.find(f => f.id === activeQuickFilter);
+    if (quickFilter) {
+      featuredRfps = featuredRfps.filter(quickFilter.filterFn);
+    }
+  }
+
   // Apply sorting
   const sortOptions = ["priceAsc", "priceDesc", "deadline"];
   const activeSort = selectedFilters.find(f => sortOptions.includes(f)) || "deadline";
@@ -163,6 +201,16 @@ export default function FeaturedRfps() {
     currentPage * itemsPerPage
   );
 
+  const handleFilterChange = (newFilters: SearchFilter[]) => {
+    setSearchFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  const handleQuickFilterChange = (filterId: string | null) => {
+    setActiveQuickFilter(filterId);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar currentPath={location} />
@@ -176,6 +224,21 @@ export default function FeaturedRfps() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-2xl font-bold">Featured RFPs</h2>
               </div>
+
+              <SavedFilters
+                currentFilters={searchFilters}
+                onLoadFilters={handleFilterChange}
+              />
+
+              <QuickFilterChips
+                activeFilter={activeQuickFilter}
+                onFilterChange={handleQuickFilterChange}
+              />
+
+              <AdvancedSearch
+                filters={searchFilters}
+                onFiltersChange={handleFilterChange}
+              />
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">

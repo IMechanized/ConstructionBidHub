@@ -124,13 +124,13 @@ export default function MyRfpsPage() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+          <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
 
-            <div className="space-y-6 mt-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold">My RFPs</h2>
-                <Button onClick={() => setIsCreateModalOpen(true)} data-testid="button-create-rfp">
+            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h2 className="text-xl sm:text-2xl font-bold">My RFPs</h2>
+                <Button onClick={() => setIsCreateModalOpen(true)} className="w-full sm:w-auto min-h-[44px]" data-testid="button-create-rfp">
                   {t('dashboard.createRfp')}
                 </Button>
               </div>
@@ -156,11 +156,11 @@ export default function MyRfpsPage() {
                 <>
                   {filteredMyRfps.length === 0 ? (
                     <div className="text-center py-12">
-                      <p className="text-muted-foreground">No RFPs found matching your filters.</p>
+                      <p className="text-muted-foreground text-sm sm:text-base">No RFPs found matching your filters.</p>
                     </div>
                   ) : (
                     <>
-                      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {paginatedRfps.map((rfp) => (
                           <RfpCard
                             key={rfp.id}

@@ -215,12 +215,12 @@ export default function AllRfps() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+          <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
 
-            <div className="space-y-6 mt-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold">All RFPs</h2>
+            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h2 className="text-xl sm:text-2xl font-bold">All RFPs</h2>
               </div>
 
               <SavedFilters
@@ -247,15 +247,15 @@ export default function AllRfps() {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full"
+                    className="w-full h-10"
                     data-testid="input-search-rfps"
                   />
                 </div>
 
-                <div className="flex flex-row sm:flex-col md:flex-row gap-2">
+                <div className="flex flex-row gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-[200px] justify-between" data-testid="button-filter">
+                      <Button variant="outline" className="w-full sm:w-[180px] justify-between h-10" data-testid="button-filter">
                         <span className="flex items-center gap-2">
                           <Filter className="h-4 w-4" />
                           Sort & Filter

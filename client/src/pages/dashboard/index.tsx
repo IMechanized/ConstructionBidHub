@@ -37,49 +37,49 @@ export default function Dashboard() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+          <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
 
-            <div className="space-y-6 mt-6">
+            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
               <div>
-                <h2 className="text-3xl font-bold">Welcome back, {user?.companyName}</h2>
-                <p className="text-muted-foreground mt-1">Here's your dashboard overview</p>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Welcome back, {user?.companyName}</h2>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">Here's your dashboard overview</p>
               </div>
 
               {/* Stat Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>RFPs Expiring Soon</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">RFPs Expiring Soon</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <RfpsExpiringSoonWidget />
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Unread RFIs</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Unread RFIs</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <UnreadRfisWidget />
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Response Rate</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Response Rate</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <ResponseRateWidget />
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Active RFPs</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Active RFPs</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <ActiveRfpsWidget />
                   </CardContent>
                 </Card>
@@ -87,10 +87,10 @@ export default function Dashboard() {
 
               {/* Calendar Widget */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Deadlines</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Upcoming Deadlines</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <CalendarWidget />
                 </CardContent>
               </Card>

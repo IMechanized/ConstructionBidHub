@@ -70,7 +70,7 @@ export const QUICK_FILTERS: QuickFilter[] = [
 
 export function QuickFilterChips({ activeFilter, onFilterChange }: QuickFilterChipsProps) {
   return (
-    <div className="flex gap-2 flex-wrap" data-testid="quick-filter-chips">
+    <div className="flex gap-1.5 sm:gap-2 flex-wrap" data-testid="quick-filter-chips">
       {QUICK_FILTERS.map((filter) => {
         const Icon = filter.icon;
         const isActive = activeFilter === filter.id;
@@ -79,7 +79,7 @@ export function QuickFilterChips({ activeFilter, onFilterChange }: QuickFilterCh
           <Badge
             key={filter.id}
             variant={isActive ? "default" : "outline"}
-            className={`cursor-pointer px-3 py-1.5 transition-all hover:scale-105 ${
+            className={`cursor-pointer px-3 py-2 sm:py-1.5 transition-all hover:scale-105 min-h-[44px] sm:min-h-0 ${
               isActive ? "ring-2 ring-primary ring-offset-2" : ""
             }`}
             onClick={() => onFilterChange(isActive ? null : filter.id)}

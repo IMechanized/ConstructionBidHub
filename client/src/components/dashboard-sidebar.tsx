@@ -21,6 +21,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationCenter } from "@/components/notification-center";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
+import { Logo } from "@/components/ui/logo";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -95,7 +96,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between py-4 px-2 border-b">
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <img src="/fcb-logo.png" alt="FCB Logo" className="h-14" />
+          <Logo className="h-14" />
         </Link>
         <NotificationCenter />
       </div>

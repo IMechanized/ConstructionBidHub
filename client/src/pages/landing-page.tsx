@@ -10,6 +10,7 @@ import { Loader2, Menu } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Logo } from "@/components/ui/logo";
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 
@@ -38,7 +39,7 @@ export default function LandingPage() {
       <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img src="/fcb-logo.png" alt="FCB Logo" className="h-12 md:h-16" />
+            <Logo className="h-12 md:h-16" />
           </Link>
           
           {/* Desktop Navigation */}

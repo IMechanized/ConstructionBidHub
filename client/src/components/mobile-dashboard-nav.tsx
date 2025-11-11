@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "@/components/ui/logo";
 import "./mobile-dashboard-styles.css";
 
 interface MobileDashboardNavProps {
@@ -43,7 +44,7 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
       icon: Clock,
     },
     {
-      label: "All RFPs",
+      label: "Search All RFPs",
       href: "/dashboard/all",
       icon: Layout,
     },
@@ -91,7 +92,7 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between py-4 px-2 border-b">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <img src="/fcb-logo.png" alt="FCB Logo" className="h-12" />
+                <Logo className="h-12" />
               </Link>
               <div className="flex items-center gap-3">
                 <ThemeToggle variant="ghost" />

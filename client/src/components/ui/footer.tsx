@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { SiFacebook, SiInstagram, SiLinkedin } from "react-icons/si";
+import { Logo } from "./logo";
 
 export function Footer() {
   return (
@@ -8,7 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="space-y-4">
-            <img src="/fcb-logo.png" alt="FCB Logo" className="h-16" />
+            <Logo className="h-16" />
             <p className="text-muted-foreground text-sm">
               Streamlining government contracting through intelligent RFP management.
             </p>

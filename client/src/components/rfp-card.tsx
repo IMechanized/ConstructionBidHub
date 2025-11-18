@@ -97,10 +97,29 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
               <span className="text-muted-foreground">Location:</span>
               <span className="text-right truncate">{rfp.jobCity}, {rfp.jobState}</span>
             </div>
+            {rfp.walkthroughDate && (
+              <div className="flex justify-between text-xs sm:text-sm gap-2">
+                <span className="text-muted-foreground">Walkthrough:</span>
+                <span className="text-right">
+                  {format(new Date(rfp.walkthroughDate), 'MM/dd/yyyy')}
+                  {rfp.mandatoryWalkthrough && (
+                    <span className="ml-1 text-xs text-orange-600 dark:text-orange-400 font-medium">
+                      (Required)
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-xs sm:text-sm gap-2">
               <span className="text-muted-foreground">Deadline:</span>
               <span>{format(new Date(rfp.deadline), 'MM/dd/yyyy')}</span>
             </div>
+            {rfp.desiredTrades && rfp.desiredTrades.length > 0 && (
+              <div className="flex justify-between text-xs sm:text-sm gap-2">
+                <span className="text-muted-foreground">Trades:</span>
+                <span className="text-right truncate">{rfp.desiredTrades.join(', ')}</span>
+              </div>
+            )}
           </div>
         </div>
 

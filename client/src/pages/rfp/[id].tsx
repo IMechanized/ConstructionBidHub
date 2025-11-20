@@ -18,7 +18,13 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2, FileText } from "lucide-react";
+import { Download, Edit, Trash2, FileText, Menu } from "lucide-react";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Footer } from "@/components/ui/footer";
+import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
@@ -231,7 +237,68 @@ export default function RfpPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      {user ? (
+        <DashboardSidebar />
+      ) : (
+        <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+          <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <Logo className="h-12 md:h-16" />
+            </Link>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
+              <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Support
+              </Link>
+              <ThemeToggle size="sm" />
+              <Button asChild variant="outline" size="sm" className="text-base">
+                <Link href="/auth">Get Started</Link>
+              </Button>
+            </div>
+
+            {/* Mobile Navigation - Hamburger Menu */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px]">
+                  <div className="flex flex-col h-full pt-6">
+                    <div className="space-y-4 flex-1">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-base"
+                        asChild
+                      >
+                        <Link href="/support">Support</Link>
+                      </Button>
+                      
+                      <div className="flex items-center justify-between px-3">
+                        <span className="text-sm font-medium">Theme</span>
+                        <ThemeToggle size="sm" />
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        className="w-full text-base"
+                        asChild
+                      >
+                        <Link href="/auth">Get Started</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </nav>
+      )}
+
+      <main className={user ? "md:ml-[280px] mt-14 md:mt-0 container mx-auto px-3 sm:px-4 py-4 sm:py-8" : "container mx-auto px-3 sm:px-4 py-4 sm:py-8"}>
         <div className="mb-4 sm:mb-8">
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
@@ -516,6 +583,8 @@ export default function RfpPage() {
           />
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

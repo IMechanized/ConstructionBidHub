@@ -213,6 +213,23 @@ export default function RfpPage() {
   }
 
   const isOwner = user?.id === rfp.organizationId;
+  
+  // For non-authenticated users, infer the likely source page based on RFP properties
+  // Featured RFPs → /opportunities/featured, Non-featured RFPs → /opportunities/new
+  const getPublicBreadcrumb = () => {
+    if (rfp.featured) {
+      return {
+        label: "Featured Opportunities",
+        href: "/opportunities/featured",
+      };
+    }
+    // For non-featured RFPs, link to new opportunities page
+    return {
+      label: "New Opportunities", 
+      href: "/opportunities/new",
+    };
+  };
+  
   const breadcrumbItems = user
     ? [
         {
@@ -220,15 +237,16 @@ export default function RfpPage() {
           href: "/dashboard",
         },
         {
+          label: isOwner ? "My RFPs" : "Search All RFPs",
+          href: isOwner ? "/dashboard/my-rfps" : "/dashboard/all",
+        },
+        {
           label: rfp.title || "RFP Details",
           href: `/rfp/${id}`,
         },
       ]
     : [
-        {
-          label: rfp.featured ? "Featured Opportunities" : "New Opportunities",
-          href: "/",
-        },
+        getPublicBreadcrumb(),
         {
           label: rfp.title || "RFP Details",
           href: `/rfp/${id}`,

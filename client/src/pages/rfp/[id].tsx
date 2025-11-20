@@ -46,7 +46,7 @@ export default function RfpPage() {
     const fromParam = params.get('from');
     
     // Validate against allowed sources
-    const allowedSources = ['featured', 'new', 'my-rfps', 'all-rfps'];
+    const allowedSources = ['featured', 'new', 'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new'];
     if (fromParam && allowedSources.includes(fromParam)) {
       return { from: fromParam };
     }
@@ -248,6 +248,26 @@ export default function RfpPage() {
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
           backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+        };
+      }
+      if (navContext.from === 'dashboard-featured') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Featured", href: "/dashboard/featured" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Featured", href: "/dashboard/featured" },
+        };
+      }
+      if (navContext.from === 'dashboard-new') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "New", href: "/dashboard/new" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to New", href: "/dashboard/new" },
         };
       }
       if (navContext.from === 'featured') {

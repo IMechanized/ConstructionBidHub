@@ -539,6 +539,7 @@ export default function OpportunitiesPage() {
                   rfp={rfp}
                   compact
                   isNew={type === "new"}
+                  from={type as string}
                 />
               ))}
             </div>

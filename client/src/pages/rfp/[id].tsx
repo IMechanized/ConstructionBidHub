@@ -35,12 +35,17 @@ import DOMPurify from 'dompurify';
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const [location, setLocationHook] = useLocation();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [, setLocation] = useLocation();
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
+  
+  // Get the 'from' query parameter to track navigation context
+  const queryString = location.split('?')[1] ?? '';
+  const searchParams = new URLSearchParams(queryString);
+  const fromParam = searchParams.get('from');
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {
@@ -214,16 +219,32 @@ export default function RfpPage() {
 
   const isOwner = user?.id === rfp.organizationId;
   
-  // For non-authenticated users, infer the likely source page based on RFP properties
-  // Featured RFPs → /opportunities/featured, Non-featured RFPs → /opportunities/new
+  // For non-authenticated users, use the 'from' query param to determine breadcrumb context
+  // Falls back to inferring from RFP properties if no param is provided
   const getPublicBreadcrumb = () => {
+    // Use fromParam if available for accurate navigation tracking
+    if (fromParam === "featured") {
+      return {
+        label: "Featured Opportunities",
+        href: "/opportunities/featured",
+      };
+    }
+    if (fromParam === "new") {
+      return {
+        label: "New Opportunities",
+        href: "/opportunities/new",
+      };
+    }
+    
+    // Fallback: infer from RFP properties if no query param
     if (rfp.featured) {
       return {
         label: "Featured Opportunities",
         href: "/opportunities/featured",
       };
     }
-    // For non-featured RFPs, link to new opportunities page
+    
+    // Default to New Opportunities for non-featured RFPs
     return {
       label: "New Opportunities", 
       href: "/opportunities/new",
@@ -554,7 +575,7 @@ export default function RfpPage() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => setLocation("/auth")}
+                onClick={() => setLocationHook("/auth")}
               >
                 Login to Submit Bid
               </Button>

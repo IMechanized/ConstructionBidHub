@@ -155,6 +155,7 @@ export default function LandingPage() {
                   key={rfp.id}
                   rfp={rfp}
                   compact
+                  from="featured"
                 />
               ))}
             </div>
@@ -190,6 +191,7 @@ export default function LandingPage() {
                   rfp={rfp}
                   compact
                   isNew
+                  from="new"
                 />
               ))}
             </div>

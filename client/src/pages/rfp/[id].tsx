@@ -219,8 +219,17 @@ export default function RfpPage() {
 
   const isOwner = user?.id === rfp.organizationId;
   
-  // For non-authenticated users, use the 'from' query param to determine breadcrumb context
-  // Falls back to inferring from RFP properties if no param is provided
+  // Determine if user came from landing page (public context)
+  // This includes explicit navigation from featured/new pages
+  const isFromLandingPage = fromParam === "featured" || fromParam === "new";
+  
+  // Determine if we should show public layout (header) vs dashboard layout (sidebar)
+  // Show public layout when:
+  // 1. User is not logged in, OR
+  // 2. User came from landing page (from=featured or from=new)
+  const shouldShowPublicLayout = !user || isFromLandingPage;
+  
+  // For public layout, determine contextual breadcrumb based on navigation
   const getPublicBreadcrumb = () => {
     // Use fromParam if available for accurate navigation tracking
     if (fromParam === "featured") {
@@ -236,7 +245,7 @@ export default function RfpPage() {
       };
     }
     
-    // Fallback: infer from RFP properties if no query param
+    // For direct links (no from param), infer from RFP properties
     if (rfp.featured) {
       return {
         label: "Featured Opportunities",
@@ -251,8 +260,16 @@ export default function RfpPage() {
     };
   };
   
-  const breadcrumbItems = user
+  // Breadcrumbs: Show dashboard breadcrumbs only when showing dashboard layout
+  const breadcrumbItems = shouldShowPublicLayout
     ? [
+        getPublicBreadcrumb(),
+        {
+          label: rfp.title || "RFP Details",
+          href: `/rfp/${id}`,
+        },
+      ]
+    : [
         {
           label: "Dashboard",
           href: "/dashboard",
@@ -265,18 +282,11 @@ export default function RfpPage() {
           label: rfp.title || "RFP Details",
           href: `/rfp/${id}`,
         },
-      ]
-    : [
-        getPublicBreadcrumb(),
-        {
-          label: rfp.title || "RFP Details",
-          href: `/rfp/${id}`,
-        },
       ];
 
   return (
     <div className="min-h-screen bg-background">
-      {user ? (
+      {!shouldShowPublicLayout ? (
         <DashboardSidebar />
       ) : (
         <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
@@ -291,9 +301,15 @@ export default function RfpPage() {
                 Support
               </Link>
               <ThemeToggle size="sm" />
-              <Button asChild variant="outline" size="sm" className="text-base">
-                <Link href="/auth">Get Started</Link>
-              </Button>
+              {user ? (
+                <Button asChild size="sm" className="text-base">
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm" className="text-base">
+                  <Link href="/auth">Get Started</Link>
+                </Button>
+              )}
             </div>
 
             {/* Mobile Navigation - Hamburger Menu */}
@@ -321,13 +337,22 @@ export default function RfpPage() {
                         <ThemeToggle size="sm" />
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        className="w-full text-base"
-                        asChild
-                      >
-                        <Link href="/auth">Get Started</Link>
-                      </Button>
+                      {user ? (
+                        <Button
+                          className="w-full text-base"
+                          asChild
+                        >
+                          <Link href="/dashboard">Dashboard</Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full text-base"
+                          asChild
+                        >
+                          <Link href="/auth">Get Started</Link>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </SheetContent>
@@ -337,7 +362,7 @@ export default function RfpPage() {
         </nav>
       )}
 
-      <main className={user ? "md:ml-[280px] mt-14 md:mt-0 container mx-auto px-3 sm:px-4 py-4 sm:py-8" : "container mx-auto px-3 sm:px-4 py-4 sm:py-8"}>
+      <main className={!shouldShowPublicLayout ? "md:ml-[280px] mt-14 md:mt-0 container mx-auto px-3 sm:px-4 py-4 sm:py-8" : "container mx-auto px-3 sm:px-4 py-4 sm:py-8"}>
         <div className="mb-4 sm:mb-8">
           <BreadcrumbNav items={breadcrumbItems} />
         </div>

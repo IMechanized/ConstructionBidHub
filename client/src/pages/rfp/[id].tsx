@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Rfp, type RfpDocument } from "@shared/schema";
@@ -18,11 +18,7 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2, FileText, Menu } from "lucide-react";
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { Logo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Download, Edit, Trash2, FileText, ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/ui/footer";
 import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
@@ -41,6 +37,37 @@ export default function RfpPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
+  
+  // Cache navigation context by RFP id to persist across remounts
+  const contextCache = useRef<Map<string, { from: string } | null>>(new Map());
+  
+  // Read navigation context from sessionStorage synchronously (recomputes when id changes)
+  const navContext = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    
+    // Check cache first
+    if (contextCache.current.has(id!)) {
+      return contextCache.current.get(id!) || null;
+    }
+    
+    // Read from sessionStorage
+    try {
+      const stored = sessionStorage.getItem(`rfp-${id}-context`);
+      if (stored) {
+        const context = JSON.parse(stored);
+        // Clear from sessionStorage and cache in ref
+        sessionStorage.removeItem(`rfp-${id}-context`);
+        contextCache.current.set(id!, context);
+        return context;
+      }
+    } catch (e) {
+      console.error('Failed to parse navigation context:', e);
+    }
+    
+    // Cache the null result too
+    contextCache.current.set(id!, null);
+    return null;
+  }, [id]);
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {
@@ -214,146 +241,126 @@ export default function RfpPage() {
 
   const isOwner = user?.id === rfp.organizationId;
   
-  // Determine if this RFP is "new" (posted in the last 24 hours)
-  const twentyFourHoursAgo = subHours(new Date(), 24);
-  const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
-  
-  // Determine if RFP should show on landing page (featured or new)
-  const isLandingPageRfp = rfp.featured || isNewRfp;
-  
-  // Determine if we should show public layout (header) vs dashboard layout (sidebar)
-  // Show public layout when:
-  // 1. User is not logged in, OR
-  // 2. RFP is featured or new (appears on landing page)
-  const shouldShowPublicLayout = !user || isLandingPageRfp;
-  
-  // For public layout, determine contextual breadcrumb based on RFP properties
-  const getPublicBreadcrumb = () => {
+  // Determine breadcrumbs and back button based on navigation context
+  const getBreadcrumbsAndBackButton = () => {
+    // If we have navigation context, use it
+    if (navContext) {
+      if (navContext.from === 'my-rfps') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "My RFPs", href: "/dashboard/my-rfps" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
+        };
+      }
+      if (navContext.from === 'all-rfps') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+        };
+      }
+      if (navContext.from === 'featured') {
+        return {
+          breadcrumbs: [
+            { label: "Featured Opportunities", href: "/opportunities/featured" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
+        };
+      }
+      if (navContext.from === 'new') {
+        return {
+          breadcrumbs: [
+            { label: "New Opportunities", href: "/opportunities/new" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
+        };
+      }
+    }
+    
+    // Fallback: If no context and user is logged in, use role-based defaults
+    if (user) {
+      if (isOwner) {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "My RFPs", href: "/dashboard/my-rfps" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
+        };
+      } else {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+        };
+      }
+    }
+    
+    // Fallback: For non-authenticated users, infer from RFP properties
+    const twentyFourHoursAgo = subHours(new Date(), 24);
+    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
+    
     if (rfp.featured) {
       return {
-        label: "Featured Opportunities",
-        href: "/opportunities/featured",
+        breadcrumbs: [
+          { label: "Featured Opportunities", href: "/opportunities/featured" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
       };
     }
     
     if (isNewRfp) {
       return {
-        label: "New Opportunities", 
-        href: "/opportunities/new",
+        breadcrumbs: [
+          { label: "New Opportunities", href: "/opportunities/new" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
       };
     }
     
-    // Fallback to Featured for older RFPs (shouldn't normally happen)
+    // Final fallback: Home
     return {
-      label: "Featured Opportunities",
-      href: "/opportunities/featured",
+      breadcrumbs: [
+        { label: "Home", href: "/" },
+        { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+      ],
+      backButton: { label: "← Back to Home", href: "/" },
     };
   };
   
-  // Breadcrumbs: Show dashboard breadcrumbs only when showing dashboard layout
-  const breadcrumbItems = shouldShowPublicLayout
-    ? [
-        getPublicBreadcrumb(),
-        {
-          label: rfp.title || "RFP Details",
-          href: `/rfp/${id}`,
-        },
-      ]
-    : [
-        {
-          label: "Dashboard",
-          href: "/dashboard",
-        },
-        {
-          label: isOwner ? "My RFPs" : "Search All RFPs",
-          href: isOwner ? "/dashboard/my-rfps" : "/dashboard/all",
-        },
-        {
-          label: rfp.title || "RFP Details",
-          href: `/rfp/${id}`,
-        },
-      ];
+  const { breadcrumbs, backButton } = getBreadcrumbsAndBackButton();
+  const breadcrumbItems = breadcrumbs;
 
   return (
     <div className="min-h-screen bg-background">
-      {!shouldShowPublicLayout ? (
-        <DashboardSidebar />
-      ) : (
-        <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-          <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <Logo className="h-12 md:h-16" />
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* Back Button and Breadcrumb Navigation */}
+        <div className="mb-4 sm:mb-8 space-y-3">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Link href={backButton.href}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {backButton.label}
             </Link>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-4">
-              <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Support
-              </Link>
-              <ThemeToggle size="sm" />
-              {user ? (
-                <Button asChild size="sm" className="text-base">
-                  <Link href="/dashboard">Dashboard</Link>
-                </Button>
-              ) : (
-                <Button asChild variant="outline" size="sm" className="text-base">
-                  <Link href="/auth">Get Started</Link>
-                </Button>
-              )}
-            </div>
-
-            {/* Mobile Navigation - Hamburger Menu */}
-            <div className="md:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[300px]">
-                  <div className="flex flex-col h-full pt-6">
-                    <div className="space-y-4 flex-1">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-base"
-                        asChild
-                      >
-                        <Link href="/support">Support</Link>
-                      </Button>
-                      
-                      <div className="flex items-center justify-between px-3">
-                        <span className="text-sm font-medium">Theme</span>
-                        <ThemeToggle size="sm" />
-                      </div>
-                      
-                      {user ? (
-                        <Button
-                          className="w-full text-base"
-                          asChild
-                        >
-                          <Link href="/dashboard">Dashboard</Link>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          className="w-full text-base"
-                          asChild
-                        >
-                          <Link href="/auth">Get Started</Link>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </nav>
-      )}
-
-      <main className={!shouldShowPublicLayout ? "md:ml-[280px] mt-14 md:mt-0 container mx-auto px-3 sm:px-4 py-4 sm:py-8" : "container mx-auto px-3 sm:px-4 py-4 sm:py-8"}>
-        <div className="mb-4 sm:mb-8">
+          </Button>
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
 

@@ -145,6 +145,7 @@ export default function ContractorDashboard() {
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
+                        from="all-rfps"
                       />
                     ))}
                   </div>

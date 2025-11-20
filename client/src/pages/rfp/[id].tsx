@@ -18,7 +18,7 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2, FileText, ArrowLeft } from "lucide-react";
+import { Download, Edit, Trash2, FileText } from "lucide-react";
 import { Footer } from "@/components/ui/footer";
 import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
@@ -327,25 +327,14 @@ export default function RfpPage() {
     };
   };
   
-  const { breadcrumbs, backButton } = getBreadcrumbsAndBackButton();
+  const { breadcrumbs } = getBreadcrumbsAndBackButton();
   const breadcrumbItems = breadcrumbs;
 
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Back Button and Breadcrumb Navigation */}
-        <div className="mb-4 sm:mb-8 space-y-3">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Link href={backButton.href}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {backButton.label}
-            </Link>
-          </Button>
+        {/* Breadcrumb Navigation */}
+        <div className="mb-4 sm:mb-8">
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
 

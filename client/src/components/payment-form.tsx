@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { stripePromise, Elements, createPaymentIntent, confirmPayment, formatPrice, getStripeConfig } from '@/lib/stripe';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { queryClient } from '@/lib/queryClient';
 
 interface PaymentFormProps {
   rfpId?: number;
@@ -56,6 +57,9 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
       }
     },
     onSuccess: () => {
+      // Invalidate the RFPs query cache to refresh all views with the newly featured RFP
+      queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
+      
       toast({
         title: 'Payment Successful',
         description: 'Your RFP has been featured successfully!',

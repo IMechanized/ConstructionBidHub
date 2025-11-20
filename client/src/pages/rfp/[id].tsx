@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { format, isAfter, subHours } from "date-fns";
 import RfiForm from "@/components/bid-form";
 import EditRfpForm from "@/components/edit-rfp-form";
 import DeleteRfpDialog from "@/components/delete-rfp-dialog";
@@ -41,13 +41,6 @@ export default function RfpPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
-  
-  // Get the 'from' query parameter to track navigation context
-  // Note: wouter's useLocation() doesn't include query params, so we use window.location.search
-  const searchParams = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams('');
-  const fromParam = searchParams.get('from');
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {
@@ -221,33 +214,21 @@ export default function RfpPage() {
 
   const isOwner = user?.id === rfp.organizationId;
   
-  // Determine if user came from landing page (public context)
-  // This includes explicit navigation from featured/new pages
-  const isFromLandingPage = fromParam === "featured" || fromParam === "new";
+  // Determine if this RFP is "new" (posted in the last 24 hours)
+  const twentyFourHoursAgo = subHours(new Date(), 24);
+  const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
+  
+  // Determine if RFP should show on landing page (featured or new)
+  const isLandingPageRfp = rfp.featured || isNewRfp;
   
   // Determine if we should show public layout (header) vs dashboard layout (sidebar)
   // Show public layout when:
   // 1. User is not logged in, OR
-  // 2. User came from landing page (from=featured or from=new)
-  const shouldShowPublicLayout = !user || isFromLandingPage;
+  // 2. RFP is featured or new (appears on landing page)
+  const shouldShowPublicLayout = !user || isLandingPageRfp;
   
-  // For public layout, determine contextual breadcrumb based on navigation
+  // For public layout, determine contextual breadcrumb based on RFP properties
   const getPublicBreadcrumb = () => {
-    // Use fromParam if available for accurate navigation tracking
-    if (fromParam === "featured") {
-      return {
-        label: "Featured Opportunities",
-        href: "/opportunities/featured",
-      };
-    }
-    if (fromParam === "new") {
-      return {
-        label: "New Opportunities",
-        href: "/opportunities/new",
-      };
-    }
-    
-    // For direct links (no from param), infer from RFP properties
     if (rfp.featured) {
       return {
         label: "Featured Opportunities",
@@ -255,10 +236,17 @@ export default function RfpPage() {
       };
     }
     
-    // Default to New Opportunities for non-featured RFPs
+    if (isNewRfp) {
+      return {
+        label: "New Opportunities", 
+        href: "/opportunities/new",
+      };
+    }
+    
+    // Fallback to Featured for older RFPs (shouldn't normally happen)
     return {
-      label: "New Opportunities", 
-      href: "/opportunities/new",
+      label: "Featured Opportunities",
+      href: "/opportunities/featured",
     };
   };
   

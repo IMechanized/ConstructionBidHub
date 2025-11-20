@@ -18,7 +18,7 @@ import DeleteRfpDialog from "@/components/delete-rfp-dialog";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
-import { Download, Edit, Trash2, FileText, Menu } from "lucide-react";
+import { Download, Edit, Trash2, FileText } from "lucide-react";
 import { Footer } from "@/components/ui/footer";
 import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
@@ -27,10 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { Logo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -353,90 +349,16 @@ export default function RfpPage() {
   
   const { breadcrumbs } = getBreadcrumbsAndBackButton();
   const breadcrumbItems = breadcrumbs;
-  
-  // Determine if this is a dashboard context or landing page context
-  const isDashboardContext = navContext && ['my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new'].includes(navContext.from);
-  const [location] = useLocation();
-  
-  // Render header for landing page contexts
-  const renderLandingHeader = () => (
-    <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <Logo className="h-12 md:h-16" />
-        </Link>
-        
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            Support
-          </Link>
-          <ThemeToggle size="sm" />
-          <Button asChild variant="outline" size="sm" className="text-base">
-            {user ? (
-              <Link href="/dashboard">Dashboard</Link>
-            ) : (
-              <Link href="/auth">Get Started</Link>
-            )}
-          </Button>
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* Breadcrumb Navigation */}
+        <div className="mb-4 sm:mb-8">
+          <BreadcrumbNav items={breadcrumbItems} />
         </div>
 
-        {/* Mobile Navigation - Hamburger Menu */}
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
-              <div className="flex flex-col h-full pt-6">
-                <div className="space-y-4 flex-1">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-base"
-                    asChild
-                  >
-                    <Link href="/support">Support</Link>
-                  </Button>
-                  
-                  <div className="flex items-center justify-between px-3">
-                    <span className="text-sm font-medium">Theme</span>
-                    <ThemeToggle size="sm" />
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full text-base"
-                    asChild
-                  >
-                    {user ? (
-                      <Link href="/dashboard">Dashboard</Link>
-                    ) : (
-                      <Link href="/auth">Get Started</Link>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-    </nav>
-  );
-  
-  // Main content component
-  const renderContent = () => (
-    <div className="flex-1 flex flex-col min-h-screen">
-      <main className={isDashboardContext ? "flex-1" : "container mx-auto px-3 sm:px-4 py-4 sm:py-8"}>
-        <div className={isDashboardContext ? "container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0" : ""}>
-          {/* Breadcrumb Navigation */}
-          <div className="mb-4 sm:mb-8">
-            <BreadcrumbNav items={breadcrumbItems} />
-          </div>
-
-          <div id="rfp-content" className="max-w-4xl mx-auto">
+        <div id="rfp-content" className="max-w-4xl mx-auto">
           {/* Important Dates Section */}
           <div className="mb-6 sm:mb-8 text-right text-xs sm:text-sm text-muted-foreground space-y-1">
             <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
@@ -715,27 +637,9 @@ export default function RfpPage() {
             onOpenChange={setIsDeleteDialogOpen}
           />
         )}
-        </div>
       </main>
+
       <Footer />
-    </div>
-  );
-
-  // Conditional rendering based on navigation context
-  if (isDashboardContext) {
-    return (
-      <div className="min-h-screen bg-background md:flex">
-        <DashboardSidebar currentPath={location} />
-        {renderContent()}
-      </div>
-    );
-  }
-
-  // Landing page layout with header
-  return (
-    <div className="min-h-screen bg-background">
-      {renderLandingHeader()}
-      {renderContent()}
     </div>
   );
 }

@@ -38,34 +38,20 @@ export default function RfpPage() {
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
   
-  // Cache navigation context by RFP id to persist across remounts
-  const contextCache = useRef<Map<string, { from: string } | null>>(new Map());
-  
   // Read navigation context from sessionStorage synchronously (recomputes when id changes)
+  // DON'T remove from sessionStorage so it persists across browser history and refreshes
   const navContext = useMemo(() => {
     if (typeof window === 'undefined') return null;
     
-    // Check cache first
-    if (contextCache.current.has(id!)) {
-      return contextCache.current.get(id!) || null;
-    }
-    
-    // Read from sessionStorage
     try {
       const stored = sessionStorage.getItem(`rfp-${id}-context`);
       if (stored) {
-        const context = JSON.parse(stored);
-        // Clear from sessionStorage and cache in ref
-        sessionStorage.removeItem(`rfp-${id}-context`);
-        contextCache.current.set(id!, context);
-        return context;
+        return JSON.parse(stored);
       }
     } catch (e) {
       console.error('Failed to parse navigation context:', e);
     }
     
-    // Cache the null result too
-    contextCache.current.set(id!, null);
     return null;
   }, [id]);
 

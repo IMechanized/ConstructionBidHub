@@ -38,22 +38,21 @@ export default function RfpPage() {
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
   
-  // Read navigation context from sessionStorage synchronously (recomputes when id changes)
-  // DON'T remove from sessionStorage so it persists across browser history and refreshes
+  // Read navigation context from URL query parameter
   const navContext = useMemo(() => {
     if (typeof window === 'undefined') return null;
     
-    try {
-      const stored = sessionStorage.getItem(`rfp-${id}-context`);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('Failed to parse navigation context:', e);
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get('from');
+    
+    // Validate against allowed sources
+    const allowedSources = ['featured', 'new', 'my-rfps', 'all-rfps'];
+    if (fromParam && allowedSources.includes(fromParam)) {
+      return { from: fromParam };
     }
     
     return null;
-  }, [id]);
+  }, [typeof window !== 'undefined' && window.location.search]);
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {

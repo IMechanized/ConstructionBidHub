@@ -32,11 +32,9 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
   const isOwner = currentUser?.id === rfp.organizationId;
 
   const handleNavigation = () => {
-    // Store navigation context in sessionStorage for back button and breadcrumbs
-    if (from) {
-      sessionStorage.setItem(`rfp-${rfp.id}-context`, JSON.stringify({ from }));
-    }
-    setLocation(`/rfp/${rfp.id}`);
+    // Navigate to RFP page with navigation context as URL parameter
+    const url = from ? `/rfp/${rfp.id}?from=${from}` : `/rfp/${rfp.id}`;
+    setLocation(url);
   };
 
   return (

@@ -35,7 +35,7 @@ import DOMPurify from 'dompurify';
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [location, setLocationHook] = useLocation();
+  const [, setLocationHook] = useLocation();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -43,8 +43,10 @@ export default function RfpPage() {
   const hasTrackedView = useRef<boolean>(false);
   
   // Get the 'from' query parameter to track navigation context
-  const queryString = location.split('?')[1] ?? '';
-  const searchParams = new URLSearchParams(queryString);
+  // Note: wouter's useLocation() doesn't include query params, so we use window.location.search
+  const searchParams = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams('');
   const fromParam = searchParams.get('from');
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {

@@ -449,7 +449,7 @@ export default function FeaturedRfps() {
                         key={rfp.id}
                         rfp={rfp}
                         isNew={isAfter(new Date(rfp.createdAt), subHours(new Date(), 24))}
-                        from="featured"
+                        from="dashboard-featured"
                       />
                     ))}
                   </div>

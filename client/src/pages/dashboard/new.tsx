@@ -447,7 +447,7 @@ export default function NewRfps() {
                         key={rfp.id}
                         rfp={rfp}
                         isNew={true}
-                        from="new"
+                        from="dashboard-new"
                       />
                     ))}
                   </div>

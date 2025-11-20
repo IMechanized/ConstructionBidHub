@@ -5,6 +5,7 @@ import { Rfp, Rfi, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import {
   Table,
   TableBody,
@@ -23,7 +24,7 @@ import { getCertificationClasses } from "@/lib/utils";
 export default function DetailedReportPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
     queryKey: [`/api/rfps/${id}`],
@@ -99,16 +100,20 @@ export default function DetailedReportPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <BreadcrumbNav items={breadcrumbItems} />
-          <Button onClick={handleDownload}>
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
-          </Button>
-        </div>
+      <DashboardSidebar currentPath={location} />
+      
+      <div className="flex-1 md:ml-[280px]">
+        <main className="w-full min-h-screen pb-16 md:pb-0">
+          <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+              <BreadcrumbNav items={breadcrumbItems} />
+              <Button onClick={handleDownload} className="w-full sm:w-auto">
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </Button>
+            </div>
 
-        <div id="report-content" className="space-y-8">
+            <div id="report-content" className="space-y-8">
           <Card className="p-6">
             <h1 className="text-3xl font-bold mb-6">{rfp.title}</h1>
 
@@ -199,8 +204,10 @@ export default function DetailedReportPage() {
               </Table>
             </div>
           </Card>
-        </div>
-      </main>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

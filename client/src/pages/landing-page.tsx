@@ -130,13 +130,18 @@ export default function LandingPage() {
       {/* Featured RFPs Section */}
       <section className="py-8 md:py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <div className="flex justify-between items-center mb-6 md:mb-12 gap-2">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Featured Opportunities</h2>
-            {featuredRfps.length > INITIAL_DISPLAY && (
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap" asChild>
-                <Link href="/opportunities/featured">View All</Link>
-              </Button>
-            )}
+          <div className="mb-6 md:mb-12">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
+              <div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">Featured Opportunities</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Premium construction projects hand-picked for qualified contractors</p>
+              </div>
+              {featuredRfps.length > INITIAL_DISPLAY && (
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap self-start sm:self-auto" asChild>
+                  <Link href="/opportunities/featured">View All</Link>
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -165,13 +170,18 @@ export default function LandingPage() {
       {newRfps.length > 0 && (
         <section className="py-8 md:py-16 px-4 bg-muted/10">
           <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-6 md:mb-12 gap-2">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">New Opportunities</h2>
-              {newRfps.length > INITIAL_DISPLAY && (
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap" asChild>
-                  <Link href="/opportunities/new">View All</Link>
-                </Button>
-              )}
+            <div className="mb-6 md:mb-12">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
+                <div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">New Opportunities</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">Fresh projects posted in the last 24 hours</p>
+                </div>
+                {newRfps.length > INITIAL_DISPLAY && (
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap self-start sm:self-auto" asChild>
+                    <Link href="/opportunities/new">View All</Link>
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {displayedNewRfps.map((rfp) => (

@@ -23,19 +23,26 @@ interface RfpCardProps {
   };
   compact?: boolean;
   isNew?: boolean;
+  from?: string; // Navigation context for breadcrumb tracking
 }
 
-export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
+export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardProps) {
   const [, setLocation] = useLocation();
   const { user: currentUser } = useAuth();
   const isOwner = currentUser?.id === rfp.organizationId;
+
+  const handleNavigation = () => {
+    // Navigate to RFP page with navigation context as URL parameter
+    const url = from ? `/rfp/${rfp.id}?from=${from}` : `/rfp/${rfp.id}`;
+    setLocation(url);
+  };
 
   return (
     <Card 
       className={`cursor-pointer transition-shadow hover:shadow-lg ${
         rfp.featured ? 'border-primary' : ''
       }`}
-      onClick={() => setLocation(`/rfp/${rfp.id}`)}
+      onClick={handleNavigation}
     >
       <CardContent className={compact ? "p-3 sm:p-4" : "p-4 sm:p-6"}>
         {/* Organization Header */}
@@ -86,9 +93,7 @@ export function RfpCard({ rfp, compact = false, isNew = false }: RfpCardProps) {
             <MapPreview
               address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
               className="w-full h-20 sm:h-24 rounded-md"
-              onClick={() => {
-                setLocation(`/rfp/${rfp.id}`);
-              }}
+              onClick={handleNavigation}
             />
           </div>
           

@@ -166,6 +166,7 @@ export default function MyRfpsPage() {
                             key={rfp.id}
                             rfp={rfp}
                             isNew={isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)}
+                            from="my-rfps"
                           />
                         ))}
                       </div>

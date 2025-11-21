@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Rfp, type RfpDocument } from "@shared/schema";
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { format, isAfter, subHours } from "date-fns";
 import RfiForm from "@/components/bid-form";
 import EditRfpForm from "@/components/edit-rfp-form";
 import DeleteRfpDialog from "@/components/delete-rfp-dialog";
@@ -19,6 +19,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Avatar } from "@/components/ui/avatar";
 import { Download, Edit, Trash2, FileText } from "lucide-react";
+import { Footer } from "@/components/ui/footer";
+import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +31,28 @@ import DOMPurify from 'dompurify';
 export default function RfpPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const [, setLocationHook] = useLocation();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [, setLocation] = useLocation();
   const viewStartTime = useRef<number>(Date.now());
   const hasTrackedView = useRef<boolean>(false);
+  
+  // Read navigation context from URL query parameter
+  const navContext = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get('from');
+    
+    // Validate against allowed sources
+    const allowedSources = ['featured', 'new', 'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new'];
+    if (fromParam && allowedSources.includes(fromParam)) {
+      return { from: fromParam };
+    }
+    
+    return null;
+  }, [typeof window !== 'undefined' && window.location.search]);
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp & {
     organization?: {
@@ -207,31 +225,135 @@ export default function RfpPage() {
   }
 
   const isOwner = user?.id === rfp.organizationId;
-  const breadcrumbItems = user
-    ? [
-        {
-          label: "Dashboard",
-          href: "/dashboard",
-        },
-        {
-          label: rfp.title || "RFP Details",
-          href: `/rfp/${id}`,
-        },
-      ]
-    : [
-        {
-          label: rfp.featured ? "Featured Opportunities" : "New Opportunities",
-          href: "/",
-        },
-        {
-          label: rfp.title || "RFP Details",
-          href: `/rfp/${id}`,
-        },
-      ];
+  
+  // Determine breadcrumbs and back button based on navigation context
+  const getBreadcrumbsAndBackButton = () => {
+    // If we have navigation context, use it
+    if (navContext) {
+      if (navContext.from === 'my-rfps') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "My RFPs", href: "/dashboard/my-rfps" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
+        };
+      }
+      if (navContext.from === 'all-rfps') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+        };
+      }
+      if (navContext.from === 'dashboard-featured') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Featured", href: "/dashboard/featured" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Featured", href: "/dashboard/featured" },
+        };
+      }
+      if (navContext.from === 'dashboard-new') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "New", href: "/dashboard/new" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to New", href: "/dashboard/new" },
+        };
+      }
+      if (navContext.from === 'featured') {
+        return {
+          breadcrumbs: [
+            { label: "Featured Opportunities", href: "/opportunities/featured" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
+        };
+      }
+      if (navContext.from === 'new') {
+        return {
+          breadcrumbs: [
+            { label: "New Opportunities", href: "/opportunities/new" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
+        };
+      }
+    }
+    
+    // Fallback: If no context and user is logged in, use role-based defaults
+    if (user) {
+      if (isOwner) {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "My RFPs", href: "/dashboard/my-rfps" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
+        };
+      } else {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+        };
+      }
+    }
+    
+    // Fallback: For non-authenticated users, infer from RFP properties
+    const twentyFourHoursAgo = subHours(new Date(), 24);
+    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
+    
+    if (rfp.featured) {
+      return {
+        breadcrumbs: [
+          { label: "Featured Opportunities", href: "/opportunities/featured" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
+      };
+    }
+    
+    if (isNewRfp) {
+      return {
+        breadcrumbs: [
+          { label: "New Opportunities", href: "/opportunities/new" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
+      };
+    }
+    
+    // Final fallback: Home
+    return {
+      breadcrumbs: [
+        { label: "Home", href: "/" },
+        { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+      ],
+      backButton: { label: "← Back to Home", href: "/" },
+    };
+  };
+  
+  const { breadcrumbs } = getBreadcrumbsAndBackButton();
+  const breadcrumbItems = breadcrumbs;
 
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* Breadcrumb Navigation */}
         <div className="mb-4 sm:mb-8">
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
@@ -240,6 +362,7 @@ export default function RfpPage() {
           {/* Important Dates Section */}
           <div className="mb-6 sm:mb-8 text-right text-xs sm:text-sm text-muted-foreground space-y-1">
             <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
+            <div>Walkthrough: {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy")}</div>
             <div>RFI Due: {format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</div>
             <div>Deadline: {format(new Date(rfp.deadline), "MM/dd/yyyy")}</div>
           </div>
@@ -469,7 +592,7 @@ export default function RfpPage() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => setLocation("/auth")}
+                onClick={() => setLocationHook("/auth")}
               >
                 Login to Submit Bid
               </Button>
@@ -516,6 +639,8 @@ export default function RfpPage() {
           />
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

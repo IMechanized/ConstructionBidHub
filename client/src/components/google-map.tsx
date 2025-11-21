@@ -1,5 +1,5 @@
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
-import { useState, useEffect, useRef, ReactElement } from "react";
+import { useState, useEffect, useRef, ReactElement, createContext, useContext } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 declare global {
@@ -19,6 +19,13 @@ interface GoogleMapProps {
 interface MapComponentProps extends GoogleMapProps {
   style: { [key: string]: string };
 }
+
+const MapContext = createContext<any>(null);
+
+export const useMap = () => {
+  const map = useContext(MapContext);
+  return map;
+};
 
 const MapComponent = ({ center, zoom, children, style, onClick }: MapComponentProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -52,7 +59,9 @@ const MapComponent = ({ center, zoom, children, style, onClick }: MapComponentPr
   return (
     <>
       <div ref={ref} style={style} />
-      {children}
+      <MapContext.Provider value={map}>
+        {map && children}
+      </MapContext.Provider>
     </>
   );
 };
@@ -98,4 +107,42 @@ export const GoogleMap = ({ center, zoom, children, className, onClick }: Google
       </Wrapper>
     </div>
   );
+};
+
+interface MarkerProps {
+  position: { lat: number; lng: number };
+  title?: string;
+}
+
+export const Marker = ({ position, title }: MarkerProps) => {
+  const map = useMap();
+  const [marker, setMarker] = useState<any>();
+
+  useEffect(() => {
+    if (!marker && map && window.google) {
+      const markerInstance = new window.google.maps.Marker({
+        position,
+        map,
+        title,
+      });
+      setMarker(markerInstance);
+    }
+
+    return () => {
+      if (marker) {
+        marker.setMap(null);
+      }
+    };
+  }, [map, marker, position, title]);
+
+  useEffect(() => {
+    if (marker) {
+      marker.setPosition(position);
+      if (title) {
+        marker.setTitle(title);
+      }
+    }
+  }, [marker, position, title]);
+
+  return null;
 };

@@ -12,7 +12,12 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 
-export default function RfiForm({ rfpId }: { rfpId: number }) {
+interface RfiFormProps {
+  rfpId: number;
+  onSuccess?: () => void;
+}
+
+export default function RfiForm({ rfpId, onSuccess }: RfiFormProps) {
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -50,6 +55,9 @@ export default function RfiForm({ rfpId }: { rfpId: number }) {
         title: t('rfi.requestSent'),
         description: t('rfi.requestSuccessful'),
       });
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error: Error) => {
       toast({

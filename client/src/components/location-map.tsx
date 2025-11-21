@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GoogleMap } from "@/components/google-map";
+import { GoogleMap, Marker } from "@/components/google-map";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface LocationMapProps {
@@ -112,26 +112,4 @@ export const LocationMap = ({
       ) : null}
     </GoogleMap>
   );
-};
-
-interface MarkerProps {
-  position: { lat: number; lng: number };
-  title?: string;
-}
-
-const Marker = ({ position, title }: MarkerProps) => {
-  useEffect(() => {
-    if (window.google) {
-      const marker = new window.google.maps.Marker({
-        position,
-        title,
-      });
-
-      return () => {
-        marker.setMap(null);
-      };
-    }
-  }, [position, title]);
-
-  return null;
 };

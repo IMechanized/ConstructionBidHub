@@ -1225,14 +1225,20 @@ const storage = {
     }
   },
 
+  // Cache for session store to avoid recreating it on every access
+  _sessionStore: null,
+
   get sessionStore() {
-    const PgSession = ConnectPgSimple(session);
-    return new PgSession({
-      pool: pool,
-      tableName: 'session',
-      createTableIfMissing: true,
-      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
-    });
+    if (!this._sessionStore) {
+      const PgSession = ConnectPgSimple(session);
+      this._sessionStore = new PgSession({
+        pool: pool,
+        tableName: 'session',
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+      });
+    }
+    return this._sessionStore;
   }
 };
 

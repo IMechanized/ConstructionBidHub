@@ -104,7 +104,7 @@ export function CalendarWidget() {
               }
 
               return (
-                <Link key={rfp.id} href={`/rfp/${rfp.id}`}>
+                <Link key={rfp.id} href={`/rfp/${rfp.id}?from=dashboard`}>
                   <div className="p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors border">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">

@@ -557,7 +557,7 @@ export default function AnalyticsDashboard() {
                                 variant="outline"
                                 className="h-8 px-2 sm:px-3"
                                 onClick={() => {
-                                  setLocation(`/rfp/${item.rfp.id}`);
+                                  setLocation(`/rfp/${item.rfp.id}?from=dashboard-analytics`);
                                   toast({
                                     title: "Viewing RFP",
                                     description: `Opening ${item.rfp.title}`,
@@ -725,7 +725,7 @@ export default function AnalyticsDashboard() {
                           <Button 
                             onClick={() => {
                               setDrillDownRfp(null);
-                              setLocation(`/rfp/${drillDownRfp.rfp.id}`);
+                              setLocation(`/rfp/${drillDownRfp.rfp.id}?from=dashboard-analytics`);
                             }}
                             className="w-full"
                           >

@@ -49,7 +49,11 @@ export default function RfpPage() {
     const fromParam = params.get('from');
     
     // Validate against allowed sources
-    const allowedSources = ['featured', 'new', 'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new'];
+    const allowedSources = [
+      'featured', 'new', 
+      'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new',
+      'dashboard', 'dashboard-analytics'
+    ];
     if (fromParam && allowedSources.includes(fromParam)) {
       return { from: fromParam };
     }
@@ -354,7 +358,7 @@ export default function RfpPage() {
   const breadcrumbItems = breadcrumbs;
 
   // Determine layout based on navigation context
-  const isDashboardView = navContext && ['dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps'].includes(navContext.from);
+  const isDashboardView = navContext && ['dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps', 'dashboard', 'dashboard-analytics'].includes(navContext.from);
   const isLandingPageView = navContext && ['featured', 'new'].includes(navContext.from);
 
   // Render with dashboard sidebar layout

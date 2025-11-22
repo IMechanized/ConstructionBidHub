@@ -277,6 +277,25 @@ export default function RfpPage() {
           backButton: { label: "← Back to New", href: "/dashboard/new" },
         };
       }
+      if (navContext.from === 'dashboard') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Dashboard", href: "/dashboard" },
+        };
+      }
+      if (navContext.from === 'dashboard-analytics') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Analytics", href: "/dashboard/analytics" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Analytics", href: "/dashboard/analytics" },
+        };
+      }
       if (navContext.from === 'featured') {
         return {
           breadcrumbs: [

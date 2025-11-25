@@ -13,7 +13,7 @@ export function LandingPageHeader() {
     <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <Logo className="h-20 md:h-32" />
+          <Logo />
         </Link>
         
         {/* Desktop Navigation */}

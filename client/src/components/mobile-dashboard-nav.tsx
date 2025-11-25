@@ -92,7 +92,7 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
           <div className="flex flex-col h-full">
             <div className="flex items-center justify-between py-4 px-2 border-b">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <Logo className="h-20 md:h-32" />
+                <Logo />
               </Link>
               <div className="flex items-center gap-3">
                 <ThemeToggle variant="ghost" />

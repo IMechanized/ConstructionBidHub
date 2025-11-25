@@ -2,7 +2,7 @@ interface LogoProps {
   className?: string;
 }
 
-export function Logo({ className = "h-32" }: LogoProps) {
+export function Logo({ className = "h-20 md:h-32" }: LogoProps) {
   return (
     <>
       <img

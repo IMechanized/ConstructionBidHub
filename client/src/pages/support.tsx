@@ -38,7 +38,7 @@ export default function SupportPage() {
                     Get help via email within 24 hours
                   </p>
                   <Button variant="outline">
-                    <a href="mailto:support@findconstructionbids.com">
+                    <a href="mailto:info@findconstructionbids.com">
                       Contact Support
                     </a>
                   </Button>
@@ -55,7 +55,7 @@ export default function SupportPage() {
                     Speak with a support representative
                   </p>
                   <Button variant="outline">
-                    <a href="tel:+15551234567">
+                    <a href="tel:+12035201544">
                       Call Us
                     </a>
                   </Button>

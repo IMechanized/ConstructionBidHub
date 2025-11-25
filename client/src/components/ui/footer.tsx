@@ -58,7 +58,7 @@ export function Footer() {
                 Email: info@findconstructionbids.com
               </li>
               <li className="text-sm text-muted-foreground">
-                Phone: (203) 495-6300
+                Phone: (203) 520-1544
               </li>
             </ul>
           </div>

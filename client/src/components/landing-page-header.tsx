@@ -18,6 +18,9 @@ export function LandingPageHeader() {
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
+          <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            About
+          </Link>
           <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
             Support
           </Link>
@@ -43,6 +46,13 @@ export function LandingPageHeader() {
             <SheetContent side="right" className="w-[300px]">
               <div className="flex flex-col h-full pt-6">
                 <div className="space-y-4 flex-1">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-base"
+                    asChild
+                  >
+                    <Link href="/about">About</Link>
+                  </Button>
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-base"

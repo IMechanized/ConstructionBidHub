@@ -55,16 +55,16 @@ export function Footer() {
             <h4 className="font-medium mb-4">Contact</h4>
             <ul className="space-y-2">
               <li className="text-sm text-muted-foreground">
-                Email: contact@findconstructionbids.com
+                Email: info@findconstructionbids.com
               </li>
               <li className="text-sm text-muted-foreground">
-                Phone: (555) 123-4567
+                Phone: (203) 495-6300
               </li>
             </ul>
           </div>
 
           {/* Social Media */}
-          <div>
+          <div className="hidden">
             <h4 className="font-medium mb-4">Follow Us</h4>
             <div className="flex space-x-4">
               <a

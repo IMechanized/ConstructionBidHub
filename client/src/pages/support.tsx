@@ -55,7 +55,7 @@ export default function SupportPage() {
                     Speak with a support representative
                   </p>
                   <Button variant="outline">
-                    <a href="tel:+12035201544">
+                    <a href="tel:+12034956300">
                       Call Us
                     </a>
                   </Button>

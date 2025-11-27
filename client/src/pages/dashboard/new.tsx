@@ -12,7 +12,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { US_STATES_AND_TERRITORIES } from "@/lib/utils";
 import { CERTIFICATIONS, TRADE_OPTIONS } from "@shared/schema";
-import { Filter } from "lucide-react";
+import { Filter, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -24,16 +24,29 @@ import { Label } from "@/components/ui/label";
 import { AdvancedSearch, SearchFilter } from "@/components/advanced-search";
 import { SavedFilters } from "@/components/saved-filters";
 import { QuickFilterChips, QUICK_FILTERS } from "@/components/quick-filter-chips";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import RfpForm from "@/components/rfp-form";
+import { useToast } from "@/hooks/use-toast";
 
 export default function NewRfps() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [selectedFilters, setSelectedFilters] = useState<string[]>(["deadline"]);
   const [searchFilters, setSearchFilters] = useState<SearchFilter[]>([]);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const itemsPerPage = 9;
+
+  const handleCreateSuccess = () => {
+    setIsCreateModalOpen(false);
+    toast({
+      title: "Success",
+      description: "RFP created successfully",
+    });
+  };
 
   const breadcrumbItems = [
     {
@@ -217,6 +230,27 @@ export default function NewRfps() {
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
+
+            {/* Navigation Buttons */}
+            <div className="flex flex-wrap gap-3 mt-4">
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)} 
+                className="gap-2"
+                data-testid="button-post-rfp"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Post RFP
+              </Button>
+              <Button 
+                onClick={() => setLocation('/dashboard/all')}
+                variant="outline" 
+                className="gap-2"
+                data-testid="button-search-rfps"
+              >
+                <Search className="h-4 w-4" />
+                Search RFPs
+              </Button>
+            </div>
 
             <div className="space-y-6 mt-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -487,6 +521,18 @@ export default function NewRfps() {
           </div>
         </main>
       </div>
+
+      {/* Create RFP Dialog */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-[600px] w-[95vw] sm:w-full mx-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Create New RFP</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto px-2 max-h-[70vh] pb-4">
+            <RfpForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateModalOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

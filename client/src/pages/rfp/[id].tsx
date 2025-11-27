@@ -251,10 +251,10 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: "Search all RFPs", href: "/dashboard/all" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
-          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+          backButton: { label: "← Back to Search all RFPs", href: "/dashboard/all" },
         };
       }
       if (navContext.from === 'dashboard-featured') {
@@ -271,10 +271,10 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: "New", href: "/dashboard/new" },
+            { label: "New RFPs", href: "/dashboard/new" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
-          backButton: { label: "← Back to New", href: "/dashboard/new" },
+          backButton: { label: "← Back to New RFPs", href: "/dashboard/new" },
         };
       }
       if (navContext.from === 'dashboard') {
@@ -299,6 +299,7 @@ export default function RfpPage() {
       if (navContext.from === 'featured') {
         return {
           breadcrumbs: [
+            { label: "Home", href: "/" },
             { label: "Featured Opportunities", href: "/opportunities/featured" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
@@ -308,36 +309,13 @@ export default function RfpPage() {
       if (navContext.from === 'new') {
         return {
           breadcrumbs: [
+            { label: "Home", href: "/" },
             { label: "New Opportunities", href: "/opportunities/new" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
           backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
         };
       }
-    }
-    
-    // Fallback: Infer from RFP properties first (works for both logged-in and non-logged-in users)
-    const twentyFourHoursAgo = subHours(new Date(), 24);
-    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
-    
-    if (rfp.featured) {
-      return {
-        breadcrumbs: [
-          { label: "Featured Opportunities", href: "/opportunities/featured" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-        ],
-        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
-      };
-    }
-    
-    if (isNewRfp) {
-      return {
-        breadcrumbs: [
-          { label: "New Opportunities", href: "/opportunities/new" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-        ],
-        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
-      };
     }
     
     // Fallback: If no context and user is logged in, use role-based defaults
@@ -355,12 +333,38 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: "Search all RFPs", href: "/dashboard/all" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
-          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+          backButton: { label: "← Back to Search all RFPs", href: "/dashboard/all" },
         };
       }
+    }
+    
+    // Fallback for non-authenticated users: Infer from RFP properties
+    const twentyFourHoursAgo = subHours(new Date(), 24);
+    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
+    
+    if (rfp.featured) {
+      return {
+        breadcrumbs: [
+          { label: "Home", href: "/" },
+          { label: "Featured Opportunities", href: "/opportunities/featured" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
+      };
+    }
+    
+    if (isNewRfp) {
+      return {
+        breadcrumbs: [
+          { label: "Home", href: "/" },
+          { label: "New Opportunities", href: "/opportunities/new" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
+      };
     }
     
     // Final fallback: Home (for non-authenticated users viewing regular RFPs)

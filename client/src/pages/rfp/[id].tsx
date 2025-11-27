@@ -43,9 +43,7 @@ export default function RfpPage() {
   
   // Read navigation context from URL query parameter
   const navContext = useMemo(() => {
-    const searchMatch = location.match(/\?(.+)/);
-    const search = searchMatch?.[1] ?? '';
-    const params = new URLSearchParams(search);
+    const params = new URLSearchParams(window.location.search);
     const fromParam = params.get('from');
     
     // Validate against allowed sources

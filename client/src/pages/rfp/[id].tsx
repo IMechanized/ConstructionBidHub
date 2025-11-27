@@ -339,17 +339,14 @@ export default function RfpPage() {
   const breadcrumbItems = breadcrumbs;
 
   // Determine layout based on navigation context
-  // Show header + footer layout for both dashboard and landing page views
-  const hasNavigationContext = navContext && [
-    'dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps', 'dashboard', 'dashboard-analytics',
-    'featured', 'new'
+  const isDashboardContext = navContext && [
+    'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new', 'dashboard', 'dashboard-analytics'
   ].includes(navContext.from);
 
-  // Render with landing page header and footer (for both public and dashboard views)
-  if (hasNavigationContext) {
+  // Dashboard contexts: Breadcrumbs + Content only (no header/footer)
+  if (isDashboardContext) {
     return (
       <div className="min-h-screen bg-background">
-        <LandingPageHeader />
         <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <RfpDetailContent
             rfp={rfp}
@@ -367,15 +364,14 @@ export default function RfpPage() {
             onNavigateToAuth={() => setLocation("/auth")}
           />
         </main>
-
-        <Footer />
       </div>
     );
   }
 
-  // Default layout (fallback - breadcrumb + footer, no header/sidebar)
+  // Landing page contexts + Direct links: Header + Breadcrumbs + Content + Footer
   return (
     <div className="min-h-screen bg-background">
+      <LandingPageHeader />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <RfpDetailContent
           rfp={rfp}

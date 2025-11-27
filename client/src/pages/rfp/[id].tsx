@@ -318,56 +318,17 @@ export default function RfpPage() {
       }
     }
     
-    // Fallback: Infer from RFP properties (for both logged-in and non-logged-in users)
-    const twentyFourHoursAgo = subHours(new Date(), 24);
-    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
-    
-    if (rfp.featured) {
-      return {
-        breadcrumbs: [
-          { label: "Home", href: "/" },
-          { label: "Featured Opportunities", href: "/opportunities/featured" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-        ],
-        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
-      };
-    }
-    
-    if (isNewRfp) {
-      return {
-        breadcrumbs: [
-          { label: "Home", href: "/" },
-          { label: "New Opportunities", href: "/opportunities/new" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-        ],
-        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
-      };
-    }
-    
-    // Final fallback based on authentication status
+    // Simple neutral fallback (no navigation context)
     if (user) {
-      if (isOwner) {
-        return {
-          breadcrumbs: [
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "My RFPs", href: "/dashboard/my-rfps" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-          ],
-          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
-        };
-      } else {
-        return {
-          breadcrumbs: [
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Search all RFPs", href: "/dashboard/all" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-          ],
-          backButton: { label: "← Back to Search all RFPs", href: "/dashboard/all" },
-        };
-      }
+      return {
+        breadcrumbs: [
+          { label: "Dashboard", href: "/dashboard" },
+          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        ],
+        backButton: { label: "← Back to Dashboard", href: "/dashboard" },
+      };
     }
     
-    // Final fallback for non-authenticated users
     return {
       breadcrumbs: [
         { label: "Home", href: "/" },

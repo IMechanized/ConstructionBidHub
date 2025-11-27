@@ -28,7 +28,6 @@ import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
 import { LandingPageHeader } from "@/components/landing-page-header";
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { RfpDetailContent } from "@/components/rfp-detail-content";
 
 export default function RfpPage() {
@@ -340,37 +339,14 @@ export default function RfpPage() {
   const breadcrumbItems = breadcrumbs;
 
   // Determine layout based on navigation context
-  const isDashboardView = navContext && ['dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps', 'dashboard', 'dashboard-analytics'].includes(navContext.from);
-  const isLandingPageView = navContext && ['featured', 'new'].includes(navContext.from);
+  // Show header + footer layout for both dashboard and landing page views
+  const hasNavigationContext = navContext && [
+    'dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps', 'dashboard', 'dashboard-analytics',
+    'featured', 'new'
+  ].includes(navContext.from);
 
-  // Render with dashboard sidebar layout
-  if (isDashboardView) {
-    return (
-      <div className="flex min-h-screen bg-background">
-        <DashboardSidebar currentPath={location} />
-        <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <RfpDetailContent
-            rfp={rfp}
-            rfpDocuments={rfpDocuments}
-            breadcrumbItems={breadcrumbItems}
-            isOwner={isOwner}
-            user={user}
-            isRfiModalOpen={isRfiModalOpen}
-            isEditModalOpen={isEditModalOpen}
-            isDeleteDialogOpen={isDeleteDialogOpen}
-            setIsRfiModalOpen={setIsRfiModalOpen}
-            setIsEditModalOpen={setIsEditModalOpen}
-            setIsDeleteDialogOpen={setIsDeleteDialogOpen}
-            handleDownload={handleDownload}
-            onNavigateToAuth={() => setLocation("/auth")}
-          />
-        </main>
-      </div>
-    );
-  }
-
-  // Render with landing page header and footer
-  if (isLandingPageView) {
+  // Render with landing page header and footer (for both public and dashboard views)
+  if (hasNavigationContext) {
     return (
       <div className="min-h-screen bg-background">
         <LandingPageHeader />

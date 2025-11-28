@@ -149,14 +149,15 @@ This approach ensures large files never transit through Vercel's serverless func
 ## Changelog
 
 Changelog:
-- November 28, 2025 (evening): Fixed critical S3 and CSP issues with hybrid access model
-  - Removed ACL parameters from S3 uploads to support modern buckets with ACLs disabled
-  - Implemented intelligent hybrid download strategy: automatic presigned URLs with public fallback
-  - Enhanced S3 key extraction to support virtual-hosted, path-style, and CloudFront URL formats
-  - Updated Content Security Policy to allow Stripe.js, Google Maps, and Google Fonts resources
-  - Mounted payments router to fix `/api/payments/price` endpoint
-  - Fixed TypeScript compilation errors (cookie-signature types, parameter validation)
-  - Added comprehensive documentation for S3 bucket configuration options
+- November 28, 2025 (evening): Fixed critical S3, CSP, and Service Worker issues with hybrid access model
+  - **Service Worker Fix**: Updated service worker (v1.2.0) to not intercept third-party resources (Stripe, Google Maps, AWS S3)
+  - **S3 Configuration**: Removed ACL parameters from uploads; created S3_SETUP_GUIDE.md with required CORS and bucket policy configuration
+  - **Download Strategy**: Implemented intelligent hybrid download strategy with presigned URLs and public fallback
+  - **URL Compatibility**: Enhanced S3 key extraction to support virtual-hosted, path-style, and CloudFront URL formats
+  - **CSP Updates**: Updated Content Security Policy headers to allow Stripe.js, Google Maps, and Google Fonts resources
+  - **Payment Router**: Mounted payments router to fix `/api/payments/price` endpoint
+  - **TypeScript Fixes**: Resolved all compilation errors (cookie-signature types, parameter validation)
+  - **Documentation**: Added comprehensive S3 bucket configuration guide and replit.md updates
 - November 28, 2025: Implemented presigned URL upload system for S3 with user-specific folder organization
   - Added support for files up to 350MB (Vercel-compatible architecture)
   - Direct client-to-S3 uploads bypass Vercel's 4.5MB serverless limit

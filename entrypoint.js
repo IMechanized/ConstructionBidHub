@@ -1885,10 +1885,11 @@ app.get("/api/rfps/:id/rfi", async (req, res) => {
             id: user.id,
             companyName: user.companyName,
             logo: user.logo,
-            contact: user.contact,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
             telephone: user.telephone,
             cell: user.cell,
-            businessEmail: user.businessEmail,
             certificationName: user.certificationName || [],
             trade: user.trade
           } : null

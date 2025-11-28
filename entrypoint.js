@@ -14,13 +14,15 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import Stripe from 'stripe';
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { scrypt, randomBytes, timingSafeEqual, randomUUID } from 'crypto';
 import { promisify } from 'util';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { z } from 'zod';
 import Mailjet from 'node-mailjet';
 import { v2 as cloudinary } from 'cloudinary';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 /**
  * Stripe Payment Processing Integration
@@ -79,6 +81,78 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// Configure AWS S3 for presigned URL uploads
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  } : undefined,
+});
+
+const s3BucketName = process.env.AWS_S3_BUCKET_NAME || '';
+
+function getMimeTypeFromFilename(filename) {
+  const extension = filename.split('.').pop()?.toLowerCase();
+  const mimeTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'svg': 'image/svg+xml',
+    'webp': 'image/webp',
+  };
+  return mimeTypes[extension || ''] || 'application/octet-stream';
+}
+
+async function generatePresignedUploadUrl(filename, mimeType, folder, userId, expiresIn = 3600) {
+  if (!s3BucketName) {
+    throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+  }
+
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    throw new Error('AWS credentials are not configured');
+  }
+
+  const fileExtension = filename.split('.').pop();
+  const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+  const key = `users/${userId}/${folder}/${uniqueFilename}`;
+
+  const command = new PutObjectCommand({
+    Bucket: s3BucketName,
+    Key: key,
+    ContentType: mimeType,
+  });
+
+  try {
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    const region = process.env.AWS_REGION || 'us-east-1';
+    const fileUrl = `https://${s3BucketName}.s3.${region}.amazonaws.com/${key}`;
+    
+    return {
+      uploadUrl,
+      fileUrl,
+      key,
+    };
+  } catch (error) {
+    console.error('Error generating presigned URL:', error);
+    throw new Error('Failed to generate presigned upload URL');
+  }
+}
+
+async function generateImageUploadUrl(filename, userId) {
+  const mimeType = getMimeTypeFromFilename(filename);
+  return generatePresignedUploadUrl(filename, mimeType, 'images', userId);
+}
+
+async function generateDocumentUploadUrl(filename, mimeType, userId) {
+  return generatePresignedUploadUrl(filename, mimeType, 'documents', userId);
+}
+
+async function generateAttachmentUploadUrl(filename, mimeType, userId) {
+  return generatePresignedUploadUrl(filename, mimeType, 'attachments', userId);
+}
 
 // Safe logging utilities for authentication (Vercel deployment version matching server/lib/safe-logging.ts)
 const SENSITIVE_FIELDS = [
@@ -2014,6 +2088,99 @@ app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch RFP analytics" });
+  }
+});
+
+// Presigned URL endpoint for image uploads
+app.post("/api/upload/presigned-url", requireAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      return sendErrorResponse(res, new Error('Authentication required'), 401, ErrorMessages.UNAUTHORIZED, 'PresignedUrl');
+    }
+
+    const { filename, mimeType } = req.body;
+
+    if (!filename || !mimeType) {
+      return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrl');
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrlType');
+    }
+
+    const presignedData = await generateImageUploadUrl(filename, req.user.id);
+    res.json(presignedData);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedUrl');
+  }
+});
+
+// Presigned URL endpoint for document uploads
+app.post("/api/upload-document/presigned-url", requireAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      return sendErrorResponse(res, new Error('Authentication required'), 401, ErrorMessages.UNAUTHORIZED, 'PresignedDocUrl');
+    }
+
+    const { filename, mimeType } = req.body;
+
+    if (!filename || !mimeType) {
+      return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocUrl');
+    }
+
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+    ];
+
+    if (!allowedMimeTypes.includes(mimeType)) {
+      return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocType');
+    }
+
+    const presignedData = await generateDocumentUploadUrl(filename, mimeType, req.user.id);
+    res.json(presignedData);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedDocUrl');
+  }
+});
+
+// Presigned URL endpoint for attachment uploads
+app.post("/api/upload-attachment/presigned-url", requireAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      return sendErrorResponse(res, new Error('Authentication required'), 401, ErrorMessages.UNAUTHORIZED, 'PresignedAttUrl');
+    }
+
+    const { filename, mimeType } = req.body;
+
+    if (!filename || !mimeType) {
+      return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttUrl');
+    }
+
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'text/plain',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    if (!allowedMimeTypes.includes(mimeType)) {
+      return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttType');
+    }
+
+    const presignedData = await generateAttachmentUploadUrl(filename, mimeType, req.user.id);
+    res.json(presignedData);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedAttUrl');
   }
 });
 

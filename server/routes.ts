@@ -116,9 +116,7 @@ export function registerRoutes(app: Express): Server {
           "https://maps.gstatic.com",
           "https://maps.googleapis.com",
           "https://*.google.com",
-          "https://*.s3.*.amazonaws.com",
           "https://*.s3.amazonaws.com",
-          "https://s3.*.amazonaws.com",
           "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
         ],
         fontSrc: [
@@ -133,9 +131,7 @@ export function registerRoutes(app: Express): Server {
           "https://maps.googleapis.com",
           "https://*.googleapis.com",
           "https://*.google.com",
-          "https://*.s3.*.amazonaws.com",
           "https://*.s3.amazonaws.com",
-          "https://s3.*.amazonaws.com",
           "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],

@@ -1872,32 +1872,10 @@ app.get("/api/rfps/:id/rfi", async (req, res) => {
     const id = validatePositiveInt(req.params.id, 'RFP ID', res);
     if (id === null) return;
 
-    // First get all RFIs for this RFP
+    // Get all RFIs for this RFP with organization data already joined
     const rfis = await storage.getRfisByRfp(id);
 
-    // Then for each RFI, get the full user data
-    const rfisWithOrgs = await Promise.all(
-      rfis.map(async (rfi) => {
-        const user = await storage.getUserByUsername(rfi.email);
-        return {
-          ...rfi,
-          organization: user ? {
-            id: user.id,
-            companyName: user.companyName,
-            logo: user.logo,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            telephone: user.telephone,
-            cell: user.cell,
-            certificationName: user.certificationName || [],
-            trade: user.trade
-          } : null
-        };
-      })
-    );
-
-    res.json(rfisWithOrgs);
+    res.json(rfis);
   } catch (error) {
     console.error('Error fetching RFIs for RFP:', error);
     res.status(500).json({ message: "Failed to fetch RFIs" });

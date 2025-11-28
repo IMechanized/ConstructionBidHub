@@ -182,7 +182,7 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
             )}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Supported formats: PDF, Word, Excel, Text files (Max 5MB each)
+            Supported formats: PDF, Word (.doc, .docx), Excel (.xls, .xlsx), Text files (.txt) - Max 350MB per file
           </p>
         </div>
       </div>

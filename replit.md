@@ -49,9 +49,25 @@ FindConstructionBids is a comprehensive construction bid management platform tha
 - Support for both test and production Stripe environments
 
 ### File Management
-- Cloudinary integration for document and image uploads
-- Secure file handling with size limits (5MB)
+- **AWS S3 Integration**: Primary storage for all user uploads with user-specific folder organization
+  - Direct client-to-S3 uploads via presigned URLs (Vercel-compatible)
+  - Supports files up to 350MB per upload (bypasses Vercel's 4.5MB serverless limit)
+  - User-specific folder structure: `users/{userId}/images/`, `users/{userId}/documents/`, `users/{userId}/attachments/`
+  - Two-step upload process: backend generates presigned URL, client uploads directly to S3
+  - Public-read ACL for uploaded files
+- **Legacy Cloudinary support**: Available for backward compatibility
+- Secure file handling with type validation and authentication requirements
 - PDF generation capabilities for reports and documents
+
+#### Presigned Upload Architecture
+The platform uses a presigned URL approach for file uploads to support large construction documents (up to 350MB) while remaining compatible with Vercel's serverless architecture:
+
+1. **Client requests presigned URL**: Frontend calls `/api/upload-document/presigned-url` with filename and MIME type
+2. **Backend generates signed URL**: Server validates auth, file type, and generates S3 presigned URL with user-specific path
+3. **Direct S3 upload**: Client uploads file directly to S3 using presigned URL (bypasses Vercel entirely)
+4. **File URL returned**: Backend returns the public S3 URL for database storage
+
+This approach ensures large files never transit through Vercel's serverless functions, avoiding the 4.5MB body size limit.
 
 ## Data Flow
 
@@ -81,8 +97,9 @@ FindConstructionBids is a comprehensive construction bid management platform tha
 - **Replit**: Alternative development and deployment environment
 
 ### Third-party Services
+- **AWS S3**: Primary file storage and media management with presigned URL uploads
 - **Stripe**: Payment processing for premium features
-- **Cloudinary**: File upload and media management
+- **Cloudinary**: Legacy file upload support (deprecated in favor of S3)
 - **Mailjet/SendGrid**: Email delivery services
 - **WebSocket**: Real-time communication support
 
@@ -115,7 +132,12 @@ FindConstructionBids is a comprehensive construction bid management platform tha
 ## Changelog
 
 Changelog:
-- June 18, 2025. Initial setup
+- November 28, 2025: Implemented presigned URL upload system for S3 with user-specific folder organization
+  - Added support for files up to 350MB (Vercel-compatible architecture)
+  - Direct client-to-S3 uploads bypass Vercel's 4.5MB serverless limit
+  - User-specific folder structure prevents naming conflicts
+  - Three presigned URL endpoints: /api/upload/presigned-url (images), /api/upload-document/presigned-url (documents), /api/upload-attachment/presigned-url (attachments)
+- June 18, 2025: Initial setup
 
 ## User Preferences
 

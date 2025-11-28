@@ -125,8 +125,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3
-      const url = await uploadImageToS3(req.file.buffer, req.file.originalname);
+      // Upload to S3 with user-specific folder
+      const url = await uploadImageToS3(req.file.buffer, req.file.originalname, req.user!.id);
 
       console.log('Upload successful:', url);
       res.json({ url });
@@ -167,8 +167,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Document received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3
-      const url = await uploadDocumentToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
+      // Upload to S3 with user-specific folder
+      const url = await uploadDocumentToS3(req.file.buffer, req.file.originalname, req.file.mimetype, req.user!.id);
 
       console.log('Document upload successful:', url);
       res.json({ 
@@ -1040,8 +1040,8 @@ export function registerRoutes(app: Express): Server {
             // SECURITY: Sanitize filename - remove dangerous characters
             const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
             
-            // Upload to S3
-            const fileUrl = await uploadAttachmentToS3(file.buffer, sanitizedFilename, file.mimetype);
+            // Upload to S3 with user-specific folder
+            const fileUrl = await uploadAttachmentToS3(file.buffer, sanitizedFilename, file.mimetype, req.user!.id);
             
             await storage.createRfiAttachment({
               messageId: newMessage.id,

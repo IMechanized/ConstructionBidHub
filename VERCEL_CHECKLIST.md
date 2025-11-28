@@ -22,7 +22,7 @@
   - Used imported createMemoryStore function properly.
 - ✅ Fixed RFIs schema and database errors
   - Updated RFIs schema to match actual database structure.
-  - Preserved original authentication behavior on all routes.
+  - Preserved original authentication behavior on all routes
   - Maintained consistent error handling across API endpoints.
 
 ## Required Environment Variables

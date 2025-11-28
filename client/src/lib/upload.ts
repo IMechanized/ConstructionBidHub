@@ -11,8 +11,15 @@ export async function uploadFile(file: File): Promise<string> {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload file');
+      let errorMessage = 'Failed to upload file';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If response is not JSON (e.g., HTML error page), use the status text
+        errorMessage = `Upload failed: ${response.statusText || response.status}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

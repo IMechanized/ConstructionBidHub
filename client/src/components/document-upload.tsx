@@ -42,8 +42,15 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to upload document');
+          let errorMessage = 'Failed to upload document';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If response is not JSON (e.g., HTML error page), use the status text
+            errorMessage = `Upload failed: ${response.statusText || response.status}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();

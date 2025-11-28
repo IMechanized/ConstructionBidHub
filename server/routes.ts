@@ -23,7 +23,7 @@ import { validatePositiveInt, validateRouteParams } from './lib/param-validation
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit for construction documents
+    fileSize: 350 * 1024 * 1024, // 350MB limit for construction documents
   }
 });
 

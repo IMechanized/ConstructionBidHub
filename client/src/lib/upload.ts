@@ -30,17 +30,28 @@ export async function uploadFileWithPresignedUrl(file: File, endpoint: string): 
     const { uploadUrl, fileUrl } = await presignedResponse.json();
     
     // Step 2: Upload directly to S3 using presigned URL
+    // Note: ACL header removed to support modern S3 buckets with ACLs disabled
     const uploadResponse = await fetch(uploadUrl, {
       method: 'PUT',
       body: file,
       headers: {
         'Content-Type': file.type,
-        'x-amz-acl': 'public-read', // Must match the ACL used when generating the presigned URL
       },
     });
 
     if (!uploadResponse.ok) {
-      throw new Error(`S3 upload failed: ${uploadResponse.statusText || uploadResponse.status}`);
+      // Enhanced error logging to diagnose S3 issues
+      let errorDetails = `${uploadResponse.status} ${uploadResponse.statusText}`;
+      try {
+        const errorText = await uploadResponse.text();
+        if (errorText) {
+          console.error('S3 Error Response:', errorText);
+          errorDetails += ` - ${errorText}`;
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+      throw new Error(`S3 upload failed: ${errorDetails}`);
     }
 
     console.log('Upload successful:', fileUrl);

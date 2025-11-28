@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X, Upload, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { uploadDocument } from "@/lib/upload";
 
 export interface UploadedDocument {
   filename: string;
@@ -32,34 +33,15 @@ export default function DocumentUpload({ documents, onDocumentsChange, disabled 
 
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload-document', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          let errorMessage = 'Failed to upload document';
-          try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-          } catch (e) {
-            // If response is not JSON (e.g., HTML error page), use the status text
-            errorMessage = `Upload failed: ${response.statusText || response.status}`;
-          }
-          throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        // Use presigned URL upload for Vercel compatibility (supports up to 350MB)
+        const fileUrl = await uploadDocument(file);
+        
         return {
-          filename: data.filename,
-          fileUrl: data.url, // Map 'url' from upload response to 'fileUrl' for save endpoint
+          filename: file.name,
+          fileUrl,
           documentType: "specification" as const,
-          fileSize: data.size,
-          mimeType: data.mimeType,
+          fileSize: file.size,
+          mimeType: file.type,
         };
       });
 

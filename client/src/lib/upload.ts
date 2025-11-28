@@ -35,6 +35,7 @@ export async function uploadFileWithPresignedUrl(file: File, endpoint: string): 
       body: file,
       headers: {
         'Content-Type': file.type,
+        'x-amz-acl': 'public-read', // Must match the ACL used when generating the presigned URL
       },
     });
 

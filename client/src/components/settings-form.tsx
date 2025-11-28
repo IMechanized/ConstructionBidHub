@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Loader2, Trash2, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { uploadImage } from "@/lib/upload";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATIONS } from "@shared/schema";
@@ -85,6 +86,7 @@ export default function SettingsForm() {
   const { user, logoutMutation } = useAuth();
   const [logoPreview, setLogoPreview] = useState<string | null>(user?.logo || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
 
@@ -188,7 +190,10 @@ export default function SettingsForm() {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {
         setIsUploading(true);
-        logoUrl = await uploadImage(data.logo);
+        setUploadProgress(0);
+        logoUrl = await uploadImage(data.logo, (progress) => {
+          setUploadProgress(progress.percentage);
+        });
       }
 
       const formData = {
@@ -205,6 +210,7 @@ export default function SettingsForm() {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -574,6 +580,17 @@ export default function SettingsForm() {
               )}
             />
 
+            {/* Upload Progress Indicator */}
+            {isUploading && uploadProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Uploading logo...</span>
+                  <span className="font-medium">{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
@@ -583,7 +600,7 @@ export default function SettingsForm() {
               {updateSettingsMutation.isPending || isUploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isUploading ? t('common.uploading') : t('common.loading')}
+                  {isUploading ? `${t('common.uploading')} (${uploadProgress}%)` : t('common.loading')}
                 </>
               ) : (
                 t('common.save')

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
@@ -43,12 +43,24 @@ export async function uploadToS3(
     key = folder ? `${folder}/${uniqueFilename}` : uniqueFilename;
   }
 
+  // Note: ACL parameter removed to support modern S3 buckets with ACLs disabled
+  // Ensure your S3 bucket has public read access via bucket policy if files need to be publicly accessible
+  // Example bucket policy for public read:
+  // {
+  //   "Version": "2012-10-17",
+  //   "Statement": [{
+  //     "Sid": "PublicReadGetObject",
+  //     "Effect": "Allow",
+  //     "Principal": "*",
+  //     "Action": "s3:GetObject",
+  //     "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+  //   }]
+  // }
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
     Body: buffer,
     ContentType: mimeType,
-    ACL: 'public-read',
   });
 
   try {
@@ -122,11 +134,12 @@ export async function generatePresignedUploadUrl(
   
   const key = `users/${userId}/${folder}/${uniqueFilename}`;
 
+  // Note: ACL parameter removed for compatibility with S3 buckets that have ACLs disabled
+  // Files uploaded via presigned URLs will inherit the bucket's default permissions
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
     ContentType: mimeType,
-    ACL: 'public-read',
   });
 
   try {
@@ -157,4 +170,60 @@ export async function generateDocumentUploadUrl(filename: string, mimeType: stri
 
 export async function generateAttachmentUploadUrl(filename: string, mimeType: string, userId: number): Promise<PresignedUploadData> {
   return generatePresignedUploadUrl(filename, mimeType, 'attachments', userId);
+}
+
+export function extractS3KeyFromUrl(url: string, bucket: string): string | null {
+  try {
+    // Handle virtual-hosted style: https://bucket.s3.region.amazonaws.com/key
+    if (url.includes('.s3.') && url.includes('.amazonaws.com/')) {
+      const parts = url.split('.amazonaws.com/');
+      return parts[1] ? decodeURIComponent(parts[1].split('?')[0]) : null;
+    }
+    
+    // Handle path-style: https://s3.region.amazonaws.com/bucket/key
+    if (url.includes('s3.') && url.includes('.amazonaws.com/')) {
+      const pathPart = url.split('.amazonaws.com/')[1];
+      if (pathPart && pathPart.startsWith(bucket + '/')) {
+        return decodeURIComponent(pathPart.substring(bucket.length + 1).split('?')[0]);
+      }
+    }
+    
+    // Handle CloudFront or custom domain - extract from path
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    if (pathname.startsWith('/')) {
+      return decodeURIComponent(pathname.substring(1));
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting S3 key from URL:', error);
+    return null;
+  }
+}
+
+export async function generatePresignedDownloadUrl(
+  s3Key: string,
+  expiresIn: number = 3600
+): Promise<string> {
+  if (!bucketName) {
+    throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+  }
+
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    throw new Error('AWS credentials are not configured');
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: s3Key,
+  });
+
+  try {
+    const downloadUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    return downloadUrl;
+  } catch (error) {
+    console.error('Error generating presigned download URL:', error);
+    throw new Error('Failed to generate presigned download URL');
+  }
 }

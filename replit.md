@@ -54,7 +54,24 @@ FindConstructionBids is a comprehensive construction bid management platform tha
   - Supports files up to 350MB per upload (bypasses Vercel's 4.5MB serverless limit)
   - User-specific folder structure: `users/{userId}/images/`, `users/{userId}/documents/`, `users/{userId}/attachments/`
   - Two-step upload process: backend generates presigned URL, client uploads directly to S3
-  - Public-read ACL for uploaded files
+  - **S3 Bucket Configuration**: Modern S3 buckets with ACLs disabled use a hybrid access approach
+    - **Upload**: Presigned URLs without ACL parameters (compatible with ACL-disabled buckets)
+    - **Download**: Automatically uses presigned URLs when AWS credentials are available, falls back to direct access
+    - **Recommended Setup**: Add a bucket policy for public read access to enable direct file access:
+      ```json
+      {
+        "Version": "2012-10-17",
+        "Statement": [{
+          "Sid": "PublicReadGetObject",
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+        }]
+      }
+      ```
+    - **Private Files**: If bucket policy is not set, download endpoints will automatically generate presigned URLs
+    - Supports multiple URL formats: virtual-hosted, path-style, and CloudFront distributions
 - **Legacy Cloudinary support**: Available for backward compatibility
 - Secure file handling with type validation and authentication requirements
 - PDF generation capabilities for reports and documents
@@ -132,6 +149,14 @@ This approach ensures large files never transit through Vercel's serverless func
 ## Changelog
 
 Changelog:
+- November 28, 2025 (evening): Fixed critical S3 and CSP issues with hybrid access model
+  - Removed ACL parameters from S3 uploads to support modern buckets with ACLs disabled
+  - Implemented intelligent hybrid download strategy: automatic presigned URLs with public fallback
+  - Enhanced S3 key extraction to support virtual-hosted, path-style, and CloudFront URL formats
+  - Updated Content Security Policy to allow Stripe.js, Google Maps, and Google Fonts resources
+  - Mounted payments router to fix `/api/payments/price` endpoint
+  - Fixed TypeScript compilation errors (cookie-signature types, parameter validation)
+  - Added comprehensive documentation for S3 bucket configuration options
 - November 28, 2025: Implemented presigned URL upload system for S3 with user-specific folder organization
   - Added support for files up to 350MB (Vercel-compatible architecture)
   - Direct client-to-S3 uploads bypass Vercel's 4.5MB serverless limit

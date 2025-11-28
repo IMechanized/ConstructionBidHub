@@ -58,6 +58,7 @@
     "@tiptap/extension-text-align": "^3.10.0",
     "@tiptap/react": "^3.6.5",
     "@tiptap/starter-kit": "^3.6.5",
+    "@types/cookie-signature": "^1.1.2",
     "@types/dompurify": "^3.0.5",
     "@types/google.maps": "^3.58.1",
     "@types/jest": "^29.5.14",

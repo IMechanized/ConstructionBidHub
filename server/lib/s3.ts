@@ -20,7 +20,8 @@ export async function uploadToS3(
   buffer: Buffer,
   filename: string,
   mimeType: string,
-  folder: string = ''
+  folder: string = '',
+  userId?: number
 ): Promise<UploadResult> {
   if (!bucketName) {
     throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
@@ -32,7 +33,14 @@ export async function uploadToS3(
 
   const fileExtension = filename.split('.').pop();
   const uniqueFilename = `${randomUUID()}.${fileExtension}`;
-  const key = folder ? `${folder}/${uniqueFilename}` : uniqueFilename;
+  
+  // Construct user-specific folder path if userId is provided
+  let key: string;
+  if (userId) {
+    key = folder ? `users/${userId}/${folder}/${uniqueFilename}` : `users/${userId}/${uniqueFilename}`;
+  } else {
+    key = folder ? `${folder}/${uniqueFilename}` : uniqueFilename;
+  }
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
@@ -55,19 +63,19 @@ export async function uploadToS3(
   }
 }
 
-export async function uploadImageToS3(buffer: Buffer, filename: string): Promise<string> {
+export async function uploadImageToS3(buffer: Buffer, filename: string, userId?: number): Promise<string> {
   const mimeType = getMimeTypeFromFilename(filename);
-  const result = await uploadToS3(buffer, filename, mimeType, 'images');
+  const result = await uploadToS3(buffer, filename, mimeType, 'images', userId);
   return result.url;
 }
 
-export async function uploadDocumentToS3(buffer: Buffer, filename: string, mimeType: string): Promise<string> {
-  const result = await uploadToS3(buffer, filename, mimeType, 'documents');
+export async function uploadDocumentToS3(buffer: Buffer, filename: string, mimeType: string, userId?: number): Promise<string> {
+  const result = await uploadToS3(buffer, filename, mimeType, 'documents', userId);
   return result.url;
 }
 
-export async function uploadAttachmentToS3(buffer: Buffer, filename: string, mimeType: string): Promise<string> {
-  const result = await uploadToS3(buffer, filename, mimeType, 'attachments');
+export async function uploadAttachmentToS3(buffer: Buffer, filename: string, mimeType: string, userId?: number): Promise<string> {
+  const result = await uploadToS3(buffer, filename, mimeType, 'attachments', userId);
   return result.url;
 }
 

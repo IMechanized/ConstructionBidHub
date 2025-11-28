@@ -291,10 +291,9 @@ export const insertRfpSchema = createInsertSchema(rfps)
     featured: z.boolean().default(false),
   });
 
-// RFI creation validation
-export const insertRfiSchema = createInsertSchema(rfis).pick({
-  email: true,
-  message: true,
+// RFI creation validation - email is provided by backend from authenticated user
+export const insertRfiSchema = z.object({
+  message: z.string().min(1, "Message is required"),
 });
 
 // RFI message creation validation

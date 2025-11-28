@@ -31,7 +31,6 @@ export default function RfiForm({ rfpId, onSuccess }: RfiFormProps) {
 
   // Schema with translated validation messages
   const rfiSchema = z.object({
-    email: z.string().email(t('validation.validEmail')),
     message: z.string().min(1, t('validation.messageRequired')),
   });
 
@@ -39,7 +38,6 @@ export default function RfiForm({ rfpId, onSuccess }: RfiFormProps) {
   const form = useForm<RfiFormData>({
     resolver: zodResolver(rfiSchema),
     defaultValues: {
-      email: "",
       message: "",
     },
   });
@@ -74,24 +72,6 @@ export default function RfiForm({ rfpId, onSuccess }: RfiFormProps) {
         onSubmit={form.handleSubmit((data) => submitRfiMutation.mutate(data))}
         className="space-y-4"
       >
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('rfi.emailAddress')}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder={t('rfi.enterEmail')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="message"

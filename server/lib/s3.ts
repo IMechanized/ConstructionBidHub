@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
 const s3Client = new S3Client({
@@ -92,4 +93,68 @@ function getMimeTypeFromFilename(filename: string): string {
   };
   
   return mimeTypes[extension || ''] || 'application/octet-stream';
+}
+
+export interface PresignedUploadData {
+  uploadUrl: string;
+  fileUrl: string;
+  key: string;
+  fields?: Record<string, string>;
+}
+
+export async function generatePresignedUploadUrl(
+  filename: string,
+  mimeType: string,
+  folder: string,
+  userId: number,
+  expiresIn: number = 3600
+): Promise<PresignedUploadData> {
+  if (!bucketName) {
+    throw new Error('AWS_S3_BUCKET_NAME environment variable is not set');
+  }
+
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    throw new Error('AWS credentials are not configured');
+  }
+
+  const fileExtension = filename.split('.').pop();
+  const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+  
+  const key = `users/${userId}/${folder}/${uniqueFilename}`;
+
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    ContentType: mimeType,
+    ACL: 'public-read',
+  });
+
+  try {
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
+    
+    const region = process.env.AWS_REGION || 'us-east-1';
+    const fileUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+    
+    return {
+      uploadUrl,
+      fileUrl,
+      key,
+    };
+  } catch (error) {
+    console.error('Error generating presigned URL:', error);
+    throw new Error('Failed to generate presigned upload URL');
+  }
+}
+
+export async function generateImageUploadUrl(filename: string, userId: number): Promise<PresignedUploadData> {
+  const mimeType = getMimeTypeFromFilename(filename);
+  return generatePresignedUploadUrl(filename, mimeType, 'images', userId);
+}
+
+export async function generateDocumentUploadUrl(filename: string, mimeType: string, userId: number): Promise<PresignedUploadData> {
+  return generatePresignedUploadUrl(filename, mimeType, 'documents', userId);
+}
+
+export async function generateAttachmentUploadUrl(filename: string, mimeType: string, userId: number): Promise<PresignedUploadData> {
+  return generatePresignedUploadUrl(filename, mimeType, 'attachments', userId);
 }

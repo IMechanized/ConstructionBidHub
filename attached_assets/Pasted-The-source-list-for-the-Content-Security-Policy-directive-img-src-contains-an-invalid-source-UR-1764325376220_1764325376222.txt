@@ -1,0 +1,247 @@
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'img-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+The source list for the Content Security Policy directive 'connect-src' contains an invalid source: '<URL>'. It will be ignored.
+index-0QRGUQXT.js:597 ✅ Stripe client initialized
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+sw.js:145 Fetch API cannot load https://js.stripe.com/acacia/stripe.js. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:164 Service Worker: Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:164
+Promise.catch
+(anonymous) @ sw.js:163
+Promise.then
+(anonymous) @ sw.js:138
+The FetchEvent for "https://js.stripe.com/acacia/stripe.js" resulted in a network error response: the promise was rejected.
+Promise.then
+(anonymous) @ sw.js:136
+sw.js:145 Uncaught (in promise) TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+index-0QRGUQXT.js:596  GET https://js.stripe.com/acacia/stripe.js net::ERR_FAILED
+EH @ index-0QRGUQXT.js:596
+(anonymous) @ index-0QRGUQXT.js:596
+mMe @ index-0QRGUQXT.js:596
+Wle @ index-0QRGUQXT.js:596
+vMe @ index-0QRGUQXT.js:596
+(anonymous) @ index-0QRGUQXT.js:597
+index-0QRGUQXT.js:48 [QueryClient] Fetching: /api/rfps/285
+index-0QRGUQXT.js:48 [QueryClient] Fetching: /api/rfps/285/documents
+index-0QRGUQXT.js:832 View tracking skipped - missing data: User=false, RFP=false
+index-0QRGUQXT.js:48 [QueryClient] Fetching: /api/user
+index-0QRGUQXT.js:596 Uncaught (in promise) Error: Failed to load Stripe.js
+    at HTMLScriptElement.<anonymous> (index-0QRGUQXT.js:596:70815)
+(anonymous) @ index-0QRGUQXT.js:596
+script
+EH @ index-0QRGUQXT.js:596
+(anonymous) @ index-0QRGUQXT.js:596
+mMe @ index-0QRGUQXT.js:596
+Wle @ index-0QRGUQXT.js:596
+vMe @ index-0QRGUQXT.js:596
+(anonymous) @ index-0QRGUQXT.js:597
+index-0QRGUQXT.js:901 Service Worker registered successfully (scope: https://construction-bid-hub-mechanizedinc.replit.app/)
+index-0QRGUQXT.js:48 [QueryClient] Response status: 200
+index-0QRGUQXT.js:48 [QueryClient] Response data: []
+index-0QRGUQXT.js:48 [QueryClient] Response status: 200
+index-0QRGUQXT.js:48 [QueryClient] Response data: {id: 87, email: 'Henriette.Effertz@gmail.com', password: '505529dba2deb3c325d434b65534eaeeb1231b437e62516360…a8f40f0197a5bbbd.321c4ba3b7b29b7b23dc272b299ae1b4', companyName: 'Dickinson Inc', firstName: null, …}
+index-0QRGUQXT.js:832 View tracking skipped - missing data: User=true, RFP=false
+index-0QRGUQXT.js:48 [QueryClient] Response status: 200
+index-0QRGUQXT.js:48 [QueryClient] Response data: {id: 285, title: 'Expansion of Quality-focused logistical leverage', description: 'Project Overview:\nRenovation project for Library l…s communis comminor sursum asper ulciscor crebro.', walkthroughDate: '2025-10-26T22:26:00.000Z', rfiDate: '2025-10-28T18:16:00.000Z', …}
+index-0QRGUQXT.js:832 View tracking eligibility check: User ID=87, RFP Owner ID=87, Should track=false
+index-0QRGUQXT.js:832 View tracking not applicable - user is RFP owner
+main.js:397 As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead. At this time, google.maps.Marker is not scheduled to be discontinued, but google.maps.marker.AdvancedMarkerElement is recommended over google.maps.Marker. While google.maps.Marker will continue to receive bug fixes for any major regressions, existing bugs in google.maps.Marker will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/deprecations for additional details and https://developers.google.com/maps/documentation/javascript/advanced-markers/migration for the migration guide.
+Yz @ main.js:397
+_.yt @ main.js:397
+(anonymous) @ index-0QRGUQXT.js:410
+h5 @ index-0QRGUQXT.js:40
+my @ index-0QRGUQXT.js:40
+(anonymous) @ index-0QRGUQXT.js:40
+j @ index-0QRGUQXT.js:25
+_ @ index-0QRGUQXT.js:25
+sw.js:145 Fetch API cannot load https://maps.gstatic.com/mapfiles/openhand_8_8.cur. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:164 Service Worker: Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:164
+Promise.catch
+(anonymous) @ sw.js:163
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:145 Fetch API cannot load https://maps.gstatic.com/mapfiles/transparent.png. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:164 Service Worker: Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:164
+Promise.catch
+(anonymous) @ sw.js:163
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:145 Fetch API cannot load https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi3.png. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:164 Service Worker: Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:164
+Promise.catch
+(anonymous) @ sw.js:163
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:145 Fetch API cannot load https://fonts.gstatic.com/s/roboto/v50/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+sw.js:164 Service Worker: Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:164
+Promise.catch
+(anonymous) @ sw.js:163
+Promise.then
+(anonymous) @ sw.js:138
+The FetchEvent for "https://fonts.gstatic.com/s/roboto/v50/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2" resulted in a network error response: the promise was rejected.
+Promise.then
+(anonymous) @ sw.js:136
+sw.js:145 Uncaught (in promise) TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:145:18
+(anonymous) @ sw.js:145
+Promise.then
+(anonymous) @ sw.js:138
+css?family=Roboto:300,400,500,700|Google+Sans:400,500,700|Google+Sans+Text:400,500,700&lang=en:1  GET https://fonts.gstatic.com/s/roboto/v50/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2 net::ERR_FAILED
+index-0QRGUQXT.js:480 [tiptap warn]: Duplicate extension names found: ['link']. This can lead to issues.
+dae @ index-0QRGUQXT.js:480
+fP @ index-0QRGUQXT.js:483
+createExtensionManager @ index-0QRGUQXT.js:553
+l4e @ index-0QRGUQXT.js:553
+createEditor @ index-0QRGUQXT.js:577
+getInitialEditor @ index-0QRGUQXT.js:577
+Iae @ index-0QRGUQXT.js:577
+(anonymous) @ index-0QRGUQXT.js:577
+l6 @ index-0QRGUQXT.js:38
+sn.useState @ index-0QRGUQXT.js:9
+H4e @ index-0QRGUQXT.js:577
+$le @ index-0QRGUQXT.js:596
+ML @ index-0QRGUQXT.js:38
+MJ @ index-0QRGUQXT.js:40
+FJ @ index-0QRGUQXT.js:40
+jve @ index-0QRGUQXT.js:40
+Ej @ index-0QRGUQXT.js:40
+j6 @ index-0QRGUQXT.js:40
+dp @ index-0QRGUQXT.js:38
+(anonymous) @ index-0QRGUQXT.js:40
+index-0QRGUQXT.js:454 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-0QRGUQXT.js:454
+h5 @ index-0QRGUQXT.js:40
+my @ index-0QRGUQXT.js:40
+Nve @ index-0QRGUQXT.js:40
+Gp @ index-0QRGUQXT.js:40
+j6 @ index-0QRGUQXT.js:40
+dp @ index-0QRGUQXT.js:38
+(anonymous) @ index-0QRGUQXT.js:40
+index-0QRGUQXT.js:597 Error fetching featured RFP price: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+ice @ index-0QRGUQXT.js:597
+await in ice
+s @ index-0QRGUQXT.js:48
+p @ index-0QRGUQXT.js:48
+start @ index-0QRGUQXT.js:48
+fetch @ index-0QRGUQXT.js:48
+Xb @ index-0QRGUQXT.js:48
+onSubscribe @ index-0QRGUQXT.js:48
+subscribe @ index-0QRGUQXT.js:48
+(anonymous) @ index-0QRGUQXT.js:48
+JX @ index-0QRGUQXT.js:38
+h5 @ index-0QRGUQXT.js:40
+my @ index-0QRGUQXT.js:40
+Nve @ index-0QRGUQXT.js:40
+Gp @ index-0QRGUQXT.js:40
+j6 @ index-0QRGUQXT.js:40
+dp @ index-0QRGUQXT.js:38
+(anonymous) @ index-0QRGUQXT.js:40
+index-0QRGUQXT.js:597  POST https://construction-bid-hub-mechanizedinc.replit.app/api/upload-document 413 (Content Too Large)
+(anonymous) @ index-0QRGUQXT.js:597
+c @ index-0QRGUQXT.js:597
+u @ index-0QRGUQXT.js:597
+Wme @ index-0QRGUQXT.js:37
+qme @ index-0QRGUQXT.js:37
+Yme @ index-0QRGUQXT.js:37
+YQ @ index-0QRGUQXT.js:37
+MX @ index-0QRGUQXT.js:37
+(anonymous) @ index-0QRGUQXT.js:37
+VL @ index-0QRGUQXT.js:40
+oX @ index-0QRGUQXT.js:37
+jO @ index-0QRGUQXT.js:37
+vL @ index-0QRGUQXT.js:37
+dge @ index-0QRGUQXT.js:37
+index-0QRGUQXT.js:597 Error uploading documents: Error: Upload failed: 413
+    at index-0QRGUQXT.js:597:15510
+    at async Promise.all (/rfp/index 0)
+    at async c (index-0QRGUQXT.js:597:15657)
+    at async u (index-0QRGUQXT.js:597:16021)
+c @ index-0QRGUQXT.js:597
+await in c
+u @ index-0QRGUQXT.js:597
+Wme @ index-0QRGUQXT.js:37
+qme @ index-0QRGUQXT.js:37
+Yme @ index-0QRGUQXT.js:37
+YQ @ index-0QRGUQXT.js:37
+MX @ index-0QRGUQXT.js:37
+(anonymous) @ index-0QRGUQXT.js:37
+VL @ index-0QRGUQXT.js:40
+oX @ index-0QRGUQXT.js:37
+jO @ index-0QRGUQXT.js:37
+vL @ index-0QRGUQXT.js:37
+dge @ index-0QRGUQXT.js:37
+index-0QRGUQXT.js:597  POST https://construction-bid-hub-mechanizedinc.replit.app/api/upload-document 413 (Content Too Large)
+(anonymous) @ index-0QRGUQXT.js:597
+c @ index-0QRGUQXT.js:597
+u @ index-0QRGUQXT.js:597
+Wme @ index-0QRGUQXT.js:37
+qme @ index-0QRGUQXT.js:37
+Yme @ index-0QRGUQXT.js:37
+YQ @ index-0QRGUQXT.js:37
+MX @ index-0QRGUQXT.js:37
+(anonymous) @ index-0QRGUQXT.js:37
+VL @ index-0QRGUQXT.js:40
+oX @ index-0QRGUQXT.js:37
+jO @ index-0QRGUQXT.js:37
+vL @ index-0QRGUQXT.js:37
+dge @ index-0QRGUQXT.js:37
+index-0QRGUQXT.js:597 Error uploading documents: Error: Upload failed: 413
+    at index-0QRGUQXT.js:597:15510
+    at async Promise.all (/rfp/index 0)
+    at async c (index-0QRGUQXT.js:597:15657)
+    at async u (index-0QRGUQXT.js:597:16021)
+c @ index-0QRGUQXT.js:597
+await in c
+u @ index-0QRGUQXT.js:597
+Wme @ index-0QRGUQXT.js:37
+qme @ index-0QRGUQXT.js:37
+Yme @ index-0QRGUQXT.js:37
+YQ @ index-0QRGUQXT.js:37
+MX @ index-0QRGUQXT.js:37
+(anonymous) @ index-0QRGUQXT.js:37
+VL @ index-0QRGUQXT.js:40
+oX @ index-0QRGUQXT.js:37
+jO @ index-0QRGUQXT.js:37
+vL @ index-0QRGUQXT.js:37
+dge @ index-0QRGUQXT.js:37

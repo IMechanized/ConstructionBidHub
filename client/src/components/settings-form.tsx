@@ -68,7 +68,7 @@ const LANGUAGES = [
 // Settings form validation schema - Updated to match onboarding schema
 const settingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
-  companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  companyWebsite: z.string().optional().or(z.literal("")),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   jobTitle: z.string().min(1, "Job title is required"),
@@ -280,8 +280,8 @@ export default function SettingsForm() {
                   <FormLabel>Company Website <span className="text-muted-foreground text-sm">(optional)</span></FormLabel>
                   <FormControl>
                     <Input 
-                      type="url" 
-                      placeholder="https://www.example.com" 
+                      type="text" 
+                      placeholder="www.example.com" 
                       {...field} 
                       data-testid="input-settings-company-website" 
                     />

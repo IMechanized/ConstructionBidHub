@@ -148,8 +148,8 @@ export default function AuthPage() {
                           <FormLabel>Company Website <span className="text-muted-foreground text-sm">(optional)</span></FormLabel>
                           <FormControl>
                             <Input 
-                              type="url" 
-                              placeholder="https://www.example.com" 
+                              type="text" 
+                              placeholder="www.example.com" 
                               {...field} 
                               data-testid="input-company-website" 
                             />

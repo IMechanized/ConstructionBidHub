@@ -247,7 +247,7 @@ export const insertUserSchema = createInsertSchema(users)
   })
   .extend({
     password: securePasswordSchema,
-    companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+    companyWebsite: z.string().optional().or(z.literal("")),
   });
 
 // Password reset schema

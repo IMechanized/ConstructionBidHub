@@ -535,7 +535,7 @@ const insertUserSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: securePasswordSchema,
   companyName: z.string().min(1, "Company name is required"),
-  companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  companyWebsite: z.string().optional().or(z.literal("")),
 });
 
 const passwordResetSchema = z.object({

@@ -68,6 +68,7 @@ const LANGUAGES = [
 // Settings form validation schema - Updated to match onboarding schema
 const settingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
+  companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   jobTitle: z.string().min(1, "Job title is required"),
@@ -102,6 +103,7 @@ export default function SettingsForm() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       companyName: user?.companyName || "",
+      companyWebsite: user?.companyWebsite || "",
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       jobTitle: user?.jobTitle || "",
@@ -262,7 +264,27 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.companyName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your company name" {...field} />
+                    <Input placeholder="Your company name" {...field} data-testid="input-settings-company-name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Company Website Field */}
+            <FormField
+              control={form.control}
+              name="companyWebsite"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Website <span className="text-muted-foreground text-sm">(optional)</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="url" 
+                      placeholder="https://www.example.com" 
+                      {...field} 
+                      data-testid="input-settings-company-website" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

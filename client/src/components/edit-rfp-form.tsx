@@ -54,6 +54,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [existingDocuments, setExistingDocuments] = useState<RfpDocument[]>([]);
   const [documentsToDelete, setDocumentsToDelete] = useState<number[]>([]);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -627,6 +628,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
             <DocumentUpload
               documents={documents}
               onDocumentsChange={setDocuments}
+              onUploadStateChange={setIsUploadingDocuments}
               disabled={updateRfpMutation.isPending}
             />
           </div>
@@ -677,7 +679,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
             type="button"
             variant="secondary"
             onClick={handleBoost}
-            disabled={isBoosting || isPriceLoading}
+            disabled={isBoosting || isPriceLoading || isUploadingDocuments}
             data-testid="boost-button"
             className="w-full sm:w-auto"
           >
@@ -685,6 +687,11 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Boosting...
+              </>
+            ) : isUploadingDocuments ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading documents...
               </>
             ) : (
               <>
@@ -695,8 +702,17 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
           </Button>
         )}
         
-        <Button type="submit" disabled={updateRfpMutation.isPending}>
-          {updateRfpMutation.isPending ? "Updating..." : "Update RFP"}
+        <Button type="submit" disabled={updateRfpMutation.isPending || isUploadingDocuments}>
+          {updateRfpMutation.isPending ? (
+            "Updating..."
+          ) : isUploadingDocuments ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
+              Uploading documents...
+            </>
+          ) : (
+            "Update RFP"
+          )}
         </Button>
       </div>
       

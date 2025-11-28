@@ -1,5 +1,17 @@
-// Upload file using presigned URL (Vercel-compatible, supports up to 350MB)
-export async function uploadFileWithPresignedUrl(file: File, endpoint: string): Promise<string> {
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+}
+
+export type UploadProgressCallback = (progress: UploadProgress) => void;
+
+// Upload file using presigned URL with progress tracking (Vercel-compatible, supports up to 350MB)
+export async function uploadFileWithPresignedUrl(
+  file: File, 
+  endpoint: string,
+  onProgress?: UploadProgressCallback
+): Promise<string> {
   try {
     console.log('Starting presigned URL upload:', file.name);
     
@@ -29,33 +41,55 @@ export async function uploadFileWithPresignedUrl(file: File, endpoint: string): 
 
     const { uploadUrl, fileUrl } = await presignedResponse.json();
     
-    // Step 2: Upload directly to S3 using presigned URL
-    // Note: ACL header removed to support modern S3 buckets with ACLs disabled
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
-
-    if (!uploadResponse.ok) {
-      // Enhanced error logging to diagnose S3 issues
-      let errorDetails = `${uploadResponse.status} ${uploadResponse.statusText}`;
-      try {
-        const errorText = await uploadResponse.text();
-        if (errorText) {
-          console.error('S3 Error Response:', errorText);
-          errorDetails += ` - ${errorText}`;
+    // Step 2: Upload directly to S3 using XMLHttpRequest for progress tracking
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percentage = Math.round((event.loaded / event.total) * 100);
+          onProgress({
+            loaded: event.loaded,
+            total: event.total,
+            percentage,
+          });
         }
-      } catch (e) {
-        // Ignore parse errors
-      }
-      throw new Error(`S3 upload failed: ${errorDetails}`);
-    }
-
-    console.log('Upload successful:', fileUrl);
-    return fileUrl;
+      });
+      
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          console.log('Upload successful:', fileUrl);
+          resolve(fileUrl);
+        } else {
+          // Enhanced error logging to diagnose S3 issues
+          let errorDetails = `${xhr.status} ${xhr.statusText}`;
+          if (xhr.responseText) {
+            console.error('S3 Error Response:', xhr.responseText);
+            errorDetails += ` - ${xhr.responseText}`;
+          }
+          reject(new Error(`S3 upload failed: ${errorDetails}`));
+        }
+      });
+      
+      // Handle network errors
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during upload'));
+      });
+      
+      // Handle aborts
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload cancelled'));
+      });
+      
+      // Open connection and set headers
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', file.type);
+      
+      // Send the file
+      xhr.send(file);
+    });
   } catch (error) {
     console.error('Error uploading file with presigned URL:', error);
     throw error;
@@ -63,18 +97,18 @@ export async function uploadFileWithPresignedUrl(file: File, endpoint: string): 
 }
 
 // Upload image using presigned URL
-export async function uploadImage(file: File): Promise<string> {
-  return uploadFileWithPresignedUrl(file, '/api/upload/presigned-url');
+export async function uploadImage(file: File, onProgress?: UploadProgressCallback): Promise<string> {
+  return uploadFileWithPresignedUrl(file, '/api/upload/presigned-url', onProgress);
 }
 
 // Upload document using presigned URL
-export async function uploadDocument(file: File): Promise<string> {
-  return uploadFileWithPresignedUrl(file, '/api/upload-document/presigned-url');
+export async function uploadDocument(file: File, onProgress?: UploadProgressCallback): Promise<string> {
+  return uploadFileWithPresignedUrl(file, '/api/upload-document/presigned-url', onProgress);
 }
 
 // Upload attachment using presigned URL
-export async function uploadAttachment(file: File): Promise<string> {
-  return uploadFileWithPresignedUrl(file, '/api/upload-attachment/presigned-url');
+export async function uploadAttachment(file: File, onProgress?: UploadProgressCallback): Promise<string> {
+  return uploadFileWithPresignedUrl(file, '/api/upload-attachment/presigned-url', onProgress);
 }
 
 // Legacy upload function using multipart form data (limited to 4.5MB on Vercel)

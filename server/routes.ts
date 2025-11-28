@@ -8,7 +8,10 @@ import { db } from "./db.js";
 import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { uploadImageToS3, uploadDocumentToS3, uploadAttachmentToS3 } from './lib/s3.js';
+import { randomUUID } from 'crypto';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
 import cookie from 'cookie';
@@ -19,9 +22,46 @@ import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './li
 import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
 import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
 
-// Configure multer for handling file uploads
+// Configure S3 client for direct uploads
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  } : undefined,
+});
+
+const bucketName = process.env.AWS_S3_BUCKET_NAME || '';
+
+// Configure multer to stream directly to S3 (no memory buffering)
 const upload = multer({ 
-  storage: multer.memoryStorage(),
+  storage: multerS3({
+    s3: s3Client,
+    bucket: bucketName,
+    acl: 'public-read',
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: function (req: any, file, cb) {
+      // Get user ID from authenticated session
+      const userId = req.user?.id;
+      const fileExtension = file.originalname.split('.').pop();
+      const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+      
+      // Determine folder based on file type
+      let folder = 'attachments';
+      if (file.mimetype.startsWith('image/')) {
+        folder = 'images';
+      } else if (file.fieldname === 'file' && req.path === '/api/upload-document') {
+        folder = 'documents';
+      }
+      
+      // Create user-specific path
+      const key = userId 
+        ? `users/${userId}/${folder}/${uniqueFilename}`
+        : `${folder}/${uniqueFilename}`;
+      
+      cb(null, key);
+    }
+  }),
   limits: {
     fileSize: 350 * 1024 * 1024, // 350MB limit for construction documents
   }
@@ -125,8 +165,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3 with user-specific folder
-      const url = await uploadImageToS3(req.file.buffer, req.file.originalname, req.user!.id);
+      // File has been uploaded to S3 by multer-s3, get the URL
+      const url = (req.file as any).location;
 
       console.log('Upload successful:', url);
       res.json({ url });
@@ -167,8 +207,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Document received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3 with user-specific folder
-      const url = await uploadDocumentToS3(req.file.buffer, req.file.originalname, req.file.mimetype, req.user!.id);
+      // File has been uploaded to S3 by multer-s3, get the URL
+      const url = (req.file as any).location;
 
       console.log('Document upload successful:', url);
       res.json({ 
@@ -1022,7 +1062,7 @@ export function registerRoutes(app: Express): Server {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         ];
         
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+        const MAX_FILE_SIZE = 350 * 1024 * 1024; // 350MB limit
         
         for (const file of files) {
           try {
@@ -1040,8 +1080,8 @@ export function registerRoutes(app: Express): Server {
             // SECURITY: Sanitize filename - remove dangerous characters
             const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
             
-            // Upload to S3 with user-specific folder
-            const fileUrl = await uploadAttachmentToS3(file.buffer, sanitizedFilename, file.mimetype, req.user!.id);
+            // File has been uploaded to S3 by multer-s3, get the URL
+            const fileUrl = (file as any).location;
             
             await storage.createRfiAttachment({
               messageId: newMessage.id,

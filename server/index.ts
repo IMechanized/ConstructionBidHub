@@ -11,8 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '350mb' }));
+app.use(express.urlencoded({ extended: false, limit: '350mb' }));
 
 // Disable HMR overlay through environment variable
 process.env.VITE_DISABLE_HMR_OVERLAY = "true";

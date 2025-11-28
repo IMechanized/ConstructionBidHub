@@ -52,6 +52,7 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
+  companyWebsite: text("company_website"),    // Company website URL (optional)
   firstName: text("first_name"),              // Contact first name
   lastName: text("last_name"),                // Contact last name
   jobTitle: text("job_title"),                // Job title/position
@@ -242,9 +243,11 @@ export const insertUserSchema = createInsertSchema(users)
     email: true,
     password: true,
     companyName: true,
+    companyWebsite: true,
   })
   .extend({
     password: securePasswordSchema,
+    companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   });
 
 // Password reset schema

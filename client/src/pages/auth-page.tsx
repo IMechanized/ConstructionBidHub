@@ -45,6 +45,7 @@ export default function AuthPage() {
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
       companyName: "",
+      companyWebsite: "",
       email: "",
       password: "",
     },
@@ -133,7 +134,25 @@ export default function AuthPage() {
                         <FormItem className="mb-4">
                           <FormLabel>Organization Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} data-testid="input-company-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="companyWebsite"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormLabel>Company Website <span className="text-muted-foreground text-sm">(optional)</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="url" 
+                              placeholder="https://www.example.com" 
+                              {...field} 
+                              data-testid="input-company-website" 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

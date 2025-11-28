@@ -405,6 +405,7 @@ const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
+  companyWebsite: text("company_website"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   jobTitle: text("job_title"),
@@ -534,6 +535,7 @@ const insertUserSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: securePasswordSchema,
   companyName: z.string().min(1, "Company name is required"),
+  companyWebsite: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
 });
 
 const passwordResetSchema = z.object({

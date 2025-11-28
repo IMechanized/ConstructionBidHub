@@ -58,6 +58,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
   const [pendingRfpData, setPendingRfpData] = useState<any>(null);
   const [isBoosting, setIsBoosting] = useState(false);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -604,6 +605,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           <DocumentUpload
             documents={documents}
             onDocumentsChange={setDocuments}
+            onUploadStateChange={setIsUploadingDocuments}
             disabled={createRfpMutation.isPending}
           />
         </div>
@@ -656,7 +658,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
           <Button
             type="submit"
             variant="outline"
-            disabled={createRfpMutation.isPending}
+            disabled={createRfpMutation.isPending || isUploadingDocuments}
             data-testid="submit-button"
             className="w-full sm:w-auto"
           >
@@ -664,6 +666,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {t('rfp.creating')}
+              </>
+            ) : isUploadingDocuments ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading documents...
               </>
             ) : (
               t('rfp.submitRfp')
@@ -683,7 +690,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               }
               form.handleSubmit((data) => onSubmit({ ...data, featured: true }))()
             }}
-            disabled={createRfpMutation.isPending || isPriceLoading}
+            disabled={createRfpMutation.isPending || isPriceLoading || isUploadingDocuments}
             data-testid="boost-button"
             className="w-full sm:w-auto"
           >
@@ -691,6 +698,11 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {t('rfp.boosting')}
+              </>
+            ) : isUploadingDocuments ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading documents...
               </>
             ) : (
               <>

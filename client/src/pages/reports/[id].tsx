@@ -179,7 +179,11 @@ export default function DetailedReportPage() {
                     {rfis?.map((rfi) => (
                       <TableRow key={rfi.id}>
                         <TableCell className="font-medium">
-                          {rfi.organization?.companyName || 'N/A'}
+                          {rfi.organization?.companyName || (
+                            <span className="text-muted-foreground italic text-sm">
+                              {rfi.email}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-sm">

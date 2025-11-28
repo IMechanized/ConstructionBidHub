@@ -908,7 +908,24 @@ const storage = {
 
   async getRfisByRfp(rfpId) {
     try {
-      return await db.select().from(rfis).where(eq(rfis.rfpId, rfpId));
+      // Get RFIs first
+      const results = await db.select().from(rfis).where(eq(rfis.rfpId, rfpId));
+      
+      // Then for each RFI, try to look up the organization by email
+      const rfisWithOrg = await Promise.all(results.map(async (rfi) => {
+        const [organization] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, rfi.email))
+          .limit(1);
+          
+        return {
+          ...rfi,
+          organization: organization || undefined
+        };
+      }));
+      
+      return rfisWithOrg;
     } catch (error) {
       console.error("Error getting RFIs by RFP:", error);
       return [];

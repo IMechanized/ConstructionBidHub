@@ -10,7 +10,6 @@ import { eq, and } from "drizzle-orm";
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { S3Client } from '@aws-sdk/client-s3';
-import { uploadImageToS3, uploadDocumentToS3, uploadAttachmentToS3 } from './lib/s3.js';
 import { randomUUID } from 'crypto';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
@@ -83,6 +82,15 @@ function requireAuth(req: Request, res?: Response) {
   return true;
 }
 
+// Middleware to check auth before upload
+function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    logAuthenticationFailure(req.path, req);
+    return sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
+  }
+  next();
+}
+
 export function registerRoutes(app: Express): Server {
   // Apply security headers with Helmet
   app.use(helmet({
@@ -144,16 +152,9 @@ export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // File upload endpoint for images
-  app.post("/api/upload", upload.single('file'), async (req, res) => {
+  app.post("/api/upload", requireAuthMiddleware, upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received');
-
-      // Check authentication first
-      try {
-        requireAuth(req);
-      } catch (error) {
-        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
-      }
 
       if (!req.file) {
         return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
@@ -176,16 +177,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Document upload endpoint for RFP documents
-  app.post("/api/upload-document", upload.single('file'), async (req, res) => {
+  app.post("/api/upload-document", requireAuthMiddleware, upload.single('file'), async (req, res) => {
     try {
       console.log('Document upload request received');
-
-      // Check authentication first
-      try {
-        requireAuth(req);
-      } catch (error) {
-        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
-      }
 
       if (!req.file) {
         return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
@@ -986,10 +980,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Send a message in RFI conversation
-  app.post("/api/rfis/:id/messages", upload.array('attachment', 5), async (req, res) => {
+  app.post("/api/rfis/:id/messages", requireAuthMiddleware, upload.array('attachment', 5), async (req, res) => {
     try {
-      requireAuth(req);
-      
       const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
       if (rfiId === null) return;
       

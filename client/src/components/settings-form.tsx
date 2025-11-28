@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Loader2, Trash2, X } from "lucide-react";
-import { uploadFile } from "@/lib/upload";
+import { uploadImage } from "@/lib/upload";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATIONS } from "@shared/schema";
 import { getCertificationClasses } from "@/lib/utils";
@@ -188,7 +188,7 @@ export default function SettingsForm() {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {
         setIsUploading(true);
-        logoUrl = await uploadFile(data.logo);
+        logoUrl = await uploadImage(data.logo);
       }
 
       const formData = {

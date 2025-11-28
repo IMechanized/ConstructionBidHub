@@ -40,8 +40,12 @@ const upload = multer({
     acl: 'public-read',
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: function (req: any, file, cb) {
-      // Get user ID from authenticated session
+      // Require authenticated user - auth middleware should have caught this
       const userId = req.user?.id;
+      if (!userId) {
+        return cb(new Error('Unauthorized: User must be authenticated to upload files'));
+      }
+      
       const fileExtension = file.originalname.split('.').pop();
       const uniqueFilename = `${randomUUID()}.${fileExtension}`;
       
@@ -53,10 +57,8 @@ const upload = multer({
         folder = 'documents';
       }
       
-      // Create user-specific path
-      const key = userId 
-        ? `users/${userId}/${folder}/${uniqueFilename}`
-        : `${folder}/${uniqueFilename}`;
+      // Create user-specific path (always includes userId)
+      const key = `users/${userId}/${folder}/${uniqueFilename}`;
       
       cb(null, key);
     }

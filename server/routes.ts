@@ -11,6 +11,7 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+import { generateImageUploadUrl, generateDocumentUploadUrl, generateAttachmentUploadUrl } from './lib/s3.js';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
 import cookie from 'cookie';
@@ -153,6 +154,99 @@ export function registerRoutes(app: Express): Server {
   // Then initialize authentication (depends on session)
   setupAuth(app);
 
+  // Presigned URL endpoints for direct S3 uploads (Vercel-compatible)
+  // These bypass the 4.5MB Vercel serverless limit by allowing direct client-to-S3 uploads
+  
+  app.post("/api/upload/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrl');
+      }
+
+      // Validate mime type for images
+      if (!mimeType.startsWith('image/')) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrlType');
+      }
+
+      const presignedData = await generateImageUploadUrl(filename, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedUrl');
+    }
+  });
+
+  app.post("/api/upload-document/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocUrl');
+      }
+
+      // Validate document types
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+      ];
+
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocType');
+      }
+
+      const presignedData = await generateDocumentUploadUrl(filename, mimeType, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedDocUrl');
+    }
+  });
+
+  app.post("/api/upload-attachment/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttUrl');
+      }
+
+      // Validate attachment types
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ];
+
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttType');
+      }
+
+      const presignedData = await generateAttachmentUploadUrl(filename, mimeType, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedAttUrl');
+    }
+  });
+
+  // Legacy file upload endpoints (kept for backward compatibility, but limited by Vercel's 4.5MB)
+  // For files >4.5MB, use the presigned URL endpoints above
+  
   // File upload endpoint for images
   app.post("/api/upload", requireAuthMiddleware, upload.single('file'), async (req, res) => {
     try {

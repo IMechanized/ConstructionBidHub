@@ -1,0 +1,116 @@
+index-M4AxMfOK.js:597 ✅ Stripe client initialized
+index-M4AxMfOK.js:48 [QueryClient] Fetching: /api/rfps/285
+index-M4AxMfOK.js:48 [QueryClient] Fetching: /api/rfps/285/documents
+index-M4AxMfOK.js:832 View tracking skipped - missing data: User=false, RFP=false
+index-M4AxMfOK.js:48 [QueryClient] Fetching: /api/user
+index-M4AxMfOK.js:48 [QueryClient] Response status: 200
+index-M4AxMfOK.js:48 [QueryClient] Response data: {id: 87, email: 'Henriette.Effertz@gmail.com', password: '505529dba2deb3c325d434b65534eaeeb1231b437e62516360…a8f40f0197a5bbbd.321c4ba3b7b29b7b23dc272b299ae1b4', companyName: 'Dickinson Inc', firstName: null, …}
+index-M4AxMfOK.js:832 View tracking skipped - missing data: User=true, RFP=false
+index-M4AxMfOK.js:901 Service Worker registered successfully (scope: https://construction-bid-hub-mechanizedinc.replit.app/)
+index-M4AxMfOK.js:48 [QueryClient] Response status: 200
+index-M4AxMfOK.js:48 [QueryClient] Response data: []
+index-M4AxMfOK.js:48 [QueryClient] Response status: 200
+index-M4AxMfOK.js:48 [QueryClient] Response data: {id: 285, title: 'Expansion of Quality-focused logistical leverage', description: 'Project Overview:\nRenovation project for Library l…s communis comminor sursum asper ulciscor crebro.', walkthroughDate: '2025-10-26T22:26:00.000Z', rfiDate: '2025-10-28T18:16:00.000Z', …}
+index-M4AxMfOK.js:832 View tracking eligibility check: User ID=87, RFP Owner ID=87, Should track=false
+index-M4AxMfOK.js:832 View tracking not applicable - user is RFP owner
+main.js:397 As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead. At this time, google.maps.Marker is not scheduled to be discontinued, but google.maps.marker.AdvancedMarkerElement is recommended over google.maps.Marker. While google.maps.Marker will continue to receive bug fixes for any major regressions, existing bugs in google.maps.Marker will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/deprecations for additional details and https://developers.google.com/maps/documentation/javascript/advanced-markers/migration for the migration guide.
+Yz @ main.js:397
+(anonymous) @ main.js:397
+(anonymous) @ index-M4AxMfOK.js:410
+h5 @ index-M4AxMfOK.js:40
+my @ index-M4AxMfOK.js:40
+(anonymous) @ index-M4AxMfOK.js:40
+j @ index-M4AxMfOK.js:25
+_ @ index-M4AxMfOK.js:25
+index-M4AxMfOK.js:480 [tiptap warn]: Duplicate extension names found: ['link']. This can lead to issues.
+dae @ index-M4AxMfOK.js:480
+fP @ index-M4AxMfOK.js:483
+createExtensionManager @ index-M4AxMfOK.js:553
+c4e @ index-M4AxMfOK.js:553
+createEditor @ index-M4AxMfOK.js:577
+getInitialEditor @ index-M4AxMfOK.js:577
+Iae @ index-M4AxMfOK.js:577
+(anonymous) @ index-M4AxMfOK.js:577
+l6 @ index-M4AxMfOK.js:38
+sn.useState @ index-M4AxMfOK.js:9
+V4e @ index-M4AxMfOK.js:577
+$le @ index-M4AxMfOK.js:596
+ML @ index-M4AxMfOK.js:38
+MJ @ index-M4AxMfOK.js:40
+FJ @ index-M4AxMfOK.js:40
+Eve @ index-M4AxMfOK.js:40
+Ej @ index-M4AxMfOK.js:40
+j6 @ index-M4AxMfOK.js:40
+dp @ index-M4AxMfOK.js:38
+(anonymous) @ index-M4AxMfOK.js:40
+index-M4AxMfOK.js:454 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-M4AxMfOK.js:454
+h5 @ index-M4AxMfOK.js:40
+my @ index-M4AxMfOK.js:40
+Pve @ index-M4AxMfOK.js:40
+Gp @ index-M4AxMfOK.js:40
+j6 @ index-M4AxMfOK.js:40
+dp @ index-M4AxMfOK.js:38
+(anonymous) @ index-M4AxMfOK.js:40
+index-M4AxMfOK.js:597 Starting presigned URL upload: 2025_Southbury_Pedestrian_Safety_Improvements-Main_St-Poverty_Rd-Plans.pdf
+index-M4AxMfOK.js:597  PUT https://findconstructionbids-dev.s3.us-east-1.amazonaws.com/users/87/documents/32c60239-a804-4704-8eb1-5c5c31313e0b.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAXT53N4AOLEDJ7IN7%2F20251128%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251128T133714Z&X-Amz-Expires=3600&X-Amz-Signature=7dbc5ccb2dec32aaa1c8cb0d78cab5c85b234a145a707626b6342c6673b82087&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject 403 (Forbidden)
+oce @ index-M4AxMfOK.js:597
+await in oce
+XMe @ index-M4AxMfOK.js:597
+(anonymous) @ index-M4AxMfOK.js:597
+c @ index-M4AxMfOK.js:597
+u @ index-M4AxMfOK.js:597
+Gme @ index-M4AxMfOK.js:37
+Yme @ index-M4AxMfOK.js:37
+Xme @ index-M4AxMfOK.js:37
+YQ @ index-M4AxMfOK.js:37
+MX @ index-M4AxMfOK.js:37
+(anonymous) @ index-M4AxMfOK.js:37
+VL @ index-M4AxMfOK.js:40
+oX @ index-M4AxMfOK.js:37
+jO @ index-M4AxMfOK.js:37
+vL @ index-M4AxMfOK.js:37
+fge @ index-M4AxMfOK.js:37
+index-M4AxMfOK.js:597 Error uploading file with presigned URL: Error: S3 upload failed: Forbidden
+    at oce (index-M4AxMfOK.js:597:15593)
+    at async index-M4AxMfOK.js:597:16126
+    at async Promise.all (/rfp/index 0)
+    at async c (index-M4AxMfOK.js:597:16238)
+    at async u (index-M4AxMfOK.js:597:16602)
+oce @ index-M4AxMfOK.js:597
+await in oce
+XMe @ index-M4AxMfOK.js:597
+(anonymous) @ index-M4AxMfOK.js:597
+c @ index-M4AxMfOK.js:597
+u @ index-M4AxMfOK.js:597
+Gme @ index-M4AxMfOK.js:37
+Yme @ index-M4AxMfOK.js:37
+Xme @ index-M4AxMfOK.js:37
+YQ @ index-M4AxMfOK.js:37
+MX @ index-M4AxMfOK.js:37
+(anonymous) @ index-M4AxMfOK.js:37
+VL @ index-M4AxMfOK.js:40
+oX @ index-M4AxMfOK.js:37
+jO @ index-M4AxMfOK.js:37
+vL @ index-M4AxMfOK.js:37
+fge @ index-M4AxMfOK.js:37
+index-M4AxMfOK.js:597 Error uploading documents: Error: S3 upload failed: Forbidden
+    at oce (index-M4AxMfOK.js:597:15593)
+    at async index-M4AxMfOK.js:597:16126
+    at async Promise.all (/rfp/index 0)
+    at async c (index-M4AxMfOK.js:597:16238)
+    at async u (index-M4AxMfOK.js:597:16602)
+c @ index-M4AxMfOK.js:597
+await in c
+u @ index-M4AxMfOK.js:597
+Gme @ index-M4AxMfOK.js:37
+Yme @ index-M4AxMfOK.js:37
+Xme @ index-M4AxMfOK.js:37
+YQ @ index-M4AxMfOK.js:37
+MX @ index-M4AxMfOK.js:37
+(anonymous) @ index-M4AxMfOK.js:37
+VL @ index-M4AxMfOK.js:40
+oX @ index-M4AxMfOK.js:37
+jO @ index-M4AxMfOK.js:37
+vL @ index-M4AxMfOK.js:37
+fge @ index-M4AxMfOK.js:37

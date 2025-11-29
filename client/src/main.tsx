@@ -39,9 +39,9 @@ if ('serviceWorker' in navigator) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New service worker available
-              console.log('New service worker available - update ready');
+              console.log('New service worker available - dispatching event for auto-activation');
               
-              // Dispatch custom event that the app can listen to
+              // Dispatch custom event that UpdateNotifier will handle
               window.dispatchEvent(new CustomEvent('sw-update-available', {
                 detail: { registration }
               }));
@@ -52,17 +52,5 @@ if ('serviceWorker' in navigator) {
       .catch((error) => {
         console.log('Service Worker registration failed:', error);
       });
-      
-    // Listen for messages from service worker
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'SW_UPDATED') {
-        console.log('Service Worker updated to version:', event.data.version);
-        
-        // Dispatch custom event
-        window.dispatchEvent(new CustomEvent('sw-updated', {
-          detail: { version: event.data.version }
-        }));
-      }
-    });
   });
 }

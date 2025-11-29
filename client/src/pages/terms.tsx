@@ -63,7 +63,7 @@ export default function TermsPage() {
           <h2>8. Contact Information</h2>
           <p>
             For questions about these Terms and Conditions, please contact us at:
-            legal@findconstructionbids.com
+            info@findconstructionbids.com
           </p>
         </div>
       </main>

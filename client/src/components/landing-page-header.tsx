@@ -13,11 +13,14 @@ export function LandingPageHeader() {
     <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <Logo className="h-12 md:h-16" />
+          <Logo />
         </Link>
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
+          <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            About
+          </Link>
           <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
             Support
           </Link>
@@ -43,6 +46,13 @@ export function LandingPageHeader() {
             <SheetContent side="right" className="w-[300px]">
               <div className="flex flex-col h-full pt-6">
                 <div className="space-y-4 flex-1">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-base"
+                    asChild
+                  >
+                    <Link href="/about">About</Link>
+                  </Button>
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-base"

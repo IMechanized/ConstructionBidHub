@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { Upload, Loader2, X } from "lucide-react";
-import { uploadFile } from "@/lib/upload";
+import { Progress } from "@/components/ui/progress";
+import { uploadImage } from "@/lib/upload";
 import { getCertificationClasses } from "@/lib/utils";
 
 // Phone number formatting utility
@@ -47,6 +48,7 @@ export default function OnboardingForm() {
   const { user } = useAuth();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -123,8 +125,11 @@ export default function OnboardingForm() {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {
         setIsUploading(true);
+        setUploadProgress(0);
         console.log("Uploading logo file...");
-        logoUrl = await uploadFile(data.logo);
+        logoUrl = await uploadImage(data.logo, (progress) => {
+          setUploadProgress(progress.percentage);
+        });
         console.log("Logo uploaded successfully:", logoUrl);
       }
 
@@ -144,6 +149,7 @@ export default function OnboardingForm() {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -458,6 +464,17 @@ export default function OnboardingForm() {
                 )}
               />
 
+              {/* Upload Progress Indicator */}
+              {isUploading && uploadProgress > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Uploading logo...</span>
+                    <span className="font-medium">{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" />
+                </div>
+              )}
+
               <div className="flex gap-4">
                 <Button
                   type="submit"
@@ -467,7 +484,7 @@ export default function OnboardingForm() {
                   {updateProfileMutation.isPending || isUploading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {isUploading ? "Uploading..." : "Saving..."}
+                      {isUploading ? `Uploading... (${uploadProgress}%)` : "Saving..."}
                     </>
                   ) : (
                     "Complete Profile"

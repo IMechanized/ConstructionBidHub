@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download, Edit, Trash2, FileText } from "lucide-react";
+import { Download, Edit, Trash2, FileText, ExternalLink } from "lucide-react";
 import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
@@ -216,14 +216,21 @@ export function RfpDetailContent({
             <hr className="my-6 border-muted" />
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
-              <a
-                href={normalizeUrl(rfp.portfolioLink)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
+              <Button
+                asChild
+                size="lg"
+                className="w-full sm:w-auto"
+                data-testid="rfp-portal-button"
               >
-                View RFP/Procurement Portal
-              </a>
+                <a
+                  href={normalizeUrl(rfp.portfolioLink)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View RFP/Procurement Portal
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
             </div>
           </>
         )}

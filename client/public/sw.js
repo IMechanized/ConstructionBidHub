@@ -1,5 +1,5 @@
 // Update this version number whenever you deploy changes
-const VERSION = '1.1.1';
+const VERSION = '1.2.0';
 const CACHE_NAME = `findconstructionbids-v${VERSION}`;
 const STATIC_CACHE_NAME = `findconstructionbids-static-v${VERSION}`;
 const DATA_CACHE_NAME = `findconstructionbids-data-v${VERSION}`;
@@ -17,6 +17,24 @@ console.log(`Service Worker: File loaded (version ${VERSION})`);
 const isApiRequest = (request) => {
   const url = new URL(request.url);
   return url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/');
+};
+
+// Helper function to check if a request is for a third-party resource that should not be intercepted
+const isThirdPartyResource = (request) => {
+  const url = new URL(request.url);
+  const hostname = url.hostname;
+  
+  // Don't intercept requests to these third-party services
+  const thirdPartyDomains = [
+    'stripe.com',
+    'googleapis.com',
+    'gstatic.com',
+    'google.com',
+    'amazonaws.com',
+    'cloudinary.com'
+  ];
+  
+  return thirdPartyDomains.some(domain => hostname.includes(domain));
 };
 
 // Helper function to check if the user is online
@@ -56,6 +74,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Don't intercept third-party resources (Stripe, Google Maps, AWS S3, etc.)
+  if (isThirdPartyResource(event.request)) {
     return;
   }
 

@@ -38,7 +38,7 @@ export default function SupportPage() {
                     Get help via email within 24 hours
                   </p>
                   <Button variant="outline">
-                    <a href="mailto:support@findconstructionbids.com">
+                    <a href="mailto:info@findconstructionbids.com">
                       Contact Support
                     </a>
                   </Button>
@@ -55,7 +55,7 @@ export default function SupportPage() {
                     Speak with a support representative
                   </p>
                   <Button variant="outline">
-                    <a href="tel:+15551234567">
+                    <a href="tel:+12034956300">
                       Call Us
                     </a>
                   </Button>
@@ -69,110 +69,118 @@ export default function SupportPage() {
             <Accordion type="single" collapsible className="space-y-4">
               <AccordionItem value="item-1" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  How do I create an RFP?
+                  What are participation goals?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  To create an RFP, log into your government organization account,
-                  navigate to the dashboard, and click on the "Create RFP" button.
-                  Follow the guided process to submit your RFP.
+                  Participation goals are targets set by agencies or project owners for involving 
+                  certified firms (such as DBE, MBE, WBE, or other designated groups) in a construction 
+                  project. Meeting these goals demonstrates a commitment to inclusive contracting and 
+                  is often required for public projects.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-2" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  How do I submit a bid?
+                  What is Good Faith Effort documentation?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Contractors can submit bids by browsing available RFPs, selecting
-                  one of interest, and clicking the "Submit Bid" button. Ensure all
-                  required documentation is included with your submission.
+                  Good Faith Effort (GFE) documentation is a record proving you made genuine, active 
+                  attempts to meet participation goals. This includes documenting all outreach to 
+                  certified firms, dates of solicitation, responses received, bid amounts, and reasons 
+                  for award decisions. Agencies require this documentation to verify compliance.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-3" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  What are the verification requirements?
+                  How does the platform help me track solicitations?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Contractors must complete the verification process which includes
-                  submitting business documentation, licenses, and insurance
-                  certificates. Government organizations must verify their department
-                  credentials.
+                  The platform maintains a detailed log of every solicitation you send to qualified firms. 
+                  You can record the company name, certification status, trade/scope, and date solicited. 
+                  This creates an audit trail that demonstrates your outreach efforts for compliance 
+                  reporting.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-4" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  How do I manage my team members?
+                  Can I track which firms responded to my solicitations?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Organization administrators can manage team members through the Team
-                  Management section in the dashboard. Here you can invite new members,
-                  set roles and permissions, and manage access levels.
+                  Yes, the platform lets you record whether each solicited firm submitted a bid, 
+                  the bid amount they provided, and your final award decision. This complete record 
+                  of responses and non-responses is essential for Good Faith Effort documentation.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-5" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  Can I update or withdraw my bid?
+                  How do I verify a firm's certification status?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Yes, you can modify or withdraw your bid before the RFP deadline.
-                  Navigate to your submitted bids in the dashboard, select the bid
-                  you wish to modify, and use the edit or withdraw options.
+                  The platform allows you to track and document each firm's certification status 
+                  (such as DBE, MBE, WBE, SBE, etc.). You can maintain records of certification 
+                  numbers and expiration dates to ensure you're working with currently certified firms.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-6" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  How are minority-owned businesses verified?
+                  What information should I include in my outreach notes?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Minority-owned businesses can submit their certification documentation
-                  during the onboarding process. Our team verifies these credentials
-                  within 2-3 business days.
+                  Use the notes field to document important details about each outreach attempt, 
+                  such as method of contact (email, phone, meeting), who you spoke with, reasons 
+                  a firm declined to bid, or any special considerations. Detailed notes strengthen 
+                  your Good Faith Effort documentation.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-7" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  What happens after I submit a bid?
+                  How does this help with compliance reporting?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  After submission, your bid is reviewed by the government organization.
-                  You'll receive notifications about bid status changes and can track
-                  progress through your dashboard.
+                  By maintaining all your outreach, bid, and award information in one place, you can 
+                  easily generate comprehensive reports showing your Good Faith Effort. The platform 
+                  creates a clear, organized record that can be submitted to agencies to demonstrate 
+                  compliance with participation goals.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-8" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  How do I track RFP deadlines?
+                  Can I track multiple projects at once?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Your dashboard includes a calendar view of all RFP deadlines. You can
-                  also set up email notifications for approaching deadlines in your
-                  notification preferences.
+                  Yes, the platform is designed to handle multiple projects simultaneously. Each RFP 
+                  or project maintains its own separate record of solicitations, responses, and 
+                  documentation, making it easy to manage compliance across your entire portfolio.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-9" className="border border-border rounded-lg px-6">
                 <AccordionTrigger className="text-left hover:no-underline">
-                  What are the benefits of boosting my RFP?
+                  What's the difference between a bid solicitation and an RFP?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  <p className="mb-3">
-                    Boosting your RFP provides several key advantages to help you get better results:
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong>Priority Visibility:</strong> Featured RFPs appear at the top of search results and category listings, ensuring maximum exposure</li>
-                    <li><strong>More Responses:</strong> Boosted RFPs receive significantly more qualified contractor bids compared to standard listings</li>
-                    <li><strong>Faster Matching:</strong> Get matched with qualified contractors faster through enhanced visibility</li>
-                    <li><strong>Professional Badge:</strong> Displays a "Featured" badge that shows your commitment to the project and attracts serious bidders</li>
-                  </ul>
-                  <p className="mt-3">
-                    Boosting is especially beneficial for time-sensitive projects or when you need to attract the most qualified contractors in your area.
-                  </p>
+                  An RFP (Request for Proposal) is a formal invitation for contractors to submit bids 
+                  on a project. Bid solicitation refers to the specific outreach you do to qualified 
+                  and certified firms, inviting them to respond to your RFP. The platform helps you 
+                  track both the overall RFP and your individual solicitations to certified firms.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-10" className="border border-border rounded-lg px-6">
+                <AccordionTrigger className="text-left hover:no-underline">
+                  How do I get started documenting my Good Faith Efforts?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Start by creating an account and setting up your project or RFP. Then, as you reach 
+                  out to certified firms, add each one to your tracking system with their company name, 
+                  certification status, and the date you contacted them. Update the record as you 
+                  receive responses and make award decisions.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

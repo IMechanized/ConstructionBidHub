@@ -11,7 +11,7 @@
   - Updated schema definitions to match exactly with shared/schema.ts
   - Synchronized field definitions between entrypoint.js and schema.ts
 - ✅ Added missing API endpoints to entrypoint.js
-  - Added RFP details endpoint (/api/rfps/:id).
+  - Added RFP details endpoint (/api/rfps/:id)
   - Added RFI endpoints (/api/rfps/:id/rfi, /api/rfis).
   - Added analytics endpoints (/api/analytics/rfp/:id, /api/analytics/boosted)
   - Implemented additional database schemas and storage methods
@@ -22,7 +22,7 @@
   - Used imported createMemoryStore function properly.
 - ✅ Fixed RFIs schema and database errors
   - Updated RFIs schema to match actual database structure.
-  - Preserved original authentication behavior on all routes.
+  - Preserved original authentication behavior on all routes
   - Maintained consistent error handling across API endpoints.
 
 ## Required Environment Variables

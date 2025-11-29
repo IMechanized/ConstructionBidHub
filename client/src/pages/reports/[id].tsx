@@ -20,6 +20,7 @@ import { Download } from "lucide-react";
 import html2pdf from 'html2pdf.js';
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
+import DOMPurify from 'dompurify';
 
 export default function DetailedReportPage() {
   const { id } = useParams();
@@ -137,71 +138,125 @@ export default function DetailedReportPage() {
 
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-4">Project Description</h2>
-              <p className="whitespace-pre-wrap">{rfp.description}</p>
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert text-justify leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rfp.description) }}
+              />
             </div>
 
-            {rfp.certificationGoals && (
+            {rfp.certificationGoals && rfp.certificationGoals.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-2">Certification Goals</h2>
-                <p>{rfp.certificationGoals}</p>
+                <div className="flex flex-wrap gap-2">
+                  {rfp.certificationGoals.map((cert, index) => (
+                    <Badge 
+                      key={index} 
+                      className={getCertificationClasses(cert)}
+                    >
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
 
             <div>
               <h2 className="text-lg font-semibold mb-4">Bidders Information</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Certifications</TableHead>
-                    <TableHead>Submission Date</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rfis?.map((rfi) => (
-                    <TableRow key={rfi.id}>
-                      <TableCell>{rfi.organization?.companyName || 'N/A'}</TableCell>
-                      <TableCell>{rfi.organization?.contact || rfi.email}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {rfi.organization?.certificationName && Array.isArray(rfi.organization.certificationName) && 
-                           rfi.organization.certificationName.map((cert, index) => (
-                            <Badge 
-                              key={index} 
-                              className={getCertificationClasses(cert)}
-                            >
-                              {cert}
-                            </Badge>
-                          ))}
-                          {(!rfi.organization?.certificationName || !Array.isArray(rfi.organization.certificationName) || 
-                            rfi.organization.certificationName.length === 0) && (
-                            <span className="text-xs text-muted-foreground">None</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{format(new Date(rfi.createdAt), "MM/dd/yyyy")}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{rfi.message}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          rfi.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          rfi.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {rfi.status}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!rfis || rfis.length === 0) && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">No bids received yet</TableCell>
+                      <TableHead className="min-w-[150px]">Company/Organization</TableHead>
+                      <TableHead className="min-w-[150px]">Contact</TableHead>
+                      <TableHead className="min-w-[200px]">Certifications</TableHead>
+                      <TableHead className="min-w-[120px]">View Date</TableHead>
+                      <TableHead className="min-w-[120px]">Due Date</TableHead>
+                      <TableHead className="min-w-[200px]">Message</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rfis?.map((rfi) => (
+                      <TableRow key={rfi.id}>
+                        <TableCell className="font-medium">
+                          {rfi.organization?.companyName || (
+                            <span className="text-muted-foreground italic text-sm">
+                              {rfi.email}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-sm">
+                            {(rfi.organization?.firstName || rfi.organization?.lastName) && (
+                              <div className="font-medium">
+                                {[rfi.organization.firstName, rfi.organization.lastName]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              </div>
+                            )}
+                            <div className="break-all">{rfi.email}</div>
+                            {rfi.organization?.telephone && (
+                              <div className="text-muted-foreground text-xs">
+                                Tel: {rfi.organization.telephone}
+                              </div>
+                            )}
+                            {rfi.organization?.cell && (
+                              <div className="text-muted-foreground text-xs">
+                                Cell: {rfi.organization.cell}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {rfi.organization?.certificationName && 
+                             Array.isArray(rfi.organization.certificationName) && 
+                             rfi.organization.certificationName.length > 0 ? (
+                              rfi.organization.certificationName.map((cert, index) => (
+                                <Badge 
+                                  key={index} 
+                                  className={getCertificationClasses(cert)}
+                                >
+                                  {cert}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">None</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(rfi.createdAt), "MM/dd/yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(rfp.deadline), "MM/dd/yyyy")}
+                        </TableCell>
+                        <TableCell className="max-w-[250px]">
+                          <div className="truncate" title={rfi.message}>
+                            {rfi.message}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${
+                            rfi.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                            rfi.status === 'responded' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200'
+                          }`}>
+                            {rfi.status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!rfis || rfis.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No bids received yet
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </Card>
             </div>

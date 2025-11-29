@@ -44,7 +44,11 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 36753
+localPort = 37221
+externalPort = 3002
+
+[[ports]]
+localPort = 39037
 externalPort = 3001
 
 [[ports]]
@@ -55,3 +59,4 @@ externalPort = 3000
 
 [userenv.shared]
 VITE_GOOGLE_MAPS_API_KEY = "AIzaSyAsHBpAcIyvNmlqWc3doKdULcFESilZ41Q"
+AWS_REGION = "us-east-1"

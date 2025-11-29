@@ -52,6 +52,7 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   password: text("password").notNull(),
   companyName: text("company_name").notNull(),
+  companyWebsite: text("company_website"),    // Company website URL (optional)
   firstName: text("first_name"),              // Contact first name
   lastName: text("last_name"),                // Contact last name
   jobTitle: text("job_title"),                // Job title/position
@@ -242,9 +243,11 @@ export const insertUserSchema = createInsertSchema(users)
     email: true,
     password: true,
     companyName: true,
+    companyWebsite: true,
   })
   .extend({
     password: securePasswordSchema,
+    companyWebsite: z.string().optional().or(z.literal("")),
   });
 
 // Password reset schema
@@ -291,10 +294,9 @@ export const insertRfpSchema = createInsertSchema(rfps)
     featured: z.boolean().default(false),
   });
 
-// RFI creation validation
-export const insertRfiSchema = createInsertSchema(rfis).pick({
-  email: true,
-  message: true,
+// RFI creation validation - email is provided by backend from authenticated user
+export const insertRfiSchema = z.object({
+  message: z.string().min(1, "Message is required"),
 });
 
 // RFI message creation validation

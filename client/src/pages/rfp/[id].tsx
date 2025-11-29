@@ -28,7 +28,6 @@ import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
 import { LandingPageHeader } from "@/components/landing-page-header";
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { RfpDetailContent } from "@/components/rfp-detail-content";
 
 export default function RfpPage() {
@@ -43,9 +42,7 @@ export default function RfpPage() {
   
   // Read navigation context from URL query parameter
   const navContext = useMemo(() => {
-    const searchMatch = location.match(/\?(.+)/);
-    const search = searchMatch?.[1] ?? '';
-    const params = new URLSearchParams(search);
+    const params = new URLSearchParams(window.location.search);
     const fromParam = params.get('from');
     
     // Validate against allowed sources
@@ -251,10 +248,10 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Search All RFPs", href: "/dashboard/all" },
+            { label: "Search all RFPs", href: "/dashboard/all" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
-          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
+          backButton: { label: "← Back to Search all RFPs", href: "/dashboard/all" },
         };
       }
       if (navContext.from === 'dashboard-featured') {
@@ -271,15 +268,35 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: "New", href: "/dashboard/new" },
+            { label: "New RFPs", href: "/dashboard/new" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
-          backButton: { label: "← Back to New", href: "/dashboard/new" },
+          backButton: { label: "← Back to New RFPs", href: "/dashboard/new" },
+        };
+      }
+      if (navContext.from === 'dashboard') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Dashboard", href: "/dashboard" },
+        };
+      }
+      if (navContext.from === 'dashboard-analytics') {
+        return {
+          breadcrumbs: [
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Analytics", href: "/dashboard/analytics" },
+            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          ],
+          backButton: { label: "← Back to Analytics", href: "/dashboard/analytics" },
         };
       }
       if (navContext.from === 'featured') {
         return {
           breadcrumbs: [
+            { label: "Home", href: "/" },
             { label: "Featured Opportunities", href: "/opportunities/featured" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
@@ -289,6 +306,7 @@ export default function RfpPage() {
       if (navContext.from === 'new') {
         return {
           breadcrumbs: [
+            { label: "Home", href: "/" },
             { label: "New Opportunities", href: "/opportunities/new" },
             { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
           ],
@@ -297,54 +315,17 @@ export default function RfpPage() {
       }
     }
     
-    // Fallback: If no context and user is logged in, use role-based defaults
+    // Simple neutral fallback (no navigation context)
     if (user) {
-      if (isOwner) {
-        return {
-          breadcrumbs: [
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "My RFPs", href: "/dashboard/my-rfps" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-          ],
-          backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
-        };
-      } else {
-        return {
-          breadcrumbs: [
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Search All RFPs", href: "/dashboard/all" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-          ],
-          backButton: { label: "← Back to Search All RFPs", href: "/dashboard/all" },
-        };
-      }
-    }
-    
-    // Fallback: For non-authenticated users, infer from RFP properties
-    const twentyFourHoursAgo = subHours(new Date(), 24);
-    const isNewRfp = isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
-    
-    if (rfp.featured) {
       return {
         breadcrumbs: [
-          { label: "Featured Opportunities", href: "/opportunities/featured" },
+          { label: "Dashboard", href: "/dashboard" },
           { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
         ],
-        backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
+        backButton: { label: "← Back to Dashboard", href: "/dashboard" },
       };
     }
     
-    if (isNewRfp) {
-      return {
-        breadcrumbs: [
-          { label: "New Opportunities", href: "/opportunities/new" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
-        ],
-        backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
-      };
-    }
-    
-    // Final fallback: Home
     return {
       breadcrumbs: [
         { label: "Home", href: "/" },
@@ -358,40 +339,14 @@ export default function RfpPage() {
   const breadcrumbItems = breadcrumbs;
 
   // Determine layout based on navigation context
-  const isDashboardView = navContext && ['dashboard-featured', 'dashboard-new', 'all-rfps', 'my-rfps', 'dashboard', 'dashboard-analytics'].includes(navContext.from);
-  const isLandingPageView = navContext && ['featured', 'new'].includes(navContext.from);
+  const isDashboardContext = navContext && [
+    'my-rfps', 'all-rfps', 'dashboard-featured', 'dashboard-new', 'dashboard', 'dashboard-analytics'
+  ].includes(navContext.from);
 
-  // Render with dashboard sidebar layout
-  if (isDashboardView) {
-    return (
-      <div className="flex min-h-screen bg-background">
-        <DashboardSidebar currentPath={location} />
-        <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <RfpDetailContent
-            rfp={rfp}
-            rfpDocuments={rfpDocuments}
-            breadcrumbItems={breadcrumbItems}
-            isOwner={isOwner}
-            user={user}
-            isRfiModalOpen={isRfiModalOpen}
-            isEditModalOpen={isEditModalOpen}
-            isDeleteDialogOpen={isDeleteDialogOpen}
-            setIsRfiModalOpen={setIsRfiModalOpen}
-            setIsEditModalOpen={setIsEditModalOpen}
-            setIsDeleteDialogOpen={setIsDeleteDialogOpen}
-            handleDownload={handleDownload}
-            onNavigateToAuth={() => setLocation("/auth")}
-          />
-        </main>
-      </div>
-    );
-  }
-
-  // Render with landing page header and footer
-  if (isLandingPageView) {
+  // Dashboard contexts: Breadcrumbs + Content only (no header/footer)
+  if (isDashboardContext) {
     return (
       <div className="min-h-screen bg-background">
-        <LandingPageHeader />
         <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <RfpDetailContent
             rfp={rfp}
@@ -409,15 +364,14 @@ export default function RfpPage() {
             onNavigateToAuth={() => setLocation("/auth")}
           />
         </main>
-
-        <Footer />
       </div>
     );
   }
 
-  // Default layout (fallback - breadcrumb + footer, no header/sidebar)
+  // Landing page contexts + Direct links: Header + Breadcrumbs + Content + Footer
   return (
     <div className="min-h-screen bg-background">
+      <LandingPageHeader />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <RfpDetailContent
           rfp={rfp}

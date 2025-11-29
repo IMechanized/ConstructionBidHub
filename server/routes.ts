@@ -8,7 +8,10 @@ import { db } from "./db.js";
 import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import multer from 'multer';
-import { uploadImageToS3, uploadDocumentToS3, uploadAttachmentToS3 } from './lib/s3.js';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
+import { randomUUID } from 'crypto';
+import { generateImageUploadUrl, generateDocumentUploadUrl, generateAttachmentUploadUrl, generatePresignedDownloadUrl, extractS3KeyFromUrl } from './lib/s3.js';
 import { createPaymentIntent, verifyPayment } from './lib/stripe.js';
 import { deadlineMonitor } from './services/deadline-monitor.js';
 import cookie from 'cookie';
@@ -18,12 +21,51 @@ import helmet from 'helmet';
 import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './lib/error-handler.js';
 import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
 import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
+import paymentsRoutes from './routes/payments.js';
 
-// Configure multer for handling file uploads
+// Configure S3 client for direct uploads
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  } : undefined,
+});
+
+const bucketName = process.env.AWS_S3_BUCKET_NAME || '';
+
+// Configure multer to stream directly to S3 (no memory buffering)
 const upload = multer({ 
-  storage: multer.memoryStorage(),
+  storage: multerS3({
+    s3: s3Client,
+    bucket: bucketName,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: function (req: any, file, cb) {
+      // Require authenticated user - auth middleware should have caught this
+      const userId = req.user?.id;
+      if (!userId) {
+        return cb(new Error('Unauthorized: User must be authenticated to upload files'));
+      }
+      
+      const fileExtension = file.originalname.split('.').pop();
+      const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+      
+      // Determine folder based on file type
+      let folder = 'attachments';
+      if (file.mimetype.startsWith('image/')) {
+        folder = 'images';
+      } else if (file.fieldname === 'file' && req.path === '/api/upload-document') {
+        folder = 'documents';
+      }
+      
+      // Create user-specific path (always includes userId)
+      const key = `users/${userId}/${folder}/${uniqueFilename}`;
+      
+      cb(null, key);
+    }
+  }),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 350 * 1024 * 1024, // 350MB limit for construction documents
   }
 });
 
@@ -41,6 +83,15 @@ function requireAuth(req: Request, res?: Response) {
     throw new Error("Unauthorized");
   }
   return true;
+}
+
+// Middleware to check auth before upload
+function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    logAuthenticationFailure(req.path, req);
+    return sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
+  }
+  next();
 }
 
 export function registerRoutes(app: Express): Server {
@@ -65,25 +116,30 @@ export function registerRoutes(app: Express): Server {
           "https://maps.gstatic.com",
           "https://maps.googleapis.com",
           "https://*.google.com",
-          "https://*.s3.*.amazonaws.com",
           "https://*.s3.amazonaws.com",
-          "https://s3.*.amazonaws.com"
+          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
         ],
         fontSrc: [
           "'self'",
+          "https://fonts.googleapis.com",
           "https://fonts.gstatic.com",
           "https://maps.gstatic.com"
         ],
         connectSrc: [
           "'self'",
+          "https://js.stripe.com",
           "https://api.stripe.com",
           "https://m.stripe.network",
+          "https://m.stripe.com",
+          "https://fonts.googleapis.com",
+          "https://fonts.gstatic.com",
           "https://maps.googleapis.com",
+          "https://maps.gstatic.com",
           "https://*.googleapis.com",
           "https://*.google.com",
-          "https://*.s3.*.amazonaws.com",
+          "https://*.gstatic.com",
           "https://*.s3.amazonaws.com",
-          "https://s3.*.amazonaws.com"
+          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],
@@ -103,17 +159,106 @@ export function registerRoutes(app: Express): Server {
   // Then initialize authentication (depends on session)
   setupAuth(app);
 
+  // Mount payments router
+  app.use('/api/payments', paymentsRoutes);
+
+  // Presigned URL endpoints for direct S3 uploads (Vercel-compatible)
+  // These bypass the 4.5MB Vercel serverless limit by allowing direct client-to-S3 uploads
+  
+  app.post("/api/upload/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrl');
+      }
+
+      // Validate mime type for images
+      if (!mimeType.startsWith('image/')) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedUrlType');
+      }
+
+      const presignedData = await generateImageUploadUrl(filename, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedUrl');
+    }
+  });
+
+  app.post("/api/upload-document/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocUrl');
+      }
+
+      // Validate document types
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+      ];
+
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedDocType');
+      }
+
+      const presignedData = await generateDocumentUploadUrl(filename, mimeType, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedDocUrl');
+    }
+  });
+
+  app.post("/api/upload-attachment/presigned-url", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+
+      const { filename, mimeType } = req.body;
+
+      if (!filename || !mimeType) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttUrl');
+      }
+
+      // Validate attachment types
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ];
+
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return sendErrorResponse(res, new Error('Invalid file type'), 400, ErrorMessages.BAD_REQUEST, 'PresignedAttType');
+      }
+
+      const presignedData = await generateAttachmentUploadUrl(filename, mimeType, req.user!.id);
+      res.json(presignedData);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PresignedAttUrl');
+    }
+  });
+
+  // Legacy file upload endpoints (kept for backward compatibility, but limited by Vercel's 4.5MB)
+  // For files >4.5MB, use the presigned URL endpoints above
+  
   // File upload endpoint for images
-  app.post("/api/upload", upload.single('file'), async (req, res) => {
+  app.post("/api/upload", requireAuthMiddleware, upload.single('file'), async (req, res) => {
     try {
       console.log('Upload request received');
-
-      // Check authentication first
-      try {
-        requireAuth(req);
-      } catch (error) {
-        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
-      }
 
       if (!req.file) {
         return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
@@ -125,8 +270,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('File received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3
-      const url = await uploadImageToS3(req.file.buffer, req.file.originalname);
+      // File has been uploaded to S3 by multer-s3, get the URL
+      const url = (req.file as any).location;
 
       console.log('Upload successful:', url);
       res.json({ url });
@@ -136,16 +281,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Document upload endpoint for RFP documents
-  app.post("/api/upload-document", upload.single('file'), async (req, res) => {
+  app.post("/api/upload-document", requireAuthMiddleware, upload.single('file'), async (req, res) => {
     try {
       console.log('Document upload request received');
-
-      // Check authentication first
-      try {
-        requireAuth(req);
-      } catch (error) {
-        return sendErrorResponse(res, error, 401, ErrorMessages.UNAUTHORIZED, 'UploadAuth');
-      }
 
       if (!req.file) {
         return sendErrorResponse(res, new Error('No file'), 400, ErrorMessages.BAD_REQUEST, 'UploadNoFile');
@@ -167,8 +305,8 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Document received:', req.file.originalname, req.file.mimetype);
 
-      // Upload to S3
-      const url = await uploadDocumentToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
+      // File has been uploaded to S3 by multer-s3, get the URL
+      const url = (req.file as any).location;
 
       console.log('Document upload successful:', url);
       res.json({ 
@@ -422,17 +560,27 @@ export function registerRoutes(app: Express): Server {
         return sendErrorResponse(res, new Error('Document not found'), 404, ErrorMessages.NOT_FOUND, 'DocumentNotFound');
       }
 
-      // Fetch the file from S3
+      // Try to extract S3 key and use presigned URL if available
+      const s3Key = extractS3KeyFromUrl(document.fileUrl, bucketName);
+      
+      if (s3Key && process.env.AWS_ACCESS_KEY_ID) {
+        try {
+          // Generate presigned download URL for S3 objects
+          const downloadUrl = await generatePresignedDownloadUrl(s3Key);
+          return res.redirect(downloadUrl);
+        } catch (error) {
+          console.error('Failed to generate presigned URL, falling back to direct access:', error);
+          // Fall through to direct access
+        }
+      }
+
+      // Fallback: Direct access (requires public bucket or legacy storage)
       const response = await fetch(document.fileUrl);
       if (!response.ok) {
         throw new Error('Failed to fetch document from storage');
       }
-
-      // Set headers to force download
       res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
       res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
-      
-      // Stream the file to the response
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
     } catch (error) {
@@ -634,7 +782,7 @@ export function registerRoutes(app: Express): Server {
         ...data,
         email: req.user!.email,  // Use authenticated user's email
         rfpId: id,
-      });
+      } as any);
 
       res.status(201).json({ 
         message: "Request for information submitted successfully",
@@ -946,10 +1094,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Send a message in RFI conversation
-  app.post("/api/rfis/:id/messages", upload.array('attachment', 5), async (req, res) => {
+  app.post("/api/rfis/:id/messages", requireAuthMiddleware, upload.array('attachment', 5), async (req, res) => {
     try {
-      requireAuth(req);
-      
       const rfiId = validatePositiveInt(req.params.id, 'RFI ID', res);
       if (rfiId === null) return;
       
@@ -1022,7 +1168,7 @@ export function registerRoutes(app: Express): Server {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         ];
         
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+        const MAX_FILE_SIZE = 350 * 1024 * 1024; // 350MB limit
         
         for (const file of files) {
           try {
@@ -1040,8 +1186,8 @@ export function registerRoutes(app: Express): Server {
             // SECURITY: Sanitize filename - remove dangerous characters
             const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
             
-            // Upload to S3
-            const fileUrl = await uploadAttachmentToS3(file.buffer, sanitizedFilename, file.mimetype);
+            // File has been uploaded to S3 by multer-s3, get the URL
+            const fileUrl = (file as any).location;
             
             await storage.createRfiAttachment({
               messageId: newMessage.id,
@@ -1109,7 +1255,7 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        logAuthorizationFailure(req.user?.id, `RFP ${rfpId}`, 'feature', req);
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
@@ -1151,7 +1297,7 @@ export function registerRoutes(app: Express): Server {
       // Verify the RFP belongs to the current user
       const rfp = await storage.getRfpById(Number(rfpId));
       if (!rfp || rfp.organizationId !== req.user?.id) {
-        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'feature', req);
+        logAuthorizationFailure(req.user?.id, `RFP ${rfpId}`, 'feature', req);
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'RFPFeature');
       }
       
@@ -1214,11 +1360,25 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (!hasPermission) {
-        logAuthorizationFailure(req.user?.id, `Attachment ${req.params.id}`, 'access', req);
+        logAuthorizationFailure(req.user?.id, `Attachment ${req.params.attachmentId}`, 'access', req);
         return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'AttachmentAccess');
       }
       
-      // Redirect to the S3 URL (this maintains authentication context)
+      // Try to extract S3 key and use presigned URL if available
+      const s3Key = extractS3KeyFromUrl(attachment.fileUrl, bucketName);
+      
+      if (s3Key && process.env.AWS_ACCESS_KEY_ID) {
+        try {
+          // Generate presigned download URL for S3 objects
+          const downloadUrl = await generatePresignedDownloadUrl(s3Key);
+          return res.redirect(downloadUrl);
+        } catch (error) {
+          console.error('Failed to generate presigned URL, falling back to direct access:', error);
+          // Fall through to direct access
+        }
+      }
+
+      // Fallback: Direct access (requires public bucket)
       res.redirect(attachment.fileUrl);
       
     } catch (error) {
@@ -1375,12 +1535,13 @@ export function registerRoutes(app: Express): Server {
             
             try {
               // Verify and unsign the cookie
-              sessionId = cookieSignature.unsign(sessionCookie.slice(2), sessionSecret);
-              if (sessionId === false) {
+              const unsigned = cookieSignature.unsign(sessionCookie.slice(2), sessionSecret);
+              if (unsigned === false) {
                 console.warn('WebSocket: Invalid cookie signature');
                 resolve(null);
                 return;
               }
+              sessionId = unsigned;
             } catch (signError) {
               console.warn('WebSocket: Cookie signature verification failed:', signError);
               resolve(null);

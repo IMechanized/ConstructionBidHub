@@ -13,7 +13,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Loader2, Trash2, X } from "lucide-react";
-import { uploadFile } from "@/lib/upload";
+import { Progress } from "@/components/ui/progress";
+import { uploadImage } from "@/lib/upload";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATIONS } from "@shared/schema";
 import { getCertificationClasses } from "@/lib/utils";
@@ -67,6 +68,7 @@ const LANGUAGES = [
 // Settings form validation schema - Updated to match onboarding schema
 const settingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
+  companyWebsite: z.string().optional().or(z.literal("")),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   jobTitle: z.string().min(1, "Job title is required"),
@@ -85,6 +87,7 @@ export default function SettingsForm() {
   const { user, logoutMutation } = useAuth();
   const [logoPreview, setLogoPreview] = useState<string | null>(user?.logo || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
 
@@ -100,6 +103,7 @@ export default function SettingsForm() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       companyName: user?.companyName || "",
+      companyWebsite: user?.companyWebsite || "",
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       jobTitle: user?.jobTitle || "",
@@ -188,7 +192,10 @@ export default function SettingsForm() {
       let logoUrl = data.logo;
       if (data.logo instanceof File) {
         setIsUploading(true);
-        logoUrl = await uploadFile(data.logo);
+        setUploadProgress(0);
+        logoUrl = await uploadImage(data.logo, (progress) => {
+          setUploadProgress(progress.percentage);
+        });
       }
 
       const formData = {
@@ -205,6 +212,7 @@ export default function SettingsForm() {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -256,7 +264,27 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>{t('settings.companyName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your company name" {...field} />
+                    <Input placeholder="Your company name" {...field} data-testid="input-settings-company-name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Company Website Field */}
+            <FormField
+              control={form.control}
+              name="companyWebsite"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Website <span className="text-muted-foreground text-sm">(optional)</span></FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="text" 
+                      placeholder="www.example.com" 
+                      {...field} 
+                      data-testid="input-settings-company-website" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -574,6 +602,17 @@ export default function SettingsForm() {
               )}
             />
 
+            {/* Upload Progress Indicator */}
+            {isUploading && uploadProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Uploading logo...</span>
+                  <span className="font-medium">{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
@@ -583,7 +622,7 @@ export default function SettingsForm() {
               {updateSettingsMutation.isPending || isUploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isUploading ? t('common.uploading') : t('common.loading')}
+                  {isUploading ? `${t('common.uploading')} (${uploadProgress}%)` : t('common.loading')}
                 </>
               ) : (
                 t('common.save')

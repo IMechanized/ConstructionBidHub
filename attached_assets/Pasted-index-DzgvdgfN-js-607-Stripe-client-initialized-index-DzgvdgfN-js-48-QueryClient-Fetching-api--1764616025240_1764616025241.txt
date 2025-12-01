@@ -1,0 +1,42 @@
+index-DzgvdgfN.js:607 ✅ Stripe client initialized
+index-DzgvdgfN.js:48 [QueryClient] Fetching: /api/rfps
+index-DzgvdgfN.js:48 [QueryClient] Fetching: /api/user
+index-DzgvdgfN.js:48 [QueryClient] Response status: 200
+index-DzgvdgfN.js:48 [QueryClient] Response data: {id: 75, email: 'mechanizedsolutionsinc@gmail.com', password: '418aed497004df1fe65605fb469c4fa3718b1288fb27e0b32d…92c80792956a6484.d8b87b58391d465247fbf843681fc1bb', companyName: 'MechanizedOrg', companyWebsite: null, …}
+index-DzgvdgfN.js:916 Service Worker registered successfully (scope: https://construction-bid-hub-mechanizedinc.replit.app/)
+index-DzgvdgfN.js:48 [QueryClient] Response status: 200
+index-DzgvdgfN.js:48 [QueryClient] Response data: (55) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+main.js:397 As of February 21st, 2024, google.maps.Marker is deprecated. Please use google.maps.marker.AdvancedMarkerElement instead. At this time, google.maps.Marker is not scheduled to be discontinued, but google.maps.marker.AdvancedMarkerElement is recommended over google.maps.Marker. While google.maps.Marker will continue to receive bug fixes for any major regressions, existing bugs in google.maps.Marker will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/deprecations for additional details and https://developers.google.com/maps/documentation/javascript/advanced-markers/migration for the migration guide.
+Yz @ main.js:397
+(anonymous) @ main.js:397
+(anonymous) @ index-DzgvdgfN.js:420
+g5 @ index-DzgvdgfN.js:40
+gy @ index-DzgvdgfN.js:40
+(anonymous) @ index-DzgvdgfN.js:40
+B @ index-DzgvdgfN.js:25
+D @ index-DzgvdgfN.js:25
+index-DzgvdgfN.js:48 [QueryClient] Fetching: /api/user
+index-DzgvdgfN.js:48 [QueryClient] Response status: 200
+index-DzgvdgfN.js:48 [QueryClient] Response data: {id: 75, email: 'mechanizedsolutionsinc@gmail.com', password: '418aed497004df1fe65605fb469c4fa3718b1288fb27e0b32d…92c80792956a6484.d8b87b58391d465247fbf843681fc1bb', companyName: 'MechanizedOrg', companyWebsite: null, …}
+index-DzgvdgfN.js:48 [QueryClient] Fetching: /api/user
+index-DzgvdgfN.js:48 [QueryClient] Response status: 200
+index-DzgvdgfN.js:48 [QueryClient] Response data: {id: 75, email: 'mechanizedsolutionsinc@gmail.com', password: '418aed497004df1fe65605fb469c4fa3718b1288fb27e0b32d…92c80792956a6484.d8b87b58391d465247fbf843681fc1bb', companyName: 'MechanizedOrg', companyWebsite: null, …}
+index-DzgvdgfN.js:48 [QueryClient] Fetching: /api/user
+index-DzgvdgfN.js:48 [QueryClient] Response status: 200
+index-DzgvdgfN.js:48 [QueryClient] Response data: {id: 75, email: 'mechanizedsolutionsinc@gmail.com', password: '418aed497004df1fe65605fb469c4fa3718b1288fb27e0b32d…92c80792956a6484.d8b87b58391d465247fbf843681fc1bb', companyName: 'MechanizedOrg', companyWebsite: null, …}
+index-DzgvdgfN.js:48  POST https://construction-bid-hub-mechanizedinc.replit.app/api/update-email 400 (Bad Request)
+Jn @ index-DzgvdgfN.js:48
+p @ index-DzgvdgfN.js:916
+(anonymous) @ index-DzgvdgfN.js:420
+await in (anonymous)
+sge @ index-DzgvdgfN.js:37
+age @ index-DzgvdgfN.js:37
+lge @ index-DzgvdgfN.js:37
+t6 @ index-DzgvdgfN.js:37
+$X @ index-DzgvdgfN.js:37
+(anonymous) @ index-DzgvdgfN.js:37
+WL @ index-DzgvdgfN.js:40
+dX @ index-DzgvdgfN.js:37
+Pk @ index-DzgvdgfN.js:37
+bL @ index-DzgvdgfN.js:37
+Sge @ index-DzgvdgfN.js:37

@@ -715,7 +715,7 @@ async function sendEmail(params) {
       Messages: [
         {
           From: {
-            Email: fromEmail || 'noreply@findconstructionbids.com',
+            Email: fromEmail || 'info@findconstructionbids.com',
             Name: fromName || 'FindConstructionBids',
           },
           To: [

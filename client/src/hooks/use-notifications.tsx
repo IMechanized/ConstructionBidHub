@@ -1,20 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Notification } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from './use-auth';
+
+function isVercelEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return hostname.includes('vercel.app') || 
+         hostname.includes('findconstructionbids.com') ||
+         hostname.includes('.vercel.app');
+}
 
 export function useNotifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  const isVercel = useMemo(() => isVercelEnvironment(), []);
 
-  // Fetch notifications
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     enabled: !!user,
-    staleTime: 30000,
+    staleTime: isVercel ? 15000 : 30000,
+    refetchInterval: isVercel ? 30000 : false,
   });
 
   // Mark notification as read mutation
@@ -47,9 +57,13 @@ export function useNotifications() {
     },
   });
 
-  // WebSocket connection setup
   useEffect(() => {
     if (!user) return;
+    
+    if (isVercel) {
+      console.log('Vercel environment detected - using polling instead of WebSocket');
+      return;
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -61,7 +75,6 @@ export function useNotifications() {
         console.log('WebSocket connected for notifications');
         setIsConnected(true);
         
-        // Authenticate with user ID
         ws.send(JSON.stringify({
           type: 'auth',
           userId: user.id.toString()
@@ -73,10 +86,7 @@ export function useNotifications() {
           const message = JSON.parse(event.data);
           
           if (message.type === 'notification') {
-            // Invalidate notifications query to fetch latest data
             queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-            
-            // You could also show a toast notification here
             console.log('New notification received:', message.data);
           } else if (message.type === 'auth_success') {
             console.log('WebSocket authentication successful');
@@ -104,7 +114,7 @@ export function useNotifications() {
     } catch (error) {
       console.error('Error creating WebSocket connection:', error);
     }
-  }, [user, queryClient]);
+  }, [user, queryClient, isVercel]);
 
   // Helper functions
   const markAsRead = useCallback((notificationId: number) => {

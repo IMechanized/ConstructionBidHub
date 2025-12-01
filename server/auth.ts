@@ -360,6 +360,11 @@ export function setupAuth(app: Express) {
   
   // Resend verification email
   app.post("/api/resend-verification", async (req, res) => {
+    // Prevent any caching of this response
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Please log in to resend verification email" });
@@ -390,6 +395,11 @@ export function setupAuth(app: Express) {
   
   // Update email address and send new verification
   app.post("/api/update-email", async (req, res) => {
+    // Prevent any caching of this response
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Please log in to update your email" });

@@ -1,5 +1,5 @@
 // Update this version number whenever you deploy changes
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const CACHE_NAME = `findconstructionbids-v${VERSION}`;
 const STATIC_CACHE_NAME = `findconstructionbids-static-v${VERSION}`;
 const DATA_CACHE_NAME = `findconstructionbids-data-v${VERSION}`;
@@ -72,7 +72,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
+  // Skip non-GET requests - let them go directly to the network
   if (event.request.method !== 'GET') {
     return;
   }
@@ -82,49 +82,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Different strategies for different types of requests
+  // NEVER cache or intercept API requests - always go to network
+  // This prevents issues with cached auth responses
   if (isApiRequest(event.request)) {
-    // Network first, falling back to cached data for API requests
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache the response for offline use
-          if (response.status === 200) {
-            const responseToCache = response.clone();
-            caches.open(DATA_CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-          }
-          return response;
-        })
-        .catch((error) => {
-          console.log('Service Worker: API fetch failed, falling back to cache', error);
-          
-          return caches.match(event.request)
-            .then((cachedResponse) => {
-              // If we have a cached response, return it
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              
-              // If no cached data and offline, return a custom offline response for API
-              return new Response(
-                JSON.stringify({ 
-                  error: 'You are offline',
-                  offline: true,
-                  timestamp: new Date().toISOString()
-                }),
-                { 
-                  headers: { 'Content-Type': 'application/json' },
-                  status: 503,
-                  statusText: 'Service Unavailable'
-                }
-              );
-            });
-        })
-    );
-  } else if (event.request.mode === 'navigate') {
+    return;
+  }
+
+  if (event.request.mode === 'navigate') {
     // Network-first for HTML navigation to prevent blank screens with stale cache
     event.respondWith(
       fetch(event.request)

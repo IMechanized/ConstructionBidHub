@@ -306,19 +306,52 @@ export function setupAuth(app: Express) {
       
       safeLog(`[Auth] Email verified successfully for user: ${userId}`);
       
-      // If user is already logged in, update the session
-      if (req.isAuthenticated() && req.user.id === userId) {
-        const updatedUser = await storage.getUser(userId);
-        if (updatedUser) {
+      // Get the updated user data for session refresh
+      const updatedUser = await storage.getUser(userId);
+      
+      // If user is already logged in, update the session and return their data
+      if (req.isAuthenticated() && req.user.id === userId && updatedUser) {
+        // Update session with new user data
+        await new Promise<void>((resolve, reject) => {
           req.login(updatedUser, (err) => {
             if (err) {
               safeError(`[Auth] Error updating user session after verification:`, err);
+              reject(err);
+            } else {
+              resolve();
             }
           });
-        }
+        }).catch(() => {
+          // If session update fails, still return success without user data
+          return res.status(200).json({ 
+            message: "Email verified successfully",
+            emailVerified: true,
+            isAuthenticated: false
+          });
+        });
+        
+        // Return safe user data (without sensitive fields) for authenticated users
+        const safeUserData = {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          companyName: updatedUser.companyName,
+          emailVerified: updatedUser.emailVerified,
+          onboardingComplete: updatedUser.onboardingComplete,
+        };
+        return res.status(200).json({ 
+          message: "Email verified successfully",
+          emailVerified: true,
+          isAuthenticated: true,
+          user: safeUserData
+        });
       }
       
-      return res.status(200).json({ message: "Email verified successfully" });
+      // For unauthenticated requests, just return verification status
+      return res.status(200).json({ 
+        message: "Email verified successfully",
+        emailVerified: true,
+        isAuthenticated: false
+      });
     } catch (error) {
       safeError(`[Auth] Error during email verification:`, error);
       return res.status(500).json({ message: "An error occurred during email verification" });

@@ -52,6 +52,10 @@ localPort = 39037
 externalPort = 3001
 
 [[ports]]
+localPort = 40989
+externalPort = 3003
+
+[[ports]]
 localPort = 43071
 externalPort = 3000
 
@@ -60,3 +64,5 @@ externalPort = 3000
 [userenv.shared]
 VITE_GOOGLE_MAPS_API_KEY = "AIzaSyAsHBpAcIyvNmlqWc3doKdULcFESilZ41Q"
 AWS_REGION = "us-east-1"
+TESTING_VITE_STRIPE_PUBLIC_KEY = "pk_test_51ROx1EQL1f05fzIg2s7gZoQhEFZisrHd9Zs0VVhLPWjW6ipdmp2rSp6FUGDwwXY568ZIzL7k2IvCAn1HjJEfmKKd00xB1DRwiH"
+TESTING_STRIPE_SECRET_KEY = "sk_test_51ROx1EQL1f05fzIgDTHCFhsgLgTbFFCyy8itBSP1GzFFuLl0svONIN203v46ZdRbsvOesxvXPuJG7XyjckEMpM9q003536EZG6"

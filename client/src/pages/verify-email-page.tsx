@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import type { User } from "@shared/schema";
 
 export default function VerifyEmailPage() {
   const [, navigate] = useLocation();
@@ -13,6 +14,7 @@ export default function VerifyEmailPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState<string>("");
+  const [verifiedUser, setVerifiedUser] = useState<User | null>(null);
 
   // Get the token from the URL
   const params = new URLSearchParams(window.location.search);
@@ -40,8 +42,20 @@ export default function VerifyEmailPage() {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
           
-          // Invalidate user query to refresh user data
-          await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          // If authenticated and user data returned, update the cache
+          if (data.isAuthenticated && data.user) {
+            // Merge with existing user data to maintain full user object
+            const existingUser = queryClient.getQueryData<User>(["/api/user"]);
+            if (existingUser) {
+              const updatedUser = { ...existingUser, ...data.user };
+              setVerifiedUser(updatedUser);
+              queryClient.setQueryData(["/api/user"], updatedUser);
+            }
+          } else if (data.isAuthenticated) {
+            // Authenticated but no user data, invalidate to refetch
+            await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          }
+          // For unauthenticated users, they will need to log in
           
           toast({
             title: "Email verified",
@@ -122,8 +136,9 @@ export default function VerifyEmailPage() {
         <CardFooter className="flex justify-center">
           <Button 
             onClick={() => {
-              if (user) {
-                if (user.onboardingComplete) {
+              const currentUser = verifiedUser || user;
+              if (currentUser) {
+                if (currentUser.onboardingComplete) {
                   navigate("/dashboard");
                 } else {
                   navigate("/onboarding");
@@ -135,7 +150,7 @@ export default function VerifyEmailPage() {
             className="w-full max-w-xs"
             data-testid="button-continue"
           >
-            {user ? (user.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
+            {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
           </Button>
         </CardFooter>
       </Card>

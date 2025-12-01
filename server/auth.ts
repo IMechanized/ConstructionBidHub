@@ -355,6 +355,77 @@ export function setupAuth(app: Express) {
     }
   });
   
+  // Update email address and send new verification
+  app.post("/api/update-email", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Please log in to update your email" });
+      }
+      
+      const { email } = req.body;
+      const user = req.user;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      
+      // Check if new email is same as current
+      if (email.toLowerCase() === user.email.toLowerCase()) {
+        return res.status(400).json({ message: "New email must be different from current email" });
+      }
+      
+      // Check if email is already in use by another user
+      const existingUser = await storage.getUserByUsername(email);
+      if (existingUser && existingUser.id !== user.id) {
+        return res.status(400).json({ message: "This email is already in use" });
+      }
+      
+      safeLog(`[Auth] Updating email for user: ${createUserLogId(user)} to ${maskEmail(email)}`);
+      
+      // Update email and reset verification status
+      await storage.updateUser(user.id, {
+        email: email,
+        emailVerified: false,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      });
+      
+      // Generate and send new verification email
+      const token = await createVerificationToken(user.id);
+      const emailSent = await sendVerificationEmail(email, token, user.companyName);
+      
+      if (emailSent) {
+        safeLog(`[Auth] Verification email sent to new address: ${maskEmail(email)}`);
+      } else {
+        safeError(`[Auth] Failed to send verification email to: ${maskEmail(email)}`);
+      }
+      
+      // Update the session with new user data
+      const updatedUser = await storage.getUser(user.id);
+      if (updatedUser) {
+        req.login(updatedUser, (err) => {
+          if (err) {
+            safeError(`[Auth] Error updating user session:`, err);
+          }
+        });
+      }
+      
+      return res.status(200).json({ 
+        message: "Email updated successfully. Please verify your new email address.",
+        emailSent: emailSent
+      });
+    } catch (error) {
+      safeError(`[Auth] Error updating email:`, error);
+      return res.status(500).json({ message: "An error occurred while updating your email" });
+    }
+  });
+  
   /**
    * Password Reset Endpoints
    */

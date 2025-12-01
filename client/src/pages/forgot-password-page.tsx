@@ -86,6 +86,7 @@ export default function ForgotPasswordPage() {
                           placeholder="name@example.com" 
                           type="email" 
                           disabled={isSubmitting}
+                          data-testid="input-email"
                           {...field}
                         />
                       </FormControl>
@@ -97,6 +98,7 @@ export default function ForgotPasswordPage() {
                   type="submit"
                   className="w-full"
                   disabled={isSubmitting}
+                  data-testid="button-send-reset"
                 >
                   {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -123,6 +125,7 @@ export default function ForgotPasswordPage() {
             variant="outline" 
             onClick={() => navigate("/auth")}
             className="w-full"
+            data-testid="button-back-login"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Login

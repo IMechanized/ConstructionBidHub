@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
@@ -39,6 +39,9 @@ export default function VerifyEmailPage() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
+          
+          // Invalidate user query to refresh user data
+          await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           
           toast({
             title: "Email verified",
@@ -118,10 +121,21 @@ export default function VerifyEmailPage() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button 
-            onClick={() => navigate(user ? "/dashboard" : "/auth")}
+            onClick={() => {
+              if (user) {
+                if (user.onboardingComplete) {
+                  navigate("/dashboard");
+                } else {
+                  navigate("/onboarding");
+                }
+              } else {
+                navigate("/auth");
+              }
+            }}
             className="w-full max-w-xs"
+            data-testid="button-continue"
           >
-            {user ? "Go to Dashboard" : "Login"}
+            {user ? (user.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
           </Button>
         </CardFooter>
       </Card>

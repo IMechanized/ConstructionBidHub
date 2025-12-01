@@ -28,6 +28,7 @@ import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
+import EmailVerificationPendingPage from "@/pages/email-verification-pending";
 import { ThemeProvider } from "@/components/theme-provider";
 import HotReload from "@/components/hot-reload";
 import { UpdateNotifier } from "@/components/update-notifier";
@@ -86,6 +87,7 @@ function Router() {
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
+      <Route path="/email-verification-pending" component={EmailVerificationPendingPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route component={NotFound} />

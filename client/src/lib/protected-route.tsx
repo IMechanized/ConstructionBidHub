@@ -29,6 +29,15 @@ export function ProtectedRoute({
     );
   }
 
+  // Redirect to email verification if not verified
+  if (!user.emailVerified) {
+    return (
+      <Route path={path}>
+        <Redirect to="/email-verification-pending" />
+      </Route>
+    );
+  }
+
   // Redirect to onboarding if not completed (except for onboarding path)
   if (!user.onboardingComplete && !path.includes("/onboarding")) {
     return (

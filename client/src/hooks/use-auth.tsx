@@ -52,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-      if (!user.onboardingComplete) {
+      if (!user.emailVerified) {
+        navigate("/email-verification-pending");
+      } else if (!user.onboardingComplete) {
         navigate("/onboarding");
       } else {
         navigate("/dashboard");
@@ -74,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-      navigate("/onboarding");
+      navigate("/email-verification-pending");
     },
     onError: (error: Error) => {
       toast({

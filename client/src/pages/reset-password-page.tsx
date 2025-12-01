@@ -158,6 +158,7 @@ export default function ResetPasswordPage() {
                         type="password" 
                         placeholder="Enter your new password" 
                         disabled={isSubmitting}
+                        data-testid="input-password"
                         {...field}
                       />
                     </FormControl>
@@ -177,6 +178,7 @@ export default function ResetPasswordPage() {
                         type="password" 
                         placeholder="Confirm your new password" 
                         disabled={isSubmitting}
+                        data-testid="input-confirm-password"
                         {...field}
                       />
                     </FormControl>
@@ -189,6 +191,7 @@ export default function ResetPasswordPage() {
                 type="submit"
                 className="w-full"
                 disabled={isSubmitting}
+                data-testid="button-reset-password"
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -231,6 +234,7 @@ export default function ResetPasswordPage() {
             <Button 
               onClick={() => navigate("/auth")}
               className="w-full"
+              data-testid="button-back-login"
             >
               Back to Login
             </Button>

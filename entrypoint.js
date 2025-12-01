@@ -715,7 +715,7 @@ async function sendEmail(params) {
       Messages: [
         {
           From: {
-            Email: fromEmail || 'noreply@findconstructionbids.com',
+            Email: fromEmail || 'info@findconstructionbids.com',
             Name: fromName || 'FindConstructionBids',
           },
           To: [
@@ -2686,19 +2686,52 @@ app.get("/api/verify-email", async (req, res) => {
     
     safeLog(`[Auth] Email verified successfully for user: ${userId}`);
     
-    // If user is already logged in, update the session
-    if (req.isAuthenticated() && req.user.id === userId) {
-      const updatedUser = await storage.getUser(userId);
-      if (updatedUser) {
+    // Get the updated user data for session refresh
+    const updatedUser = await storage.getUser(userId);
+    
+    // If user is already logged in, update the session and return their data
+    if (req.isAuthenticated() && req.user.id === userId && updatedUser) {
+      // Update session with new user data
+      await new Promise((resolve, reject) => {
         req.login(updatedUser, (err) => {
           if (err) {
             safeError(`[Auth] Error updating user session after verification:`, err);
+            reject(err);
+          } else {
+            resolve();
           }
         });
-      }
+      }).catch(() => {
+        // If session update fails, still return success without user data
+        return res.status(200).json({ 
+          message: "Email verified successfully",
+          emailVerified: true,
+          isAuthenticated: false
+        });
+      });
+      
+      // Return safe user data (without sensitive fields) for authenticated users
+      const safeUserData = {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        companyName: updatedUser.companyName,
+        emailVerified: updatedUser.emailVerified,
+        onboardingComplete: updatedUser.onboardingComplete,
+      };
+      return res.status(200).json({ 
+        message: "Email verified successfully",
+        emailVerified: true,
+        isAuthenticated: true,
+        user: safeUserData
+      });
     }
     
-    return res.status(200).json({ message: "Email verified successfully" });
+    // For unauthenticated requests, just return verification status
+    return res.status(200).json({ 
+      message: "Email verified successfully",
+      emailVerified: true,
+      isAuthenticated: false
+    });
   } catch (error) {
     safeError(`[Auth] Error during email verification:`, error);
     return res.status(500).json({ message: "An error occurred during email verification" });
@@ -2706,6 +2739,11 @@ app.get("/api/verify-email", async (req, res) => {
 });
 
 app.post("/api/resend-verification", async (req, res) => {
+  // Prevent any caching of this response
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  
   try {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Please log in to resend verification email" });
@@ -2731,6 +2769,82 @@ app.post("/api/resend-verification", async (req, res) => {
   } catch (error) {
     safeError(`[Auth] Error resending verification email:`, error);
     return res.status(500).json({ message: "An error occurred while resending the verification email" });
+  }
+});
+
+// Update email address and send new verification
+app.post("/api/update-email", async (req, res) => {
+  // Prevent any caching of this response
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Please log in to update your email" });
+    }
+    
+    const { email } = req.body;
+    const user = req.user;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+    
+    // Check if new email is same as current
+    if (email.toLowerCase() === user.email.toLowerCase()) {
+      return res.status(400).json({ message: "New email must be different from current email" });
+    }
+    
+    // Check if email is already in use by another user
+    const existingUser = await storage.getUserByUsername(email);
+    if (existingUser && existingUser.id !== user.id) {
+      return res.status(400).json({ message: "This email is already in use" });
+    }
+    
+    safeLog(`[Auth] Updating email for user: ${user.id} to ${maskEmail(email)}`);
+    
+    // Update email and reset verification status
+    await storage.updateUser(user.id, {
+      email: email,
+      emailVerified: false,
+      verificationToken: null,
+      verificationTokenExpiry: null,
+    });
+    
+    // Generate and send new verification email
+    const token = await createVerificationToken(user.id);
+    const emailSent = await sendVerificationEmail(email, token, user.companyName);
+    
+    if (emailSent) {
+      safeLog(`[Auth] Verification email sent to new address: ${maskEmail(email)}`);
+    } else {
+      safeError(`[Auth] Failed to send verification email to: ${maskEmail(email)}`);
+    }
+    
+    // Update the session with new user data
+    const updatedUser = await storage.getUser(user.id);
+    if (updatedUser) {
+      req.login(updatedUser, (err) => {
+        if (err) {
+          safeError(`[Auth] Error updating user session:`, err);
+        }
+      });
+    }
+    
+    return res.status(200).json({ 
+      message: "Email updated successfully. Please verify your new email address.",
+      emailSent: emailSent
+    });
+  } catch (error) {
+    safeError(`[Auth] Error updating email:`, error);
+    return res.status(500).json({ message: "An error occurred while updating your email" });
   }
 });
 

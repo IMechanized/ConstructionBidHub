@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import type { User } from "@shared/schema";
 
 export default function VerifyEmailPage() {
   const [, navigate] = useLocation();
@@ -13,6 +14,7 @@ export default function VerifyEmailPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState<string>("");
+  const [verifiedUser, setVerifiedUser] = useState<User | null>(null);
 
   // Get the token from the URL
   const params = new URLSearchParams(window.location.search);
@@ -39,6 +41,21 @@ export default function VerifyEmailPage() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
+          
+          // If authenticated and user data returned, update the cache
+          if (data.isAuthenticated && data.user) {
+            // Merge with existing user data to maintain full user object
+            const existingUser = queryClient.getQueryData<User>(["/api/user"]);
+            if (existingUser) {
+              const updatedUser = { ...existingUser, ...data.user };
+              setVerifiedUser(updatedUser);
+              queryClient.setQueryData(["/api/user"], updatedUser);
+            }
+          } else if (data.isAuthenticated) {
+            // Authenticated but no user data, invalidate to refetch
+            await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          }
+          // For unauthenticated users, they will need to log in
           
           toast({
             title: "Email verified",
@@ -118,10 +135,22 @@ export default function VerifyEmailPage() {
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button 
-            onClick={() => navigate(user ? "/dashboard" : "/auth")}
+            onClick={() => {
+              const currentUser = verifiedUser || user;
+              if (currentUser) {
+                if (currentUser.onboardingComplete) {
+                  navigate("/dashboard");
+                } else {
+                  navigate("/onboarding");
+                }
+              } else {
+                navigate("/auth");
+              }
+            }}
             className="w-full max-w-xs"
+            data-testid="button-continue"
           >
-            {user ? "Go to Dashboard" : "Login"}
+            {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
           </Button>
         </CardFooter>
       </Card>

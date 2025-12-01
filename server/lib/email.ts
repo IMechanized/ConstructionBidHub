@@ -32,7 +32,10 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     const { to, subject, htmlContent, textContent, fromEmail, fromName } = params;
     
-    const request = await mailjet.post('send', { version: 'v3.1' }).request({
+    console.log(`[Mailjet] Attempting to send email to: ${to}, subject: "${subject}"`);
+    console.log(`[Mailjet] From: ${fromEmail || 'info@findconstructionbids.com'}`);
+    
+    const response = await mailjet.post('send', { version: 'v3.1' }).request({
       Messages: [
         {
           From: {
@@ -51,10 +54,58 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       ],
     });
     
-    console.log(`Email sent successfully to ${to}`);
+    const responseBody = response.body as {
+      Messages?: Array<{
+        Status?: string;
+        To?: Array<{ Email?: string; MessageUUID?: string; MessageID?: number; MessageHref?: string }>;
+        Errors?: Array<{ ErrorIdentifier?: string; ErrorCode?: string; StatusCode?: number; ErrorMessage?: string; ErrorRelatedTo?: string[] }>;
+      }>;
+    };
+    
+    console.log(`[Mailjet] Full API Response:`, JSON.stringify(responseBody, null, 2));
+    
+    if (responseBody.Messages && responseBody.Messages.length > 0) {
+      const message = responseBody.Messages[0];
+      const status = message.Status;
+      const messageInfo = message.To?.[0];
+      const errors = message.Errors;
+      
+      console.log(`[Mailjet] Message Status: ${status}`);
+      
+      if (messageInfo) {
+        console.log(`[Mailjet] MessageID: ${messageInfo.MessageID}`);
+        console.log(`[Mailjet] MessageUUID: ${messageInfo.MessageUUID}`);
+        console.log(`[Mailjet] MessageHref: ${messageInfo.MessageHref}`);
+      }
+      
+      if (errors && errors.length > 0) {
+        console.error(`[Mailjet] Errors in response:`, JSON.stringify(errors, null, 2));
+        return false;
+      }
+      
+      if (status === 'success') {
+        console.log(`[Mailjet] Email sent successfully to ${to}`);
+        return true;
+      } else {
+        console.error(`[Mailjet] Unexpected status: ${status}`);
+        return false;
+      }
+    }
+    
+    console.log(`[Mailjet] Email request completed for ${to}`);
     return true;
-  } catch (error) {
-    console.error('Error sending email:', error);
+  } catch (error: any) {
+    console.error('[Mailjet] Error sending email:', error);
+    if (error.response) {
+      console.error('[Mailjet] Error response status:', error.response.status);
+      console.error('[Mailjet] Error response body:', JSON.stringify(error.response.body || error.response.data, null, 2));
+    }
+    if (error.statusCode) {
+      console.error('[Mailjet] Error status code:', error.statusCode);
+    }
+    if (error.message) {
+      console.error('[Mailjet] Error message:', error.message);
+    }
     return false;
   }
 }

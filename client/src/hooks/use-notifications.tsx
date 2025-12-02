@@ -23,8 +23,11 @@ export function useNotifications() {
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     enabled: !!user,
-    staleTime: isVercel ? 15000 : 30000,
-    refetchInterval: isVercel ? 30000 : false,
+    staleTime: isVercel ? 60000 : 30000,
+    refetchInterval: isVercel ? 60000 : false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: 'always',
+    gcTime: isVercel ? 120000 : 60000,
   });
 
   // Mark notification as read mutation
@@ -61,7 +64,6 @@ export function useNotifications() {
     if (!user) return;
     
     if (isVercel) {
-      console.log('Vercel environment detected - using polling instead of WebSocket');
       return;
     }
 

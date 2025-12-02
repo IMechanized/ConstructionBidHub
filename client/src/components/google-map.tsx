@@ -116,33 +116,67 @@ interface MarkerProps {
 
 export const Marker = ({ position, title }: MarkerProps) => {
   const map = useMap();
-  const [marker, setMarker] = useState<any>();
+  const markerRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!marker && map && window.google) {
-      const markerInstance = new window.google.maps.Marker({
-        position,
-        map,
-        title,
-      });
-      setMarker(markerInstance);
-    }
+    if (!map || !window.google) return;
 
-    return () => {
-      if (marker) {
-        marker.setMap(null);
+    const initMarker = async () => {
+      try {
+        const { AdvancedMarkerElement } = await window.google.maps.importLibrary("marker") as any;
+        
+        if (markerRef.current) {
+          markerRef.current.map = null;
+        }
+        
+        const markerInstance = new AdvancedMarkerElement({
+          position,
+          map,
+          title,
+        });
+        
+        markerRef.current = markerInstance;
+      } catch (error) {
+        if (!markerRef.current && window.google.maps.Marker) {
+          const markerInstance = new window.google.maps.Marker({
+            position,
+            map,
+            title,
+          });
+          markerRef.current = markerInstance;
+        }
       }
     };
-  }, [map, marker, position, title]);
+
+    initMarker();
+
+    return () => {
+      if (markerRef.current) {
+        if (markerRef.current.map !== undefined) {
+          markerRef.current.map = null;
+        } else if (markerRef.current.setMap) {
+          markerRef.current.setMap(null);
+        }
+        markerRef.current = null;
+      }
+    };
+  }, [map]);
 
   useEffect(() => {
-    if (marker) {
-      marker.setPosition(position);
+    if (!markerRef.current) return;
+    
+    if (markerRef.current.position !== undefined) {
+      markerRef.current.position = position;
       if (title) {
-        marker.setTitle(title);
+        markerRef.current.title = title;
+      }
+    } else if (markerRef.current.setPosition) {
+      markerRef.current.setPosition(position);
+      if (title) {
+        markerRef.current.setTitle(title);
       }
     }
-  }, [marker, position, title]);
+  }, [position, title]);
 
   return null;
 };

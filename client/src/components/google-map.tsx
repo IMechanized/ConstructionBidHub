@@ -121,42 +121,21 @@ export const Marker = ({ position, title }: MarkerProps) => {
   useEffect(() => {
     if (!map || !window.google) return;
 
-    const initMarker = async () => {
-      try {
-        const { AdvancedMarkerElement } = await window.google.maps.importLibrary("marker") as any;
-        
-        if (markerRef.current) {
-          markerRef.current.map = null;
-        }
-        
-        const markerInstance = new AdvancedMarkerElement({
-          position,
-          map,
-          title,
-        });
-        
-        markerRef.current = markerInstance;
-      } catch (error) {
-        if (!markerRef.current && window.google.maps.Marker) {
-          const markerInstance = new window.google.maps.Marker({
-            position,
-            map,
-            title,
-          });
-          markerRef.current = markerInstance;
-        }
-      }
-    };
-
-    initMarker();
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+    }
+    
+    const markerInstance = new window.google.maps.Marker({
+      position,
+      map,
+      title,
+    });
+    
+    markerRef.current = markerInstance;
 
     return () => {
       if (markerRef.current) {
-        if (markerRef.current.map !== undefined) {
-          markerRef.current.map = null;
-        } else if (markerRef.current.setMap) {
-          markerRef.current.setMap(null);
-        }
+        markerRef.current.setMap(null);
         markerRef.current = null;
       }
     };
@@ -165,16 +144,9 @@ export const Marker = ({ position, title }: MarkerProps) => {
   useEffect(() => {
     if (!markerRef.current) return;
     
-    if (markerRef.current.position !== undefined) {
-      markerRef.current.position = position;
-      if (title) {
-        markerRef.current.title = title;
-      }
-    } else if (markerRef.current.setPosition) {
-      markerRef.current.setPosition(position);
-      if (title) {
-        markerRef.current.setTitle(title);
-      }
+    markerRef.current.setPosition(position);
+    if (title) {
+      markerRef.current.setTitle(title);
     }
   }, [position, title]);
 

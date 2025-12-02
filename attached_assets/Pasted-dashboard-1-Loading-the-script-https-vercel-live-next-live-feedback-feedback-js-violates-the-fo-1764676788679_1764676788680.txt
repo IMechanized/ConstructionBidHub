@@ -1,0 +1,184 @@
+dashboard:1 Loading the script 'https://vercel.live/_next-live/feedback/feedback.js' violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://*.googleapis.com". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.
+index-u9BVIM1s.js:607 ✅ Stripe client initialized
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/user
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response data: {id: 87, email: 'Henriette.Effertz@gmail.com', password: '505529dba2deb3c325d434b65534eaeeb1231b437e62516360…a8f40f0197a5bbbd.321c4ba3b7b29b7b23dc272b299ae1b4', companyName: 'Dickinson Inc', companyWebsite: 'findconstructionbids.com', …}
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/notifications
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/rfps
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/rfis
+index-u9BVIM1s.js:916 Service Worker registered successfully (scope: https://construction-bid-hub.vercel.app/)
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response data: (261) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+index-u9BVIM1s.js:48 [QueryClient] Response data: (55) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response data: [{…}]
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/rfps/283
+index-u9BVIM1s.js:48 [QueryClient] Fetching: /api/rfps/283/documents
+index-u9BVIM1s.js:847 View tracking skipped - missing data: User=true, RFP=false
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response status: 200
+index-u9BVIM1s.js:48 [QueryClient] Response data: {id: 283, title: 'Expansion of Exclusive discrete interface', description: '<h2>Project Overview:</h2><p> Renovation project f…relinquo vestrum ex coniecto illum caelestis.</p>', walkthroughDate: '2025-10-01T12:02:00.000Z', rfiDate: '2025-10-19T00:54:00.000Z', …}
+index-u9BVIM1s.js:48 [QueryClient] Response data: [{…}]
+index-u9BVIM1s.js:847 View tracking eligibility check: User ID=87, RFP Owner ID=87, Should track=false
+index-u9BVIM1s.js:847 View tracking not applicable - user is RFP owner
+main.js:457 The map is initialized without a valid Map ID, which will prevent use of Advanced Markers.
+log @ main.js:457
+(anonymous) @ marker.js:53
+Promise.then
+fWa @ marker.js:53
+setMap @ marker.js:108
+set map @ marker.js:107
+tS @ marker.js:100
+(anonymous) @ index-u9BVIM1s.js:420
+await in (anonymous)
+(anonymous) @ index-u9BVIM1s.js:420
+g5 @ index-u9BVIM1s.js:40
+gy @ index-u9BVIM1s.js:40
+(anonymous) @ index-u9BVIM1s.js:40
+S @ index-u9BVIM1s.js:25
+D @ index-u9BVIM1s.js:25

@@ -149,6 +149,17 @@ This approach ensures large files never transit through Vercel's serverless func
 ## Changelog
 
 Changelog:
+- December 5, 2025: Fixed Vercel deployment caching issues causing blank pages and stale content
+  - **Service Worker v2.0.0**: Complete rewrite of caching strategy
+    - Network-first for HTML navigation requests ensures fresh content
+    - Cache-first only for versioned assets (Vite hashed files)
+    - Selective cache cleanup only removes old versions with app namespace prefix
+    - Preserves offline.html and precached assets during upgrades
+  - **Chunk Error Recovery**: Added automatic reload when stale JavaScript chunks fail to load
+    - Detects "Loading chunk failed" and similar errors
+    - Includes cooldown to prevent reload loops
+    - Triggers SKIP_WAITING on service worker before reload
+  - **BFCache Handler**: Added pageshow listener to check for updates when page is restored from browser cache
 - November 28, 2025 (evening): Fixed critical S3, CSP, and Service Worker issues with hybrid access model
   - **Service Worker Fix**: Updated service worker (v1.2.0) to not intercept third-party resources (Stripe, Google Maps, AWS S3)
   - **S3 Configuration**: Removed ACL parameters from uploads; created S3_SETUP_GUIDE.md with required CORS and bucket policy configuration

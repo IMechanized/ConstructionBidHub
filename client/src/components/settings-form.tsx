@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, Loader2, Trash2, X } from "lucide-react";
+import { Upload, Loader2, Trash2, X, Mail, CheckCircle, AlertCircle, Send } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { uploadImage } from "@/lib/upload";
 import { useTranslation } from "react-i18next";
 import { CERTIFICATIONS } from "@shared/schema";
@@ -80,7 +82,13 @@ const settingsSchema = z.object({
   language: z.string().default("en"),
 });
 
+// Email change validation schema
+const emailChangeSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 type SettingsFormValues = z.infer<typeof settingsSchema>;
+type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
 
 export default function SettingsForm() {
   const { toast } = useToast();
@@ -88,6 +96,9 @@ export default function SettingsForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(user?.logo || null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
 
@@ -97,6 +108,70 @@ export default function SettingsForm() {
       i18n.changeLanguage(user.language);
     }
   }, [user?.language, i18n]);
+
+  // Email change mutation
+  const updateEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/update-email", { email });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      setEmailDialogOpen(false);
+      setNewEmail("");
+      setEmailError("");
+      toast({
+        title: "Email Updated",
+        description: data.emailSent 
+          ? "A verification email has been sent to your new address. Please check your inbox."
+          : "Your email has been updated. Please verify it to continue using all features.",
+      });
+    },
+    onError: (error: Error) => {
+      setEmailError(error.message);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Resend verification email mutation
+  const resendVerificationMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/resend-verification", {});
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your inbox and click the verification link.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle email change submission
+  const handleEmailChange = () => {
+    setEmailError("");
+    const result = emailChangeSchema.safeParse({ email: newEmail });
+    if (!result.success) {
+      setEmailError(result.error.errors[0].message);
+      return;
+    }
+    if (newEmail.toLowerCase() === user?.email?.toLowerCase()) {
+      setEmailError("New email must be different from current email");
+      return;
+    }
+    updateEmailMutation.mutate(newEmail);
+  };
 
   // Initialize form with user data
   const form = useForm<SettingsFormValues>({
@@ -249,6 +324,151 @@ export default function SettingsForm() {
   // Render the settings form
   return (
     <div className="space-y-6">
+      {/* Email Management Section */}
+      <div className="border rounded-lg p-4 bg-card">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          Email Settings
+        </h2>
+        
+        <div className="space-y-4">
+          {/* Current Email Display */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground mb-1">Current Email</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium" data-testid="text-current-email">{user?.email}</span>
+                {user?.emailVerified ? (
+                  <Badge variant="default" className="bg-green-500 hover:bg-green-500" data-testid="badge-email-verified">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" data-testid="badge-email-unverified">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Not Verified
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex gap-2 flex-wrap">
+              {/* Resend Verification Button - Only show if not verified */}
+              {!user?.emailVerified && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => resendVerificationMutation.mutate()}
+                  disabled={resendVerificationMutation.isPending}
+                  data-testid="button-resend-verification"
+                >
+                  {resendVerificationMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-1" />
+                  )}
+                  Resend Verification
+                </Button>
+              )}
+              
+              {/* Change Email Dialog */}
+              <Dialog open={emailDialogOpen} onOpenChange={(open) => {
+                setEmailDialogOpen(open);
+                if (!open) {
+                  setNewEmail("");
+                  setEmailError("");
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" data-testid="button-change-email">
+                    <Mail className="h-4 w-4 mr-1" />
+                    Change Email
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Email Address</DialogTitle>
+                    <DialogDescription>
+                      Enter your new email address. We'll send a verification link to confirm the change.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <label htmlFor="new-email" className="text-sm font-medium">
+                        New Email Address
+                      </label>
+                      <Input
+                        id="new-email"
+                        type="email"
+                        placeholder="Enter new email address"
+                        value={newEmail}
+                        onChange={(e) => {
+                          setNewEmail(e.target.value);
+                          setEmailError("");
+                        }}
+                        disabled={updateEmailMutation.isPending}
+                        data-testid="input-new-email"
+                      />
+                      {emailError && (
+                        <p className="text-sm text-destructive" data-testid="text-email-error">{emailError}</p>
+                      )}
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                      <p className="font-medium mb-1">Important:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Your current email is: {user?.email}</li>
+                        <li>After changing, you'll need to verify your new email</li>
+                        <li>You'll use your new email to sign in</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEmailDialogOpen(false)}
+                      disabled={updateEmailMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleEmailChange}
+                      disabled={updateEmailMutation.isPending || !newEmail.trim()}
+                      data-testid="button-confirm-email-change"
+                    >
+                      {updateEmailMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Email"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          
+          {/* Info message for unverified email */}
+          {!user?.emailVerified && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-400">Email verification required</p>
+                <p className="text-amber-700 dark:text-amber-500">
+                  Please verify your email address to access all features. Check your inbox for the verification link or click "Resend Verification" above.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Organization Settings Section */}
       <div>
         <h2 className="text-lg font-semibold mb-4">{t('settings.organizationSettings')}</h2>
         <Form {...form}>

@@ -442,6 +442,21 @@ const registerLimiter = rateLimit({
   },
 });
 
+// Rate limiter for password reset endpoint
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 password reset requests per 15 minutes
+  message: "Too many password reset attempts, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    safeLog(`[Security] Rate limit exceeded for password reset from IP: ${req.ip}`);
+    res.status(429).json({ 
+      message: "Too many password reset attempts, please try again later" 
+    });
+  },
+});
+
 // Configure WebSocket for Neon
 if (ws) {
   neonConfig.webSocketConstructor = ws;
@@ -600,7 +615,7 @@ const db = drizzle(pool);
 
 // Validation Schemas
 const securePasswordSchema = z.string()
-  .min(7, "Password must be at least 7 characters long")
+  .min(8, "Password must be at least 8 characters long")
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[a-zA-Z]/, "Password must contain at least one letter")
   .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, "Password must contain at least one special character");
@@ -1201,6 +1216,19 @@ const storage = {
     } catch (error) {
       console.error("Error getting notifications by user:", error);
       return [];
+    }
+  },
+
+  async getNotificationById(id) {
+    try {
+      const [notification] = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.id, id));
+      return notification;
+    } catch (error) {
+      console.error("Error getting notification by ID:", error);
+      return undefined;
     }
   },
 
@@ -2793,8 +2821,9 @@ app.post("/api/update-email", async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
     
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validate email format with more robust regex
+    // RFC 5322 compliant email validation
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
@@ -2850,7 +2879,7 @@ app.post("/api/update-email", async (req, res) => {
   }
 });
 
-app.post("/api/request-password-reset", async (req, res) => {
+app.post("/api/request-password-reset", passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     
@@ -3384,12 +3413,20 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
 
 app.post("/api/notifications", requireAuth, async (req, res) => {
   try {
-    // In entrypoint.js, we skip Zod validation for simplicity
-    const notification = await storage.createNotification(req.body);
+    const data = req.body;
+    
+    // SECURITY: Only allow creating notifications for the authenticated user or system notifications
+    // This prevents users from creating notifications for other users
+    if (data.userId !== req.user.id && data.type !== 'system') {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to create notification for user ${data.userId}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationCreate');
+    }
+    
+    const notification = await storage.createNotification(data);
     
     // Send real-time notification if user is connected
     if (global.sendNotificationToUser) {
-      global.sendNotificationToUser(req.body.userId, notification);
+      global.sendNotificationToUser(data.userId, notification);
     }
     
     res.status(201).json(notification);
@@ -3402,6 +3439,16 @@ app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
   try {
     const id = validatePositiveInt(req.params.id, 'Notification ID', res);
     if (id === null) return;
+    
+    // SECURITY: Verify the notification belongs to the authenticated user
+    const existingNotification = await storage.getNotificationById(id);
+    if (!existingNotification) {
+      return sendErrorResponse(res, new Error('Not found'), 404, ErrorMessages.NOT_FOUND, 'NotificationNotFound');
+    }
+    if (existingNotification.userId !== req.user.id) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to mark notification ${id} as read`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationMarkRead');
+    }
     
     const notification = await storage.markNotificationAsRead(id);
     res.json(notification);
@@ -3423,6 +3470,16 @@ app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
   try {
     const id = validatePositiveInt(req.params.id, 'Notification ID', res);
     if (id === null) return;
+    
+    // SECURITY: Verify the notification belongs to the authenticated user
+    const existingNotification = await storage.getNotificationById(id);
+    if (!existingNotification) {
+      return sendErrorResponse(res, new Error('Not found'), 404, ErrorMessages.NOT_FOUND, 'NotificationNotFound');
+    }
+    if (existingNotification.userId !== req.user.id) {
+      safeLog(`Authorization failed: User ${req.user?.id} attempted to delete notification ${id}`);
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationDelete');
+    }
     
     await storage.deleteNotification(id);
     res.json({ message: "Notification deleted" });

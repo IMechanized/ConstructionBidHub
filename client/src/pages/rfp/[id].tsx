@@ -29,6 +29,7 @@ import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { RfpDetailContent } from "@/components/rfp-detail-content";
+import { RfpDetailSkeleton } from "@/components/skeletons";
 
 export default function RfpPage() {
   const { id } = useParams();
@@ -213,11 +214,7 @@ export default function RfpPage() {
   };
 
   if (loadingRfp) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin">Loading...</div>
-      </div>
-    );
+    return <RfpDetailSkeleton />;
   }
 
   if (!rfp) {

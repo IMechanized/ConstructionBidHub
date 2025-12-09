@@ -21,6 +21,7 @@ import html2pdf from 'html2pdf.js';
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
 import DOMPurify from 'dompurify';
+import { ReportDetailSkeleton } from "@/components/skeletons";
 
 export default function DetailedReportPage() {
   const { id } = useParams();
@@ -89,8 +90,13 @@ export default function DetailedReportPage() {
 
   if (loadingRfp) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <DashboardSidebar currentPath={location} />
+        <div className="flex-1 md:ml-[280px]">
+          <main className="w-full min-h-screen pb-16 md:pb-0 mt-14 md:mt-0">
+            <ReportDetailSkeleton />
+          </main>
+        </div>
       </div>
     );
   }

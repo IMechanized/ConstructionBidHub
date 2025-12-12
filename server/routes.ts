@@ -104,7 +104,9 @@ export function registerRoutes(app: Express): Server {
           "'self'", "'unsafe-inline'", "'unsafe-eval'",
           "https://js.stripe.com",
           "https://maps.googleapis.com",
-          "https://*.googleapis.com"
+          "https://*.googleapis.com",
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com"
         ],
         styleSrc: [
           "'self'", "'unsafe-inline'",
@@ -139,7 +141,11 @@ export function registerRoutes(app: Express): Server {
           "https://*.google.com",
           "https://*.gstatic.com",
           "https://*.s3.amazonaws.com",
-          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
+          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com",
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com",
+          "https://*.google-analytics.com",
+          "https://analytics.google.com"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],
@@ -1041,10 +1047,7 @@ export function registerRoutes(app: Express): Server {
         updatedRfis 
       });
     } catch (error) {
-      console.error('Error in bulk RFI status update:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to bulk update RFI status"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'BulkRFIStatusUpdate');
     }
   });
 
@@ -1086,10 +1089,7 @@ export function registerRoutes(app: Express): Server {
       const messages = await storage.getRfiMessages(rfiId);
       res.json(messages);
     } catch (error) {
-      console.error('Error fetching RFI messages:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to fetch RFI messages"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFIMessages');
     }
   });
 
@@ -1234,10 +1234,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(createdMessage);
     } catch (error) {
-      console.error('Error sending RFI message:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to send message"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'RFIMessageSend');
     }
   });
 
@@ -1271,10 +1268,7 @@ export function registerRoutes(app: Express): Server {
         amount: paymentIntent.amount
       });
     } catch (error) {
-      console.error('Error creating payment intent:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to create payment intent"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PaymentIntent');
     }
   });
   
@@ -1312,10 +1306,7 @@ export function registerRoutes(app: Express): Server {
         rfp: updatedRfp
       });
     } catch (error) {
-      console.error('Error confirming payment:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to confirm payment"
-      });
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'PaymentConfirm');
     }
   });
 
@@ -1442,6 +1433,14 @@ export function registerRoutes(app: Express): Server {
     try {
       requireAuth(req);
       const data = insertNotificationSchema.parse(req.body);
+      
+      // SECURITY: Only allow creating notifications for the authenticated user or system notifications
+      // This prevents users from creating notifications for other users
+      if (data.userId !== req.user!.id && data.type !== 'system') {
+        logAuthorizationFailure(req.user?.id, `Notification for user ${data.userId}`, 'create', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationCreate');
+      }
+      
       const notification = await storage.createNotification(data);
       
       // Send real-time notification if user is connected
@@ -1461,6 +1460,16 @@ export function registerRoutes(app: Express): Server {
       
       const id = validatePositiveInt(req.params.id, 'Notification ID', res);
       if (id === null) return;
+      
+      // SECURITY: Verify the notification belongs to the authenticated user
+      const existingNotification = await storage.getNotificationById(id);
+      if (!existingNotification) {
+        return sendErrorResponse(res, new Error('Not found'), 404, ErrorMessages.NOT_FOUND, 'NotificationNotFound');
+      }
+      if (existingNotification.userId !== req.user!.id) {
+        logAuthorizationFailure(req.user?.id, `Notification ${id}`, 'mark read', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationMarkRead');
+      }
       
       const notification = await storage.markNotificationAsRead(id);
       res.json(notification);
@@ -1485,6 +1494,16 @@ export function registerRoutes(app: Express): Server {
       
       const id = validatePositiveInt(req.params.id, 'Notification ID', res);
       if (id === null) return;
+      
+      // SECURITY: Verify the notification belongs to the authenticated user
+      const existingNotification = await storage.getNotificationById(id);
+      if (!existingNotification) {
+        return sendErrorResponse(res, new Error('Not found'), 404, ErrorMessages.NOT_FOUND, 'NotificationNotFound');
+      }
+      if (existingNotification.userId !== req.user!.id) {
+        logAuthorizationFailure(req.user?.id, `Notification ${id}`, 'delete', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'NotificationDelete');
+      }
       
       await storage.deleteNotification(id);
       res.json({ message: "Notification deleted" });

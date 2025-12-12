@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link as LinkIcon, Unlink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PdfLoadingSkeleton } from "@/components/skeletons";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -173,7 +174,7 @@ export function DocumentComparison({ documents }: DocumentComparisonProps) {
               <Document
                 file={documents[leftDoc]?.url}
                 onLoadSuccess={({ numPages }) => setLeftNumPages(numPages)}
-                loading={<div className="p-8">Loading...</div>}
+                loading={<PdfLoadingSkeleton />}
                 error={<div className="p-8 text-destructive">Failed to load</div>}
               >
                 <Page pageNumber={leftPage} scale={scale} />
@@ -215,7 +216,7 @@ export function DocumentComparison({ documents }: DocumentComparisonProps) {
               <Document
                 file={documents[rightDoc]?.url}
                 onLoadSuccess={({ numPages }) => setRightNumPages(numPages)}
-                loading={<div className="p-8">Loading...</div>}
+                loading={<PdfLoadingSkeleton />}
                 error={<div className="p-8 text-destructive">Failed to load</div>}
               >
                 <Page pageNumber={rightPage} scale={scale} />

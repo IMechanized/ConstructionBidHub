@@ -73,7 +73,6 @@ export default function AuthPage() {
                 <Form {...loginForm}>
                   <form 
                     onSubmit={loginForm.handleSubmit((data) => {
-                      console.log('Submitting login form with data:', data);
                       loginMutation.mutate(data);
                     })}
                   >

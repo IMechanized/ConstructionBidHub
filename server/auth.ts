@@ -62,6 +62,20 @@ const registerLimiter = rateLimit({
   },
 });
 
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 password reset requests per 15 minutes
+  message: "Too many password reset attempts, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logRateLimitHit('/api/request-password-reset', req);
+    res.status(429).json({ 
+      message: "Too many password reset attempts, please try again later" 
+    });
+  },
+});
+
 export function setupAuth(app: Express) {
   console.log('[Auth] Initializing Passport authentication...');
   
@@ -412,8 +426,9 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email is required" });
       }
       
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Validate email format with more robust regex
+      // RFC 5322 compliant email validation
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({ message: "Invalid email format" });
       }
@@ -474,7 +489,7 @@ export function setupAuth(app: Express) {
    */
   
   // Request password reset
-  app.post("/api/request-password-reset", async (req, res) => {
+  app.post("/api/request-password-reset", passwordResetLimiter, async (req, res) => {
     try {
       const { email } = req.body;
       

@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
-import { Download } from "lucide-react";
+import { Download, Award } from "lucide-react";
+import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
 import { Badge } from "@/components/ui/badge";
 import { getCertificationClasses } from "@/lib/utils";
@@ -114,10 +115,18 @@ export default function DetailedReportPage() {
           <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
-              <Button onClick={handleDownload} className="w-full sm:w-auto">
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link href={`/reports/certification/${id}`}>
+                  <Button variant="outline" className="w-full sm:w-auto" data-testid="link-certification-report">
+                    <Award className="mr-2 h-4 w-4" />
+                    Certification Report
+                  </Button>
+                </Link>
+                <Button onClick={handleDownload} className="w-full sm:w-auto" data-testid="button-download-pdf">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
             </div>
 
             <div id="report-content" className="space-y-8">

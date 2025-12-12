@@ -1,0 +1,38 @@
+sw.js:121 Connecting to 'https://www.googletagmanager.com/gtag/js?id=G-TKVBQ9DWTH' violates the following Content Security Policy directive: "connect-src 'self' https://js.stripe.com https://api.stripe.com https://m.stripe.network https://m.stripe.com https://fonts.googleapis.com https://fonts.gstatic.com https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.google.com https://*.gstatic.com https://*.s3.amazonaws.com https://findconstructionbids-dev.s3.us-east-1.amazonaws.com". The action has been blocked.
+(anonymous) @ sw.js:121
+sw.js:121 Fetch API cannot load https://www.googletagmanager.com/gtag/js?id=G-TKVBQ9DWTH. Refused to connect because it violates the document's Content Security Policy.
+(anonymous) @ sw.js:121
+sw.js:133 Service Worker: Navigation fetch failed TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at sw.js:121:7
+dashboard:1 Refused to execute script from 'https://www.googletagmanager.com/gtag/js?id=G-TKVBQ9DWTH' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.
+index-Cwba_zTD.js:607 ✅ Stripe client initialized
+index-Cwba_zTD.js:48 [QueryClient] Fetching: /api/user
+index-Cwba_zTD.js:48 [QueryClient] Response status: 200
+index-Cwba_zTD.js:48 [QueryClient] Response data: {id: 87, email: 'Henriette.Effertz@gmail.com', password: '505529dba2deb3c325d434b65534eaeeb1231b437e62516360…a8f40f0197a5bbbd.321c4ba3b7b29b7b23dc272b299ae1b4', companyName: 'Dickinson Inc', companyWebsite: 'findconstructionbids.com', …}
+index-Cwba_zTD.js:48 [QueryClient] Fetching: /api/notifications
+index-Cwba_zTD.js:48 [QueryClient] Fetching: /api/rfps
+index-Cwba_zTD.js:48 [QueryClient] Fetching: /api/rfis
+index-Cwba_zTD.js:481 WebSocket connection to 'wss://construction-bid-hub-mechanizedinc.replit.app/ws' failed: WebSocket is closed before the connection is established.
+(anonymous) @ index-Cwba_zTD.js:481
+T4 @ index-Cwba_zTD.js:40
+mw @ index-Cwba_zTD.js:40
+vy @ index-Cwba_zTD.js:40
+F6 @ index-Cwba_zTD.js:40
+hp @ index-Cwba_zTD.js:38
+Hve @ index-Cwba_zTD.js:40
+Yp @ index-Cwba_zTD.js:40
+DJ @ index-Cwba_zTD.js:40
+C @ index-Cwba_zTD.js:25
+I @ index-Cwba_zTD.js:25
+index-Cwba_zTD.js:481 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+x.onerror @ index-Cwba_zTD.js:481
+index-Cwba_zTD.js:481 WebSocket disconnected
+index-Cwba_zTD.js:48 [QueryClient] Response status: 200
+index-Cwba_zTD.js:48 [QueryClient] Response data: [{…}]
+index-Cwba_zTD.js:481 WebSocket connected for notifications
+index-Cwba_zTD.js:48 [QueryClient] Response status: 200
+index-Cwba_zTD.js:48 [QueryClient] Response status: 200
+index-Cwba_zTD.js:48 [QueryClient] Response data: (290) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, …]
+index-Cwba_zTD.js:48 [QueryClient] Response data: (55) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+index-Cwba_zTD.js:481 WebSocket authentication successful
+index-Cwba_zTD.js:916 Service Worker registered successfully (scope: https://construction-bid-hub-mechanizedinc.replit.app/)

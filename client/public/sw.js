@@ -1,5 +1,5 @@
 // Update this version number whenever you deploy changes
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const CACHE_NAME = `findconstructionbids-v${VERSION}`;
 const STATIC_CACHE_NAME = `findconstructionbids-static-v${VERSION}`;
 
@@ -27,7 +27,9 @@ const isThirdPartyResource = (request) => {
     'gstatic.com',
     'google.com',
     'amazonaws.com',
-    'cloudinary.com'
+    'cloudinary.com',
+    'googletagmanager.com',
+    'google-analytics.com'
   ];
   
   return thirdPartyDomains.some(domain => hostname.includes(domain));

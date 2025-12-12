@@ -104,7 +104,9 @@ export function registerRoutes(app: Express): Server {
           "'self'", "'unsafe-inline'", "'unsafe-eval'",
           "https://js.stripe.com",
           "https://maps.googleapis.com",
-          "https://*.googleapis.com"
+          "https://*.googleapis.com",
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com"
         ],
         styleSrc: [
           "'self'", "'unsafe-inline'",
@@ -139,7 +141,11 @@ export function registerRoutes(app: Express): Server {
           "https://*.google.com",
           "https://*.gstatic.com",
           "https://*.s3.amazonaws.com",
-          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com"
+          "https://findconstructionbids-dev.s3.us-east-1.amazonaws.com",
+          "https://www.googletagmanager.com",
+          "https://www.google-analytics.com",
+          "https://*.google-analytics.com",
+          "https://analytics.google.com"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],

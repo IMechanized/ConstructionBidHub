@@ -1444,6 +1444,7 @@ app.use(helmet({
         "https://www.googletagmanager.com",
         "https://www.google-analytics.com",
         "https://vercel.live",
+        "https://vercel.live/",
         "https://*.vercel.live"
       ],
       styleSrc: [
@@ -1487,6 +1488,7 @@ app.use(helmet({
         "https://*.google-analytics.com",
         "https://analytics.google.com",
         "https://vercel.live",
+        "https://vercel.live/",
         "https://*.vercel.live",
         "wss://vercel.live",
         "wss://*.vercel.live"

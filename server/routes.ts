@@ -108,6 +108,7 @@ export function registerRoutes(app: Express): Server {
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
           "https://vercel.live",
+          "https://vercel.live/",
           "https://*.vercel.live"
         ],
         styleSrc: [
@@ -149,6 +150,7 @@ export function registerRoutes(app: Express): Server {
           "https://*.google-analytics.com",
           "https://analytics.google.com",
           "https://vercel.live",
+          "https://vercel.live/",
           "https://*.vercel.live",
           "wss://vercel.live",
           "wss://*.vercel.live"

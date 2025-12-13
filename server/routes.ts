@@ -106,7 +106,9 @@ export function registerRoutes(app: Express): Server {
           "https://maps.googleapis.com",
           "https://*.googleapis.com",
           "https://www.googletagmanager.com",
-          "https://www.google-analytics.com"
+          "https://www.google-analytics.com",
+          "https://vercel.live",
+          "https://*.vercel.live"
         ],
         styleSrc: [
           "'self'", "'unsafe-inline'",
@@ -145,7 +147,11 @@ export function registerRoutes(app: Express): Server {
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
           "https://*.google-analytics.com",
-          "https://analytics.google.com"
+          "https://analytics.google.com",
+          "https://vercel.live",
+          "https://*.vercel.live",
+          "wss://vercel.live",
+          "wss://*.vercel.live"
         ],
         frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],

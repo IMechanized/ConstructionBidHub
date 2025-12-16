@@ -43,14 +43,6 @@ integrations = ["javascript_stripe:1.0.0", "javascript_websocket:1.0.0"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 36289
-externalPort = 3000
-
-[[ports]]
-localPort = 45557
-externalPort = 3001
-
 [userenv]
 
 [userenv.shared]

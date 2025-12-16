@@ -25,13 +25,20 @@ export function LandingPageHeader() {
             Support
           </Link>
           <ThemeToggle size="sm" />
-          <Button asChild variant="outline" size="sm" className="text-base">
-            {user ? (
+          {user ? (
+            <Button asChild variant="outline" size="sm" className="text-base" data-testid="button-dashboard">
               <Link href="/dashboard">Dashboard</Link>
-            ) : (
-              <Link href="/auth">Get Started</Link>
-            )}
-          </Button>
+            </Button>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm" className="text-base" data-testid="button-login">
+                <Link href="/auth">Login</Link>
+              </Button>
+              <Button asChild variant="default" size="sm" className="text-base" data-testid="button-get-started">
+                <Link href="/auth">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Navigation - Hamburger Menu */}
@@ -66,17 +73,35 @@ export function LandingPageHeader() {
                     <ThemeToggle size="sm" />
                   </div>
                   
-                  <Button
-                    variant="outline"
-                    className="w-full text-base"
-                    asChild
-                  >
-                    {user ? (
+                  {user ? (
+                    <Button
+                      variant="outline"
+                      className="w-full text-base"
+                      asChild
+                      data-testid="mobile-button-dashboard"
+                    >
                       <Link href="/dashboard">Dashboard</Link>
-                    ) : (
-                      <Link href="/auth">Get Started</Link>
-                    )}
-                  </Button>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="w-full text-base"
+                        asChild
+                        data-testid="mobile-button-login"
+                      >
+                        <Link href="/auth">Login</Link>
+                      </Button>
+                      <Button
+                        variant="default"
+                        className="w-full text-base"
+                        asChild
+                        data-testid="mobile-button-get-started"
+                      >
+                        <Link href="/auth">Get Started</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

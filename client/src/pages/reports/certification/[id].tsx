@@ -15,7 +15,6 @@ export default function CertificationReportPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [location, navigate] = useLocation();
-  const { theme } = useTheme();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
     queryKey: [`/api/rfps/${id}`],
@@ -76,28 +75,6 @@ export default function CertificationReportPage() {
 
     return { matched: matchedBidders, total: totalBidders, percentage };
   }, [certificationGoals, bidderCertifications]);
-
-  const goalsVsActualData = useMemo(() => {
-    if (!certificationGoals.length) return [];
-    return certificationGoals
-      .filter(goal => goal && typeof goal === 'string' && goal !== "None")
-      .map(goal => {
-        const actualCount = certificationStats.find(s => s.name === goal)?.count || 0;
-        return {
-          name: goal.length > 15 ? goal.substring(0, 12) + '...' : goal,
-          fullName: goal,
-          required: 1,
-          actual: actualCount,
-        };
-      });
-  }, [certificationGoals, certificationStats]);
-
-  const pieChartData = useMemo(() => {
-    return certificationStats.map((stat, index) => ({
-      ...stat,
-      color: CHART_COLORS[index % CHART_COLORS.length],
-    }));
-  }, [certificationStats]);
 
   const breadcrumbItems = [
     { label: "Dashboard", href: "/dashboard" },

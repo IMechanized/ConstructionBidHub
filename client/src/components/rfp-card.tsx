@@ -45,23 +45,23 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
       onClick={handleNavigation}
     >
       <CardContent className={compact ? "p-3 sm:p-4" : "p-4 sm:p-6"}>
-        {/* Organization Header */}
+        {/* Client/Organization Header */}
         <div className="flex flex-col items-center gap-2 mb-3 text-center">
           <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
             {rfp.organization?.logo ? (
               <img
                 src={rfp.organization.logo}
-                alt={`${rfp.organization.companyName} logo`}
+                alt={`${rfp.clientName || rfp.organization.companyName} logo`}
                 className="object-cover"
               />
             ) : (
               <span className="text-base sm:text-lg">
-                {rfp.organization?.companyName?.charAt(0)}
+                {(rfp.clientName || rfp.organization?.companyName)?.charAt(0)}
               </span>
             )}
           </Avatar>
-          <span className="font-medium text-sm sm:text-base line-clamp-1">
-            {rfp.organization?.companyName || "Unknown Organization"}
+          <span className="font-medium text-sm sm:text-base line-clamp-1" data-testid="rfp-client-name">
+            {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
           </span>
           <div className="flex gap-1.5 flex-wrap justify-center">
             {rfp.featured && (

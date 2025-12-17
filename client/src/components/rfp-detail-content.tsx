@@ -72,14 +72,19 @@ export function RfpDetailContent({
 
         <hr className="my-4 sm:my-6 border-muted" />
 
-        {/* Title and Organization Section */}
+        {/* Title and Client/Organization Section */}
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
             <div className="flex-1">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{rfp.title}</h1>
-              <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-                {rfp.organization?.companyName || "Unknown Organization"}
+              <p className="text-muted-foreground mt-2 text-sm sm:text-base" data-testid="rfp-detail-client-name">
+                {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
               </p>
+              {rfp.clientName && rfp.clientName !== rfp.organization?.companyName && (
+                <p className="text-muted-foreground text-xs mt-1">
+                  Posted by: {rfp.organization?.companyName}
+                </p>
+              )}
             </div>
             <div id="download-button" className="shrink-0">
               <Button variant="outline" size="sm" onClick={handleDownload} className="w-full sm:w-auto">

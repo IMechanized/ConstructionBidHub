@@ -16,6 +16,7 @@ const resources = {
         submitting: 'Submitting...'
       },
       validation: {
+        clientNameRequired: 'Client name is required',
         titleRequired: 'Title is required',
         descriptionRequired: 'Description is required',
         jobStreetRequired: 'Street address is required',
@@ -98,6 +99,9 @@ const resources = {
         deleteWarning: 'This action cannot be undone. This will permanently delete your account and remove all your data from our servers.'
       },
       rfp: {
+        clientName: 'Client Name',
+        enterClientName: 'Enter client/organization name',
+        useMyOrganization: 'Use my organization name',
         title: 'Project Title',
         enterTitle: 'Enter RFP title',
         description: 'Project Description',
@@ -170,6 +174,7 @@ const resources = {
         error: 'Error'
       },
       validation: {
+        clientNameRequired: 'El nombre del cliente es obligatorio',
         titleRequired: 'El título es obligatorio',
         descriptionRequired: 'La descripción es obligatoria',
         jobStreetRequired: 'La dirección es obligatoria',
@@ -181,6 +186,11 @@ const resources = {
         deadlineRequired: 'La fecha límite es obligatoria',
         validEmail: 'Por favor, introduzca una dirección de correo electrónico válida',
         messageRequired: 'Por favor, introduzca su pregunta o mensaje'
+      },
+      rfp: {
+        clientName: 'Nombre del Cliente',
+        enterClientName: 'Ingrese el nombre del cliente/organización',
+        useMyOrganization: 'Usar el nombre de mi organización'
       },
       auth: {
         login: 'Iniciar Sesión',

@@ -131,7 +131,7 @@ export default function CertificationReportPage() {
       margin: 0.5,
       filename: `${rfp?.title}-certification-report.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
@@ -188,6 +188,23 @@ export default function CertificationReportPage() {
             </div>
 
             <div id="certification-report-content" className="space-y-6">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b">
+                <img
+                  src="/fcb-logo.png"
+                  alt="FindConstructionBids Logo"
+                  className="h-16 object-contain"
+                  data-testid="img-fcb-logo"
+                />
+                {user?.logo && (
+                  <img
+                    src={user.logo}
+                    alt={`${user.companyName} Logo`}
+                    className="h-16 object-contain"
+                    crossOrigin="anonymous"
+                    data-testid="img-client-logo"
+                  />
+                )}
+              </div>
               <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Award className="h-8 w-8 text-primary" />

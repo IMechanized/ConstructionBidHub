@@ -169,6 +169,7 @@ export class DatabaseStorage implements IStorage {
     const [newRfp] = await db
       .insert(rfps)
       .values({
+        clientName: rfp.clientName,
         title: rfp.title,
         description: rfp.description,
         walkthroughDate: new Date(rfp.walkthroughDate),
@@ -180,6 +181,7 @@ export class DatabaseStorage implements IStorage {
         jobZip: rfp.jobZip,
         budgetMin: rfp.budgetMin || null,
         certificationGoals: rfp.certificationGoals || null,
+        desiredTrades: rfp.desiredTrades || null,
         portfolioLink: rfp.portfolioLink || null,
         organizationId: rfp.organizationId,
         featured: rfp.featured || false,

@@ -149,6 +149,10 @@ This approach ensures large files never transit through Vercel's serverless func
 ## Changelog
 
 Changelog:
+- December 16, 2025: UX improvements and session/routing fixes
+  - **Login Button**: Added dedicated "Login" button to top navigation alongside "Get Started" for clearer user flow
+  - **Session Duration**: Extended session cookie duration from 24 hours to 30 days to reduce re-login frequency
+  - **SPA Routing Fix**: Reorganized Express route ordering in entrypoint.js - moved static file serving and SPA catch-all after all API routes to prevent route conflicts and blank page issues on Vercel
 - December 5, 2025: Fixed Vercel deployment caching issues causing blank pages and stale content
   - **Service Worker v2.0.0**: Complete rewrite of caching strategy
     - Network-first for HTML navigation requests ensures fresh content

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import {
   Table,
@@ -20,13 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown, FileText, Award } from "lucide-react";
+import { FileText } from "lucide-react";
 
 interface RfpReportProps {
   rfps: Rfp[];
@@ -72,30 +65,15 @@ export default function RfpReport({ rfps }: RfpReportProps) {
                     ${rfp.budgetMin?.toLocaleString() || "N/A"}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" data-testid={`button-view-reports-${rfp.id}`}>
-                          View Reports
-                          <ChevronDown className="ml-1 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => navigate(`/reports/${rfp.id}`)}
-                          data-testid={`link-detailed-report-${rfp.id}`}
-                        >
-                          <FileText className="mr-2 h-4 w-4" />
-                          Detailed Report
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => navigate(`/reports/certification/${rfp.id}`)}
-                          data-testid={`link-certification-report-${rfp.id}`}
-                        >
-                          <Award className="mr-2 h-4 w-4" />
-                          Certification Report
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => navigate(`/reports/${rfp.id}`)}
+                      data-testid={`button-view-report-${rfp.id}`}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Report
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -81,6 +81,7 @@ export const users = pgTable("users", {
  */
 export const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
+  clientName: text("client_name"),                                // Client/organization name for RFP attribution
   title: text("title").notNull(),
   description: text("description").notNull(),
   walkthroughDate: timestamp("walkthrough_date").notNull(),  // Site visit date
@@ -262,6 +263,7 @@ export const passwordResetSchema = z.object({
 // RFP creation validation
 export const insertRfpSchema = createInsertSchema(rfps)
   .pick({
+    clientName: true,
     title: true,
     description: true,
     walkthroughDate: true,
@@ -279,6 +281,7 @@ export const insertRfpSchema = createInsertSchema(rfps)
     featured: true,
   })
   .extend({
+    clientName: z.string().min(1, "Client name is required"),
     walkthroughDate: z.string(),
     rfiDate: z.string(),
     deadline: z.string(),

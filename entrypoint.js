@@ -1516,7 +1516,7 @@ const sessionConfig = {
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours - consistent timeout
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days - extended session duration
     sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax' // Use lax for better compatibility
   }
 };
@@ -2328,24 +2328,6 @@ app.post("/api/upload-document", requireAuth, upload.single('file'), async (req,
   }
 });
 
-// Serve static files
-const staticDir = path.join(process.cwd(), 'dist/public');
-if (fs.existsSync(staticDir)) {
-  app.use(express.static(staticDir));
-
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(path.join(staticDir, 'index.html'));
-  });
-}
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Internal server error" });
-});
 
 // STRIPE PAYMENT PROCESSING SYSTEM
 // Payment Routes - Fully rewritten implementation
@@ -3506,6 +3488,37 @@ app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
   } catch (error) {
     sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
   }
+});
+
+// Serve static files - MUST be placed after all API routes
+const staticDir = path.join(process.cwd(), 'dist/public');
+if (fs.existsSync(staticDir)) {
+  app.use(express.static(staticDir));
+}
+
+// SPA catch-all - serves index.html for all non-API routes (must be after all API routes)
+app.get('*', (req, res, next) => {
+  // Skip API routes - let them fall through to 404
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  
+  // Try multiple possible locations for index.html
+  const possiblePaths = [
+    path.join(process.cwd(), 'dist/public/index.html'),
+    path.join(process.cwd(), 'dist/index.html'),
+    path.join(process.cwd(), 'public/index.html'),
+  ];
+  
+  for (const indexPath of possiblePaths) {
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+  }
+  
+  // If no index.html found, return a helpful error
+  console.error('[SPA] index.html not found. Searched paths:', possiblePaths);
+  res.status(404).send('Application not found. Build may be incomplete.');
 });
 
 // Error handling middleware

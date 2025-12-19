@@ -55,6 +55,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const [existingDocuments, setExistingDocuments] = useState<RfpDocument[]>([]);
   const [documentsToDelete, setDocumentsToDelete] = useState<number[]>([]);
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [useOwnOrganization, setUseOwnOrganization] = useState(rfp.clientName === user?.companyName);
   
   // Fetch the featured RFP price
   const { data: featuredPrice = 2500, isLoading: isPriceLoading } = useQuery({
@@ -81,6 +82,7 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   const form = useForm({
     resolver: zodResolver(editRfpSchema),
     defaultValues: {
+      clientName: rfp.clientName || "",
       title: rfp.title,
       description: rfp.description,
       jobStreet: rfp.jobStreet,
@@ -98,6 +100,16 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       featured: rfp.featured,
     },
   });
+
+  // Handle "Use my organization name" checkbox
+  const handleUseOwnOrganization = (checked: boolean) => {
+    setUseOwnOrganization(checked);
+    if (checked && user?.companyName) {
+      form.setValue("clientName", user.companyName, { shouldValidate: true });
+    } else {
+      form.setValue("clientName", "", { shouldValidate: true });
+    }
+  };
 
   // Common mutation function for updating RFP
   const updateRfpMutationFn = async (data: any) => {
@@ -257,6 +269,39 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
+        {/* Client Name Field */}
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="clientName">{t('rfp.clientName')}</Label>
+            <Input
+              id="clientName"
+              data-testid="client-name-input"
+              {...form.register("clientName")}
+              placeholder={t('rfp.enterClientName')}
+              disabled={useOwnOrganization}
+            />
+            {form.formState.errors.clientName && (
+              <p className="text-sm text-destructive mt-1">
+                {form.formState.errors.clientName.message}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="use-own-organization-edit"
+              data-testid="use-own-organization-checkbox"
+              checked={useOwnOrganization}
+              onCheckedChange={handleUseOwnOrganization}
+            />
+            <label 
+              htmlFor="use-own-organization-edit" 
+              className="text-sm cursor-pointer"
+            >
+              {t('rfp.useMyOrganization')}
+            </label>
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="title">Project Title</Label>
           <Input

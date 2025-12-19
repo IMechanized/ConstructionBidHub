@@ -73,10 +73,14 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
     }
   }, [user?.language, i18n]);
 
+  // State for "Use my organization name" checkbox
+  const [useOwnOrganization, setUseOwnOrganization] = useState(false);
+
   // Initialize form with validation schema and default values
   const form = useForm({
     resolver: zodResolver(
       insertRfpSchema.extend({
+        clientName: insertRfpSchema.shape.clientName.min(1, t('validation.clientNameRequired')),
         title: insertRfpSchema.shape.title.min(1, t('validation.titleRequired')),
         description: insertRfpSchema.shape.description.min(1, t('validation.descriptionRequired')),
         jobStreet: insertRfpSchema.shape.jobStreet.min(1, t('validation.jobStreetRequired')),
@@ -89,6 +93,7 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       })
     ),
     defaultValues: {
+      clientName: "",
       title: "",
       description: "",
       walkthroughDate: "",
@@ -106,6 +111,16 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
       featured: false,
     },
   });
+
+  // Handle "Use my organization name" checkbox
+  const handleUseOwnOrganization = (checked: boolean) => {
+    setUseOwnOrganization(checked);
+    if (checked && user?.companyName) {
+      form.setValue("clientName", user.companyName, { shouldValidate: true });
+    } else {
+      form.setValue("clientName", "", { shouldValidate: true });
+    }
+  };
 
   // Mutation for creating new RFP
   const createRfpMutation = useMutation({
@@ -211,6 +226,42 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         onSubmit={form.handleSubmit(onSubmit)}
         data-testid="rfp-form"
       >
+        {/* Client Name Field */}
+        <div className="space-y-3">
+          <FormField
+            control={form.control}
+            name="clientName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('rfp.clientName')}</FormLabel>
+                <FormControl>
+                  <Input 
+                    data-testid="client-name-input"
+                    placeholder={t('rfp.enterClientName')}
+                    {...field}
+                    disabled={useOwnOrganization}
+                  />
+                </FormControl>
+                <FormMessage role="alert" data-testid="client-name-error" />
+              </FormItem>
+            )}
+          />
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="use-own-organization"
+              data-testid="use-own-organization-checkbox"
+              checked={useOwnOrganization}
+              onCheckedChange={handleUseOwnOrganization}
+            />
+            <label 
+              htmlFor="use-own-organization" 
+              className="text-sm cursor-pointer"
+            >
+              {t('rfp.useMyOrganization')}
+            </label>
+          </div>
+        </div>
+
         {/* Title Field */}
         <FormField
           control={form.control}

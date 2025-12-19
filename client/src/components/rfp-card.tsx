@@ -46,8 +46,8 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
     >
       <CardContent className={compact ? "p-3 sm:p-4" : "p-4 sm:p-6"}>
         {/* Client/Organization Header */}
-        <div className="flex flex-col items-center gap-2 mb-3 text-center">
-          <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+        <div className="flex items-center gap-3 mb-3">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
             {rfp.organization?.logo ? (
               <img
                 src={rfp.organization.logo}
@@ -60,20 +60,22 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
               </span>
             )}
           </Avatar>
-          <span className="font-medium text-sm sm:text-base line-clamp-1" data-testid="rfp-client-name">
-            {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
-          </span>
-          <div className="flex gap-1.5 flex-wrap justify-center">
-            {rfp.featured && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                Featured
-              </span>
-            )}
-            {isNew && !rfp.featured && (
-              <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
-                New
-              </span>
-            )}
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-sm sm:text-base line-clamp-1" data-testid="rfp-client-name">
+              {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
+            </span>
+            <div className="flex gap-1.5 flex-wrap">
+              {rfp.featured && (
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  Featured
+                </span>
+              )}
+              {isNew && !rfp.featured && (
+                <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
+                  New
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

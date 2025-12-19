@@ -15,8 +15,7 @@ import TermsPage from "@/pages/terms";
 import RfpDetailPage from "@/pages/rfp/[id]";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
 import OpportunitiesPage from "@/pages/opportunities/[type]";
-import DetailedReportPage from "@/pages/reports/[id]";
-import CertificationReportPage from "@/pages/reports/certification/[id]";
+import UnifiedReportPage from "@/pages/reports/[id]";
 import AllRfps from "@/pages/dashboard/all";
 import NewRfps from "@/pages/dashboard/new";
 import FeaturedRfps from "@/pages/dashboard/featured";
@@ -84,10 +83,10 @@ function Router() {
         <ProtectedRoute path="/dashboard/rfi-management/:id" component={RfiManagementPage} />
       </Route>
       <Route path="/reports/certification/:id">
-        <ProtectedRoute path="/reports/certification/:id" component={() => <CertificationReportPage />} />
+        <ProtectedRoute path="/reports/certification/:id" component={() => <UnifiedReportPage />} />
       </Route>
       <Route path="/reports/:id">
-        <ProtectedRoute path="/reports/:id" component={() => <DetailedReportPage />} />
+        <ProtectedRoute path="/reports/:id" component={() => <UnifiedReportPage />} />
       </Route>
       <Route path="/rfp/:id" component={RfpDetailPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />

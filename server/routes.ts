@@ -777,6 +777,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/analytics/rfp/:id/views", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      const viewSessions = await storage.getRfpViewSessions(id);
+      res.json(viewSessions);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPViewSessions');
+    }
+  });
+
   // Update the RFI endpoint
   app.post("/api/rfps/:id/rfi", async (req, res) => {
     try {

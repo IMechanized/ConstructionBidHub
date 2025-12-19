@@ -46,6 +46,7 @@ export interface IStorage {
   trackRfpView(rfpId: number, userId: number, duration: number): Promise<RfpViewSession>;
   getAnalyticsByRfpId(rfpId: number): Promise<RfpAnalytics | undefined>;
   updateAnalytics(rfpId: number, updates: Partial<RfpAnalytics>): Promise<RfpAnalytics>;
+  getRfpViewSessions(rfpId: number): Promise<(RfpViewSession & { user?: User })[]>;
 
   // RFI Operations
   createRfi(rfi: InsertRfi & { rfpId: number, organizationId?: number }): Promise<Rfi>;
@@ -357,6 +358,38 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error tracking RFP view:", error);
       throw error; // Re-throw to allow the caller to handle it
+    }
+  }
+
+  /**
+   * Gets all view sessions for a specific RFP with user information
+   */
+  async getRfpViewSessions(rfpId: number): Promise<(RfpViewSession & { user?: User })[]> {
+    try {
+      const viewSessions = await db
+        .select()
+        .from(rfpViewSessions)
+        .where(eq(rfpViewSessions.rfpId, rfpId))
+        .orderBy(desc(rfpViewSessions.viewDate));
+
+      const sessionsWithUser = await Promise.all(
+        viewSessions.map(async (session) => {
+          if (session.userId) {
+            const [user] = await db
+              .select()
+              .from(users)
+              .where(eq(users.id, session.userId))
+              .limit(1);
+            return { ...session, user: user || undefined };
+          }
+          return { ...session, user: undefined };
+        })
+      );
+
+      return sessionsWithUser;
+    } catch (error) {
+      console.error("Error getting RFP view sessions:", error);
+      return [];
     }
   }
 

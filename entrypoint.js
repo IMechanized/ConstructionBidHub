@@ -519,6 +519,7 @@ const users = pgTable("users", {
 
 const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
+  clientName: text("client_name"),
   title: text("title").notNull(),
   description: text("description").notNull(),
   walkthroughDate: timestamp("walkthrough_date").notNull(),

@@ -1092,6 +1092,35 @@ const storage = {
     }
   },
 
+  async getRfpViewSessions(rfpId) {
+    try {
+      const viewSessionsList = await db
+        .select()
+        .from(rfpViewSessions)
+        .where(eq(rfpViewSessions.rfpId, rfpId))
+        .orderBy(desc(rfpViewSessions.viewDate));
+
+      const sessionsWithUser = await Promise.all(
+        viewSessionsList.map(async (session) => {
+          if (session.userId) {
+            const [user] = await db
+              .select()
+              .from(users)
+              .where(eq(users.id, session.userId))
+              .limit(1);
+            return { ...session, user: user || undefined };
+          }
+          return { ...session, user: undefined };
+        })
+      );
+
+      return sessionsWithUser;
+    } catch (error) {
+      console.error("Error getting RFP view sessions:", error);
+      return [];
+    }
+  },
+
   // RFI Conversation Operations
   async createRfiMessage(message) {
     try {
@@ -2156,6 +2185,18 @@ app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch RFP analytics" });
+  }
+});
+
+app.get("/api/analytics/rfp/:id/views", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const viewSessions = await storage.getRfpViewSessions(id);
+    res.json(viewSessions);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch view sessions" });
   }
 });
 

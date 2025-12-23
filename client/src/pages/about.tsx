@@ -4,6 +4,7 @@ import { Footer } from "@/components/ui/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import SEOHead from "@/components/seo-head";
 import { 
   Target, 
   Shield, 
@@ -80,8 +81,34 @@ export default function AboutPage() {
     { label: "Award decisions & reasoning", icon: CheckCircle2 },
   ];
 
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About FindConstructionBids",
+    "description": "Learn how FindConstructionBids helps contractors meet DBE/MBE/WBE participation goals and document Good Faith Efforts with our comprehensive bid management platform.",
+    "url": "https://findconstructionbids.com/about",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "FindConstructionBids",
+      "description": "Construction bid management platform helping contractors with compliance documentation and Good Faith Efforts.",
+      "url": "https://findconstructionbids.com",
+      "foundingDate": "2024",
+      "areaServed": "United States",
+      "serviceType": ["Construction Bid Management", "Compliance Documentation", "Good Faith Effort Tracking"]
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEOHead
+        title="About Us - FindConstructionBids | Construction Bid Compliance Platform"
+        description="Learn how FindConstructionBids helps contractors meet DBE, MBE, and WBE participation goals. Streamline Good Faith Effort documentation with our trusted construction bid management platform."
+        keywords="about findconstructionbids, construction bid platform, DBE compliance, MBE WBE participation goals, Good Faith Effort documentation, contractor compliance software"
+        url="https://findconstructionbids.com/about"
+        canonical="https://findconstructionbids.com/about"
+        type="website"
+        schema={aboutSchema}
+      />
       <LandingPageHeader />
       
       <main className="flex-1">

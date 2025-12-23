@@ -101,13 +101,13 @@ export default function AboutPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" asChild data-testid="button-get-started">
-                  <Link href="/register">
+                  <Link href="/auth">
                     Get Started Free
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild data-testid="button-learn-more">
-                  <Link href="/features">
+                  <Link href="/#features">
                     Explore Features
                   </Link>
                 </Button>
@@ -218,13 +218,13 @@ export default function AboutPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" variant="secondary" asChild data-testid="button-cta-register">
-                  <Link href="/register">
+                  <Link href="/auth">
                     Create Free Account
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild data-testid="button-cta-contact">
-                  <Link href="/contact">
+                  <Link href="/support">
                     Contact Us
                   </Link>
                 </Button>

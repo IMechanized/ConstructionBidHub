@@ -9,7 +9,6 @@ import {
   Target, 
   Shield, 
   FileCheck, 
-  Users, 
   Building2, 
   Clock, 
   CheckCircle2, 
@@ -49,26 +48,21 @@ export default function AboutPage() {
     }
   ];
 
-  const statistics = [
+  const howItWorks = [
     {
-      value: "1000+",
-      label: "Contractors Served",
-      icon: Users
+      step: "1",
+      title: "Create Your Project",
+      description: "Set up your project with participation goals, required certifications, and trade categories. Import existing subcontractor lists or start fresh."
     },
     {
-      value: "50K+",
-      label: "Projects Tracked",
-      icon: Building2
+      step: "2",
+      title: "Solicit & Track Bids",
+      description: "Reach out to qualified firms and track every response. Our platform automatically logs dates, methods, and communications for complete documentation."
     },
     {
-      value: "75%",
-      label: "Time Saved on Documentation",
-      icon: Clock
-    },
-    {
-      value: "99%",
-      label: "Compliance Rate",
-      icon: CheckCircle2
+      step: "3",
+      title: "Generate Compliance Reports",
+      description: "Export audit-ready Good Faith Effort documentation with one click. Clear records of outreach, responses, and award decisions — ready for any review."
     }
   ];
 
@@ -172,22 +166,27 @@ export default function AboutPage() {
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-6">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Trusted by Contractors Nationwide</h2>
+              <h2 className="text-3xl font-bold mb-4">How It Works</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of contractors who have streamlined their compliance workflows 
-                and improved their Good Faith Effort documentation.
+                Get started in minutes. Our streamlined process makes compliance documentation 
+                simple and stress-free.
               </p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {statistics.map((stat, index) => (
-                <Card key={index} className="text-center" data-testid={`card-stat-${index}`}>
-                  <CardContent className="p-6">
-                    <stat.icon className="h-8 w-8 text-primary mx-auto mb-4" />
-                    <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                  </CardContent>
-                </Card>
+            <div className="grid md:grid-cols-3 gap-8">
+              {howItWorks.map((item, index) => (
+                <div key={index} className="relative" data-testid={`step-${index}`}>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mb-6">
+                      {item.step}
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                  </div>
+                  {index < howItWorks.length - 1 && (
+                    <div className="hidden md:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed border-primary/30" />
+                  )}
+                </div>
               ))}
             </div>
           </div>

@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import AboutPage from "@/pages/about";
 import SupportPage from "@/pages/support";
 import TermsPage from "@/pages/terms";
+import PrivacyPolicyPage from "@/pages/privacy-policy";
 import RfpDetailPage from "@/pages/rfp/[id]";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
 import OpportunitiesPage from "@/pages/opportunities/[type]";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy-policy" component={PrivacyPolicyPage} />
       <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
         <ProtectedRoute path="/onboarding" component={() => <OnboardingForm />} />

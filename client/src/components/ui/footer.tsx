@@ -47,6 +47,13 @@ export function Footer() {
                   </span>
                 </Link>
               </li>
+              <li>
+                <Link href="/privacy-policy">
+                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" data-testid="link-privacy-policy">
+                    Privacy Policy
+                  </span>
+                </Link>
+              </li>
             </ul>
           </div>
 

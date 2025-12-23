@@ -1,12 +1,28 @@
 import { Link } from "wouter";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { LandingPageHeader } from "@/components/landing-page-header";
+import { Footer } from "@/components/ui/footer";
 
 export default function PrivacyPolicyPage() {
+  const breadcrumbItems = [
+    {
+      label: "Home",
+      href: "/",
+    },
+    {
+      label: "Privacy Policy",
+      href: "/privacy-policy",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-12">
+    <div className="min-h-screen bg-background flex flex-col">
+      <LandingPageHeader />
+      <main className="container mx-auto px-6 py-12 flex-1">
+        <BreadcrumbNav items={breadcrumbItems} />
         <h1 className="text-4xl font-bold mb-8" data-testid="text-page-title">Privacy Policy</h1>
 
-        <div className="prose prose-slate max-w-none">
+        <div className="prose prose-slate max-w-none dark:prose-invert">
           <p className="lead">
             Last updated: December 2024
           </p>
@@ -179,6 +195,7 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

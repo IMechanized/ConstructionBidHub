@@ -55,6 +55,11 @@ export default function LandingPage() {
               )}
             </Button>
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            <Link href="/leaderboard" className="text-primary hover:underline" data-testid="link-leaderboard">
+              View Reach Leaderboard
+            </Link>
+          </p>
         </div>
       </section>
 

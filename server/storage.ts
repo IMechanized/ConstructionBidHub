@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import session from "express-session";
@@ -28,6 +28,7 @@ export interface IStorage {
   getRfps(): Promise<Rfp[]>;
   getFeaturedRfps(): Promise<Rfp[]>;
   getRfpById(id: number): Promise<Rfp | undefined>;
+  getRfpByStateAndSlug(state: string, slug: string): Promise<Rfp | undefined>;
   createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp>;
   updateRfp(id: number, rfp: Partial<Rfp>): Promise<Rfp>;
   deleteRfp(id: number): Promise<void>;
@@ -166,12 +167,39 @@ export class DatabaseStorage implements IStorage {
     return rfp;
   }
 
+  async getRfpByStateAndSlug(state: string, slug: string): Promise<Rfp | undefined> {
+    const [rfp] = await db
+      .select()
+      .from(rfps)
+      .where(
+        and(
+          eq(rfps.jobState, state),
+          eq(rfps.slug, slug)
+        )
+      );
+    return rfp;
+  }
+
   async createRfp(rfp: InsertRfp & { organizationId: number }): Promise<Rfp> {
+    // Generate base slug from title
+    let baseSlug = generateSlug(rfp.title);
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Ensure slug is unique within the same state
+    while (true) {
+      const existing = await this.getRfpByStateAndSlug(rfp.jobState, slug);
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
     const [newRfp] = await db
       .insert(rfps)
       .values({
         clientName: rfp.clientName,
         title: rfp.title,
+        slug: slug,
         description: rfp.description,
         walkthroughDate: new Date(rfp.walkthroughDate),
         rfiDate: new Date(rfp.rfiDate),

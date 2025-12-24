@@ -76,6 +76,19 @@ export const users = pgTable("users", {
 });
 
 /**
+ * Utility function to generate URL-friendly slugs from text
+ */
+export function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+    .replace(/-+/g, '-')      // Replace multiple hyphens with single
+    .substring(0, 100);       // Limit length
+}
+
+/**
  * RFPs (Request for Proposals) Table
  * Core table for bid opportunities
  */
@@ -83,6 +96,7 @@ export const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
   clientName: text("client_name"),                                // Client/organization name for RFP attribution
   title: text("title").notNull(),
+  slug: text("slug"),                                       // URL-friendly slug derived from title
   description: text("description").notNull(),
   walkthroughDate: timestamp("walkthrough_date").notNull(),  // Site visit date
   rfiDate: timestamp("rfi_date").notNull(),                  // Last day for questions

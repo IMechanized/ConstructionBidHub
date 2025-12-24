@@ -5,7 +5,7 @@ import { setupAuth } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
-import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions } from "../shared/schema.js";
+import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions, generateSlug } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import multer from 'multer';
 import multerS3 from 'multer-s3';

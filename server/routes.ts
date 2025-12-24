@@ -421,6 +421,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get RFP by state and slug (SEO-friendly URL)
+  app.get("/api/rfps/by-location/:state/:slug", async (req, res) => {
+    try {
+      const { state, slug } = req.params;
+      
+      if (!state || !slug) {
+        return sendErrorResponse(res, new Error('State and slug are required'), 400, ErrorMessages.BAD_REQUEST, 'RFPBySlug');
+      }
+
+      const rfp = await storage.getRfpByStateAndSlug(state, slug);
+      if (!rfp) {
+        return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
+      }
+      
+      if (rfp.organizationId === null) {
+        return res.json({
+          ...rfp,
+          organization: null
+        });
+      }
+      
+      const org = await storage.getUser(rfp.organizationId);
+      const rfpWithOrg = {
+        ...rfp,
+        organization: org ? {
+          id: org.id,
+          companyName: org.companyName,
+          logo: org.logo
+        } : null
+      };
+      res.json(rfpWithOrg);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPBySlug');
+    }
+  });
+
   // Protected RFP routes
   app.post("/api/rfps", async (req, res) => {
     try {

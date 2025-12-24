@@ -521,6 +521,7 @@ const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
   clientName: text("client_name"),
   title: text("title").notNull(),
+  slug: text("slug"),
   description: text("description").notNull(),
   walkthroughDate: timestamp("walkthrough_date").notNull(),
   rfiDate: timestamp("rfi_date").notNull(),
@@ -540,6 +541,16 @@ const rfps = pgTable("rfps", {
   featuredAt: timestamp("featured_at"),
   createdAt: timestamp("created_at"),
 });
+
+function generateSlug(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .substring(0, 100);
+}
 
 const rfis = pgTable("rfis", {
   id: serial("id").primaryKey(),
@@ -878,6 +889,17 @@ const storage = {
     }
   },
 
+  async getRfpByStateAndSlug(state, slug) {
+    try {
+      const [rfp] = await db.select().from(rfps)
+        .where(and(eq(rfps.jobState, state), eq(rfps.slug, slug)));
+      return rfp;
+    } catch (error) {
+      console.error("Error getting RFP by state and slug:", error);
+      return null;
+    }
+  },
+
   async getFeaturedRfps() {
     try {
       return await db.select()
@@ -891,7 +913,19 @@ const storage = {
 
   async createRfp(data) {
     try {
-      const [rfp] = await db.insert(rfps).values(data).returning();
+      let baseSlug = generateSlug(data.title);
+      let slug = baseSlug;
+      let counter = 1;
+      
+      while (true) {
+        const existing = await db.select().from(rfps)
+          .where(and(eq(rfps.jobState, data.jobState), eq(rfps.slug, slug)));
+        if (existing.length === 0) break;
+        counter++;
+        slug = `${baseSlug}-${counter}`;
+      }
+      
+      const [rfp] = await db.insert(rfps).values({ ...data, slug }).returning();
       return rfp;
     } catch (error) {
       console.error("Error creating RFP:", error);
@@ -1830,6 +1864,38 @@ app.get("/api/rfps/:id", async (req, res) => {
     if (rfp.organizationId === null) {
       return res.json({ ...rfp, organization: null });
     }
+    const org = await storage.getUser(rfp.organizationId);
+    const rfpWithOrg = {
+      ...rfp,
+      organization: org ? {
+        id: org.id,
+        companyName: org.companyName,
+        logo: org.logo
+      } : null
+    };
+    res.json(rfpWithOrg);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch RFP" });
+  }
+});
+
+app.get("/api/rfps/by-location/:state/:slug", async (req, res) => {
+  try {
+    const { state, slug } = req.params;
+    
+    if (!state || !slug) {
+      return res.status(400).json({ message: "State and slug are required" });
+    }
+
+    const rfp = await storage.getRfpByStateAndSlug(state, slug);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId === null) {
+      return res.json({ ...rfp, organization: null });
+    }
+    
     const org = await storage.getUser(rfp.organizationId);
     const rfpWithOrg = {
       ...rfp,

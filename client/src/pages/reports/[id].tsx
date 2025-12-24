@@ -286,7 +286,7 @@ export default function UnifiedReportPage() {
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Viewer</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Company</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">View Date</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Duration</th>
+                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Certifications</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Converted to Bid</th>
                       </tr>
                     </thead>
@@ -314,8 +314,18 @@ export default function UnifiedReportPage() {
                             <td className="border border-gray-300 px-2 py-2 align-top whitespace-nowrap">
                               {session.viewDate ? format(new Date(session.viewDate), "MM/dd/yyyy h:mm a") : '-'}
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top whitespace-nowrap">
-                              {session.duration ? `${Math.floor(session.duration / 60)}m ${session.duration % 60}s` : '-'}
+                            <td className="border border-gray-300 px-2 py-2 align-top">
+                              {session.user?.certificationName && session.user.certificationName.length > 0 && session.user.certificationName.some((c: string) => c !== "None") ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {session.user.certificationName.filter((c: string) => c !== "None").map((cert: string, idx: number) => (
+                                    <span key={idx} className="px-1 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {cert}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">None</span>
+                              )}
                             </td>
                             <td className="border border-gray-300 px-2 py-2 align-top">
                               {session.convertedToBid ? (

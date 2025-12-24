@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Rfp, Rfi, User, RfpViewSession } from "@shared/schema";
@@ -33,6 +33,8 @@ export default function UnifiedReportPage() {
       navigate("/dashboard/reports");
     }
   }, [rfp, user, loadingRfp, navigate]);
+
+  const [logoError, setLogoError] = useState(false);
 
   const certificationGoals = useMemo(() => rfp?.certificationGoals || [], [rfp]);
 
@@ -167,15 +169,24 @@ export default function UnifiedReportPage() {
                   className="h-12 object-contain"
                   data-testid="img-fcb-logo"
                 />
-                {user?.logo && (
+                {user?.logo && !logoError ? (
                   <img
                     src={user.logo}
                     alt={`${user.companyName} Logo`}
                     className="h-12 object-contain"
-                    crossOrigin="anonymous"
                     data-testid="img-client-logo"
+                    onError={() => setLogoError(true)}
                   />
-                )}
+                ) : user?.companyName ? (
+                  <div 
+                    className="h-12 px-4 bg-gray-100 border border-gray-300 rounded flex items-center justify-center"
+                    data-testid="img-client-logo-fallback"
+                  >
+                    <span className="text-lg font-bold text-gray-700">
+                      {user.companyName.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
               {/* Report Content */}

@@ -35,6 +35,34 @@ export default function UnifiedReportPage() {
   }, [rfp, user, loadingRfp, navigate]);
 
   const [logoError, setLogoError] = useState(false);
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+
+  // Convert logo to base64 for PDF rendering
+  useEffect(() => {
+    if (user?.logo && !logoError) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/png');
+            setLogoBase64(dataUrl);
+          }
+        } catch (e) {
+          console.error('Failed to convert logo to base64:', e);
+        }
+      };
+      img.onerror = () => {
+        setLogoError(true);
+      };
+      img.src = user.logo;
+    }
+  }, [user?.logo, logoError]);
 
   const certificationGoals = useMemo(() => rfp?.certificationGoals || [], [rfp]);
 
@@ -169,10 +197,10 @@ export default function UnifiedReportPage() {
                   className="h-12 object-contain"
                   data-testid="img-fcb-logo"
                 />
-                {user?.logo && !logoError ? (
+                {(logoBase64 || (user?.logo && !logoError)) ? (
                   <img
-                    src={user.logo}
-                    alt={`${user.companyName} Logo`}
+                    src={logoBase64 || user?.logo}
+                    alt={`${user?.companyName} Logo`}
                     className="h-12 object-contain"
                     data-testid="img-client-logo"
                     onError={() => setLogoError(true)}

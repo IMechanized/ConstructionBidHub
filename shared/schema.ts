@@ -230,6 +230,28 @@ export const backupLogs = pgTable("backup_logs", {
 });
 
 /**
+ * RFP Reach Table
+ * Tracks outreach metrics for RFPs by certification type
+ */
+export const rfpReach = pgTable("rfp_reach", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'cascade' }).notNull(),
+  womenOwned: integer("women_owned").default(0),
+  nativeAmericanOwned: integer("native_american_owned").default(0),
+  veteranOwned: integer("veteran_owned").default(0),
+  militarySpouse: integer("military_spouse").default(0),
+  lgbtqOwned: integer("lgbtq_owned").default(0),
+  rural: integer("rural").default(0),
+  minorityOwned: integer("minority_owned").default(0),
+  section3: integer("section_3").default(0),
+  sbe: integer("sbe").default(0),
+  dbe: integer("dbe").default(0),
+  totalReach: integer("total_reach").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
  * Validation Schemas
  */
 
@@ -354,6 +376,22 @@ export const insertRfpDocumentSchema = createInsertSchema(rfpDocuments).pick({
   mimeType: true,
 });
 
+// RFP reach creation validation
+export const insertRfpReachSchema = createInsertSchema(rfpReach).pick({
+  rfpId: true,
+  womenOwned: true,
+  nativeAmericanOwned: true,
+  veteranOwned: true,
+  militarySpouse: true,
+  lgbtqOwned: true,
+  rural: true,
+  minorityOwned: true,
+  section3: true,
+  sbe: true,
+  dbe: true,
+  totalReach: true,
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -373,3 +411,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = typeof backupLogs.$inferInsert;
+export type RfpReach = typeof rfpReach.$inferSelect;
+export type InsertRfpReach = z.infer<typeof insertRfpReachSchema>;

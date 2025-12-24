@@ -5,7 +5,7 @@ import { setupAuth } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
-import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, rfps, rfpAnalytics, rfpViewSessions, generateSlug } from "../shared/schema.js";
+import { insertRfpSchema, onboardingSchema, insertRfiSchema, insertNotificationSchema, insertRfpReachSchema, rfps, rfpAnalytics, rfpViewSessions, generateSlug } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import multer from 'multer';
 import multerS3 from 'multer-s3';
@@ -824,6 +824,105 @@ export function registerRoutes(app: Express): Server {
       res.json(viewSessions);
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'RFPViewSessions');
+    }
+  });
+
+  // Reach Report Routes (Public)
+  app.get("/api/reports/reach", async (req, res) => {
+    try {
+      const period = (req.query.period as 'quarterly' | '6-month' | 'all-time') || 'all-time';
+      
+      if (!['quarterly', '6-month', 'all-time'].includes(period)) {
+        return sendErrorResponse(res, new Error('Invalid period'), 400, ErrorMessages.BAD_REQUEST, 'ReachReport');
+      }
+      
+      const report = await storage.getReachReport(period);
+      res.json(report);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReachReport');
+    }
+  });
+
+  app.get("/api/reports/leaderboard", async (req, res) => {
+    try {
+      const leaderboard = await storage.getReachLeaderboard();
+      res.json(leaderboard);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReachLeaderboard');
+    }
+  });
+
+  // Create or update reach for an RFP (protected)
+  app.post("/api/rfps/:id/reach", async (req, res) => {
+    try {
+      requireAuth(req);
+      
+      const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (rfpId === null) return;
+      
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp || rfp.organizationId !== req.user?.id) {
+        logAuthorizationFailure(req.user?.id, `RFP ${req.params.id}`, 'update reach', req);
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'ReachCreate');
+      }
+      
+      // Validate request body using schema
+      const reachDataSchema = insertRfpReachSchema.omit({ rfpId: true }).extend({
+        womenOwned: insertRfpReachSchema.shape.womenOwned.optional(),
+        nativeAmericanOwned: insertRfpReachSchema.shape.nativeAmericanOwned.optional(),
+        veteranOwned: insertRfpReachSchema.shape.veteranOwned.optional(),
+        militarySpouse: insertRfpReachSchema.shape.militarySpouse.optional(),
+        lgbtqOwned: insertRfpReachSchema.shape.lgbtqOwned.optional(),
+        rural: insertRfpReachSchema.shape.rural.optional(),
+        minorityOwned: insertRfpReachSchema.shape.minorityOwned.optional(),
+        section3: insertRfpReachSchema.shape.section3.optional(),
+        sbe: insertRfpReachSchema.shape.sbe.optional(),
+        dbe: insertRfpReachSchema.shape.dbe.optional(),
+        totalReach: insertRfpReachSchema.shape.totalReach.optional(),
+      });
+      
+      const validatedData = reachDataSchema.parse(req.body);
+      
+      const existingReach = await storage.getRfpReachByRfpId(rfpId);
+      
+      if (existingReach) {
+        const updated = await storage.updateRfpReach(rfpId, validatedData);
+        res.json(updated);
+      } else {
+        const newReach = await storage.createRfpReach({ ...validatedData, rfpId });
+        res.status(201).json(newReach);
+      }
+    } catch (error) {
+      const safeMessage = getSafeValidationMessage(error);
+      sendErrorResponse(res, error, 400, safeMessage || ErrorMessages.CREATE_FAILED, 'ReachCreate');
+    }
+  });
+
+  app.get("/api/rfps/:id/reach", async (req, res) => {
+    try {
+      const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (rfpId === null) return;
+      
+      const reach = await storage.getRfpReachByRfpId(rfpId);
+      if (!reach) {
+        return res.json({ 
+          rfpId,
+          womenOwned: 0,
+          nativeAmericanOwned: 0,
+          veteranOwned: 0,
+          militarySpouse: 0,
+          lgbtqOwned: 0,
+          rural: 0,
+          minorityOwned: 0,
+          section3: 0,
+          sbe: 0,
+          dbe: 0,
+          totalReach: 0
+        });
+      }
+      res.json(reach);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'ReachFetch');
     }
   });
 

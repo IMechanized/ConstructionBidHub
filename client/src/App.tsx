@@ -31,6 +31,7 @@ import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import EmailVerificationPendingPage from "@/pages/email-verification-pending";
+import LeaderboardPage from "@/pages/leaderboard";
 import { ThemeProvider } from "@/components/theme-provider";
 import HotReload from "@/components/hot-reload";
 import { UpdateNotifier } from "@/components/update-notifier";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+      <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
         <ProtectedRoute path="/onboarding" component={() => <OnboardingForm />} />

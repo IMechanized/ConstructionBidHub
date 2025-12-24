@@ -3,9 +3,9 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, generateSlug } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
-import { eq, and, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, inArray, gte } from "drizzle-orm";
 import session from "express-session";
 import { Store } from "express-session";
 import ConnectPgSimple from 'connect-pg-simple';
@@ -72,6 +72,13 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
   deleteNotification(id: number): Promise<void>;
+
+  // RFP Reach Operations
+  createRfpReach(reach: InsertRfpReach): Promise<RfpReach>;
+  getRfpReachByRfpId(rfpId: number): Promise<RfpReach | undefined>;
+  updateRfpReach(rfpId: number, updates: Partial<RfpReach>): Promise<RfpReach>;
+  getReachReport(period: 'quarterly' | '6-month' | 'all-time'): Promise<(RfpReach & { rfp: Rfp })[]>;
+  getReachLeaderboard(): Promise<{ clientName: string; totalReach: number; rfpCount: number }[]>;
 }
 
 /**
@@ -744,6 +751,112 @@ export class DatabaseStorage implements IStorage {
 
   async deleteNotification(id: number): Promise<void> {
     await db.delete(notifications).where(eq(notifications.id, id));
+  }
+
+  /**
+   * RFP Reach Operations
+   */
+  async createRfpReach(reach: InsertRfpReach): Promise<RfpReach> {
+    const totalReach = (reach.womenOwned || 0) + (reach.nativeAmericanOwned || 0) + 
+                       (reach.veteranOwned || 0) + (reach.militarySpouse || 0) + 
+                       (reach.lgbtqOwned || 0) + (reach.rural || 0) + 
+                       (reach.minorityOwned || 0) + (reach.section3 || 0) + 
+                       (reach.sbe || 0) + (reach.dbe || 0);
+    
+    const [newReach] = await db
+      .insert(rfpReach)
+      .values({ ...reach, totalReach })
+      .returning();
+    return newReach;
+  }
+
+  async getRfpReachByRfpId(rfpId: number): Promise<RfpReach | undefined> {
+    const [reach] = await db
+      .select()
+      .from(rfpReach)
+      .where(eq(rfpReach.rfpId, rfpId));
+    return reach;
+  }
+
+  async updateRfpReach(rfpId: number, updates: Partial<RfpReach>): Promise<RfpReach> {
+    const existing = await this.getRfpReachByRfpId(rfpId);
+    
+    if (existing) {
+      const totalReach = (updates.womenOwned ?? existing.womenOwned ?? 0) + 
+                         (updates.nativeAmericanOwned ?? existing.nativeAmericanOwned ?? 0) + 
+                         (updates.veteranOwned ?? existing.veteranOwned ?? 0) + 
+                         (updates.militarySpouse ?? existing.militarySpouse ?? 0) + 
+                         (updates.lgbtqOwned ?? existing.lgbtqOwned ?? 0) + 
+                         (updates.rural ?? existing.rural ?? 0) + 
+                         (updates.minorityOwned ?? existing.minorityOwned ?? 0) + 
+                         (updates.section3 ?? existing.section3 ?? 0) + 
+                         (updates.sbe ?? existing.sbe ?? 0) + 
+                         (updates.dbe ?? existing.dbe ?? 0);
+      
+      const [updated] = await db
+        .update(rfpReach)
+        .set({ ...updates, totalReach, updatedAt: new Date() })
+        .where(eq(rfpReach.rfpId, rfpId))
+        .returning();
+      return updated;
+    }
+    
+    throw new Error("RFP reach record not found");
+  }
+
+  async getReachReport(period: 'quarterly' | '6-month' | 'all-time'): Promise<(RfpReach & { rfp: Rfp })[]> {
+    let startDate: Date | null = null;
+    const now = new Date();
+    
+    if (period === 'quarterly') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    } else if (period === '6-month') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    }
+    
+    const allReach = await db
+      .select()
+      .from(rfpReach)
+      .orderBy(desc(rfpReach.totalReach));
+    
+    const reachWithRfps = await Promise.all(
+      allReach.map(async (reach) => {
+        const rfp = await this.getRfpById(reach.rfpId);
+        if (!rfp) return null;
+        
+        if (startDate && rfp.createdAt && new Date(rfp.createdAt) < startDate) {
+          return null;
+        }
+        
+        return { ...reach, rfp };
+      })
+    );
+    
+    return reachWithRfps.filter((item): item is (RfpReach & { rfp: Rfp }) => item !== null);
+  }
+
+  async getReachLeaderboard(): Promise<{ clientName: string; totalReach: number; rfpCount: number }[]> {
+    const allReach = await db
+      .select()
+      .from(rfpReach)
+      .orderBy(desc(rfpReach.totalReach));
+    
+    const clientStats: Map<string, { totalReach: number; rfpCount: number }> = new Map();
+    
+    for (const reach of allReach) {
+      const rfp = await this.getRfpById(reach.rfpId);
+      if (!rfp || !rfp.clientName) continue;
+      
+      const existing = clientStats.get(rfp.clientName) || { totalReach: 0, rfpCount: 0 };
+      clientStats.set(rfp.clientName, {
+        totalReach: existing.totalReach + (reach.totalReach || 0),
+        rfpCount: existing.rfpCount + 1
+      });
+    }
+    
+    return Array.from(clientStats.entries())
+      .map(([clientName, stats]) => ({ clientName, ...stats }))
+      .sort((a, b) => b.totalReach - a.totalReach);
   }
 }
 

@@ -10,6 +10,14 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +31,8 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Home
+  Home,
+  ChevronDown
 } from "lucide-react";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Footer } from "@/components/ui/footer";
@@ -68,10 +77,12 @@ const CERTIFICATION_LABELS: Record<string, string> = {
 };
 
 const CLIENTS_PER_PAGE = 10;
+const RFPS_PER_PAGE = 15;
 
 export default function LeaderboardPage() {
   const [period, setPeriod] = useState<'quarterly' | '6-month' | 'all-time'>('quarterly');
   const [clientPage, setClientPage] = useState(0);
+  const [visibleRfps, setVisibleRfps] = useState(RFPS_PER_PAGE);
 
   const { data: reachReport, isLoading: reportLoading } = useQuery<RfpReach[]>({
     queryKey: ['/api/reports/reach', period],
@@ -134,13 +145,15 @@ export default function LeaderboardPage() {
     totalReach: 0,
   };
 
-  // Pagination for client leaderboard
   const totalClients = leaderboard?.length || 0;
   const totalPages = Math.ceil(totalClients / CLIENTS_PER_PAGE);
   const paginatedClients = leaderboard?.slice(
     clientPage * CLIENTS_PER_PAGE,
     (clientPage + 1) * CLIENTS_PER_PAGE
   ) || [];
+
+  const displayedRfps = reachReport?.slice(0, visibleRfps) || [];
+  const hasMoreRfps = reachReport && reachReport.length > visibleRfps;
 
   return (
     <>
@@ -153,7 +166,6 @@ export default function LeaderboardPage() {
         <LandingPageHeader />
 
         <main className="container mx-auto px-4 py-6 flex-1">
-          {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6" data-testid="breadcrumb">
             <Link href="/" className="hover:text-foreground flex items-center gap-1">
               <Home className="h-4 w-4" />
@@ -163,7 +175,6 @@ export default function LeaderboardPage() {
             <span className="text-foreground">Reach Leaderboard</span>
           </nav>
 
-          {/* Page Title and Share Button */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2" data-testid="text-page-title">
@@ -180,7 +191,7 @@ export default function LeaderboardPage() {
             </Button>
           </div>
 
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)} className="space-y-6">
+          <Tabs value={period} onValueChange={(v) => { setPeriod(v as typeof period); setVisibleRfps(RFPS_PER_PAGE); }} className="space-y-6">
             <TabsList data-testid="tabs-period">
               <TabsTrigger value="quarterly" data-testid="tab-quarterly">
                 <Calendar className="h-4 w-4 mr-2" />
@@ -196,7 +207,6 @@ export default function LeaderboardPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Summary Cards */}
             <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
               <Card data-testid="card-total-reach">
                 <CardHeader className="pb-2">
@@ -232,7 +242,6 @@ export default function LeaderboardPage() {
               </Card>
             </div>
 
-            {/* Certification Breakdown - Now first */}
             <Card data-testid="card-certification-breakdown">
               <CardHeader>
                 <CardTitle>Certification Breakdown</CardTitle>
@@ -252,7 +261,6 @@ export default function LeaderboardPage() {
               </CardContent>
             </Card>
 
-            {/* Client Leaderboard - Now second with pagination */}
             <Card data-testid="card-client-leaderboard">
               <CardHeader>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -339,7 +347,6 @@ export default function LeaderboardPage() {
               </CardContent>
             </Card>
 
-            {/* RFP Reach Details - Now third, full width with responsive table */}
             <Card data-testid="card-rfp-table">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -350,7 +357,63 @@ export default function LeaderboardPage() {
                   Breakdown of contractor outreach by RFP and certification type
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Totals Card - Always Visible */}
+                <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5" data-testid="row-totals">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                    <div>
+                      <p className="font-bold text-lg">Totals</p>
+                      <p className="text-sm text-muted-foreground">{reachReport?.length || 0} RFPs</p>
+                    </div>
+                    <Badge className="shrink-0 text-lg px-3 py-1">
+                      {totals.totalReach} total reach
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 text-sm">
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.minorityOwned}</p>
+                      <p className="text-xs text-muted-foreground">MBE</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.womenOwned}</p>
+                      <p className="text-xs text-muted-foreground">WBE</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.section3}</p>
+                      <p className="text-xs text-muted-foreground">Sec3</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.sbe}</p>
+                      <p className="text-xs text-muted-foreground">SBE</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.dbe}</p>
+                      <p className="text-xs text-muted-foreground">DBE</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.veteranOwned}</p>
+                      <p className="text-xs text-muted-foreground">Vet</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.nativeAmericanOwned}</p>
+                      <p className="text-xs text-muted-foreground">NA</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.lgbtqOwned}</p>
+                      <p className="text-xs text-muted-foreground">LGBTQ</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.militarySpouse}</p>
+                      <p className="text-xs text-muted-foreground">MilSp</p>
+                    </div>
+                    <div className="p-2 rounded bg-background text-center">
+                      <p className="font-bold text-sm sm:text-base">{totals.rural}</p>
+                      <p className="text-xs text-muted-foreground">Rural</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RFP Table */}
                 {reportLoading ? (
                   <div className="space-y-2">
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -358,124 +421,71 @@ export default function LeaderboardPage() {
                     ))}
                   </div>
                 ) : reachReport && reachReport.length > 0 ? (
-                  <div className="space-y-4">
-                    {reachReport.map((item) => (
-                      <div key={item.id} className="p-4 rounded-lg border bg-card" data-testid={`rfp-card-${item.rfpId}`}>
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <Link href={`/rfp/${item.rfp.jobState}/${item.rfp.slug}`}>
-                              <span className="font-medium text-primary hover:underline cursor-pointer block truncate">
-                                {item.rfp.title}
-                              </span>
-                            </Link>
-                            <p className="text-sm text-muted-foreground">
-                              {item.rfp.clientName || '-'} • Posted {item.rfp.createdAt ? format(new Date(item.rfp.createdAt), 'MM/dd/yyyy') : '-'}
-                            </p>
-                          </div>
-                          <Badge variant="secondary" className="shrink-0 text-lg px-3 py-1">
-                            {item.totalReach || 0} total
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-sm">
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.minorityOwned || 0}</p>
-                            <p className="text-xs text-muted-foreground">MBE</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.womenOwned || 0}</p>
-                            <p className="text-xs text-muted-foreground">WBE</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.section3 || 0}</p>
-                            <p className="text-xs text-muted-foreground">Sec 3</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.sbe || 0}</p>
-                            <p className="text-xs text-muted-foreground">SBE</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.dbe || 0}</p>
-                            <p className="text-xs text-muted-foreground">DBE</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.veteranOwned || 0}</p>
-                            <p className="text-xs text-muted-foreground">Veteran</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.nativeAmericanOwned || 0}</p>
-                            <p className="text-xs text-muted-foreground">Native Am.</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.lgbtqOwned || 0}</p>
-                            <p className="text-xs text-muted-foreground">LGBTQ</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.militarySpouse || 0}</p>
-                            <p className="text-xs text-muted-foreground">Mil. Spouse</p>
-                          </div>
-                          <div className="p-2 rounded bg-muted/50 text-center">
-                            <p className="font-semibold">{item.rural || 0}</p>
-                            <p className="text-xs text-muted-foreground">Rural</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Totals Row */}
-                    <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5" data-testid="row-totals">
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
-                        <div>
-                          <p className="font-bold text-lg">Totals</p>
-                          <p className="text-sm text-muted-foreground">{reachReport.length} RFPs</p>
-                        </div>
-                        <Badge className="shrink-0 text-lg px-3 py-1">
-                          {totals.totalReach} total reach
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-sm">
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.minorityOwned}</p>
-                          <p className="text-xs text-muted-foreground">MBE</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.womenOwned}</p>
-                          <p className="text-xs text-muted-foreground">WBE</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.section3}</p>
-                          <p className="text-xs text-muted-foreground">Sec 3</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.sbe}</p>
-                          <p className="text-xs text-muted-foreground">SBE</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.dbe}</p>
-                          <p className="text-xs text-muted-foreground">DBE</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.veteranOwned}</p>
-                          <p className="text-xs text-muted-foreground">Veteran</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.nativeAmericanOwned}</p>
-                          <p className="text-xs text-muted-foreground">Native Am.</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.lgbtqOwned}</p>
-                          <p className="text-xs text-muted-foreground">LGBTQ</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.militarySpouse}</p>
-                          <p className="text-xs text-muted-foreground">Mil. Spouse</p>
-                        </div>
-                        <div className="p-2 rounded bg-background text-center">
-                          <p className="font-bold">{totals.rural}</p>
-                          <p className="text-xs text-muted-foreground">Rural</p>
-                        </div>
-                      </div>
+                  <>
+                    <div className="overflow-x-auto rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="min-w-[200px]">RFP</TableHead>
+                            <TableHead className="whitespace-nowrap">Posted</TableHead>
+                            <TableHead className="whitespace-nowrap">Client</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">MBE</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">WBE</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Sec3</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">SBE</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">DBE</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Vet</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">NA</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">LGBTQ</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">MilSp</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Rural</TableHead>
+                            <TableHead className="text-right font-bold whitespace-nowrap">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {displayedRfps.map((item) => (
+                            <TableRow key={item.id} data-testid={`row-rfp-${item.rfpId}`}>
+                              <TableCell className="font-medium">
+                                <Link href={`/rfp/${item.rfp.jobState}/${item.rfp.slug}`}>
+                                  <span className="hover:underline cursor-pointer text-primary line-clamp-1">
+                                    {item.rfp.title}
+                                  </span>
+                                </Link>
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-muted-foreground">
+                                {item.rfp.createdAt ? format(new Date(item.rfp.createdAt), 'MM/dd/yy') : '-'}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">{item.rfp.clientName || '-'}</TableCell>
+                              <TableCell className="text-right">{item.minorityOwned || 0}</TableCell>
+                              <TableCell className="text-right">{item.womenOwned || 0}</TableCell>
+                              <TableCell className="text-right">{item.section3 || 0}</TableCell>
+                              <TableCell className="text-right">{item.sbe || 0}</TableCell>
+                              <TableCell className="text-right">{item.dbe || 0}</TableCell>
+                              <TableCell className="text-right">{item.veteranOwned || 0}</TableCell>
+                              <TableCell className="text-right">{item.nativeAmericanOwned || 0}</TableCell>
+                              <TableCell className="text-right">{item.lgbtqOwned || 0}</TableCell>
+                              <TableCell className="text-right">{item.militarySpouse || 0}</TableCell>
+                              <TableCell className="text-right">{item.rural || 0}</TableCell>
+                              <TableCell className="text-right font-bold">{item.totalReach || 0}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
-                  </div>
+                    
+                    {hasMoreRfps && (
+                      <div className="flex justify-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => setVisibleRfps(v => v + RFPS_PER_PAGE)}
+                          data-testid="button-view-more"
+                        >
+                          <ChevronDown className="h-4 w-4 mr-2" />
+                          View More ({reachReport.length - visibleRfps} remaining)
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     No reach data available for this period

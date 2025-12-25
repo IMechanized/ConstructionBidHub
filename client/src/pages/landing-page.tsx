@@ -5,9 +5,17 @@ import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trophy, ArrowRight } from "lucide-react";
 import { isAfter, subHours } from "date-fns";
 import { LandingPageHeader } from "@/components/landing-page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+interface LeaderboardEntry {
+  clientName: string;
+  totalReach: number;
+  rfpCount: number;
+}
 
 const INITIAL_DISPLAY = 6; // 3x2 grid
 
@@ -17,6 +25,10 @@ export default function LandingPage() {
 
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
     queryKey: ["/api/rfps"],
+  });
+
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ['/api/reports/leaderboard'],
   });
 
   const featuredRfps = rfps?.filter(rfp => rfp.featured) || [];
@@ -55,11 +67,61 @@ export default function LandingPage() {
               )}
             </Button>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            <Link href="/leaderboard" className="text-primary hover:underline" data-testid="link-leaderboard">
-              View Reach Leaderboard
-            </Link>
-          </p>
+        </div>
+      </section>
+
+      {/* Leaderboard Preview Section */}
+      <section className="py-8 md:py-12 px-4">
+        <div className="container mx-auto">
+          <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20" data-testid="card-leaderboard-preview">
+            <CardHeader className="pb-2">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-6 w-6 text-yellow-500" />
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">Top Clients by Contractor Reach</CardTitle>
+                    <p className="text-sm text-muted-foreground">See which organizations are leading in diverse contractor outreach</p>
+                  </div>
+                </div>
+                <Button asChild variant="outline" size="sm" data-testid="button-view-leaderboard">
+                  <Link href="/leaderboard">
+                    View Full Leaderboard
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {leaderboardLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : leaderboard && leaderboard.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
+                  {leaderboard.slice(0, 5).map((entry, index) => (
+                    <div
+                      key={entry.clientName}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border"
+                      data-testid={`preview-leaderboard-entry-${index}`}
+                    >
+                      <Badge 
+                        variant={index === 0 ? "default" : index < 3 ? "secondary" : "outline"}
+                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                      >
+                        {index + 1}
+                      </Badge>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{entry.clientName}</p>
+                        <p className="text-xs text-muted-foreground">{entry.totalReach.toLocaleString()} reach</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-4">No leaderboard data yet</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </section>
 

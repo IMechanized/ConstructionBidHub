@@ -156,6 +156,14 @@ This approach ensures large files never transit through Vercel's serverless func
 ## Changelog
 
 Changelog:
+- December 25, 2025: Fixed blank page issue on browser refresh for Vercel deployment
+  - **Static Asset Cache Headers**: Implemented granular cache-control headers for static files in entrypoint.js
+    - index.html and HTML files: no-cache, no-store, must-revalidate (always fetch fresh)
+    - Hashed assets (Vite bundled files): max-age=1 year, immutable (cached forever)
+    - Non-hashed JS/CSS: max-age=1 hour with must-revalidate
+    - Images/fonts: max-age=1 day
+  - **SPA Catch-All Fix**: Added explicit no-cache headers when serving index.html for client-side routes
+  - **ETag/Last-Modified**: Enabled conditional request headers for efficient cache validation
 - December 16, 2025: UX improvements and session/routing fixes
   - **Login Button**: Added dedicated "Login" button to top navigation alongside "Get Started" for clearer user flow
   - **Session Duration**: Extended session cookie duration from 24 hours to 30 days to reduce re-login frequency

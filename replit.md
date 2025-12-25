@@ -101,6 +101,13 @@ This approach ensures large files never transit through Vercel's serverless func
 4. RFI submission and management for project clarifications
 5. Analytics tracking for view counts and engagement metrics
 
+### SEO-Friendly URL Structure
+- RFP URLs use SEO-friendly format: `/rfp/:state/:slug` (e.g., `/rfp/Connecticut/plumbing-project`)
+- Slugs are auto-generated from RFP titles (lowercase, hyphens, special chars removed)
+- Slugs are unique per state (allows same title in different states)
+- Old `/rfp/:id` URLs redirect to new format for backward compatibility
+- API endpoints: `/api/rfps/by-location/:state/:slug` for SEO URLs, `/api/rfps/:id` still works
+
 ### Real-time Features
 - Hot module replacement in development
 - WebSocket support for live updates

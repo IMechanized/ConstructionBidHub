@@ -1,10 +1,27 @@
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { LandingPageHeader } from "@/components/landing-page-header";
+import { Footer } from "@/components/ui/footer";
+
 export default function TermsPage() {
+  const breadcrumbItems = [
+    {
+      label: "Home",
+      href: "/",
+    },
+    {
+      label: "Terms & Conditions",
+      href: "/terms",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-12">
+    <div className="min-h-screen bg-background flex flex-col">
+      <LandingPageHeader />
+      <main className="container mx-auto px-6 py-12 flex-1">
+        <BreadcrumbNav items={breadcrumbItems} />
         <h1 className="text-4xl font-bold mb-8">Terms and Conditions</h1>
 
-        <div className="prose prose-slate max-w-none">
+        <div className="prose prose-slate max-w-none dark:prose-invert">
           <p className="lead">
             Please read these terms and conditions carefully before using the FindConstructionBids platform.
           </p>
@@ -67,6 +84,7 @@ export default function TermsPage() {
           </p>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

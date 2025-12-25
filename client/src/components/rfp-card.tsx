@@ -33,7 +33,10 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
 
   const handleNavigation = () => {
     // Navigate to RFP page with navigation context as URL parameter
-    const url = from ? `/rfp/${rfp.id}?from=${from}` : `/rfp/${rfp.id}`;
+    // Use SEO-friendly URL with state and slug
+    const state = encodeURIComponent(rfp.jobState);
+    const slug = rfp.slug || rfp.id.toString();
+    const url = from ? `/rfp/${state}/${slug}?from=${from}` : `/rfp/${state}/${slug}`;
     setLocation(url);
   };
 

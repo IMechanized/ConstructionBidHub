@@ -521,6 +521,7 @@ const rfps = pgTable("rfps", {
   id: serial("id").primaryKey(),
   clientName: text("client_name"),
   title: text("title").notNull(),
+  slug: text("slug"),
   description: text("description").notNull(),
   walkthroughDate: timestamp("walkthrough_date").notNull(),
   rfiDate: timestamp("rfi_date").notNull(),
@@ -540,6 +541,16 @@ const rfps = pgTable("rfps", {
   featuredAt: timestamp("featured_at"),
   createdAt: timestamp("created_at"),
 });
+
+function generateSlug(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .substring(0, 100);
+}
 
 const rfis = pgTable("rfis", {
   id: serial("id").primaryKey(),
@@ -609,6 +620,24 @@ const rfpDocuments = pgTable("rfp_documents", {
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+const rfpReach = pgTable("rfp_reach", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").references(() => rfps.id).notNull(),
+  womenOwned: integer("women_owned").default(0),
+  nativeAmericanOwned: integer("native_american_owned").default(0),
+  veteranOwned: integer("veteran_owned").default(0),
+  militarySpouse: integer("military_spouse").default(0),
+  lgbtqOwned: integer("lgbtq_owned").default(0),
+  rural: integer("rural").default(0),
+  minorityOwned: integer("minority_owned").default(0),
+  section3: integer("section_3").default(0),
+  sbe: integer("sbe").default(0),
+  dbe: integer("dbe").default(0),
+  totalReach: integer("total_reach").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Initialize Drizzle ORM
@@ -878,6 +907,17 @@ const storage = {
     }
   },
 
+  async getRfpByStateAndSlug(state, slug) {
+    try {
+      const [rfp] = await db.select().from(rfps)
+        .where(and(eq(rfps.jobState, state), eq(rfps.slug, slug)));
+      return rfp;
+    } catch (error) {
+      console.error("Error getting RFP by state and slug:", error);
+      return null;
+    }
+  },
+
   async getFeaturedRfps() {
     try {
       return await db.select()
@@ -891,7 +931,19 @@ const storage = {
 
   async createRfp(data) {
     try {
-      const [rfp] = await db.insert(rfps).values(data).returning();
+      let baseSlug = generateSlug(data.title);
+      let slug = baseSlug;
+      let counter = 1;
+      
+      while (true) {
+        const existing = await db.select().from(rfps)
+          .where(and(eq(rfps.jobState, data.jobState), eq(rfps.slug, slug)));
+        if (existing.length === 0) break;
+        counter++;
+        slug = `${baseSlug}-${counter}`;
+      }
+      
+      const [rfp] = await db.insert(rfps).values({ ...data, slug }).returning();
       return rfp;
     } catch (error) {
       console.error("Error creating RFP:", error);
@@ -1088,6 +1140,35 @@ const storage = {
       return analyticsWithRfps;
     } catch (error) {
       console.error("Error getting boosted analytics:", error);
+      return [];
+    }
+  },
+
+  async getRfpViewSessions(rfpId) {
+    try {
+      const viewSessionsList = await db
+        .select()
+        .from(rfpViewSessions)
+        .where(eq(rfpViewSessions.rfpId, rfpId))
+        .orderBy(desc(rfpViewSessions.viewDate));
+
+      const sessionsWithUser = await Promise.all(
+        viewSessionsList.map(async (session) => {
+          if (session.userId) {
+            const [user] = await db
+              .select()
+              .from(users)
+              .where(eq(users.id, session.userId))
+              .limit(1);
+            return { ...session, user: user || undefined };
+          }
+          return { ...session, user: undefined };
+        })
+      );
+
+      return sessionsWithUser;
+    } catch (error) {
+      console.error("Error getting RFP view sessions:", error);
       return [];
     }
   },
@@ -1816,6 +1897,38 @@ app.get("/api/rfps/:id", async (req, res) => {
   }
 });
 
+app.get("/api/rfps/by-location/:state/:slug", async (req, res) => {
+  try {
+    const { state, slug } = req.params;
+    
+    if (!state || !slug) {
+      return res.status(400).json({ message: "State and slug are required" });
+    }
+
+    const rfp = await storage.getRfpByStateAndSlug(state, slug);
+    if (!rfp) {
+      return res.status(404).json({ message: "RFP not found" });
+    }
+    
+    if (rfp.organizationId === null) {
+      return res.json({ ...rfp, organization: null });
+    }
+    
+    const org = await storage.getUser(rfp.organizationId);
+    const rfpWithOrg = {
+      ...rfp,
+      organization: org ? {
+        id: org.id,
+        companyName: org.companyName,
+        logo: org.logo
+      } : null
+    };
+    res.json(rfpWithOrg);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch RFP" });
+  }
+});
+
 app.post("/api/rfps", requireAuth, async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -2156,6 +2269,174 @@ app.get("/api/analytics/rfp/:id", requireAuth, async (req, res) => {
     res.json(analytics);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch RFP analytics" });
+  }
+});
+
+app.get("/api/analytics/rfp/:id/views", requireAuth, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+
+    const viewSessions = await storage.getRfpViewSessions(id);
+    res.json(viewSessions);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch view sessions" });
+  }
+});
+
+// Reach Report Routes (Public)
+app.get("/api/reports/reach", async (req, res) => {
+  try {
+    const period = req.query.period || 'all-time';
+    
+    if (!['quarterly', '6-month', 'all-time'].includes(period)) {
+      return res.status(400).json({ message: "Invalid period" });
+    }
+    
+    let startDate = null;
+    const now = new Date();
+    
+    if (period === 'quarterly') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    } else if (period === '6-month') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    }
+    
+    const allReach = await db.select().from(rfpReach).orderBy(desc(rfpReach.totalReach));
+    
+    const reachWithRfps = await Promise.all(
+      allReach.map(async (reach) => {
+        const [rfp] = await db.select().from(rfps).where(eq(rfps.id, reach.rfpId));
+        if (!rfp) return null;
+        
+        if (startDate && rfp.createdAt && new Date(rfp.createdAt) < startDate) {
+          return null;
+        }
+        
+        return { ...reach, rfp };
+      })
+    );
+    
+    res.json(reachWithRfps.filter(item => item !== null));
+  } catch (error) {
+    console.error("Failed to fetch reach report:", error);
+    res.status(500).json({ message: "Failed to fetch reach report" });
+  }
+});
+
+app.get("/api/reports/leaderboard", async (req, res) => {
+  try {
+    const allReach = await db.select().from(rfpReach).orderBy(desc(rfpReach.totalReach));
+    
+    const clientStats = new Map();
+    
+    for (const reach of allReach) {
+      const [rfp] = await db.select().from(rfps).where(eq(rfps.id, reach.rfpId));
+      if (!rfp || !rfp.clientName) continue;
+      
+      const existing = clientStats.get(rfp.clientName) || { totalReach: 0, rfpCount: 0 };
+      clientStats.set(rfp.clientName, {
+        totalReach: existing.totalReach + (reach.totalReach || 0),
+        rfpCount: existing.rfpCount + 1
+      });
+    }
+    
+    const leaderboard = Array.from(clientStats.entries())
+      .map(([clientName, stats]) => ({ clientName, ...stats }))
+      .sort((a, b) => b.totalReach - a.totalReach);
+    
+    res.json(leaderboard);
+  } catch (error) {
+    console.error("Failed to fetch leaderboard:", error);
+    res.status(500).json({ message: "Failed to fetch leaderboard" });
+  }
+});
+
+// Validation schema for reach data
+const reachDataSchema = z.object({
+  womenOwned: z.number().int().min(0).optional(),
+  nativeAmericanOwned: z.number().int().min(0).optional(),
+  veteranOwned: z.number().int().min(0).optional(),
+  militarySpouse: z.number().int().min(0).optional(),
+  lgbtqOwned: z.number().int().min(0).optional(),
+  rural: z.number().int().min(0).optional(),
+  minorityOwned: z.number().int().min(0).optional(),
+  section3: z.number().int().min(0).optional(),
+  sbe: z.number().int().min(0).optional(),
+  dbe: z.number().int().min(0).optional(),
+});
+
+app.post("/api/rfps/:id/reach", requireAuth, async (req, res) => {
+  try {
+    const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (rfpId === null) return;
+    
+    const [rfp] = await db.select().from(rfps).where(eq(rfps.id, rfpId));
+    if (!rfp || rfp.organizationId !== req.user?.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    // Validate request body
+    const parseResult = reachDataSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ message: "Invalid reach data", errors: parseResult.error.errors });
+    }
+    
+    const reachData = parseResult.data;
+    const [existingReach] = await db.select().from(rfpReach).where(eq(rfpReach.rfpId, rfpId));
+    
+    const totalReach = (reachData.womenOwned || 0) + (reachData.nativeAmericanOwned || 0) + 
+                       (reachData.veteranOwned || 0) + (reachData.militarySpouse || 0) + 
+                       (reachData.lgbtqOwned || 0) + (reachData.rural || 0) + 
+                       (reachData.minorityOwned || 0) + (reachData.section3 || 0) + 
+                       (reachData.sbe || 0) + (reachData.dbe || 0);
+    
+    if (existingReach) {
+      const [updated] = await db
+        .update(rfpReach)
+        .set({ ...reachData, totalReach, updatedAt: new Date() })
+        .where(eq(rfpReach.rfpId, rfpId))
+        .returning();
+      res.json(updated);
+    } else {
+      const [newReach] = await db
+        .insert(rfpReach)
+        .values({ ...reachData, rfpId, totalReach })
+        .returning();
+      res.status(201).json(newReach);
+    }
+  } catch (error) {
+    console.error("Failed to create/update reach:", error);
+    res.status(500).json({ message: "Failed to create/update reach" });
+  }
+});
+
+app.get("/api/rfps/:id/reach", async (req, res) => {
+  try {
+    const rfpId = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (rfpId === null) return;
+    
+    const [reach] = await db.select().from(rfpReach).where(eq(rfpReach.rfpId, rfpId));
+    if (!reach) {
+      return res.json({ 
+        rfpId,
+        womenOwned: 0,
+        nativeAmericanOwned: 0,
+        veteranOwned: 0,
+        militarySpouse: 0,
+        lgbtqOwned: 0,
+        rural: 0,
+        minorityOwned: 0,
+        section3: 0,
+        sbe: 0,
+        dbe: 0,
+        totalReach: 0
+      });
+    }
+    res.json(reach);
+  } catch (error) {
+    console.error("Failed to fetch reach:", error);
+    res.status(500).json({ message: "Failed to fetch reach" });
   }
 });
 

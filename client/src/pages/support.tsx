@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, ChevronDown } from "lucide-react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { LandingPageHeader } from "@/components/landing-page-header";
+import { Footer } from "@/components/ui/footer";
 import {
   Accordion,
   AccordionContent,
@@ -22,8 +24,9 @@ export default function SupportPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-6 py-12">
+    <div className="min-h-screen bg-background flex flex-col">
+      <LandingPageHeader />
+      <main className="container mx-auto px-6 py-12 flex-1">
         <BreadcrumbNav items={breadcrumbItems} />
         <h1 className="text-4xl font-bold mb-8">Support Center</h1>
 
@@ -187,6 +190,7 @@ export default function SupportPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

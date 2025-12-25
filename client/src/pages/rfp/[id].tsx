@@ -32,7 +32,7 @@ import { RfpDetailContent } from "@/components/rfp-detail-content";
 import { RfpDetailSkeleton } from "@/components/skeletons";
 
 export default function RfpPage() {
-  const { id } = useParams();
+  const { state, slug } = useParams<{ state: string; slug: string }>();
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
@@ -66,13 +66,24 @@ export default function RfpPage() {
       logo?: string;
     } | null;
   }>({
-    queryKey: [`/api/rfps/${id}`],
+    queryKey: ['/api/rfps/by-location', state, slug],
+    queryFn: async () => {
+      const response = await fetch(`/api/rfps/by-location/${encodeURIComponent(state || '')}/${encodeURIComponent(slug || '')}`);
+      if (!response.ok) throw new Error('RFP not found');
+      return response.json();
+    },
+    enabled: !!state && !!slug,
   });
 
-  // Fetch RFP documents
+  // Fetch RFP documents using the RFP ID once we have it
   const { data: rfpDocuments = [] } = useQuery<RfpDocument[]>({
-    queryKey: [`/api/rfps/${id}/documents`],
-    enabled: !!id,
+    queryKey: ['/api/rfps', rfp?.id, 'documents'],
+    queryFn: async () => {
+      const response = await fetch(`/api/rfps/${rfp!.id}/documents`);
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      return response.json();
+    },
+    enabled: !!rfp?.id,
   });
   
   // Track view time when user leaves the page or when component unmounts
@@ -108,7 +119,7 @@ export default function RfpPage() {
         
         // Only track if the user spent at least 3 seconds on the page (to filter out accidental clicks)
         if (duration >= 3) {
-          console.log(`Tracking view for RFP ${id} with duration ${duration}s`);
+          console.log(`Tracking view for RFP ${rfp?.id} with duration ${duration}s`);
           
           const response = await fetch('/api/analytics/track-view', {
             method: 'POST',
@@ -116,7 +127,7 @@ export default function RfpPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              rfpId: Number(id),
+              rfpId: rfp?.id,
               duration: duration,
             }),
             credentials: 'include', // Important: Include cookies for auth
@@ -173,7 +184,7 @@ export default function RfpPage() {
       clearTimeout(trackingTimer);
       trackViewDuration();
     };
-  }, [id, user, rfp]);
+  }, [rfp?.id, user, rfp]);
 
   const handleDownload = () => {
     const element = document.getElementById('rfp-content');
@@ -227,6 +238,9 @@ export default function RfpPage() {
 
   const isOwner = user?.id === rfp.organizationId;
   
+  // Helper to build current RFP URL
+  const currentRfpUrl = `/rfp/${encodeURIComponent(rfp.jobState)}/${rfp.slug || rfp.id}`;
+  
   // Determine breadcrumbs and back button based on navigation context
   const getBreadcrumbsAndBackButton = () => {
     // If we have navigation context, use it
@@ -236,7 +250,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
             { label: "My RFPs", href: "/dashboard/my-rfps" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to My RFPs", href: "/dashboard/my-rfps" },
         };
@@ -246,7 +260,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
             { label: "Search all RFPs", href: "/dashboard/all" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to Search all RFPs", href: "/dashboard/all" },
         };
@@ -256,7 +270,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
             { label: "Featured", href: "/dashboard/featured" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to Featured", href: "/dashboard/featured" },
         };
@@ -266,7 +280,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
             { label: "New RFPs", href: "/dashboard/new" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to New RFPs", href: "/dashboard/new" },
         };
@@ -275,7 +289,7 @@ export default function RfpPage() {
         return {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to Dashboard", href: "/dashboard" },
         };
@@ -285,7 +299,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Dashboard", href: "/dashboard" },
             { label: "Analytics", href: "/dashboard/analytics" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to Analytics", href: "/dashboard/analytics" },
         };
@@ -295,7 +309,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Home", href: "/" },
             { label: "Featured Opportunities", href: "/opportunities/featured" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to Featured Opportunities", href: "/opportunities/featured" },
         };
@@ -305,7 +319,7 @@ export default function RfpPage() {
           breadcrumbs: [
             { label: "Home", href: "/" },
             { label: "New Opportunities", href: "/opportunities/new" },
-            { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+            { label: rfp.title || "RFP Details", href: currentRfpUrl },
           ],
           backButton: { label: "← Back to New Opportunities", href: "/opportunities/new" },
         };
@@ -317,7 +331,7 @@ export default function RfpPage() {
       return {
         breadcrumbs: [
           { label: "Dashboard", href: "/dashboard" },
-          { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+          { label: rfp.title || "RFP Details", href: currentRfpUrl },
         ],
         backButton: { label: "← Back to Dashboard", href: "/dashboard" },
       };
@@ -326,7 +340,7 @@ export default function RfpPage() {
     return {
       breadcrumbs: [
         { label: "Home", href: "/" },
-        { label: rfp.title || "RFP Details", href: `/rfp/${id}` },
+        { label: rfp.title || "RFP Details", href: currentRfpUrl },
       ],
       backButton: { label: "← Back to Home", href: "/" },
     };

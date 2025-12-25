@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Rfp, Rfi, User, RfpViewSession } from "@shared/schema";
@@ -33,6 +33,8 @@ export default function UnifiedReportPage() {
       navigate("/dashboard/reports");
     }
   }, [rfp, user, loadingRfp, navigate]);
+
+  const [logoError, setLogoError] = useState(false);
 
   const certificationGoals = useMemo(() => rfp?.certificationGoals || [], [rfp]);
 
@@ -167,15 +169,24 @@ export default function UnifiedReportPage() {
                   className="h-12 object-contain"
                   data-testid="img-fcb-logo"
                 />
-                {user?.logo && (
+                {user?.logo && !logoError ? (
                   <img
                     src={user.logo}
                     alt={`${user.companyName} Logo`}
                     className="h-12 object-contain"
-                    crossOrigin="anonymous"
                     data-testid="img-client-logo"
+                    onError={() => setLogoError(true)}
                   />
-                )}
+                ) : user?.companyName ? (
+                  <div 
+                    className="h-12 px-4 bg-gray-100 border border-gray-300 rounded flex items-center justify-center"
+                    data-testid="img-client-logo-fallback"
+                  >
+                    <span className="text-lg font-bold text-gray-700">
+                      {user.companyName.split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
               {/* Report Content */}
@@ -286,7 +297,7 @@ export default function UnifiedReportPage() {
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Viewer</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Company</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">View Date</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Duration</th>
+                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Certifications</th>
                         <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Converted to Bid</th>
                       </tr>
                     </thead>
@@ -314,8 +325,18 @@ export default function UnifiedReportPage() {
                             <td className="border border-gray-300 px-2 py-2 align-top whitespace-nowrap">
                               {session.viewDate ? format(new Date(session.viewDate), "MM/dd/yyyy h:mm a") : '-'}
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top whitespace-nowrap">
-                              {session.duration ? `${Math.floor(session.duration / 60)}m ${session.duration % 60}s` : '-'}
+                            <td className="border border-gray-300 px-2 py-2 align-top">
+                              {session.user?.certificationName && session.user.certificationName.length > 0 && session.user.certificationName.some((c: string) => c !== "None") ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {session.user.certificationName.filter((c: string) => c !== "None").map((cert: string, idx: number) => (
+                                    <span key={idx} className="px-1 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {cert}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">None</span>
+                              )}
                             </td>
                             <td className="border border-gray-300 px-2 py-2 align-top">
                               {session.convertedToBid ? (

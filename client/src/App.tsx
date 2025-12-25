@@ -12,7 +12,9 @@ import { ProtectedRoute } from "./lib/protected-route";
 import AboutPage from "@/pages/about";
 import SupportPage from "@/pages/support";
 import TermsPage from "@/pages/terms";
+import PrivacyPolicyPage from "@/pages/privacy-policy";
 import RfpDetailPage from "@/pages/rfp/[id]";
+import RfpRedirectPage from "@/pages/rfp-redirect";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
 import OpportunitiesPage from "@/pages/opportunities/[type]";
 import UnifiedReportPage from "@/pages/reports/[id]";
@@ -29,6 +31,7 @@ import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import EmailVerificationPendingPage from "@/pages/email-verification-pending";
+import LeaderboardPage from "@/pages/leaderboard";
 import { ThemeProvider } from "@/components/theme-provider";
 import HotReload from "@/components/hot-reload";
 import { UpdateNotifier } from "@/components/update-notifier";
@@ -45,6 +48,8 @@ function Router() {
       <Route path="/about" component={AboutPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+      <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/opportunities/:type" component={OpportunitiesPage} />
       <Route path="/onboarding">
         <ProtectedRoute path="/onboarding" component={() => <OnboardingForm />} />
@@ -88,7 +93,8 @@ function Router() {
       <Route path="/reports/:id">
         <ProtectedRoute path="/reports/:id" component={() => <UnifiedReportPage />} />
       </Route>
-      <Route path="/rfp/:id" component={RfpDetailPage} />
+      <Route path="/rfp/:state/:slug" component={RfpDetailPage} />
+      <Route path="/rfp/:id" component={RfpRedirectPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/email-verification-pending" component={EmailVerificationPendingPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />

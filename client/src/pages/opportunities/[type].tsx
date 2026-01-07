@@ -56,6 +56,9 @@ export default function OpportunitiesPage() {
 
   const twentyFourHoursAgo = subHours(new Date(), 24);
   let filteredRfps = rfps?.filter(rfp => {
+    // Hide RFPs past their deadline
+    if (new Date(rfp.deadline) < new Date()) return false;
+    
     if (type === "featured") {
       return rfp.featured;
     } else if (type === "new") {

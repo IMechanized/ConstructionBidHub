@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gt } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
@@ -922,7 +922,7 @@ const storage = {
     try {
       return await db.select()
         .from(rfps)
-        .where(eq(rfps.featured, true));
+        .where(and(eq(rfps.featured, true), gt(rfps.deadline, new Date())));
     } catch (error) {
       console.error("Error getting featured RFPs:", error);
       return [];
@@ -3773,12 +3773,53 @@ app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
 });
 
 // Serve static files - MUST be placed after all API routes
+// Configure cache headers: hashed assets get long cache, non-hashed get short cache
 const staticDir = path.join(process.cwd(), 'dist/public');
 if (fs.existsSync(staticDir)) {
-  app.use(express.static(staticDir));
+  app.use(express.static(staticDir, {
+    maxAge: '1y',
+    immutable: true,
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      const basename = path.basename(filePath);
+      
+      // index.html should never be cached - always fetch fresh
+      if (basename === 'index.html' || ext === '.html') {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return;
+      }
+      
+      // Hashed assets (contain hash in filename like main.abc123.js) can be cached forever
+      const hashedPattern = /\.[a-f0-9]{8,}\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)$/i;
+      if (hashedPattern.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return;
+      }
+      
+      // Non-hashed static assets: cache for 1 hour with revalidation
+      if (['.js', '.css', '.json', '.map'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        return;
+      }
+      
+      // Images and fonts without hash: cache for 1 day
+      if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.eot'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return;
+      }
+      
+      // Default: short cache for other assets
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }));
 }
 
 // SPA catch-all - serves index.html for all non-API routes (must be after all API routes)
+// CRITICAL: Always send no-cache headers to prevent stale SPA shell on browser refresh
 app.get('*', (req, res, next) => {
   // Skip API routes - let them fall through to 404
   if (req.path.startsWith('/api')) {
@@ -3794,6 +3835,10 @@ app.get('*', (req, res, next) => {
   
   for (const indexPath of possiblePaths) {
     if (fs.existsSync(indexPath)) {
+      // Set no-cache headers to prevent browser from using stale HTML
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.sendFile(indexPath);
     }
   }

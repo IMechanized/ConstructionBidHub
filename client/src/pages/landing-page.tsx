@@ -31,10 +31,13 @@ export default function LandingPage() {
     queryKey: ['/api/reports/leaderboard'],
   });
 
-  const featuredRfps = rfps?.filter(rfp => rfp.featured) || [];
+  const featuredRfps = rfps?.filter(rfp => 
+    rfp.featured && new Date(rfp.deadline) > new Date()
+  ) || [];
   const twentyFourHoursAgo = subHours(new Date(), 24);
   const newRfps = rfps?.filter(rfp =>
     !rfp.featured &&
+    new Date(rfp.deadline) > new Date() &&
     isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
   ) || [];
 

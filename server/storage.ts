@@ -5,7 +5,7 @@
 
 import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
-import { eq, and, sql, desc, inArray, gte } from "drizzle-orm";
+import { eq, and, sql, desc, inArray, gte, gt } from "drizzle-orm";
 import session from "express-session";
 import { Store } from "express-session";
 import ConnectPgSimple from 'connect-pg-simple';
@@ -166,7 +166,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedRfps(): Promise<Rfp[]> {
-    return db.select().from(rfps).where(eq(rfps.featured, true));
+    return db.select().from(rfps).where(
+      and(
+        eq(rfps.featured, true),
+        gt(rfps.deadline, new Date())
+      )
+    );
   }
 
   async getRfpById(id: number): Promise<Rfp | undefined> {

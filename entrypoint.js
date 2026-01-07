@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, gt } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
@@ -922,7 +922,7 @@ const storage = {
     try {
       return await db.select()
         .from(rfps)
-        .where(eq(rfps.featured, true));
+        .where(and(eq(rfps.featured, true), gt(rfps.deadline, new Date())));
     } catch (error) {
       console.error("Error getting featured RFPs:", error);
       return [];

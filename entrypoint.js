@@ -2086,8 +2086,14 @@ app.get("/api/rfp-documents/:id/download", async (req, res) => {
       throw new Error('Failed to fetch document from storage');
     }
 
+    // Sanitize filename to prevent header injection attacks
+    const sanitizedFilename = document.filename
+      .replace(/[^\w\s.-]/g, '_')
+      .replace(/\s+/g, '_')
+      .substring(0, 255);
+    
     // Set headers to force download
-    res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
     res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
     
     // Stream the file to the response
@@ -2631,23 +2637,23 @@ app.get('/api/payments/config', (req, res) => {
 
 /**
  * Debug endpoint to check Stripe status and connection
+ * SECURITY: Only accessible in development mode
  */
 app.get('/api/payments/debug', (req, res) => {
+  if (isProduction) {
+    return res.status(403).json({ message: 'Debug endpoint disabled in production' });
+  }
+
   console.log('Stripe Debug Information:');
   console.log('- Stripe Status:', JSON.stringify(stripeStatus));
   console.log('- Has Stripe Key:', Boolean(stripeSecretKey));
-  console.log('- Stripe Key Last Four:', stripeSecretKey ? `...${stripeSecretKey.slice(-4)}` : 'none');
   console.log('- Node Environment:', process.env.NODE_ENV || 'development');
-  console.log('- Is Production:', isProduction);
   console.log('- Test Mode:', stripeStatus.keyType === 'test');
 
-  // Return detailed information about Stripe configuration
   res.json({
     stripeStatus: stripeStatus,
     hasStripeKey: Boolean(stripeSecretKey),
-    stripeKeyLastFour: stripeSecretKey ? `...${stripeSecretKey.slice(-4)}` : null,
     nodeEnv: process.env.NODE_ENV || 'development',
-    isProduction: isProduction,
     testMode: stripeStatus.keyType === 'test'
   });
 });

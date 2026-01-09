@@ -297,7 +297,9 @@ export default function PaymentForm({ rfpId, pendingRfpData, onSuccess, onCancel
       <Card>
         <CardContent className="p-4">
           {/* Set the created RFP ID to global window object so it can be accessed by the StripeCheckoutForm */}
-          {createdRfpId && <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${createdRfpId};` }} />}
+          {createdRfpId && Number.isInteger(Number(createdRfpId)) && Number(createdRfpId) > 0 && (
+            <script dangerouslySetInnerHTML={{ __html: `window.createdRfpId = ${Number(createdRfpId)};` }} />
+          )}
           
           {hasStripeError || !isValidClientSecret ? (
             <div className="p-6 text-center">

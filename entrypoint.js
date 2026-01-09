@@ -1590,8 +1590,23 @@ app.use(helmet({
 // Set up session - matches server/session.ts configuration
 console.log('[Session] Initializing session configuration...');
 
+// SECURITY: Validate session secret in production
+function getSessionSecretSafe() {
+  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.DEV === 'true';
+  
+  if (!isDevelopment) {
+    if (!process.env.SESSION_SECRET) {
+      console.error('CRITICAL SECURITY ERROR: SESSION_SECRET is required in production');
+      throw new Error('SESSION_SECRET is required in production');
+    }
+    return process.env.SESSION_SECRET;
+  }
+  
+  return process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret';
+}
+
 const sessionConfig = {
-  secret: process.env.SESSION_SECRET || process.env.REPL_ID || 'development_secret',
+  secret: getSessionSecretSafe(),
   resave: false,
   saveUninitialized: false,
   store: storage.sessionStore,

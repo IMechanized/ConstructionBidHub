@@ -629,7 +629,13 @@ export function registerRoutes(app: Express): Server {
       if (!response.ok) {
         throw new Error('Failed to fetch document from storage');
       }
-      res.setHeader('Content-Disposition', `attachment; filename="${document.filename}"`);
+      // Sanitize filename to prevent header injection attacks
+      const sanitizedFilename = document.filename
+        .replace(/[^\w\s.-]/g, '_')
+        .replace(/\s+/g, '_')
+        .substring(0, 255);
+      
+      res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
       res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));

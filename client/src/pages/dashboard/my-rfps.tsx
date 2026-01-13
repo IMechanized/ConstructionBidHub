@@ -93,9 +93,9 @@ export default function MyRfpsPage() {
       }
     }
 
-    // Sort by newest first (most recently created)
+    // Sort by farthest deadline first (future deadlines at top, expired at bottom)
     filtered = [...filtered].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.deadline).getTime() - new Date(a.deadline).getTime()
     );
 
     return filtered;

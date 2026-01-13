@@ -73,7 +73,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Leaderboard Preview Section */}
+      {/* Leaderboard Preview Section - only show when 5 or more clients */}
+      {leaderboard && leaderboard.length >= 5 && (
       <section className="py-8 md:py-12 px-4">
         <div className="container mx-auto">
           <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20" data-testid="card-leaderboard-preview">
@@ -82,7 +83,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3">
                   <Trophy className="h-6 w-6 text-yellow-500" />
                   <div>
-                    <CardTitle className="text-lg sm:text-xl">Top Clients by Contractor Reach</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">Leaderboard</CardTitle>
                     <p className="text-sm text-muted-foreground">See which organizations are leading in diverse contractor outreach</p>
                   </div>
                 </div>
@@ -127,6 +128,7 @@ export default function LandingPage() {
           </Card>
         </div>
       </section>
+      )}
 
       {/* Featured RFPs Section */}
       <section className="py-8 md:py-16 px-4 bg-muted/30">

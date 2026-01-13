@@ -35,7 +35,7 @@ export function LandingPageHeader() {
                 <Link href="/auth">Login</Link>
               </Button>
               <Button asChild variant="default" size="sm" className="text-base" data-testid="button-get-started">
-                <Link href="/auth">Get Started</Link>
+                <Link href="/auth">Get Started for Free</Link>
               </Button>
             </>
           )}

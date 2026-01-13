@@ -93,9 +93,9 @@ export default function MyRfpsPage() {
       }
     }
 
-    // Sort by deadline
+    // Sort by newest first (most recently created)
     filtered = [...filtered].sort((a, b) => 
-      new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     return filtered;

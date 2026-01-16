@@ -15,7 +15,7 @@
   - Added RFI endpoints (/api/rfps/:id/rfi, /api/rfis).
   - Added analytics endpoints (/api/analytics/rfp/:id, /api/analytics/boosted)
   - Implemented additional database schemas and storage methods.
-- ✅ Fixed session store implementation
+- ✅ Fixed session store implementation.
   - Fixed "ReferenceError: SessionStore is not defined" error.
   - Implemented memory-based session store instead of PostgreSQL store
   - Resolved session store inconsistency by removing duplicate implementation.

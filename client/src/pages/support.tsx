@@ -186,6 +186,15 @@ export default function SupportPage() {
                   receive responses and make award decisions.
                 </AccordionContent>
               </AccordionItem>
+
+              <AccordionItem value="item-11" className="border border-border rounded-lg px-6">
+                <AccordionTrigger className="text-left hover:no-underline">
+                  How much does it cost to post an RFP?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  It is free to post an RFP, but $25 to get it featured on the homepage to qualified contractors.
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </div>
         </div>

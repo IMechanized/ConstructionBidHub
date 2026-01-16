@@ -64,8 +64,10 @@ export function Footer() {
               <li className="text-sm text-muted-foreground">
                 Email: info@findconstructionbids.com
               </li>
-              <li className="text-sm text-muted-foreground">
-                Phone: (203) 520-1544
+              <li>
+                <a href="tel:+12034956300" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Phone: (203) 495-6300
+                </a>
               </li>
             </ul>
           </div>

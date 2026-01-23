@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { setupAuth } from "./auth.js";
+import { setupAuth, hashPassword } from "./auth.js";
 import { createSession } from "./session.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
@@ -90,6 +90,20 @@ function requireAuthMiddleware(req: Request, res: Response, next: NextFunction) 
   if (!req.isAuthenticated()) {
     logAuthenticationFailure(req.path, req);
     return sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
+  }
+  next();
+}
+
+// Middleware to check admin access
+function requireAdminMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    logAuthenticationFailure(req.path, req);
+    return sendErrorResponse(res, new Error('Unauthorized'), 401, ErrorMessages.UNAUTHORIZED, 'Auth');
+  }
+  const user = req.user as any;
+  if (!user?.isAdmin) {
+    console.log(`[ADMIN] Access denied for user ${user?.id}: isAdmin=${user?.isAdmin}`);
+    return sendErrorResponse(res, new Error('Forbidden'), 403, 'Admin access required', 'Admin');
   }
   next();
 }
@@ -1460,8 +1474,28 @@ export function registerRoutes(app: Express): Server {
       
       // Update RFP to be featured
       const updatedRfp = await storage.updateRfp(Number(rfpId), { 
-        featured: true
+        featured: true,
+        featuredAt: new Date()
       });
+      
+      // Record the payment in the payments table
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        await storage.createPayment({
+          userId: req.user!.id,
+          rfpId: Number(rfpId),
+          paymentIntentId: paymentIntentId,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency || 'usd',
+          status: 'succeeded',
+          rfpTitle: rfp.title || 'Boosted RFP'
+        });
+        console.log(`[PAYMENT] Payment record created for RFP ${rfpId}`);
+      } catch (paymentRecordError) {
+        console.error('[PAYMENT] Error recording payment:', paymentRecordError);
+        // Don't fail the request if payment recording fails - the RFP is already featured
+      }
       
       res.json({
         success: true,
@@ -1672,6 +1706,203 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: "Notification deleted" });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+    }
+  });
+
+  // ==========================================
+  // ADMIN ROUTES
+  // ==========================================
+
+  // Get all users with pagination (admin only)
+  app.get("/api/admin/users", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string || '';
+      
+      if (page < 1 || limit < 1 || limit > 100) {
+        return sendErrorResponse(res, new Error('Invalid pagination'), 400, 'Invalid pagination parameters', 'AdminUsers');
+      }
+      
+      const result = await storage.getAllUsers(page, limit, search);
+      
+      // Remove passwords from response
+      const sanitizedUsers = result.users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json({
+        users: sanitizedUsers,
+        total: result.total,
+        page,
+        limit,
+        totalPages: Math.ceil(result.total / limit)
+      });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to fetch users', 'AdminUsers');
+    }
+  });
+
+  // Update user status (enable/disable) - admin only
+  app.patch("/api/admin/users/:id/status", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'User ID', res);
+      if (id === null) return;
+      
+      const { status } = req.body;
+      if (!status || !['active', 'deactivated'].includes(status)) {
+        return sendErrorResponse(res, new Error('Invalid status'), 400, 'Status must be "active" or "deactivated"', 'AdminUserStatus');
+      }
+      
+      // Prevent admin from deactivating themselves
+      if (id === req.user!.id) {
+        return sendErrorResponse(res, new Error('Cannot modify own status'), 400, 'Cannot modify your own account status', 'AdminUserStatus');
+      }
+      
+      const updated = await storage.updateUserStatus(id, status);
+      const { password, ...userWithoutPassword } = updated;
+      
+      console.log(`[ADMIN] User ${req.user!.id} changed user ${id} status to ${status}`);
+      res.json(userWithoutPassword);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to update user status', 'AdminUserStatus');
+    }
+  });
+
+  // Update user password - admin only
+  app.patch("/api/admin/users/:id/password", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'User ID', res);
+      if (id === null) return;
+      
+      const { newPassword } = req.body;
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+        return sendErrorResponse(res, new Error('Invalid password'), 400, 'Password must be at least 8 characters', 'AdminUserPassword');
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      const updated = await storage.adminUpdateUserPassword(id, hashedPassword);
+      const { password, ...userWithoutPassword } = updated;
+      
+      console.log(`[ADMIN] User ${req.user!.id} changed password for user ${id}`);
+      res.json({ message: 'Password updated successfully', user: userWithoutPassword });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to update password', 'AdminUserPassword');
+    }
+  });
+
+  // Delete user - admin only
+  app.delete("/api/admin/users/:id", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'User ID', res);
+      if (id === null) return;
+      
+      // Prevent admin from deleting themselves
+      if (id === req.user!.id) {
+        return sendErrorResponse(res, new Error('Cannot delete self'), 400, 'Cannot delete your own account', 'AdminUserDelete');
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(id);
+      if (!user) {
+        return sendErrorResponse(res, new Error('User not found'), 404, 'User not found', 'AdminUserDelete');
+      }
+      
+      await storage.adminDeleteUser(id);
+      console.log(`[ADMIN] User ${req.user!.id} deleted user ${id}`);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to delete user', 'AdminUserDelete');
+    }
+  });
+
+  // Get all payments with pagination (admin only)
+  app.get("/api/admin/payments", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      if (page < 1 || limit < 1 || limit > 100) {
+        return sendErrorResponse(res, new Error('Invalid pagination'), 400, 'Invalid pagination parameters', 'AdminPayments');
+      }
+      
+      const result = await storage.getAllPayments(page, limit);
+      
+      // Remove sensitive user data
+      const sanitizedPayments = result.payments.map(payment => {
+        if (payment.user) {
+          const { password, ...userWithoutPassword } = payment.user;
+          return { ...payment, user: userWithoutPassword };
+        }
+        return payment;
+      });
+      
+      res.json({
+        payments: sanitizedPayments,
+        total: result.total,
+        page,
+        limit,
+        totalPages: Math.ceil(result.total / limit)
+      });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to fetch payments', 'AdminPayments');
+    }
+  });
+
+  // Get all RFPs with pagination (admin only)
+  app.get("/api/admin/rfps", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string || '';
+      
+      if (page < 1 || limit < 1 || limit > 100) {
+        return sendErrorResponse(res, new Error('Invalid pagination'), 400, 'Invalid pagination parameters', 'AdminRfps');
+      }
+      
+      const result = await storage.getAllRfps(page, limit, search);
+      
+      res.json({
+        rfps: result.rfps,
+        total: result.total,
+        page,
+        limit,
+        totalPages: Math.ceil(result.total / limit)
+      });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to fetch RFPs', 'AdminRfps');
+    }
+  });
+
+  // Delete RFP - admin only
+  app.delete("/api/admin/rfps/:id", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+      if (id === null) return;
+      
+      // Check if RFP exists
+      const rfp = await storage.getRfpById(id);
+      if (!rfp) {
+        return sendErrorResponse(res, new Error('RFP not found'), 404, 'RFP not found', 'AdminRfpDelete');
+      }
+      
+      await storage.deleteRfp(id);
+      console.log(`[ADMIN] User ${req.user!.id} deleted RFP ${id} (${rfp.title})`);
+      res.json({ message: 'RFP deleted successfully' });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to delete RFP', 'AdminRfpDelete');
+    }
+  });
+
+  // Check if current user is admin
+  app.get("/api/admin/status", requireAuthMiddleware, async (req: Request, res: Response) => {
+    try {
+      const user = req.user as any;
+      res.json({ isAdmin: user?.isAdmin || false });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, 'Failed to check admin status', 'AdminStatus');
     }
   });
 

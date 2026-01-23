@@ -73,6 +73,23 @@ export const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"), // When the reset token expires
   failedLoginAttempts: integer("failed_login_attempts").default(0), // Track failed login attempts
   accountLockedUntil: timestamp("account_locked_until"), // When the account lockout expires
+  isAdmin: boolean("is_admin").default(false), // Admin flag - manually set by DB manager
+});
+
+/**
+ * Payments Table
+ * Tracks payments for boosted RFPs
+ */
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(), // User who made the payment
+  rfpId: integer("rfp_id").references(() => rfps.id, { onDelete: 'set null' }), // RFP that was boosted
+  paymentIntentId: text("payment_intent_id").notNull(), // Stripe payment intent ID
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: text("currency").default("usd").notNull(),
+  status: text("status", { enum: ["pending", "succeeded", "failed", "refunded"] }).default("pending").notNull(),
+  rfpTitle: text("rfp_title"), // Snapshot of RFP title at time of payment
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 /**
@@ -392,6 +409,22 @@ export const insertRfpReachSchema = createInsertSchema(rfpReach).pick({
   totalReach: true,
 });
 
+// Payment creation validation
+export const insertPaymentSchema = createInsertSchema(payments).pick({
+  userId: true,
+  rfpId: true,
+  paymentIntentId: true,
+  amount: true,
+  currency: true,
+  status: true,
+  rfpTitle: true,
+});
+
+// Admin password change schema
+export const adminPasswordChangeSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -413,3 +446,5 @@ export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = typeof backupLogs.$inferInsert;
 export type RfpReach = typeof rfpReach.$inferSelect;
 export type InsertRfpReach = z.infer<typeof insertRfpReachSchema>;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;

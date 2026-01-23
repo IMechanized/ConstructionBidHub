@@ -3,9 +3,9 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, generateSlug } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, payments, type Payment, type InsertPayment, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
-import { eq, and, sql, desc, inArray, gte, gt } from "drizzle-orm";
+import { eq, and, sql, desc, inArray, gte, gt, ilike, or, count } from "drizzle-orm";
 import session from "express-session";
 import { Store } from "express-session";
 import ConnectPgSimple from 'connect-pg-simple';
@@ -79,6 +79,20 @@ export interface IStorage {
   updateRfpReach(rfpId: number, updates: Partial<RfpReach>): Promise<RfpReach>;
   getReachReport(period: 'quarterly' | '6-month' | 'all-time'): Promise<(RfpReach & { rfp: Rfp })[]>;
   getReachLeaderboard(): Promise<{ clientName: string; totalReach: number; rfpCount: number }[]>;
+
+  // Admin Operations
+  getAllUsers(page: number, limit: number, search?: string): Promise<{ users: User[]; total: number }>;
+  updateUserStatus(id: number, status: 'active' | 'deactivated'): Promise<User>;
+  adminUpdateUserPassword(id: number, hashedPassword: string): Promise<User>;
+  adminDeleteUser(id: number): Promise<void>;
+  getAllRfps(page: number, limit: number, search?: string): Promise<{ rfps: Rfp[]; total: number }>;
+  
+  // Payment Operations
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  getPaymentById(id: number): Promise<Payment | undefined>;
+  getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined>;
+  updatePaymentStatus(id: number, status: 'pending' | 'succeeded' | 'failed' | 'refunded'): Promise<Payment>;
+  getAllPayments(page: number, limit: number): Promise<{ payments: (Payment & { user?: User; rfp?: Rfp })[]; total: number }>;
 }
 
 /**
@@ -862,6 +876,210 @@ export class DatabaseStorage implements IStorage {
     return Array.from(clientStats.entries())
       .map(([clientName, stats]) => ({ clientName, ...stats }))
       .sort((a, b) => b.totalReach - a.totalReach);
+  }
+
+  /**
+   * Admin Operations
+   */
+  async getAllUsers(page: number, limit: number, search?: string): Promise<{ users: User[]; total: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      let whereClause = undefined;
+      if (search && search.trim()) {
+        whereClause = or(
+          ilike(users.email, `%${search}%`),
+          ilike(users.companyName, `%${search}%`),
+          ilike(users.firstName, `%${search}%`),
+          ilike(users.lastName, `%${search}%`)
+        );
+      }
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(users)
+        .where(whereClause);
+      
+      const userList = await db
+        .select()
+        .from(users)
+        .where(whereClause)
+        .orderBy(desc(users.id))
+        .limit(limit)
+        .offset(offset);
+      
+      return { users: userList, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw error;
+    }
+  }
+
+  async updateUserStatus(id: number, status: 'active' | 'deactivated'): Promise<User> {
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ status })
+        .where(eq(users.id, id))
+        .returning();
+      if (!updated) throw new Error("User not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      throw error;
+    }
+  }
+
+  async adminUpdateUserPassword(id: number, hashedPassword: string): Promise<User> {
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, id))
+        .returning();
+      if (!updated) throw new Error("User not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating user password:", error);
+      throw error;
+    }
+  }
+
+  async adminDeleteUser(id: number): Promise<void> {
+    try {
+      await db.delete(rfis).where(eq(rfis.email, 
+        db.select({ email: users.email }).from(users).where(eq(users.id, id))
+      ));
+      await db.delete(notifications).where(eq(notifications.userId, id));
+      await db.delete(users).where(eq(users.id, id));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw error;
+    }
+  }
+
+  async getAllRfps(page: number, limit: number, search?: string): Promise<{ rfps: Rfp[]; total: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      let whereClause = undefined;
+      if (search && search.trim()) {
+        whereClause = or(
+          ilike(rfps.title, `%${search}%`),
+          ilike(rfps.clientName, `%${search}%`),
+          ilike(rfps.description, `%${search}%`)
+        );
+      }
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(rfps)
+        .where(whereClause);
+      
+      const rfpList = await db
+        .select()
+        .from(rfps)
+        .where(whereClause)
+        .orderBy(desc(rfps.id))
+        .limit(limit)
+        .offset(offset);
+      
+      return { rfps: rfpList, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all RFPs:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Payment Operations
+   */
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    try {
+      const [newPayment] = await db
+        .insert(payments)
+        .values(payment)
+        .returning();
+      return newPayment;
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      throw error;
+    }
+  }
+
+  async getPaymentById(id: number): Promise<Payment | undefined> {
+    try {
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.id, id));
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by ID:", error);
+      return undefined;
+    }
+  }
+
+  async getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined> {
+    try {
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.paymentIntentId, paymentIntentId));
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by intent ID:", error);
+      return undefined;
+    }
+  }
+
+  async updatePaymentStatus(id: number, status: 'pending' | 'succeeded' | 'failed' | 'refunded'): Promise<Payment> {
+    try {
+      const [updated] = await db
+        .update(payments)
+        .set({ status })
+        .where(eq(payments.id, id))
+        .returning();
+      if (!updated) throw new Error("Payment not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw error;
+    }
+  }
+
+  async getAllPayments(page: number, limit: number): Promise<{ payments: (Payment & { user?: User; rfp?: Rfp })[]; total: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(payments);
+      
+      const paymentList = await db
+        .select()
+        .from(payments)
+        .orderBy(desc(payments.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      const paymentsWithDetails = await Promise.all(
+        paymentList.map(async (payment) => {
+          const [user] = payment.userId 
+            ? await db.select().from(users).where(eq(users.id, payment.userId))
+            : [undefined];
+          const [rfp] = payment.rfpId 
+            ? await db.select().from(rfps).where(eq(rfps.id, payment.rfpId))
+            : [undefined];
+          return { ...payment, user, rfp };
+        })
+      );
+      
+      return { payments: paymentsWithDetails, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all payments:", error);
+      throw error;
+    }
   }
 }
 

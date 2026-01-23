@@ -11,6 +11,7 @@ import {
   Clock,
   Layout,
   LayoutDashboard,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,6 +41,12 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   }, [user?.language, i18n]);
 
   const navItems = [
+    ...(user?.isAdmin ? [{
+      label: "Admin",
+      href: "/dashboard/admin",
+      icon: Shield,
+      isAdmin: true,
+    }] : []),
     {
       label: "Dashboard",
       href: "/dashboard",

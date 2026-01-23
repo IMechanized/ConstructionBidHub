@@ -31,6 +31,12 @@ export default function Dashboard() {
     }
   }, [user?.language, i18n]);
 
+  useEffect(() => {
+    if (user?.isAdmin && location === "/dashboard") {
+      setLocation("/dashboard/admin");
+    }
+  }, [user?.isAdmin, location, setLocation]);
+
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
     toast({

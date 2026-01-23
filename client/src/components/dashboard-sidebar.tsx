@@ -11,6 +11,7 @@ import {
   Clock,
   Layout,
   LayoutDashboard,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -90,6 +91,12 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       href: "/dashboard/support",
       icon: HelpCircle,
     },
+    ...(user?.isAdmin ? [{
+      label: "Admin",
+      href: "/dashboard/admin",
+      icon: Shield,
+      isAdmin: true,
+    }] : []),
   ];
 
   const NavigationContent = () => (

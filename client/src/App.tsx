@@ -26,6 +26,7 @@ import RfiPage from "@/pages/dashboard/rfis";
 import ReportsPage from "@/pages/dashboard/reports";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
+import AdminDashboard from "@/pages/dashboard/admin";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
@@ -83,6 +84,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/support">
         <ProtectedRoute path="/dashboard/support" component={DashboardSupportPage} />
+      </Route>
+      <Route path="/dashboard/admin">
+        <ProtectedRoute path="/dashboard/admin" component={AdminDashboard} />
       </Route>
       <Route path="/dashboard/rfi-management/:id">
         <ProtectedRoute path="/dashboard/rfi-management/:id" component={RfiManagementPage} />

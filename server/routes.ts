@@ -1474,8 +1474,28 @@ export function registerRoutes(app: Express): Server {
       
       // Update RFP to be featured
       const updatedRfp = await storage.updateRfp(Number(rfpId), { 
-        featured: true
+        featured: true,
+        featuredAt: new Date()
       });
+      
+      // Record the payment in the payments table
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        await storage.createPayment({
+          userId: req.user!.id,
+          rfpId: Number(rfpId),
+          paymentIntentId: paymentIntentId,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency || 'usd',
+          status: 'succeeded',
+          rfpTitle: rfp.title || 'Boosted RFP'
+        });
+        console.log(`[PAYMENT] Payment record created for RFP ${rfpId}`);
+      } catch (paymentRecordError) {
+        console.error('[PAYMENT] Error recording payment:', paymentRecordError);
+        // Don't fail the request if payment recording fails - the RFP is already featured
+      }
       
       res.json({
         success: true,

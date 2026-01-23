@@ -3025,6 +3025,24 @@ app.post('/api/payments/confirm-payment', requireAuth, async (req, res) => {
       featuredAt: new Date()
     });
 
+    // Record the payment in the payments table
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      await storage.createPayment({
+        userId: req.user.id,
+        rfpId: Number(rfpId),
+        paymentIntentId: paymentIntentId,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency || 'usd',
+        status: 'succeeded',
+        rfpTitle: rfp.title || 'Boosted RFP'
+      });
+      console.log(`✅ Payment record created for RFP ${rfpId}`);
+    } catch (paymentRecordError) {
+      console.error('Error recording payment:', paymentRecordError);
+      // Don't fail the request if payment recording fails - the RFP is already featured
+    }
+
     console.log(`✅ RFP ${rfpId} successfully marked as featured`);
 
     res.json({

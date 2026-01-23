@@ -41,6 +41,12 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   }, [user?.language, i18n]);
 
   const navItems = [
+    ...(user?.isAdmin ? [{
+      label: "Admin",
+      href: "/dashboard/admin",
+      icon: Shield,
+      isAdmin: true,
+    }] : []),
     {
       label: "Dashboard",
       href: "/dashboard",
@@ -91,12 +97,6 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
       href: "/dashboard/support",
       icon: HelpCircle,
     },
-    ...(user?.isAdmin ? [{
-      label: "Admin",
-      href: "/dashboard/admin",
-      icon: Shield,
-      isAdmin: true,
-    }] : []),
   ];
 
   const NavigationContent = () => (

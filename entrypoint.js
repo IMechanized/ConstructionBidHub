@@ -515,6 +515,7 @@ const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   accountLockedUntil: timestamp("account_locked_until"),
+  isAdmin: boolean("is_admin").default(false),
 });
 
 const rfps = pgTable("rfps", {
@@ -638,6 +639,18 @@ const rfpReach = pgTable("rfp_reach", {
   totalReach: integer("total_reach").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  amount: integer("amount").notNull(),
+  currency: text("currency").default("usd").notNull(),
+  status: text("status").default("pending").notNull(),
+  rfpTitle: text("rfp_title"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Initialize Drizzle ORM

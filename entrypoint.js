@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and, desc, gt } from 'drizzle-orm';
+import { eq, and, desc, gt, or, ilike, count } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
@@ -1441,6 +1441,206 @@ const storage = {
     }
   },
 
+  // Admin Operations
+  async getAllUsers(page, limit, search) {
+    try {
+      const offset = (page - 1) * limit;
+      
+      let whereClause = undefined;
+      if (search && search.trim()) {
+        whereClause = or(
+          ilike(users.email, `%${search}%`),
+          ilike(users.companyName, `%${search}%`),
+          ilike(users.firstName, `%${search}%`),
+          ilike(users.lastName, `%${search}%`)
+        );
+      }
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(users)
+        .where(whereClause);
+      
+      const userList = await db
+        .select()
+        .from(users)
+        .where(whereClause)
+        .orderBy(desc(users.id))
+        .limit(limit)
+        .offset(offset);
+      
+      return { users: userList, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw error;
+    }
+  },
+
+  async updateUserStatus(id, status) {
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ status })
+        .where(eq(users.id, id))
+        .returning();
+      if (!updated) throw new Error("User not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      throw error;
+    }
+  },
+
+  async adminUpdateUserPassword(id, hashedPassword) {
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, id))
+        .returning();
+      if (!updated) throw new Error("User not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating user password:", error);
+      throw error;
+    }
+  },
+
+  async adminDeleteUser(id) {
+    try {
+      await db.delete(rfis).where(eq(rfis.email, 
+        db.select({ email: users.email }).from(users).where(eq(users.id, id))
+      ));
+      await db.delete(notifications).where(eq(notifications.userId, id));
+      await db.delete(users).where(eq(users.id, id));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw error;
+    }
+  },
+
+  async getAllRfps(page, limit, search) {
+    try {
+      const offset = (page - 1) * limit;
+      
+      let whereClause = undefined;
+      if (search && search.trim()) {
+        whereClause = or(
+          ilike(rfps.title, `%${search}%`),
+          ilike(rfps.clientName, `%${search}%`),
+          ilike(rfps.description, `%${search}%`)
+        );
+      }
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(rfps)
+        .where(whereClause);
+      
+      const rfpList = await db
+        .select()
+        .from(rfps)
+        .where(whereClause)
+        .orderBy(desc(rfps.id))
+        .limit(limit)
+        .offset(offset);
+      
+      return { rfps: rfpList, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all RFPs:", error);
+      throw error;
+    }
+  },
+
+  // Payment Operations
+  async createPayment(payment) {
+    try {
+      const [newPayment] = await db
+        .insert(payments)
+        .values(payment)
+        .returning();
+      return newPayment;
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      throw error;
+    }
+  },
+
+  async getPaymentById(id) {
+    try {
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.id, id));
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by ID:", error);
+      return undefined;
+    }
+  },
+
+  async getPaymentByIntentId(paymentIntentId) {
+    try {
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.paymentIntentId, paymentIntentId));
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by intent ID:", error);
+      return undefined;
+    }
+  },
+
+  async updatePaymentStatus(id, status) {
+    try {
+      const [updated] = await db
+        .update(payments)
+        .set({ status })
+        .where(eq(payments.id, id))
+        .returning();
+      if (!updated) throw new Error("Payment not found");
+      return updated;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw error;
+    }
+  },
+
+  async getAllPayments(page, limit) {
+    try {
+      const offset = (page - 1) * limit;
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(payments);
+      
+      const paymentList = await db
+        .select()
+        .from(payments)
+        .orderBy(desc(payments.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      const paymentsWithDetails = await Promise.all(
+        paymentList.map(async (payment) => {
+          const [user] = payment.userId 
+            ? await db.select().from(users).where(eq(users.id, payment.userId))
+            : [undefined];
+          const [rfp] = payment.rfpId 
+            ? await db.select().from(rfps).where(eq(rfps.id, payment.rfpId))
+            : [undefined];
+          return { ...payment, user, rfp };
+        })
+      );
+      
+      return { payments: paymentsWithDetails, total: totalResult?.count || 0 };
+    } catch (error) {
+      console.error("Error getting all payments:", error);
+      throw error;
+    }
+  },
+
   // Cache for session store to avoid recreating it on every access
   _sessionStore: null,
 
@@ -1802,6 +2002,17 @@ passport.deserializeUser(async (id, done) => {
 function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized: Please log in" });
+  }
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized: Please log in" });
+  }
+  if (!req.user?.isAdmin) {
+    console.log(`[ADMIN] Access denied for user ${req.user?.id}: isAdmin=${req.user?.isAdmin}`);
+    return res.status(403).json({ message: "Admin access required" });
   }
   next();
 }
@@ -3803,6 +4014,210 @@ app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
     res.json({ message: "Notification deleted" });
   } catch (error) {
     sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+  }
+});
+
+// ==========================================
+// ADMIN ROUTES
+// ==========================================
+
+// Get all users with pagination (admin only)
+app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    
+    if (page < 1 || limit < 1 || limit > 100) {
+      return res.status(400).json({ message: 'Invalid pagination parameters' });
+    }
+    
+    const result = await storage.getAllUsers(page, limit, search);
+    
+    // Remove passwords from response
+    const sanitizedUsers = result.users.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+    
+    res.json({
+      users: sanitizedUsers,
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit)
+    });
+  } catch (error) {
+    console.error("Admin get users error:", error);
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
+// Update user status (enable/disable) - admin only
+app.patch("/api/admin/users/:id/status", requireAdmin, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'User ID', res);
+    if (id === null) return;
+    
+    const { status } = req.body;
+    if (!status || !['active', 'deactivated'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be "active" or "deactivated"' });
+    }
+    
+    // Prevent admin from deactivating themselves
+    if (id === req.user.id) {
+      return res.status(400).json({ message: 'Cannot modify your own account status' });
+    }
+    
+    const updated = await storage.updateUserStatus(id, status);
+    const { password, ...userWithoutPassword } = updated;
+    
+    console.log(`[ADMIN] User ${req.user.id} changed user ${id} status to ${status}`);
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Admin update user status error:", error);
+    res.status(500).json({ message: 'Failed to update user status' });
+  }
+});
+
+// Update user password - admin only
+app.patch("/api/admin/users/:id/password", requireAdmin, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'User ID', res);
+    if (id === null) return;
+    
+    const { newPassword } = req.body;
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword);
+    const updated = await storage.adminUpdateUserPassword(id, hashedPassword);
+    const { password, ...userWithoutPassword } = updated;
+    
+    console.log(`[ADMIN] User ${req.user.id} changed password for user ${id}`);
+    res.json({ message: 'Password updated successfully', user: userWithoutPassword });
+  } catch (error) {
+    console.error("Admin update user password error:", error);
+    res.status(500).json({ message: 'Failed to update password' });
+  }
+});
+
+// Delete user - admin only
+app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'User ID', res);
+    if (id === null) return;
+    
+    // Prevent admin from deleting themselves
+    if (id === req.user.id) {
+      return res.status(400).json({ message: 'Cannot delete your own account' });
+    }
+    
+    // Check if user exists
+    const user = await storage.getUser(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    await storage.adminDeleteUser(id);
+    console.log(`[ADMIN] User ${req.user.id} deleted user ${id}`);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error("Admin delete user error:", error);
+    res.status(500).json({ message: 'Failed to delete user' });
+  }
+});
+
+// Get all payments with pagination (admin only)
+app.get("/api/admin/payments", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    if (page < 1 || limit < 1 || limit > 100) {
+      return res.status(400).json({ message: 'Invalid pagination parameters' });
+    }
+    
+    const result = await storage.getAllPayments(page, limit);
+    
+    // Remove sensitive user data
+    const sanitizedPayments = result.payments.map(payment => {
+      if (payment.user) {
+        const { password, ...userWithoutPassword } = payment.user;
+        return { ...payment, user: userWithoutPassword };
+      }
+      return payment;
+    });
+    
+    res.json({
+      payments: sanitizedPayments,
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit)
+    });
+  } catch (error) {
+    console.error("Admin get payments error:", error);
+    res.status(500).json({ message: 'Failed to fetch payments' });
+  }
+});
+
+// Get all RFPs with pagination (admin only)
+app.get("/api/admin/rfps", requireAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    
+    if (page < 1 || limit < 1 || limit > 100) {
+      return res.status(400).json({ message: 'Invalid pagination parameters' });
+    }
+    
+    const result = await storage.getAllRfps(page, limit, search);
+    
+    res.json({
+      rfps: result.rfps,
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit)
+    });
+  } catch (error) {
+    console.error("Admin get RFPs error:", error);
+    res.status(500).json({ message: 'Failed to fetch RFPs' });
+  }
+});
+
+// Delete RFP - admin only
+app.delete("/api/admin/rfps/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = validatePositiveInt(req.params.id, 'RFP ID', res);
+    if (id === null) return;
+    
+    // Check if RFP exists
+    const rfp = await storage.getRfpById(id);
+    if (!rfp) {
+      return res.status(404).json({ message: 'RFP not found' });
+    }
+    
+    await storage.deleteRfp(id);
+    console.log(`[ADMIN] User ${req.user.id} deleted RFP ${id} (${rfp.title})`);
+    res.json({ message: 'RFP deleted successfully' });
+  } catch (error) {
+    console.error("Admin delete RFP error:", error);
+    res.status(500).json({ message: 'Failed to delete RFP' });
+  }
+});
+
+// Check if current user is admin
+app.get("/api/admin/status", requireAuth, async (req, res) => {
+  try {
+    res.json({ isAdmin: req.user?.isAdmin || false });
+  } catch (error) {
+    console.error("Admin status check error:", error);
+    res.status(500).json({ message: 'Failed to check admin status' });
   }
 });
 

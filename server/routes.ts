@@ -435,16 +435,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get RFP by state and slug (SEO-friendly URL)
-  app.get("/api/rfps/by-location/:state/:slug", async (req, res) => {
+  // Get RFP by state and slug (SEO-friendly URL) - supports both old and new URL formats
+  app.get("/api/rfps/by-location/:state/:clientNameOrSlug/:slug?", async (req, res) => {
     try {
-      const { state, slug } = req.params;
+      const { state, clientNameOrSlug, slug } = req.params;
       
-      if (!state || !slug) {
+      // Support both old format /:state/:slug and new format /:state/:clientName/:slug
+      const actualSlug = slug || clientNameOrSlug;
+      
+      if (!state || !actualSlug) {
         return sendErrorResponse(res, new Error('State and slug are required'), 400, ErrorMessages.BAD_REQUEST, 'RFPBySlug');
       }
 
-      const rfp = await storage.getRfpByStateAndSlug(state, slug);
+      const rfp = await storage.getRfpByStateAndSlug(state, actualSlug);
       if (!rfp) {
         return sendErrorResponse(res, new Error('RFP not found'), 404, ErrorMessages.NOT_FOUND, 'RFPNotFound');
       }

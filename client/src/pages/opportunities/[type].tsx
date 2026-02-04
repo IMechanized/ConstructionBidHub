@@ -6,7 +6,7 @@ import { RfpCard } from "@/components/rfp-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, ArrowUpDown, Filter, Menu } from "lucide-react";
-import { isAfter, subHours, addDays, addMonths } from "date-fns";
+import { addDays, addMonths } from "date-fns";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/ui/logo";
@@ -54,18 +54,26 @@ export default function OpportunitiesPage() {
     retry: 3,
   });
 
-  const twentyFourHoursAgo = subHours(new Date(), 24);
   let filteredRfps = rfps?.filter(rfp => {
-    // Hide RFPs past their deadline
     if (new Date(rfp.deadline) < new Date()) return false;
     
     if (type === "featured") {
       return rfp.featured;
     } else if (type === "new") {
-      return !rfp.featured && isAfter(new Date(rfp.createdAt), twentyFourHoursAgo);
+      return !rfp.featured;
     }
     return false;
   }) || [];
+
+  if (type === "new") {
+    filteredRfps = [...filteredRfps].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  const newestRfpIds = new Set(
+    (type === "new" ? filteredRfps.slice(0, 12) : []).map(rfp => rfp.id)
+  );
 
   // Apply search filter
   if (searchTerm) {
@@ -541,7 +549,7 @@ export default function OpportunitiesPage() {
                   key={rfp.id}
                   rfp={rfp}
                   compact
-                  isNew={type === "new"}
+                  isNew={newestRfpIds.has(rfp.id)}
                   from={type as string}
                 />
               ))}

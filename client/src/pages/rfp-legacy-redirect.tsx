@@ -3,16 +3,16 @@ import { useParams, useLocation } from "wouter";
 import { RfpDetailSkeleton } from "@/components/skeletons";
 import { generateClientSlug } from "@/lib/utils";
 
-export default function RfpRedirectPage() {
-  const { id } = useParams<{ id: string }>();
+export default function RfpLegacyRedirect() {
+  const { state, slug } = useParams<{ state: string; slug: string }>();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!id) return;
+    if (!state || !slug) return;
 
     const fetchAndRedirect = async () => {
       try {
-        const response = await fetch(`/api/rfps/${id}`);
+        const response = await fetch(`/api/rfps/by-location/${encodeURIComponent(state)}/${encodeURIComponent(slug)}`);
         if (!response.ok) {
           setLocation("/");
           return;
@@ -22,8 +22,8 @@ export default function RfpRedirectPage() {
         const from = searchParams.get("from");
         const clientSlug = generateClientSlug(rfp.clientName || rfp.organization?.companyName);
         const newUrl = from
-          ? `/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(clientSlug)}/${rfp.slug || rfp.id}?from=${from}`
-          : `/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(clientSlug)}/${rfp.slug || rfp.id}`;
+          ? `/rfp/${encodeURIComponent(state)}/${encodeURIComponent(clientSlug)}/${slug}?from=${from}`
+          : `/rfp/${encodeURIComponent(state)}/${encodeURIComponent(clientSlug)}/${slug}`;
         setLocation(newUrl, { replace: true });
       } catch {
         setLocation("/");
@@ -31,7 +31,7 @@ export default function RfpRedirectPage() {
     };
 
     fetchAndRedirect();
-  }, [id, setLocation]);
+  }, [state, slug, setLocation]);
 
   return <RfpDetailSkeleton />;
 }

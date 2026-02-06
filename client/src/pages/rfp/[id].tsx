@@ -24,7 +24,7 @@ import { Link } from "wouter";
 import html2pdf from 'html2pdf.js';
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
-import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
+import { getCertificationClasses, normalizeUrl, generateClientSlug } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
 import { LandingPageHeader } from "@/components/landing-page-header";
@@ -32,7 +32,7 @@ import { RfpDetailContent } from "@/components/rfp-detail-content";
 import { RfpDetailSkeleton } from "@/components/skeletons";
 
 export default function RfpPage() {
-  const { state, slug } = useParams<{ state: string; slug: string }>();
+  const { state, clientName, slug } = useParams<{ state: string; clientName: string; slug: string }>();
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [isRfiModalOpen, setIsRfiModalOpen] = useState(false);
@@ -66,13 +66,13 @@ export default function RfpPage() {
       logo?: string;
     } | null;
   }>({
-    queryKey: ['/api/rfps/by-location', state, slug],
+    queryKey: ['/api/rfps/by-location', state, clientName, slug],
     queryFn: async () => {
-      const response = await fetch(`/api/rfps/by-location/${encodeURIComponent(state || '')}/${encodeURIComponent(slug || '')}`);
+      const response = await fetch(`/api/rfps/by-location/${encodeURIComponent(state || '')}/${encodeURIComponent(clientName || '')}/${encodeURIComponent(slug || '')}`);
       if (!response.ok) throw new Error('RFP not found');
       return response.json();
     },
-    enabled: !!state && !!slug,
+    enabled: !!state && !!clientName && !!slug,
   });
 
   // Fetch RFP documents using the RFP ID once we have it
@@ -239,7 +239,8 @@ export default function RfpPage() {
   const isOwner = user?.id === rfp.organizationId;
   
   // Helper to build current RFP URL
-  const currentRfpUrl = `/rfp/${encodeURIComponent(rfp.jobState)}/${rfp.slug || rfp.id}`;
+  const clientSlug = generateClientSlug(rfp.clientName || rfp.organization?.companyName);
+  const currentRfpUrl = `/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(clientSlug)}/${rfp.slug || rfp.id}`;
   
   // Determine breadcrumbs and back button based on navigation context
   const getBreadcrumbsAndBackButton = () => {

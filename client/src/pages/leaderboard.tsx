@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import { generateClientSlug } from "@/lib/utils";
 import { 
   Card, 
   CardContent, 
@@ -446,7 +447,7 @@ export default function LeaderboardPage() {
                           {displayedRfps.map((item) => (
                             <TableRow key={item.id} data-testid={`row-rfp-${item.rfpId}`}>
                               <TableCell className="font-medium">
-                                <Link href={`/rfp/${item.rfp.jobState}/${item.rfp.slug}`}>
+                                <Link href={`/rfp/${encodeURIComponent(item.rfp.jobState)}/${encodeURIComponent(generateClientSlug(item.rfp.clientName || (item.rfp as any).organization?.companyName))}/${item.rfp.slug}`}>
                                   <span className="hover:underline cursor-pointer text-primary line-clamp-1">
                                     {item.rfp.title}
                                   </span>

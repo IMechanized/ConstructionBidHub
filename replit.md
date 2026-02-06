@@ -102,11 +102,23 @@ This approach ensures large files never transit through Vercel's serverless func
 5. Analytics tracking for view counts and engagement metrics
 
 ### SEO-Friendly URL Structure
-- RFP URLs use SEO-friendly format: `/rfp/:state/:slug` (e.g., `/rfp/Connecticut/plumbing-project`)
+- RFP URLs use SEO-friendly format: `/rfp/:state/:clientName/:slug` (e.g., `/rfp/Missouri/acme-construction/renovation-project`)
+- Client name slug is generated from the RFP's clientName or organization's companyName
 - Slugs are auto-generated from RFP titles (lowercase, hyphens, special chars removed)
 - Slugs are unique per state (allows same title in different states)
+- Legacy `/rfp/:state/:slug` URLs redirect to new format with clientName for backward compatibility
 - Old `/rfp/:id` URLs redirect to new format for backward compatibility
-- API endpoints: `/api/rfps/by-location/:state/:slug` for SEO URLs, `/api/rfps/:id` still works
+- API endpoints: `/api/rfps/by-location/:state/:clientName/:slug` for SEO URLs, also supports legacy format `/api/rfps/:state/:slug`
+
+### New Opportunities Display
+- New Opportunities section shows all non-featured RFPs sorted by newest first (createdAt descending)
+- Only the newest 12 RFPs display the "New" pill badge
+- Applies to: landing page, /opportunities/new, and /dashboard/new
+
+### Featured Opportunities Empty State
+- When no featured opportunities exist, shows CTA button:
+  - "Post your RFP now" → /auth (for unauthenticated users)
+  - "Create Your RFP now" → /dashboard/my-rfps (for authenticated users)
 
 ### Real-time Features
 - Hot module replacement in development

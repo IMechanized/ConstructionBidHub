@@ -149,3 +149,19 @@ export function exportToCSV<T extends Record<string, any>>(
   
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Generate a URL-friendly slug from text (for client names)
+ * @param text The text to convert to a slug
+ * @returns A URL-friendly slug
+ */
+export function generateClientSlug(text: string | null | undefined): string {
+  if (!text) return 'unknown';
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 50) || 'unknown';
+}

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { MapPreview } from "@/components/map-preview";
+import { generateClientSlug } from "@/lib/utils";
 
 function stripHtml(html: string): string {
   const tmp = document.createElement('div');
@@ -33,10 +34,11 @@ export function RfpCard({ rfp, compact = false, isNew = false, from }: RfpCardPr
 
   const handleNavigation = () => {
     // Navigate to RFP page with navigation context as URL parameter
-    // Use SEO-friendly URL with state and slug
+    // Use SEO-friendly URL with state, clientName, and slug
     const state = encodeURIComponent(rfp.jobState);
+    const clientSlug = encodeURIComponent(generateClientSlug(rfp.clientName || rfp.organization?.companyName));
     const slug = rfp.slug || rfp.id.toString();
-    const url = from ? `/rfp/${state}/${slug}?from=${from}` : `/rfp/${state}/${slug}`;
+    const url = from ? `/rfp/${state}/${clientSlug}/${slug}?from=${from}` : `/rfp/${state}/${clientSlug}/${slug}`;
     setLocation(url);
   };
 

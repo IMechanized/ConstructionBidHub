@@ -15,6 +15,7 @@ import TermsPage from "@/pages/terms";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
 import RfpDetailPage from "@/pages/rfp/[id]";
 import RfpRedirectPage from "@/pages/rfp-redirect";
+import RfpLegacyRedirect from "@/pages/rfp-legacy-redirect";
 import AnalyticsDashboard from "@/pages/dashboard/analytics";
 import OpportunitiesPage from "@/pages/opportunities/[type]";
 import UnifiedReportPage from "@/pages/reports/[id]";
@@ -97,7 +98,8 @@ function Router() {
       <Route path="/reports/:id">
         <ProtectedRoute path="/reports/:id" component={() => <UnifiedReportPage />} />
       </Route>
-      <Route path="/rfp/:state/:slug" component={RfpDetailPage} />
+      <Route path="/rfp/:state/:clientName/:slug" component={RfpDetailPage} />
+      <Route path="/rfp/:state/:slug" component={RfpLegacyRedirect} />
       <Route path="/rfp/:id" component={RfpRedirectPage} />
       <Route path="/verify-email" component={VerifyEmailPage} />
       <Route path="/email-verification-pending" component={EmailVerificationPendingPage} />

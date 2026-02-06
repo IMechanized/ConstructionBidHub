@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination";
 import { ChevronLeft, ChevronRight, ExternalLink, RefreshCcw, Download, GitCompare, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { exportToCSV } from "@/lib/utils";
+import { exportToCSV, generateClientSlug } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -557,7 +557,7 @@ export default function AnalyticsDashboard() {
                                 variant="outline"
                                 className="h-8 px-2 sm:px-3"
                                 onClick={() => {
-                                  setLocation(`/rfp/${encodeURIComponent(item.rfp.jobState)}/${item.rfp.slug || item.rfp.id}?from=dashboard-analytics`);
+                                  setLocation(`/rfp/${encodeURIComponent(item.rfp.jobState)}/${encodeURIComponent(generateClientSlug(item.rfp.clientName || (item.rfp as any).organization?.companyName))}/${item.rfp.slug || item.rfp.id}?from=dashboard-analytics`);
                                   toast({
                                     title: "Viewing RFP",
                                     description: `Opening ${item.rfp.title}`,
@@ -725,7 +725,7 @@ export default function AnalyticsDashboard() {
                           <Button 
                             onClick={() => {
                               setDrillDownRfp(null);
-                              setLocation(`/rfp/${encodeURIComponent(drillDownRfp.rfp.jobState)}/${drillDownRfp.rfp.slug || drillDownRfp.rfp.id}?from=dashboard-analytics`);
+                              setLocation(`/rfp/${encodeURIComponent(drillDownRfp.rfp.jobState)}/${encodeURIComponent(generateClientSlug(drillDownRfp.rfp.clientName || (drillDownRfp.rfp as any).organization?.companyName))}/${drillDownRfp.rfp.slug || drillDownRfp.rfp.id}?from=dashboard-analytics`);
                             }}
                             className="w-full"
                           >

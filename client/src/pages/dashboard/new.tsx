@@ -5,7 +5,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { RfpCard } from "@/components/rfp-card";
 import { DashboardSectionSkeleton } from "@/components/skeletons";
-import { isAfter, subHours, addDays, addMonths } from "date-fns";
+import { addDays, addMonths } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -63,12 +63,15 @@ export default function NewRfps() {
     queryKey: ["/api/rfps"],
   });
 
-  const twentyFourHoursAgo = subHours(new Date(), 24);
   const locations = US_STATES_AND_TERRITORIES;
 
-  let newRfps = rfps?.filter(rfp => {
-    if (!(!rfp.featured && isAfter(new Date(rfp.createdAt), twentyFourHoursAgo))) return false;
+  const allNonFeaturedRfps = rfps?.filter(rfp => 
+    !rfp.featured && new Date(rfp.deadline) > new Date()
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
+  const newestRfpIds = new Set(allNonFeaturedRfps.slice(0, 12).map(rfp => rfp.id));
+
+  let newRfps = allNonFeaturedRfps.filter(rfp => {
     let matches = true;
 
     if (searchTerm) {
@@ -87,7 +90,7 @@ export default function NewRfps() {
     }
 
     return matches;
-  }) || [];
+  });
 
   // Apply multi-select filters
   const budgetFilters = ["under100k", "100k-500k", "500k-1m", "1m+"];
@@ -480,7 +483,7 @@ export default function NewRfps() {
                       <RfpCard
                         key={rfp.id}
                         rfp={rfp}
-                        isNew={true}
+                        isNew={newestRfpIds.has(rfp.id)}
                         from="dashboard-new"
                       />
                     ))}

@@ -5,8 +5,7 @@ import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
-import { Loader2, Trophy, ArrowRight } from "lucide-react";
-import { isAfter, subHours } from "date-fns";
+import { Loader2, Trophy, ArrowRight, PlusCircle } from "lucide-react";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,14 +33,14 @@ export default function LandingPage() {
   const featuredRfps = rfps?.filter(rfp => 
     rfp.featured && new Date(rfp.deadline) > new Date()
   ) || [];
-  const twentyFourHoursAgo = subHours(new Date(), 24);
+  
   const newRfps = rfps?.filter(rfp =>
     !rfp.featured &&
-    new Date(rfp.deadline) > new Date() &&
-    isAfter(new Date(rfp.createdAt), twentyFourHoursAgo)
-  ) || [];
+    new Date(rfp.deadline) > new Date()
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
-  // Only show first 6 RFPs in each section
+  const newestRfpIds = new Set(newRfps.slice(0, 12).map(rfp => rfp.id));
+
   const displayedFeaturedRfps = featuredRfps.slice(0, INITIAL_DISPLAY);
   const displayedNewRfps = newRfps.slice(0, INITIAL_DISPLAY);
 
@@ -163,9 +162,24 @@ export default function LandingPage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground">
-              No featured opportunities available at the moment.
-            </p>
+            <div className="flex flex-col items-center justify-center p-8 border rounded-lg border-dashed border-muted-foreground/50">
+              <p className="text-center text-muted-foreground mb-4">
+                No featured opportunities available at the moment.
+              </p>
+              <Button asChild>
+                {user ? (
+                  <Link href="/dashboard/my-rfps" className="flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Create Your RFP now
+                  </Link>
+                ) : (
+                  <Link href="/auth" className="flex items-center gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Post your RFP now
+                  </Link>
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </section>
@@ -178,7 +192,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
                 <div>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">New Opportunities</h2>
-                  <p className="text-sm sm:text-base text-muted-foreground">Fresh projects posted in the last 24 hours</p>
+                  <p className="text-sm sm:text-base text-muted-foreground">Latest projects sorted by newest first</p>
                 </div>
                 {newRfps.length > INITIAL_DISPLAY && (
                   <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap self-start sm:self-auto" asChild>
@@ -193,7 +207,7 @@ export default function LandingPage() {
                   key={rfp.id}
                   rfp={rfp}
                   compact
-                  isNew
+                  isNew={newestRfpIds.has(rfp.id)}
                   from="new"
                 />
               ))}

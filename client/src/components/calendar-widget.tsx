@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { Link } from "wouter";
 import { ExternalLink } from "lucide-react";
+import { generateClientSlug } from "@/lib/utils";
 
 export function CalendarWidget() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -104,7 +105,7 @@ export function CalendarWidget() {
               }
 
               return (
-                <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${rfp.slug || rfp.id}?from=dashboard`}>
+                <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName || (rfp as any).organization?.companyName))}/${rfp.slug || rfp.id}?from=dashboard`}>
                   <div className="p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors border">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">

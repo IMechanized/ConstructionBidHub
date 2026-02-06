@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { generateClientSlug } from "@/lib/utils";
 
 export function RfpsExpiringSoonWidget() {
   const { data: rfps, isLoading } = useQuery<Rfp[]>({
@@ -39,7 +40,7 @@ export function RfpsExpiringSoonWidget() {
             const daysUntil = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             
             return (
-              <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${rfp.slug || rfp.id}?from=dashboard`}>
+              <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName || (rfp as any).organization?.companyName))}/${rfp.slug || rfp.id}?from=dashboard`}>
                 <div className="p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors border">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -209,7 +210,7 @@ export function UpcomingDeadlinesWidget() {
             const daysUntil = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             
             return (
-              <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${rfp.slug || rfp.id}?from=dashboard`}>
+              <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName || (rfp as any).organization?.companyName))}/${rfp.slug || rfp.id}?from=dashboard`}>
                 <div className="p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors border">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">

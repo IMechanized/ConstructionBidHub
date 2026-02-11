@@ -2136,15 +2136,18 @@ app.get("/api/rfps/:id", async (req, res) => {
   }
 });
 
-app.get("/api/rfps/by-location/:state/:slug", async (req, res) => {
+app.get("/api/rfps/by-location/:state/:clientNameOrSlug/:slug?", async (req, res) => {
   try {
-    const { state, slug } = req.params;
+    const { state, clientNameOrSlug, slug } = req.params;
     
-    if (!state || !slug) {
+    // Support both old format /:state/:slug and new format /:state/:clientName/:slug
+    const actualSlug = slug || clientNameOrSlug;
+    
+    if (!state || !actualSlug) {
       return res.status(400).json({ message: "State and slug are required" });
     }
 
-    const rfp = await storage.getRfpByStateAndSlug(state, slug);
+    const rfp = await storage.getRfpByStateAndSlug(state, actualSlug);
     if (!rfp) {
       return res.status(404).json({ message: "RFP not found" });
     }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Helmet } from "react-helmet-async";
+import SEOHead from "@/components/seo-head";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { generateClientSlug } from "@/lib/utils";
@@ -158,10 +158,11 @@ export default function LeaderboardPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Reach Leaderboard | FindConstructionBids</title>
-        <meta name="description" content="View the reach report and leaderboard for construction RFPs by certification type." />
-      </Helmet>
+      <SEOHead
+        title="Diversity Leaderboard - FindConstructionBids"
+        description="View the diversity and inclusion leaderboard for construction projects. Track minority-owned, women-owned, and veteran-owned business participation."
+        canonical="https://findconstructionbids.com/leaderboard"
+      />
 
       <div className="min-h-screen bg-background flex flex-col">
         <LandingPageHeader />

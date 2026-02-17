@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SEOHead from "@/components/seo-head";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
@@ -221,6 +222,11 @@ export default function OpportunitiesPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Construction Opportunities - FindConstructionBids"
+        description="Browse construction bid opportunities, RFPs, and project listings. Filter by location, trade, and certification requirements."
+        canonical="https://findconstructionbids.com/opportunities"
+      />
       {/* Navigation */}
       <nav className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">

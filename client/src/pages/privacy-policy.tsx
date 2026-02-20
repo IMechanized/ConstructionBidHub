@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import SEOHead from "@/components/seo-head";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Footer } from "@/components/ui/footer";
@@ -17,6 +18,11 @@ export default function PrivacyPolicyPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEOHead
+        title="Privacy Policy - FindConstructionBids"
+        description="Learn how FindConstructionBids collects, uses, and protects your personal information. Our commitment to your data privacy and security."
+        canonical="https://findconstructionbids.com/privacy-policy"
+      />
       <LandingPageHeader />
       <main className="container mx-auto px-6 py-12 flex-1">
         <BreadcrumbNav items={breadcrumbItems} />

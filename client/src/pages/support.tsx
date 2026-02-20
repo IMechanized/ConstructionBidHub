@@ -1,3 +1,4 @@
+import SEOHead from "@/components/seo-head";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, ChevronDown } from "lucide-react";
@@ -25,6 +26,11 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEOHead
+        title="Support - FindConstructionBids"
+        description="Get help with FindConstructionBids. Browse FAQs, contact our support team, and find answers to common questions about our platform."
+        canonical="https://findconstructionbids.com/support"
+      />
       <LandingPageHeader />
       <main className="container mx-auto px-6 py-12 flex-1">
         <BreadcrumbNav items={breadcrumbItems} />

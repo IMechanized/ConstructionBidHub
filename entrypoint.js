@@ -1726,6 +1726,15 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use((req, res, next) => {
+  if (req.path !== '/' && req.path.endsWith('/') && !req.path.startsWith('/api')) {
+    const cleanPath = req.path.slice(0, -1);
+    const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    return res.redirect(301, cleanPath + query);
+  }
+  next();
+});
+
 // Apply security headers with Helmet
 app.use(helmet({
   contentSecurityPolicy: {
@@ -1827,7 +1836,7 @@ const sessionConfig = {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days - extended session duration
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax' // Use lax for better compatibility
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   }
 };
 
@@ -2033,7 +2042,73 @@ app.use([
   '/api/stripe'  // For any other potential Stripe routes
 ], requireAuth);
 
-// Routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return req.path === '/healthz' || req.path === '/readyz' || req.path === '/api/health';
+  },
+});
+app.use('/api/', apiLimiter);
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const baseUrl = process.env.PUBLIC_URL || 'https://findconstructionbids.com';
+    const today = new Date().toISOString().split('T')[0];
+
+    const staticPages = [
+      { loc: '/', changefreq: 'daily', priority: '1.0' },
+      { loc: '/opportunities/featured', changefreq: 'daily', priority: '0.9' },
+      { loc: '/opportunities/new', changefreq: 'daily', priority: '0.9' },
+      { loc: '/about', changefreq: 'monthly', priority: '0.7' },
+      { loc: '/support', changefreq: 'monthly', priority: '0.6' },
+      { loc: '/terms', changefreq: 'monthly', priority: '0.5' },
+      { loc: '/privacy-policy', changefreq: 'monthly', priority: '0.5' },
+      { loc: '/leaderboard', changefreq: 'weekly', priority: '0.6' },
+    ];
+
+    const allRfps = await storage.getRfps();
+    const activeRfps = allRfps.filter(rfp => rfp.status === 'open' && rfp.slug);
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    for (const page of staticPages) {
+      xml += `  <url>\n    <loc>${baseUrl}${page.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>\n`;
+    }
+
+    for (const rfp of activeRfps) {
+      const clientSlug = (rfp.clientName || 'unknown').toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      const rfpPath = `/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(clientSlug)}/${rfp.slug}`;
+      xml += `  <url>\n    <loc>${baseUrl}${rfpPath}</loc>\n    <lastmod>${rfp.createdAt ? new Date(rfp.createdAt).toISOString().split('T')[0] : today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+    }
+
+    xml += '</urlset>';
+
+    res.set('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+app.get('/readyz', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ status: 'ready', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'not ready', db: 'disconnected' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });

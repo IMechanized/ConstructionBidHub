@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import SEOHead from "@/components/seo-head";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +60,12 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex">
+      <SEOHead
+        title="Sign In or Register - FindConstructionBids"
+        description="Sign in to your FindConstructionBids account or create a new one. Access construction bid management tools and contractor opportunities."
+        canonical="https://findconstructionbids.com/auth"
+        noindex={true}
+      />
       <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8">
         <Card className="w-full max-w-md">
           <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">

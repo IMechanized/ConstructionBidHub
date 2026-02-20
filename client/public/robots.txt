@@ -1,10 +1,9 @@
 User-agent: *
 Allow: /
 
-# Allow crawling of all content
 Disallow: /api/
+Disallow: /dashboard/
+Disallow: /onboarding
 Disallow: /admin/
-Disallow: /private/
 
-# Sitemap location
 Sitemap: https://findconstructionbids.com/sitemap.xml

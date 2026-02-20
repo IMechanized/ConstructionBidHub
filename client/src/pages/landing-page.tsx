@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import SEOHead from "@/components/seo-head";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { Footer } from "@/components/ui/footer";
@@ -46,6 +47,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="FindConstructionBids - Construction Bid Management Platform"
+        description="Find and manage construction bids, RFPs, and contractor opportunities. Connect with qualified contractors and streamline your bidding process."
+        canonical="https://findconstructionbids.com/"
+      />
       <LandingPageHeader />
 
       {/* Hero Section */}

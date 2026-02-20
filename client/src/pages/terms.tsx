@@ -1,3 +1,4 @@
+import SEOHead from "@/components/seo-head";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Footer } from "@/components/ui/footer";
@@ -16,6 +17,11 @@ export default function TermsPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEOHead
+        title="Terms and Conditions - FindConstructionBids"
+        description="Read the terms and conditions for using FindConstructionBids construction bid management platform. Understand your rights and obligations."
+        canonical="https://findconstructionbids.com/terms"
+      />
       <LandingPageHeader />
       <main className="container mx-auto px-6 py-12 flex-1">
         <BreadcrumbNav items={breadcrumbItems} />

@@ -2035,6 +2035,7 @@ Respond ONLY with valid JSON, no explanation.`;
           certificationGoals: enriched.certificationGoals?.length ? enriched.certificationGoals : null,
           desiredTrades: desiredTrades.length ? desiredTrades : null,
           portfolioLink: portfolioLink || null,
+          organizationId: req.user!.id,
         });
 
         drafts.push(draft);

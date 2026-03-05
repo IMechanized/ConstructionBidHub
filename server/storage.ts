@@ -86,7 +86,7 @@ export interface IStorage {
   adminUpdateUserPassword(id: number, hashedPassword: string): Promise<User>;
   adminDeleteUser(id: number): Promise<void>;
   getAllRfps(page: number, limit: number, search?: string): Promise<{ rfps: Rfp[]; total: number }>;
-  createDraftRfp(rfp: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date }): Promise<Rfp>;
+  createDraftRfp(rfp: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date; organizationId?: number }): Promise<Rfp>;
   getDraftRfps(): Promise<Rfp[]>;
   publishDraftRfp(id: number): Promise<Rfp>;
   deleteDraftRfp(id: number): Promise<void>;
@@ -996,7 +996,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDraftRfp(rfpData: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date }): Promise<Rfp> {
+  async createDraftRfp(rfpData: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date; organizationId?: number }): Promise<Rfp> {
     let baseSlug = generateSlug(rfpData.title);
     let slug = baseSlug;
     let counter = 1;
@@ -1024,6 +1024,7 @@ export class DatabaseStorage implements IStorage {
         portfolioLink: rfpData.portfolioLink || null,
         walkthroughDate: rfpData.walkthroughDate || null,
         rfiDate: rfpData.rfiDate || null,
+        organizationId: rfpData.organizationId || null,
         mandatoryWalkthrough: false,
         status: 'draft',
         featured: false,

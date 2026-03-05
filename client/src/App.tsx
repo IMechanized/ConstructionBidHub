@@ -27,7 +27,6 @@ import RfiPage from "@/pages/dashboard/rfis";
 import ReportsPage from "@/pages/dashboard/reports";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
-import AdminDashboard from "@/pages/dashboard/admin";
 import AdminOverview from "@/pages/admin/index";
 import AdminUsers from "@/pages/admin/users";
 import AdminPayments from "@/pages/admin/payments";
@@ -90,9 +89,6 @@ function Router() {
       </Route>
       <Route path="/dashboard/support">
         <ProtectedRoute path="/dashboard/support" component={DashboardSupportPage} />
-      </Route>
-      <Route path="/dashboard/admin">
-        <ProtectedRoute path="/dashboard/admin" component={AdminDashboard} />
       </Route>
       <Route path="/admin">
         <ProtectedRoute path="/admin" component={AdminOverview} />

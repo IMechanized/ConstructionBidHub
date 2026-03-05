@@ -5,7 +5,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq, and, desc, gt, or, ilike, count } from 'drizzle-orm';
+import { eq, and, desc, gt, or, ilike, count, sql } from 'drizzle-orm';
 import { pgTable, text, integer, boolean, timestamp, serial, date } from 'drizzle-orm/pg-core';
 import ConnectPgSimple from 'connect-pg-simple';
 import multer from 'multer';
@@ -1550,6 +1550,68 @@ const storage = {
       console.error("Error getting all RFPs:", error);
       throw error;
     }
+  },
+
+  async createDraftRfp(rfpData) {
+    function generateSlugLocal(text) {
+      return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 100);
+    }
+    let baseSlug = generateSlugLocal(rfpData.title);
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const [existing] = await db.select().from(rfps).where(and(eq(rfps.jobState, rfpData.jobState), eq(rfps.slug, slug)));
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    const [newRfp] = await db.insert(rfps).values({
+      title: rfpData.title,
+      slug,
+      description: rfpData.description,
+      jobState: rfpData.jobState,
+      deadline: rfpData.deadline,
+      clientName: rfpData.clientName || null,
+      jobStreet: rfpData.jobStreet || null,
+      jobCity: rfpData.jobCity || null,
+      jobZip: rfpData.jobZip || null,
+      budgetMin: rfpData.budgetMin || null,
+      certificationGoals: rfpData.certificationGoals || null,
+      desiredTrades: rfpData.desiredTrades || null,
+      portfolioLink: rfpData.portfolioLink || null,
+      walkthroughDate: rfpData.walkthroughDate || null,
+      rfiDate: rfpData.rfiDate || null,
+      mandatoryWalkthrough: false,
+      status: 'draft',
+      featured: false,
+    }).returning();
+    return newRfp;
+  },
+
+  async getDraftRfps() {
+    return db.select().from(rfps).where(eq(rfps.status, 'draft')).orderBy(desc(rfps.createdAt));
+  },
+
+  async publishDraftRfp(id) {
+    const [updated] = await db.update(rfps).set({ status: 'open' }).where(and(eq(rfps.id, id), eq(rfps.status, 'draft'))).returning();
+    if (!updated) throw new Error("Draft RFP not found");
+    return updated;
+  },
+
+  async deleteDraftRfp(id) {
+    await db.delete(rfps).where(and(eq(rfps.id, id), eq(rfps.status, 'draft')));
+  },
+
+  async findDuplicateRfp(title, clientName) {
+    const normalizedTitle = title.trim().toLowerCase();
+    const normalizedClient = clientName.trim().toLowerCase();
+    const allRfps = await db.select().from(rfps).where(
+      and(
+        sql`lower(trim(${rfps.title})) = ${normalizedTitle}`,
+        sql`lower(trim(${rfps.clientName})) = ${normalizedClient}`
+      )
+    );
+    return allRfps[0];
   },
 
   // Payment Operations
@@ -4314,6 +4376,182 @@ app.get("/api/admin/status", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Admin status check error:", error);
     res.status(500).json({ message: 'Failed to check admin status' });
+  }
+});
+
+// DeepSeek-powered RFP JSON import — admin only
+app.post("/api/admin/rfp-import/preview", requireAdmin, async (req, res) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Request body must be a non-empty JSON array." });
+    }
+
+    const TRADE_MAP = {
+      "02": "Division 02 — Site Works",
+      "03": "Division 03 — Concrete",
+      "04": "Division 04 — Masonry",
+      "05": "Division 05 — Metals",
+      "06": "Division 06 — Wood and Plastics",
+      "07": "Division 07 — Thermal and Moisture Protection",
+      "08": "Division 08 — Doors and Windows",
+      "09": "Division 09 — Finishes",
+      "10": "Division 10 — Specialties",
+      "11": "Division 11 — Equipment",
+      "12": "Division 12 — Furnishings",
+      "13": "Division 13 — Special Construction",
+      "14": "Division 14 — Conveying Systems",
+      "15": "Division 15 — Mechanical/Plumbing",
+      "16": "Division 16 — Electrical",
+      "23": "Division 15 — Mechanical/Plumbing",
+      "26": "Division 16 — Electrical",
+      "28": "Division 16 — Electrical",
+      "31": "Division 02 — Site Works",
+      "32": "Division 02 — Site Works",
+      "33": "Division 02 — Site Works",
+      "34": "Division 02 — Site Works",
+    };
+
+    function mapCsiToTrades(csiString) {
+      if (!csiString) return [];
+      const trades = new Set();
+      const matches = csiString.match(/Division\s+(\d+)/gi) || [];
+      for (const match of matches) {
+        const num = match.replace(/Division\s+/i, "").trim().padStart(2, "0");
+        const mapped = TRADE_MAP[num];
+        if (mapped) trades.add(mapped);
+      }
+      return Array.from(trades);
+    }
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    if (!deepseekKey) {
+      return res.status(500).json({ error: "DeepSeek API key is not configured." });
+    }
+
+    const drafts = [];
+    let duplicatesSkipped = 0;
+
+    for (const item of items) {
+      const title = (item["Project Title"] || item.title || "").trim();
+      const clientName = (item["Client"] || item.clientName || "").trim();
+
+      if (!title || !clientName) continue;
+
+      const duplicate = await storage.findDuplicateRfp(title, clientName);
+      if (duplicate) {
+        duplicatesSkipped++;
+        continue;
+      }
+
+      const rawDescription = (item["Scope"] || item["Description"] || item.description || "").trim();
+      const csiDivisions = item["CSI Divisions"] || "";
+      const desiredTrades = mapCsiToTrades(csiDivisions);
+      const jobState = (item["State"] || item.jobState || "").trim();
+      const portfolioLink = (item["Source Link"] || item.portfolioLink || "").trim();
+      const rawDeadline = item["Deadline"] || item.deadline;
+      const deadlineDate = rawDeadline ? new Date(rawDeadline) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      let enriched = {};
+      try {
+        const prompt = `You are a data extraction assistant. Given this construction RFP description, extract the following fields in JSON format:
+- jobCity: the city where the project is located (string or null)
+- jobStreet: the street address if mentioned (string or null)
+- jobZip: the zip/postal code if mentioned (string or null)
+- budgetMin: the estimated budget or minimum contract value as an integer in dollars (null if not mentioned)
+- certificationGoals: array of applicable diversity certifications from this list only: ["Women-owned","Native American-owned","Veteran-owned","Military spouse","LGBTQ-owned","Rural","Minority-owned","Section 3","SBE","DBE"] (empty array if none mentioned)
+
+State: ${jobState}
+Client: ${clientName}
+Description: ${rawDescription}
+
+Respond ONLY with valid JSON, no explanation.`;
+
+        const deepseekRes = await fetch("https://api.deepseek.com/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${deepseekKey}`,
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.1,
+            max_tokens: 300,
+          }),
+        });
+
+        if (deepseekRes.ok) {
+          const dsData = await deepseekRes.json();
+          const content = dsData.choices?.[0]?.message?.content || "{}";
+          const cleaned = content.replace(/```json\n?|\n?```/g, "").trim();
+          enriched = JSON.parse(cleaned);
+        }
+      } catch (e) {
+        console.error("[RFP Import] DeepSeek enrichment error:", e);
+      }
+
+      const draft = await storage.createDraftRfp({
+        title,
+        clientName,
+        description: rawDescription,
+        jobState,
+        deadline: deadlineDate,
+        jobCity: enriched.jobCity || null,
+        jobStreet: enriched.jobStreet || null,
+        jobZip: enriched.jobZip || null,
+        budgetMin: enriched.budgetMin || null,
+        certificationGoals: enriched.certificationGoals?.length ? enriched.certificationGoals : null,
+        desiredTrades: desiredTrades.length ? desiredTrades : null,
+        portfolioLink: portfolioLink || null,
+      });
+
+      drafts.push(draft);
+    }
+
+    res.json({ drafts, duplicatesSkipped });
+  } catch (error) {
+    console.error("RFP import error:", error);
+    res.status(500).json({ error: "Failed to process RFP import" });
+  }
+});
+
+// Get all draft RFPs — admin only
+app.get("/api/admin/rfp-drafts", requireAdmin, async (req, res) => {
+  try {
+    const drafts = await storage.getDraftRfps();
+    res.json(drafts);
+  } catch (error) {
+    console.error("Get draft RFPs error:", error);
+    res.status(500).json({ error: "Failed to fetch draft RFPs" });
+  }
+});
+
+// Publish a draft RFP — admin only
+app.post("/api/admin/rfp-drafts/:id/publish", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id) || id <= 0) return res.status(400).json({ error: "Invalid RFP ID" });
+    const published = await storage.publishDraftRfp(id);
+    console.log(`[ADMIN] User ${req.user.id} published draft RFP ${id} (${published.title})`);
+    res.json(published);
+  } catch (error) {
+    console.error("Publish draft RFP error:", error);
+    res.status(500).json({ error: "Failed to publish draft RFP" });
+  }
+});
+
+// Discard a draft RFP — admin only
+app.delete("/api/admin/rfp-drafts/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id) || id <= 0) return res.status(400).json({ error: "Invalid RFP ID" });
+    await storage.deleteDraftRfp(id);
+    console.log(`[ADMIN] User ${req.user.id} discarded draft RFP ${id}`);
+    res.json({ message: "Draft discarded" });
+  } catch (error) {
+    console.error("Discard draft RFP error:", error);
+    res.status(500).json({ error: "Failed to discard draft RFP" });
   }
 });
 

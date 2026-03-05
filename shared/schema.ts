@@ -115,19 +115,19 @@ export const rfps = pgTable("rfps", {
   title: text("title").notNull(),
   slug: text("slug"),                                       // URL-friendly slug derived from title
   description: text("description").notNull(),
-  walkthroughDate: timestamp("walkthrough_date").notNull(),  // Site visit date
-  rfiDate: timestamp("rfi_date").notNull(),                  // Last day for questions
+  walkthroughDate: timestamp("walkthrough_date"),            // Site visit date (optional for imports)
+  rfiDate: timestamp("rfi_date"),                            // Last day for questions (optional for imports)
   deadline: timestamp("deadline").notNull(),                 // Bid submission deadline
   budgetMin: integer("budget_min"),                         // Minimum budget (optional)
   certificationGoals: text("certification_goals").array(),   // Required certifications
   desiredTrades: text("desired_trades").array(),            // Desired contractor trades
-  jobStreet: text("job_street").notNull(),                 // Street address
-  jobCity: text("job_city").notNull(),                     // City
+  jobStreet: text("job_street"),                           // Street address (optional for imports)
+  jobCity: text("job_city"),                               // City (optional for imports)
   jobState: text("job_state").notNull(),                   // State
-  jobZip: text("job_zip").notNull(),                       // ZIP code
-  portfolioLink: text("portfolio_link"),                    // Additional resources
+  jobZip: text("job_zip"),                                 // ZIP code (optional for imports)
+  portfolioLink: text("portfolio_link"),                    // Additional resources / source link
   mandatoryWalkthrough: boolean("mandatory_walkthrough").default(false), // Is walkthrough mandatory
-  status: text("status", { enum: ["open", "closed"] }).default("open"),
+  status: text("status", { enum: ["open", "closed", "draft"] }).default("open"),
   organizationId: integer("organization_id").references(() => users.id),
   featured: boolean("featured").default(false),             // Promoted/featured status
   featuredAt: timestamp("featured_at"),                    // When the RFP was featured
@@ -335,14 +335,14 @@ export const insertRfpSchema = createInsertSchema(rfps)
   })
   .extend({
     clientName: z.string().min(1, "Client name is required"),
-    walkthroughDate: z.string(),
-    rfiDate: z.string(),
+    walkthroughDate: z.string().nullish(),
+    rfiDate: z.string().nullish(),
     deadline: z.string(),
     budgetMin: z.number().min(0, "Minimum budget must be a positive number").nullish(),
-    jobStreet: z.string().min(1, "Street address is required"),
-    jobCity: z.string().min(1, "City is required"),
+    jobStreet: z.string().nullish().or(z.literal("")),
+    jobCity: z.string().nullish().or(z.literal("")),
     jobState: z.string().min(1, "State is required"),
-    jobZip: z.string().min(1, "ZIP code is required"),
+    jobZip: z.string().nullish().or(z.literal("")),
     certificationGoals: z.array(z.string()).nullish(),
     desiredTrades: z.array(z.string()).nullish(),
     portfolioLink: z.string().nullish().or(z.literal("")),

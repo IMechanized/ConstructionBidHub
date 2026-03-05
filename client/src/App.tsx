@@ -28,6 +28,11 @@ import ReportsPage from "@/pages/dashboard/reports";
 import SettingsPage from "@/pages/dashboard/settings";
 import DashboardSupportPage from "@/pages/dashboard/support";
 import AdminDashboard from "@/pages/dashboard/admin";
+import AdminOverview from "@/pages/admin/index";
+import AdminUsers from "@/pages/admin/users";
+import AdminPayments from "@/pages/admin/payments";
+import AdminRfps from "@/pages/admin/rfps";
+import AdminRfpImport from "@/pages/admin/rfp-import";
 import RfiManagementPage from "@/pages/dashboard/rfi-management/[id]";
 import VerifyEmailPage from "@/pages/verify-email-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
@@ -88,6 +93,21 @@ function Router() {
       </Route>
       <Route path="/dashboard/admin">
         <ProtectedRoute path="/dashboard/admin" component={AdminDashboard} />
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute path="/admin" component={AdminOverview} />
+      </Route>
+      <Route path="/admin/users">
+        <ProtectedRoute path="/admin/users" component={AdminUsers} />
+      </Route>
+      <Route path="/admin/payments">
+        <ProtectedRoute path="/admin/payments" component={AdminPayments} />
+      </Route>
+      <Route path="/admin/rfps">
+        <ProtectedRoute path="/admin/rfps" component={AdminRfps} />
+      </Route>
+      <Route path="/admin/rfp-import">
+        <ProtectedRoute path="/admin/rfp-import" component={AdminRfpImport} />
       </Route>
       <Route path="/dashboard/rfi-management/:id">
         <ProtectedRoute path="/dashboard/rfi-management/:id" component={RfiManagementPage} />

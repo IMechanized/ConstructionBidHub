@@ -1909,6 +1909,179 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // DeepSeek-powered RFP JSON import — admin only
+  app.post("/api/admin/rfp-import/preview", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const items = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Request body must be a non-empty JSON array." });
+      }
+
+      const TRADE_MAP: Record<string, string> = {
+        "02": "Division 02 — Site Works",
+        "03": "Division 03 — Concrete",
+        "04": "Division 04 — Masonry",
+        "05": "Division 05 — Metals",
+        "06": "Division 06 — Wood and Plastics",
+        "07": "Division 07 — Thermal and Moisture Protection",
+        "08": "Division 08 — Doors and Windows",
+        "09": "Division 09 — Finishes",
+        "10": "Division 10 — Specialties",
+        "11": "Division 11 — Equipment",
+        "12": "Division 12 — Furnishings",
+        "13": "Division 13 — Special Construction",
+        "14": "Division 14 — Conveying Systems",
+        "15": "Division 15 — Mechanical/Plumbing",
+        "16": "Division 16 — Electrical",
+        "23": "Division 15 — Mechanical/Plumbing",
+        "26": "Division 16 — Electrical",
+        "28": "Division 16 — Electrical",
+        "31": "Division 02 — Site Works",
+        "32": "Division 02 — Site Works",
+        "33": "Division 02 — Site Works",
+        "34": "Division 02 — Site Works",
+      };
+
+      function mapCsiToTrades(csiString: string): string[] {
+        if (!csiString) return [];
+        const trades = new Set<string>();
+        const matches = csiString.match(/Division\s+(\d+)/gi) || [];
+        for (const match of matches) {
+          const num = match.replace(/Division\s+/i, "").trim().padStart(2, "0");
+          const mapped = TRADE_MAP[num];
+          if (mapped) trades.add(mapped);
+        }
+        return Array.from(trades);
+      }
+
+      const deepseekKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepseekKey) {
+        return res.status(500).json({ error: "DeepSeek API key is not configured." });
+      }
+
+      const drafts: any[] = [];
+      let duplicatesSkipped = 0;
+
+      for (const item of items) {
+        const title = (item["Project Title"] || item.title || "").trim();
+        const clientName = (item["Client"] || item.clientName || "").trim();
+
+        if (!title || !clientName) continue;
+
+        const duplicate = await storage.findDuplicateRfp(title, clientName);
+        if (duplicate) {
+          duplicatesSkipped++;
+          continue;
+        }
+
+        const rawDescription = (item["Scope"] || item["Description"] || item.description || "").trim();
+        const csiDivisions = item["CSI Divisions"] || "";
+        const desiredTrades = mapCsiToTrades(csiDivisions);
+        const jobState = (item["State"] || item.jobState || "").trim();
+        const portfolioLink = (item["Source Link"] || item.portfolioLink || "").trim();
+        const rawDeadline = item["Deadline"] || item.deadline;
+        const deadlineDate = rawDeadline ? new Date(rawDeadline) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        // Call DeepSeek to enrich location and other fields
+        let enriched: any = {};
+        try {
+          const prompt = `You are a data extraction assistant. Given this construction RFP description, extract the following fields in JSON format:
+- jobCity: the city where the project is located (string or null)
+- jobStreet: the street address if mentioned (string or null)
+- jobZip: the zip/postal code if mentioned (string or null)
+- budgetMin: the estimated budget or minimum contract value as an integer in dollars (null if not mentioned)
+- certificationGoals: array of applicable diversity certifications from this list only: ["Women-owned","Native American-owned","Veteran-owned","Military spouse","LGBTQ-owned","Rural","Minority-owned","Section 3","SBE","DBE"] (empty array if none mentioned)
+
+State: ${jobState}
+Client: ${clientName}
+Description: ${rawDescription}
+
+Respond ONLY with valid JSON, no explanation.`;
+
+          const deepseekRes = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${deepseekKey}`,
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [{ role: "user", content: prompt }],
+              temperature: 0.1,
+              max_tokens: 300,
+            }),
+          });
+
+          if (deepseekRes.ok) {
+            const dsData = await deepseekRes.json() as any;
+            const content = dsData.choices?.[0]?.message?.content || "{}";
+            const cleaned = content.replace(/```json\n?|\n?```/g, "").trim();
+            enriched = JSON.parse(cleaned);
+          }
+        } catch (e) {
+          console.error("[RFP Import] DeepSeek enrichment error:", e);
+        }
+
+        const draft = await storage.createDraftRfp({
+          title,
+          clientName,
+          description: rawDescription,
+          jobState,
+          deadline: deadlineDate,
+          jobCity: enriched.jobCity || null,
+          jobStreet: enriched.jobStreet || null,
+          jobZip: enriched.jobZip || null,
+          budgetMin: enriched.budgetMin || null,
+          certificationGoals: enriched.certificationGoals?.length ? enriched.certificationGoals : null,
+          desiredTrades: desiredTrades.length ? desiredTrades : null,
+          portfolioLink: portfolioLink || null,
+        });
+
+        drafts.push(draft);
+      }
+
+      res.json({ drafts, duplicatesSkipped });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, "Failed to process RFP import", "RfpImport");
+    }
+  });
+
+  // Get all draft RFPs — admin only
+  app.get("/api/admin/rfp-drafts", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const drafts = await storage.getDraftRfps();
+      res.json(drafts);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, "Failed to fetch draft RFPs", "RfpDrafts");
+    }
+  });
+
+  // Publish a draft RFP — admin only
+  app.post("/api/admin/rfp-drafts/:id/publish", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, "Draft RFP ID", res);
+      if (id === null) return;
+      const published = await storage.publishDraftRfp(id);
+      console.log(`[ADMIN] User ${req.user!.id} published draft RFP ${id} (${published.title})`);
+      res.json(published);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, "Failed to publish draft RFP", "RfpPublish");
+    }
+  });
+
+  // Discard a draft RFP — admin only
+  app.delete("/api/admin/rfp-drafts/:id", requireAdminMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = validatePositiveInt(req.params.id, "Draft RFP ID", res);
+      if (id === null) return;
+      await storage.deleteDraftRfp(id);
+      console.log(`[ADMIN] User ${req.user!.id} discarded draft RFP ${id}`);
+      res.json({ message: "Draft discarded" });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, "Failed to discard draft RFP", "RfpDiscard");
+    }
+  });
+
   // For now, we'll use the payment routes from entrypoint.js
   // We'll integrate the dedicated payment router in a future update
   console.log('Payment routes are handled in entrypoint.js');

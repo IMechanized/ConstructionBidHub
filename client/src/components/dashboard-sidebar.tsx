@@ -42,8 +42,8 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
 
   const navItems = [
     ...(user?.isAdmin ? [{
-      label: "Admin",
-      href: "/dashboard/admin",
+      label: "Admin Panel",
+      href: "/admin",
       icon: Shield,
       isAdmin: true,
     }] : []),

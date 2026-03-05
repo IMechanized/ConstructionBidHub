@@ -31,10 +31,47 @@ FindConstructionBids is a comprehensive construction bid management platform tha
 
 ### Core Data Models
 1. **Users**: Organization profiles supporting both contractors and government entities
-2. **RFPs**: Request for Proposals with deadline tracking and certification requirements
+2. **RFPs**: Request for Proposals with deadline tracking and certification requirements. Status can be `open`, `closed`, or `draft`. `walkthroughDate`, `rfiDate`, `jobStreet`, `jobCity`, `jobZip` are nullable to support JSON imports.
 3. **RFIs**: Request for Information system for project clarifications
 4. **Analytics**: View tracking and engagement metrics for performance monitoring
 5. **Employees**: Team member management for organization accounts
+
+### Admin Panel (Standalone)
+Dedicated admin dashboard at `/admin` (separate from user dashboard at `/dashboard`).
+
+**Routes:**
+- `/admin` — Overview with platform stats and quick actions
+- `/admin/users` — User management (list, activate/deactivate, password reset, delete)
+- `/admin/payments` — Stripe payment review
+- `/admin/rfps` — All RFP management
+- `/admin/rfp-import` — AI-powered JSON RFP import tool
+- `/dashboard/admin` — Legacy redirect still works
+
+**Admin Sidebar:** `client/src/components/admin-sidebar.tsx` — dark-themed sidebar separate from the user dashboard sidebar.
+
+**Admin Layout:** `client/src/pages/admin/layout.tsx` — wraps all admin pages, enforces admin auth check.
+
+### RFP Import Feature (AI-powered)
+Multi-step flow at `/admin/rfp-import`:
+
+1. **Upload**: Drop zone for JSON file containing array of RFP objects
+2. **Analyze**: Posts to `POST /api/admin/rfp-import/preview`, which:
+   - Checks for duplicates (by title + clientName match) — skips and counts them
+   - Maps CSI Divisions (e.g. "Division 23 - HVAC") to MasterFormat Division 02–16 labels for `desiredTrades`
+   - Maps JSON fields: `Scope` → `description`, `Source Link` → `portfolioLink`, `CSI Divisions` → `desiredTrades`, `State` → `jobState`, `Client` → `clientName`, `Project Title` → `title`, `Deadline` → `deadline`
+   - Calls **DeepSeek API** to enrich: `jobCity`, `jobStreet`, `jobZip`, `budgetMin`, `certificationGoals`
+   - Saves as `status: 'draft'` in the database
+3. **Results**: Shows count of new RFPs queued and duplicates skipped
+4. **Review**: One-by-one card preview with AI-inferred fields highlighted. Each card has Publish and Discard (trash icon) actions.
+5. **Complete**: Summary of published vs. discarded
+
+**API Endpoints:**
+- `POST /api/admin/rfp-import/preview` — Process JSON array, enrich via DeepSeek, save drafts
+- `GET /api/admin/rfp-drafts` — Get all draft RFPs
+- `POST /api/admin/rfp-drafts/:id/publish` — Publish a draft (sets status to open)
+- `DELETE /api/admin/rfp-drafts/:id` — Discard a draft
+
+**Environment:** Requires `DEEPSEEK_API_KEY` secret.
 
 ### Authentication System
 - Email/password authentication with secure password hashing

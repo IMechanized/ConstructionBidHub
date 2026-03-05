@@ -86,6 +86,11 @@ export interface IStorage {
   adminUpdateUserPassword(id: number, hashedPassword: string): Promise<User>;
   adminDeleteUser(id: number): Promise<void>;
   getAllRfps(page: number, limit: number, search?: string): Promise<{ rfps: Rfp[]; total: number }>;
+  createDraftRfp(rfp: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date; organizationId?: number }): Promise<Rfp>;
+  getDraftRfps(): Promise<Rfp[]>;
+  publishDraftRfp(id: number): Promise<Rfp>;
+  deleteDraftRfp(id: number): Promise<void>;
+  findDuplicateRfp(title: string, clientName: string): Promise<Rfp | undefined>;
   
   // Payment Operations
   createPayment(payment: InsertPayment): Promise<Payment>;
@@ -227,13 +232,13 @@ export class DatabaseStorage implements IStorage {
         title: rfp.title,
         slug: slug,
         description: rfp.description,
-        walkthroughDate: new Date(rfp.walkthroughDate),
-        rfiDate: new Date(rfp.rfiDate),
+        walkthroughDate: rfp.walkthroughDate ? new Date(rfp.walkthroughDate) : null,
+        rfiDate: rfp.rfiDate ? new Date(rfp.rfiDate) : null,
         deadline: new Date(rfp.deadline),
-        jobStreet: rfp.jobStreet,
-        jobCity: rfp.jobCity,
+        jobStreet: rfp.jobStreet || null,
+        jobCity: rfp.jobCity || null,
         jobState: rfp.jobState,
-        jobZip: rfp.jobZip,
+        jobZip: rfp.jobZip || null,
         budgetMin: rfp.budgetMin || null,
         certificationGoals: rfp.certificationGoals || null,
         desiredTrades: rfp.desiredTrades || null,
@@ -989,6 +994,76 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting all RFPs:", error);
       throw error;
     }
+  }
+
+  async createDraftRfp(rfpData: Partial<Rfp> & { title: string; description: string; jobState: string; deadline: Date; organizationId?: number }): Promise<Rfp> {
+    let baseSlug = generateSlug(rfpData.title);
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const existing = await this.getRfpByStateAndSlug(rfpData.jobState, slug);
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    const [newRfp] = await db
+      .insert(rfps)
+      .values({
+        title: rfpData.title,
+        slug,
+        description: rfpData.description,
+        jobState: rfpData.jobState,
+        deadline: rfpData.deadline,
+        clientName: rfpData.clientName || null,
+        jobStreet: rfpData.jobStreet || null,
+        jobCity: rfpData.jobCity || null,
+        jobZip: rfpData.jobZip || null,
+        budgetMin: rfpData.budgetMin || null,
+        certificationGoals: rfpData.certificationGoals || null,
+        desiredTrades: rfpData.desiredTrades || null,
+        portfolioLink: rfpData.portfolioLink || null,
+        walkthroughDate: rfpData.walkthroughDate || null,
+        rfiDate: rfpData.rfiDate || null,
+        organizationId: rfpData.organizationId || null,
+        mandatoryWalkthrough: false,
+        status: 'draft',
+        featured: false,
+      })
+      .returning();
+    return newRfp;
+  }
+
+  async getDraftRfps(): Promise<Rfp[]> {
+    return db.select().from(rfps).where(eq(rfps.status, 'draft')).orderBy(desc(rfps.createdAt));
+  }
+
+  async publishDraftRfp(id: number): Promise<Rfp> {
+    const [updated] = await db
+      .update(rfps)
+      .set({ status: 'open' })
+      .where(and(eq(rfps.id, id), eq(rfps.status, 'draft')))
+      .returning();
+    if (!updated) throw new Error("Draft RFP not found");
+    return updated;
+  }
+
+  async deleteDraftRfp(id: number): Promise<void> {
+    await db.delete(rfps).where(and(eq(rfps.id, id), eq(rfps.status, 'draft')));
+  }
+
+  async findDuplicateRfp(title: string, clientName: string): Promise<Rfp | undefined> {
+    const normalizedTitle = title.trim().toLowerCase();
+    const normalizedClient = clientName.trim().toLowerCase();
+    const allRfps = await db
+      .select()
+      .from(rfps)
+      .where(
+        and(
+          sql`lower(trim(${rfps.title})) = ${normalizedTitle}`,
+          sql`lower(trim(${rfps.clientName})) = ${normalizedClient}`
+        )
+      );
+    return allRfps[0];
   }
 
   /**

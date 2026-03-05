@@ -209,11 +209,11 @@ export default function UnifiedReportPage() {
                   </div>
                   <div>
                     <span className="text-gray-500 text-xs">Walkthrough</span>
-                    <p className="font-medium text-gray-900">{format(new Date(rfp.walkthroughDate), "MM/dd/yyyy")}</p>
+                    <p className="font-medium text-gray-900">{rfp.walkthroughDate ? format(new Date(rfp.walkthroughDate), "MM/dd/yyyy") : "--"}</p>
                   </div>
                   <div>
                     <span className="text-gray-500 text-xs">RFI Due</span>
-                    <p className="font-medium text-gray-900">{format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</p>
+                    <p className="font-medium text-gray-900">{rfp.rfiDate ? format(new Date(rfp.rfiDate), "MM/dd/yyyy") : "--"}</p>
                   </div>
                 </div>
 

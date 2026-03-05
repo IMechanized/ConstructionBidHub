@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -31,11 +31,6 @@ export default function Dashboard() {
     }
   }, [user?.language, i18n]);
 
-  useEffect(() => {
-    if (user?.isAdmin && location === "/dashboard") {
-      setLocation("/dashboard/admin");
-    }
-  }, [user?.isAdmin, location, setLocation]);
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);

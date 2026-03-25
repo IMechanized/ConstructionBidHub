@@ -22,6 +22,7 @@ import { sendErrorResponse, ErrorMessages, getSafeValidationMessage } from './li
 import { logAuthenticationFailure, logAuthorizationFailure } from './lib/security-audit.js';
 import { validatePositiveInt, validateRouteParams } from './lib/param-validation.js';
 import paymentsRoutes from './routes/payments.js';
+import { sendPushToUser } from './services/push-sender.js';
 
 // Configure S3 client for direct uploads
 const s3Client = new S3Client({
@@ -1213,6 +1214,14 @@ ${rfpEntries}
         if ((global as any).sendNotificationToUser) {
           (global as any).sendNotificationToUser(rfi.organization.id, notification);
         }
+
+        // Send Web Push notification
+        sendPushToUser(rfi.organization.id, {
+          title: notification.title,
+          body: notification.message,
+          type: 'rfi_response',
+          url: `/dashboard/rfi-management/${rfiId}`,
+        }).catch(err => console.error('[Routes] Push send failed:', err));
       }
       
       res.json(updatedRfi);
@@ -1282,6 +1291,14 @@ ${rfpEntries}
               if ((global as any).sendNotificationToUser) {
                 (global as any).sendNotificationToUser(rfi.organization.id, notification);
               }
+
+              // Send Web Push notification
+              sendPushToUser(rfi.organization.id, {
+                title: notification.title,
+                body: notification.message,
+                type: 'rfi_response',
+                url: `/dashboard/rfi-management/${rfi.id}`,
+              }).catch(err => console.error('[Routes] Push send failed:', err));
             }
           }
         }
@@ -1471,6 +1488,14 @@ ${rfpEntries}
         if ((global as any).sendNotificationToUser) {
           (global as any).sendNotificationToUser(targetUserId, notification);
         }
+
+        // Send Web Push notification
+        sendPushToUser(targetUserId, {
+          title: notification.title,
+          body: notification.message,
+          type: 'rfi_response',
+          url: `/dashboard/rfi-management/${rfiId}`,
+        }).catch(err => console.error('[Routes] Push send failed:', err));
       }
 
       // Return the message with sender information and attachments
@@ -1713,6 +1738,18 @@ ${rfpEntries}
         (global as any).sendNotificationToUser(data.userId, notification);
       }
       
+      // Send Web Push notification
+      sendPushToUser(data.userId, {
+        title: notification.title,
+        body: notification.message,
+        type: notification.type,
+        url: notification.relatedType === 'rfi' && notification.relatedId
+          ? `/dashboard/rfi-management/${notification.relatedId}`
+          : notification.relatedType === 'rfp' && notification.relatedId
+          ? `/rfp/${notification.relatedId}`
+          : '/dashboard',
+      }).catch(err => console.error('[Routes] Push send failed:', err));
+      
       res.status(201).json(notification);
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'NotificationCreation');
@@ -1774,6 +1811,59 @@ ${rfpEntries}
       res.json({ message: "Notification deleted" });
     } catch (error) {
       sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+    }
+  });
+
+  // ==========================================
+  // PUSH SUBSCRIPTION ROUTES
+  // ==========================================
+
+  // Get VAPID public key (safe to expose — it's the public key)
+  app.get("/api/push-subscriptions/vapid-key", (req, res) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+    res.json({ publicKey });
+  });
+
+  // Register a push subscription
+  app.post("/api/push-subscriptions", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+      const { endpoint, keys, userAgent } = req.body;
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PushSubscribe');
+      }
+      const subscription = await storage.createPushSubscription({
+        userId: req.user!.id,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        userAgent: userAgent || req.headers['user-agent'] || null,
+      });
+      res.status(201).json({ success: true, id: subscription.id });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'PushSubscribe');
+    }
+  });
+
+  // Unregister a push subscription
+  app.delete("/api/push-subscriptions", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+      const { endpoint } = req.body;
+      if (!endpoint) {
+        return sendErrorResponse(res, new Error('Missing endpoint'), 400, ErrorMessages.BAD_REQUEST, 'PushUnsubscribe');
+      }
+      const existing = await storage.getPushSubscriptionByEndpoint(endpoint);
+      if (existing && existing.userId !== req.user!.id) {
+        return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'PushUnsubscribe');
+      }
+      await storage.deletePushSubscription(endpoint);
+      res.json({ success: true });
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'PushUnsubscribe');
     }
   });
 

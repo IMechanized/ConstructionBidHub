@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, payments, type Payment, type InsertPayment, generateSlug } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, payments, type Payment, type InsertPayment, pushSubscriptions, type PushSubscription, type InsertPushSubscription, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray, gte, gt, ilike, or, count } from "drizzle-orm";
 import session from "express-session";
@@ -98,6 +98,13 @@ export interface IStorage {
   getPaymentByIntentId(paymentIntentId: string): Promise<Payment | undefined>;
   updatePaymentStatus(id: number, status: 'pending' | 'succeeded' | 'failed' | 'refunded'): Promise<Payment>;
   getAllPayments(page: number, limit: number): Promise<{ payments: (Payment & { user?: User; rfp?: Rfp })[]; total: number }>;
+
+  // Push Subscription Operations
+  createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
+  getPushSubscriptionsByUser(userId: number): Promise<PushSubscription[]>;
+  getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined>;
+  deletePushSubscription(endpoint: string): Promise<void>;
+  deletePushSubscriptionsByUser(userId: number): Promise<void>;
 }
 
 /**
@@ -1155,6 +1162,34 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting all payments:", error);
       throw error;
     }
+  }
+  /**
+   * Push Subscription Operations
+   */
+  async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
+    const existing = await this.getPushSubscriptionByEndpoint(subscription.endpoint);
+    if (existing) {
+      return existing;
+    }
+    const [newSub] = await db.insert(pushSubscriptions).values(subscription).returning();
+    return newSub;
+  }
+
+  async getPushSubscriptionsByUser(userId: number): Promise<PushSubscription[]> {
+    return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined> {
+    const [sub] = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+    return sub;
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+  }
+
+  async deletePushSubscriptionsByUser(userId: number): Promise<void> {
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
   }
 }
 

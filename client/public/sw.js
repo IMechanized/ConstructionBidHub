@@ -1,5 +1,5 @@
 // Update this version number whenever you deploy changes
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const CACHE_NAME = `findconstructionbids-v${VERSION}`;
 const STATIC_CACHE_NAME = `findconstructionbids-static-v${VERSION}`;
 
@@ -236,6 +236,72 @@ self.addEventListener('message', (event) => {
       });
     });
   }
+});
+
+// ==========================================
+// PUSH NOTIFICATION HANDLERS
+// ==========================================
+
+self.addEventListener('push', (event) => {
+  console.log('Service Worker: Push event received');
+
+  let payload = {
+    title: 'FindConstructionBids',
+    body: 'You have a new notification',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    url: '/dashboard',
+    tag: 'fcb-notification',
+    type: 'system',
+  };
+
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      payload = { ...payload, ...data };
+    } catch (e) {
+      payload.body = event.data.text() || payload.body;
+    }
+  }
+
+  const showNotificationPromise = self.registration.showNotification(payload.title, {
+    body: payload.body,
+    icon: payload.icon,
+    badge: payload.badge,
+    tag: payload.tag,
+    data: { url: payload.url, type: payload.type },
+    requireInteraction: false,
+    silent: false,
+  });
+
+  event.waitUntil(showNotificationPromise);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  console.log('Service Worker: Notification clicked', event.notification.tag);
+  event.notification.close();
+
+  const notificationData = event.notification.data || {};
+  const targetUrl = notificationData.url || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If the app is already open, focus the existing window and navigate
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client) {
+            return client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+      // Otherwise open a new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
 });
 
 console.log(`Service Worker: Script loaded (version ${VERSION})`);

@@ -236,6 +236,20 @@ export const notifications = pgTable("notifications", {
 });
 
 /**
+ * Push Subscriptions Table
+ * Stores Web Push (VAPID) subscriptions per user/device
+ */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Backup Logs Table
  * Tracks database backup operations
  */
@@ -410,6 +424,15 @@ export const insertRfpReachSchema = createInsertSchema(rfpReach).pick({
   totalReach: true,
 });
 
+// Push subscription creation validation
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).pick({
+  userId: true,
+  endpoint: true,
+  p256dh: true,
+  auth: true,
+  userAgent: true,
+});
+
 // Payment creation validation
 export const insertPaymentSchema = createInsertSchema(payments).pick({
   userId: true,
@@ -449,3 +472,5 @@ export type RfpReach = typeof rfpReach.$inferSelect;
 export type InsertRfpReach = z.infer<typeof insertRfpReachSchema>;
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;

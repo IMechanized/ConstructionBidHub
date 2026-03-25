@@ -15,6 +15,13 @@
       "when": 1772705109612,
       "tag": "0001_nullable_rfp_fields_and_draft_status",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774438675084,
+      "tag": "0002_striped_excalibur",
+      "breakpoints": true
     }
   ]
 }

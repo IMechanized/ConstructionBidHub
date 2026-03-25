@@ -42,19 +42,53 @@ export const db = drizzle({ client: pool, schema });
 export { pool as dbPool };
 
 /**
- * Ensures the rfps table has the updated_at column.
- * This migration is idempotent: safe to run on every startup.
- * It was added to track when RFPs are last modified so the sitemap
- * can provide accurate <lastmod> dates to search engines.
+ * Idempotent startup migrations.
+ * All statements use IF NOT EXISTS / IF NOT EXISTS patterns so they are
+ * safe to run on every startup against an already-migrated database.
+ *
+ * Add new migrations here when new tables/columns are introduced so that
+ * production deployments that don't run drizzle-kit push automatically
+ * still pick up schema changes on the next startup.
  */
 export async function runStartupMigrations(): Promise<void> {
   const client = await pool.connect();
   try {
+    // ── 2024-Q4: RFP last-modified tracking ─────────────────────────────
     await client.query(`
       ALTER TABLE rfps
         ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     `);
     console.log('[DB] Startup migration: rfps.updated_at ensured');
+
+    // ── 2025-Q1: Web Push (VAPID) subscription storage ──────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id            SERIAL PRIMARY KEY,
+        user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint      TEXT NOT NULL,
+        p256dh        TEXT NOT NULL,
+        auth          TEXT NOT NULL,
+        user_agent    TEXT,
+        created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('[DB] Startup migration: push_subscriptions ensured');
+
+    // ── 2025-Q1: Per-user notification preferences (quiet hours, type filters) ─
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notification_preferences (
+        id                        SERIAL PRIMARY KEY,
+        user_id                   INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        quiet_hours_enabled       BOOLEAN NOT NULL DEFAULT FALSE,
+        quiet_hours_start         TEXT NOT NULL DEFAULT '22:00',
+        quiet_hours_end           TEXT NOT NULL DEFAULT '08:00',
+        notify_on_rfi_response    BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_on_deadline_reminder BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_on_new_rfp         BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_at                TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('[DB] Startup migration: notification_preferences ensured');
   } finally {
     client.release();
   }

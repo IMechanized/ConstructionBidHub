@@ -77,16 +77,22 @@ export async function runStartupMigrations(): Promise<void> {
     // ── 2025-Q1: Per-user notification preferences (quiet hours, type filters) ─
     await client.query(`
       CREATE TABLE IF NOT EXISTS notification_preferences (
-        id                        SERIAL PRIMARY KEY,
-        user_id                   INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-        quiet_hours_enabled       BOOLEAN NOT NULL DEFAULT FALSE,
-        quiet_hours_start         TEXT NOT NULL DEFAULT '22:00',
-        quiet_hours_end           TEXT NOT NULL DEFAULT '08:00',
-        notify_on_rfi_response    BOOLEAN NOT NULL DEFAULT TRUE,
+        id                          SERIAL PRIMARY KEY,
+        user_id                     INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        quiet_hours_enabled         BOOLEAN NOT NULL DEFAULT FALSE,
+        quiet_hours_start           TEXT NOT NULL DEFAULT '22:00',
+        quiet_hours_end             TEXT NOT NULL DEFAULT '08:00',
+        utc_offset_minutes          INTEGER NOT NULL DEFAULT 0,
+        notify_on_rfi_response      BOOLEAN NOT NULL DEFAULT TRUE,
         notify_on_deadline_reminder BOOLEAN NOT NULL DEFAULT TRUE,
-        notify_on_new_rfp         BOOLEAN NOT NULL DEFAULT TRUE,
-        updated_at                TIMESTAMP NOT NULL DEFAULT NOW()
+        notify_on_new_rfp           BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_at                  TIMESTAMP NOT NULL DEFAULT NOW()
       )
+    `);
+    // Ensure utc_offset_minutes column exists for existing tables (idempotent)
+    await client.query(`
+      ALTER TABLE notification_preferences
+        ADD COLUMN IF NOT EXISTS utc_offset_minutes INTEGER NOT NULL DEFAULT 0
     `);
     console.log('[DB] Startup migration: notification_preferences ensured');
   } finally {

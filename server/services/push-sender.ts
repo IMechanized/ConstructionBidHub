@@ -37,12 +37,20 @@ export interface PushPayload {
 }
 
 /**
- * Checks whether the current UTC time falls within the user's quiet hours window.
- * Quiet hours are stored as HH:mm strings in the database.
+ * Checks whether the current server time (adjusted to the user's local timezone)
+ * falls within the user's quiet hours window.
+ *
+ * @param start            HH:mm quiet-hours start in the user's local time
+ * @param end              HH:mm quiet-hours end in the user's local time
+ * @param utcOffsetMinutes User's UTC offset in minutes (e.g. -300 for UTC-5, +60 for UTC+1).
+ *                         Computed client-side as -(new Date().getTimezoneOffset()).
  */
-function isInQuietHours(start: string, end: string): boolean {
-  const now = new Date();
-  const current = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}`;
+function isInQuietHours(start: string, end: string, utcOffsetMinutes: number): boolean {
+  // Convert current UTC time to the user's local wall-clock time
+  const nowUtcMs = Date.now();
+  const localMs = nowUtcMs + utcOffsetMinutes * 60_000;
+  const local = new Date(localMs);
+  const current = `${local.getUTCHours().toString().padStart(2, '0')}:${local.getUTCMinutes().toString().padStart(2, '0')}`;
 
   if (start > end) {
     // Overnight window e.g. "22:00" to "08:00"
@@ -69,9 +77,9 @@ export async function sendPushToUser(userId: number, payload: PushPayload): Prom
       if (type === 'rfi_response' && !prefs.notifyOnRfiResponse) return;
       if (type === 'deadline_reminder' && !prefs.notifyOnDeadlineReminder) return;
 
-      // Check quiet hours
-      if (prefs.quietHoursEnabled && isInQuietHours(prefs.quietHoursStart, prefs.quietHoursEnd)) {
-        console.log(`[PushSender] Suppressing push for user ${userId} — in quiet hours (${prefs.quietHoursStart}–${prefs.quietHoursEnd})`);
+      // Check quiet hours, converting UTC now to the user's local time via their stored offset
+      if (prefs.quietHoursEnabled && isInQuietHours(prefs.quietHoursStart, prefs.quietHoursEnd, prefs.utcOffsetMinutes)) {
+        console.log(`[PushSender] Suppressing push for user ${userId} — in quiet hours (${prefs.quietHoursStart}–${prefs.quietHoursEnd}, UTC offset: ${prefs.utcOffsetMinutes} min)`);
         return;
       }
     }

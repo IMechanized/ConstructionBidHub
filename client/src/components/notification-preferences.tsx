@@ -31,6 +31,9 @@ const SERVER_SYNCED_FIELDS: (keyof NotificationPreferences)[] = [
 
 async function syncPreferencesToServer(prefs: NotificationPreferences): Promise<void> {
   try {
+    // -(getTimezoneOffset()) converts browser's "minutes behind UTC" to "UTC offset in minutes"
+    // e.g. Eastern US (UTC-5): getTimezoneOffset()=300 → utcOffsetMinutes=-300
+    const utcOffsetMinutes = -(new Date().getTimezoneOffset());
     await fetch("/api/notification-preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -39,6 +42,7 @@ async function syncPreferencesToServer(prefs: NotificationPreferences): Promise<
         quietHoursEnabled: prefs.quietHoursEnabled,
         quietHoursStart: prefs.quietHoursStart,
         quietHoursEnd: prefs.quietHoursEnd,
+        utcOffsetMinutes,
         notifyOnRfiResponse: prefs.notifyOnRfiResponse,
         notifyOnDeadlineReminder: prefs.notifyOnDeadlineReminder,
         notifyOnNewRfp: prefs.notifyOnNewRfp,

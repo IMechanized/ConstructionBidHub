@@ -244,8 +244,16 @@ export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
   quietHoursEnabled: boolean("quiet_hours_enabled").default(false).notNull(),
-  quietHoursStart: text("quiet_hours_start").default("22:00").notNull(), // HH:mm
-  quietHoursEnd: text("quiet_hours_end").default("08:00").notNull(),     // HH:mm
+  quietHoursStart: text("quiet_hours_start").default("22:00").notNull(), // HH:mm in user's local time
+  quietHoursEnd: text("quiet_hours_end").default("08:00").notNull(),     // HH:mm in user's local time
+  /**
+   * The user's UTC offset in minutes at the time preferences were last saved.
+   * Computed client-side as -(new Date().getTimezoneOffset()).
+   * Eastern US (UTC-5) = -300, Central Europe (UTC+1) = +60.
+   * Used server-side to convert UTC "now" into the user's local time before
+   * comparing against quiet hours window.
+   */
+  utcOffsetMinutes: integer("utc_offset_minutes").default(0).notNull(),
   notifyOnRfiResponse: boolean("notify_on_rfi_response").default(true).notNull(),
   notifyOnDeadlineReminder: boolean("notify_on_deadline_reminder").default(true).notNull(),
   notifyOnNewRfp: boolean("notify_on_new_rfp").default(true).notNull(),

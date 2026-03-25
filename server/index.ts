@@ -6,6 +6,7 @@ import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { startBackupScheduler } from "./lib/backup-scheduler";
+import { runStartupMigrations } from "./db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -60,6 +61,9 @@ const startServer = async (): Promise<void> => {
     const HOST = process.env.HOST || "0.0.0.0";
 
     log(`Starting server setup on port ${PORT}...`);
+
+    // Run idempotent startup migrations (e.g. add new columns if missing)
+    await runStartupMigrations();
 
     // Register routes and get HTTP server instance
     const server = registerRoutes(app);

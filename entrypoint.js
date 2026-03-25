@@ -23,6 +23,7 @@ import Mailjet from 'node-mailjet';
 import { v2 as cloudinary } from 'cloudinary';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import webpush from 'web-push';
 
 /**
  * Stripe Payment Processing Integration
@@ -653,8 +654,82 @@ const payments = pgTable("payments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  quietHoursEnabled: boolean("quiet_hours_enabled").default(false).notNull(),
+  quietHoursStart: text("quiet_hours_start").default("22:00").notNull(),
+  quietHoursEnd: text("quiet_hours_end").default("08:00").notNull(),
+  utcOffsetMinutes: integer("utc_offset_minutes").default(0).notNull(),
+  notifyOnRfiResponse: boolean("notify_on_rfi_response").default(true).notNull(),
+  notifyOnDeadlineReminder: boolean("notify_on_deadline_reminder").default(true).notNull(),
+  notifyOnNewRfp: boolean("notify_on_new_rfp").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Initialize Drizzle ORM
 const db = drizzle(pool);
+
+// Idempotent startup migrations for push_subscriptions and notification_preferences
+async function runStartupMigrations() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        user_agent TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conname = 'push_subscriptions_endpoint_unique'
+            AND conrelid = 'push_subscriptions'::regclass
+        ) THEN
+          ALTER TABLE push_subscriptions ADD CONSTRAINT push_subscriptions_endpoint_unique UNIQUE (endpoint);
+        END IF;
+      END $$;
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notification_preferences (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        quiet_hours_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        quiet_hours_start TEXT NOT NULL DEFAULT '22:00',
+        quiet_hours_end TEXT NOT NULL DEFAULT '08:00',
+        utc_offset_minutes INTEGER NOT NULL DEFAULT 0,
+        notify_on_rfi_response BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_on_deadline_reminder BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_on_new_rfp BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT notification_preferences_user_id_unique UNIQUE (user_id)
+      );
+    `);
+    console.log('[Entrypoint] Startup migrations complete (push_subscriptions, notification_preferences)');
+  } catch (err) {
+    console.error('[Entrypoint] Startup migration error:', err);
+  } finally {
+    client.release();
+  }
+}
+runStartupMigrations();
 
 // Validation Schemas
 const securePasswordSchema = z.string()
@@ -1704,6 +1779,100 @@ const storage = {
     }
   },
 
+  // Push Subscription Operations
+  async createPushSubscription(subscription) {
+    try {
+      const [result] = await db
+        .insert(pushSubscriptions)
+        .values(subscription)
+        .onConflictDoUpdate({
+          target: pushSubscriptions.endpoint,
+          set: {
+            userId: subscription.userId,
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+            userAgent: subscription.userAgent ?? null,
+          },
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating push subscription:", error);
+      throw error;
+    }
+  },
+
+  async getPushSubscriptionsByUser(userId) {
+    try {
+      return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+    } catch (error) {
+      console.error("Error getting push subscriptions:", error);
+      return [];
+    }
+  },
+
+  async getPushSubscriptionByEndpoint(endpoint) {
+    try {
+      const [sub] = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+      return sub;
+    } catch (error) {
+      console.error("Error getting push subscription by endpoint:", error);
+      return undefined;
+    }
+  },
+
+  async deletePushSubscription(endpoint) {
+    try {
+      await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+    } catch (error) {
+      console.error("Error deleting push subscription:", error);
+      throw error;
+    }
+  },
+
+  async deletePushSubscriptionsByUser(userId) {
+    try {
+      await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+    } catch (error) {
+      console.error("Error deleting push subscriptions by user:", error);
+      throw error;
+    }
+  },
+
+  // Notification Preferences Operations
+  async getNotificationPreferences(userId) {
+    try {
+      const [prefs] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+      return prefs;
+    } catch (error) {
+      console.error("Error getting notification preferences:", error);
+      return undefined;
+    }
+  },
+
+  async upsertNotificationPreferences(userId, prefs) {
+    try {
+      const existing = await this.getNotificationPreferences(userId);
+      if (existing) {
+        const [updated] = await db
+          .update(notificationPreferences)
+          .set({ ...prefs, updatedAt: new Date() })
+          .where(eq(notificationPreferences.userId, userId))
+          .returning();
+        return updated;
+      } else {
+        const [created] = await db
+          .insert(notificationPreferences)
+          .values({ userId, ...prefs })
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error("Error upserting notification preferences:", error);
+      throw error;
+    }
+  },
+
   // Cache for session store to avoid recreating it on every access
   _sessionStore: null,
 
@@ -1720,6 +1889,95 @@ const storage = {
     return this._sessionStore;
   }
 };
+
+// ==========================================
+// WEB PUSH SENDER
+// ==========================================
+
+let _pushConfigured = false;
+
+function ensurePushConfigured() {
+  if (_pushConfigured) return;
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const email = process.env.VAPID_EMAIL || 'mailto:support@findconstructionbids.com';
+  if (!publicKey || !privateKey) {
+    console.warn('[PushSender] VAPID keys not configured. Push notifications will be disabled.');
+    return;
+  }
+  webpush.setVapidDetails(email, publicKey, privateKey);
+  _pushConfigured = true;
+  console.log('[PushSender] Web Push configured successfully');
+}
+
+function isInQuietHours(start, end, utcOffsetMinutes) {
+  const nowUtcMs = Date.now();
+  const localMs = nowUtcMs + utcOffsetMinutes * 60_000;
+  const local = new Date(localMs);
+  const current = `${local.getUTCHours().toString().padStart(2, '0')}:${local.getUTCMinutes().toString().padStart(2, '0')}`;
+  if (start > end) {
+    return current >= start || current <= end;
+  }
+  return current >= start && current <= end;
+}
+
+async function sendPushToUser(userId, payload) {
+  ensurePushConfigured();
+  if (!_pushConfigured) return;
+
+  try {
+    const prefs = await storage.getNotificationPreferences(userId);
+    if (prefs) {
+      const type = payload.type || 'system';
+      if (type === 'rfi_response' && !prefs.notifyOnRfiResponse) return;
+      if (type === 'deadline_reminder' && !prefs.notifyOnDeadlineReminder) return;
+      if (prefs.quietHoursEnabled && isInQuietHours(prefs.quietHoursStart, prefs.quietHoursEnd, prefs.utcOffsetMinutes)) {
+        console.log(`[PushSender] Suppressing push for user ${userId} — in quiet hours`);
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('[PushSender] Failed to load notification preferences for user', userId, error);
+  }
+
+  let subscriptions;
+  try {
+    subscriptions = await storage.getPushSubscriptionsByUser(userId);
+  } catch (error) {
+    console.error('[PushSender] Failed to fetch subscriptions for user', userId, error);
+    return;
+  }
+
+  if (!subscriptions || subscriptions.length === 0) return;
+
+  const notification = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    icon: payload.icon || '/icons/icon-192x192.png',
+    badge: payload.badge || '/icons/icon-192x192.png',
+    url: payload.url || '/',
+    tag: payload.tag || `notification-${Date.now()}`,
+    type: payload.type || 'system',
+  });
+
+  const sendPromises = subscriptions.map(async (sub) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        notification
+      );
+    } catch (error) {
+      if (error.statusCode === 410 || error.statusCode === 404) {
+        console.log('[PushSender] Removing expired subscription for user', userId);
+        try { await storage.deletePushSubscription(sub.endpoint); } catch {}
+      } else {
+        console.error('[PushSender] Failed to send push notification to', sub.endpoint, error.message || error);
+      }
+    }
+  });
+
+  await Promise.allSettled(sendPromises);
+}
 
 // Configure multer
 const upload = multer({ 
@@ -3987,6 +4245,14 @@ app.post("/api/rfis/:id/messages", requireAuth, upload.array('attachment', 5), a
       if (global.sendNotificationToUser) {
         global.sendNotificationToUser(targetUserId, notification);
       }
+
+      // Send Web Push notification
+      sendPushToUser(targetUserId, {
+        title: notification.title,
+        body: notification.message,
+        type: 'rfi_response',
+        url: `/dashboard/rfi-management/${rfiId}`,
+      }).catch(err => console.error('[Entrypoint] Push send failed:', err));
     }
 
     // Return the message with sender information and attachments
@@ -4173,6 +4439,98 @@ app.delete("/api/notifications/:id", requireAuth, async (req, res) => {
     res.json({ message: "Notification deleted" });
   } catch (error) {
     sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'NotificationDeletion');
+  }
+});
+
+// ==========================================
+// PUSH SUBSCRIPTION ROUTES
+// ==========================================
+
+// Get VAPID public key (safe to expose — it's the public key)
+app.get("/api/push-subscriptions/vapid-key", (req, res) => {
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  if (!publicKey) {
+    return res.status(503).json({ error: 'Push notifications not configured' });
+  }
+  res.json({ publicKey });
+});
+
+// Register a push subscription
+app.post("/api/push-subscriptions", requireAuth, async (req, res) => {
+  try {
+    const { endpoint, keys, userAgent } = req.body;
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return sendErrorResponse(res, new Error('Missing required fields'), 400, ErrorMessages.BAD_REQUEST, 'PushSubscribe');
+    }
+    const subscription = await storage.createPushSubscription({
+      userId: req.user.id,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+      userAgent: userAgent || req.headers['user-agent'] || null,
+    });
+    res.status(201).json({ success: true, id: subscription.id });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.CREATE_FAILED, 'PushSubscribe');
+  }
+});
+
+// Unregister a push subscription
+app.delete("/api/push-subscriptions", requireAuth, async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (!endpoint) {
+      return sendErrorResponse(res, new Error('Missing endpoint'), 400, ErrorMessages.BAD_REQUEST, 'PushUnsubscribe');
+    }
+    const existing = await storage.getPushSubscriptionByEndpoint(endpoint);
+    if (existing && existing.userId !== req.user.id) {
+      return sendErrorResponse(res, new Error('Unauthorized'), 403, ErrorMessages.FORBIDDEN, 'PushUnsubscribe');
+    }
+    await storage.deletePushSubscription(endpoint);
+    res.json({ success: true });
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.DELETE_FAILED, 'PushUnsubscribe');
+  }
+});
+
+// ==========================================
+// NOTIFICATION PREFERENCES ROUTES
+// ==========================================
+
+// Get the current user's notification preferences
+app.get("/api/notification-preferences", requireAuth, async (req, res) => {
+  try {
+    const prefs = await storage.getNotificationPreferences(req.user.id);
+    res.json(prefs || null);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'GetNotifPrefs');
+  }
+});
+
+// Upsert the current user's notification preferences
+app.put("/api/notification-preferences", requireAuth, async (req, res) => {
+  try {
+    const {
+      quietHoursEnabled,
+      quietHoursStart,
+      quietHoursEnd,
+      utcOffsetMinutes,
+      notifyOnRfiResponse,
+      notifyOnDeadlineReminder,
+      notifyOnNewRfp,
+    } = req.body;
+    const updated = await storage.upsertNotificationPreferences(req.user.id, {
+      ...(quietHoursEnabled !== undefined && { quietHoursEnabled }),
+      ...(quietHoursStart !== undefined && { quietHoursStart }),
+      ...(quietHoursEnd !== undefined && { quietHoursEnd }),
+      ...(utcOffsetMinutes !== undefined && { utcOffsetMinutes: Number(utcOffsetMinutes) }),
+      ...(notifyOnRfiResponse !== undefined && { notifyOnRfiResponse }),
+      ...(notifyOnDeadlineReminder !== undefined && { notifyOnDeadlineReminder }),
+      ...(notifyOnNewRfp !== undefined && { notifyOnNewRfp }),
+    });
+    res.json(updated);
+  } catch (error) {
+    sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'PutNotifPrefs');
   }
 });
 

@@ -72,6 +72,19 @@ export async function runStartupMigrations(): Promise<void> {
         created_at    TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
+    // Ensure endpoint is unique (one row per physical browser endpoint).
+    // The upsert in createPushSubscription depends on this constraint.
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conname = 'push_subscriptions_endpoint_unique'
+            AND conrelid = 'push_subscriptions'::regclass
+        ) THEN
+          ALTER TABLE push_subscriptions ADD CONSTRAINT push_subscriptions_endpoint_unique UNIQUE (endpoint);
+        END IF;
+      END $$;
+    `);
     console.log('[DB] Startup migration: push_subscriptions ensured');
 
     // ── 2025-Q1: Per-user notification preferences (quiet hours, type filters) ─

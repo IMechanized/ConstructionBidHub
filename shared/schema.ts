@@ -271,7 +271,7 @@ export type NotificationPreferencesRecord = typeof notificationPreferences.$infe
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  endpoint: text("endpoint").notNull(),
+  endpoint: text("endpoint").notNull().unique(), // One row per physical browser endpoint
   p256dh: text("p256dh").notNull(),
   auth: text("auth").notNull(),
   userAgent: text("user_agent"),

@@ -1171,12 +1171,23 @@ export class DatabaseStorage implements IStorage {
    * Push Subscription Operations
    */
   async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
-    const existing = await this.getPushSubscriptionByEndpoint(subscription.endpoint);
-    if (existing) {
-      return existing;
-    }
-    const [newSub] = await db.insert(pushSubscriptions).values(subscription).returning();
-    return newSub;
+    // Upsert by endpoint: the physical browser endpoint is unique — one row per device.
+    // If the endpoint already exists (e.g. a different user logged in on the same browser),
+    // reassign it to the current user so push notifications reach the right account.
+    const [result] = await db
+      .insert(pushSubscriptions)
+      .values(subscription)
+      .onConflictDoUpdate({
+        target: pushSubscriptions.endpoint,
+        set: {
+          userId: subscription.userId,
+          p256dh: subscription.p256dh,
+          auth: subscription.auth,
+          userAgent: subscription.userAgent ?? null,
+        },
+      })
+      .returning();
+    return result;
   }
 
   async getPushSubscriptionsByUser(userId: number): Promise<PushSubscription[]> {

@@ -3,7 +3,7 @@
  * Handles all database operations and business logic
  */
 
-import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, payments, type Payment, type InsertPayment, pushSubscriptions, type PushSubscription, type InsertPushSubscription, generateSlug } from "../shared/schema.js";
+import { User, InsertUser, Rfp, InsertRfp, users, rfps, rfpDocuments, RfpDocument, InsertRfpDocument, rfpAnalytics, rfpViewSessions, RfpAnalytics, RfpViewSession, rfis, type Rfi, type InsertRfi, rfiMessages, type RfiMessage, type InsertRfiMessage, rfiAttachments, type RfiAttachment, type InsertRfiAttachment, notifications, type Notification, type InsertNotification, rfpReach, type RfpReach, type InsertRfpReach, payments, type Payment, type InsertPayment, pushSubscriptions, type PushSubscription, type InsertPushSubscription, notificationPreferences, type NotificationPreferencesRecord, type InsertNotificationPreferences, generateSlug } from "../shared/schema.js";
 import { db, pool } from "./db.js";
 import { eq, and, sql, desc, inArray, gte, gt, ilike, or, count } from "drizzle-orm";
 import session from "express-session";
@@ -105,6 +105,10 @@ export interface IStorage {
   getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined>;
   deletePushSubscription(endpoint: string): Promise<void>;
   deletePushSubscriptionsByUser(userId: number): Promise<void>;
+
+  // Notification Preferences Operations
+  getNotificationPreferences(userId: number): Promise<NotificationPreferencesRecord | undefined>;
+  upsertNotificationPreferences(userId: number, prefs: Partial<InsertNotificationPreferences>): Promise<NotificationPreferencesRecord>;
 }
 
 /**
@@ -1190,6 +1194,32 @@ export class DatabaseStorage implements IStorage {
 
   async deletePushSubscriptionsByUser(userId: number): Promise<void> {
     await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  }
+
+  /**
+   * Notification Preferences Operations
+   */
+  async getNotificationPreferences(userId: number): Promise<NotificationPreferencesRecord | undefined> {
+    const [prefs] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    return prefs;
+  }
+
+  async upsertNotificationPreferences(userId: number, prefs: Partial<InsertNotificationPreferences>): Promise<NotificationPreferencesRecord> {
+    const existing = await this.getNotificationPreferences(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(notificationPreferences)
+        .set({ ...prefs, updatedAt: new Date() })
+        .where(eq(notificationPreferences.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(notificationPreferences)
+        .values({ userId, ...prefs })
+        .returning();
+      return created;
+    }
   }
 }
 

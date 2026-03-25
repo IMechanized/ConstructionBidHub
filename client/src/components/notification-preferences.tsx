@@ -19,6 +19,36 @@ import {
   NotificationPreferences,
 } from "@/lib/push-notifications";
 
+/** Fields that are persisted server-side for push enforcement */
+const SERVER_SYNCED_FIELDS: (keyof NotificationPreferences)[] = [
+  "quietHoursEnabled",
+  "quietHoursStart",
+  "quietHoursEnd",
+  "notifyOnRfiResponse",
+  "notifyOnDeadlineReminder",
+  "notifyOnNewRfp",
+];
+
+async function syncPreferencesToServer(prefs: NotificationPreferences): Promise<void> {
+  try {
+    await fetch("/api/notification-preferences", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        quietHoursEnabled: prefs.quietHoursEnabled,
+        quietHoursStart: prefs.quietHoursStart,
+        quietHoursEnd: prefs.quietHoursEnd,
+        notifyOnRfiResponse: prefs.notifyOnRfiResponse,
+        notifyOnDeadlineReminder: prefs.notifyOnDeadlineReminder,
+        notifyOnNewRfp: prefs.notifyOnNewRfp,
+      }),
+    });
+  } catch (err) {
+    console.error("Failed to sync notification preferences to server:", err);
+  }
+}
+
 export function NotificationPreferencesPanel() {
   const [preferences, setPreferences] = useState<NotificationPreferences>(getNotificationPreferences());
   const [permissionState, setPermissionState] = useState(getNotificationPermissionState());
@@ -31,6 +61,26 @@ export function NotificationPreferencesPanel() {
     setPermissionState(getNotificationPermissionState());
     setPushSupported(checkPushSupport());
     isPushSubscribed().then(setPushSubscribed);
+
+    // Load server-side preferences and merge with local
+    fetch("/api/notification-preferences", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((serverPrefs) => {
+        if (serverPrefs) {
+          const merged: NotificationPreferences = {
+            ...getNotificationPreferences(),
+            quietHoursEnabled: serverPrefs.quietHoursEnabled,
+            quietHoursStart: serverPrefs.quietHoursStart,
+            quietHoursEnd: serverPrefs.quietHoursEnd,
+            notifyOnRfiResponse: serverPrefs.notifyOnRfiResponse,
+            notifyOnDeadlineReminder: serverPrefs.notifyOnDeadlineReminder,
+            notifyOnNewRfp: serverPrefs.notifyOnNewRfp,
+          };
+          setPreferences(merged);
+          saveNotificationPreferences(merged);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleEnableBrowserNotifications = async () => {
@@ -133,6 +183,10 @@ export function NotificationPreferencesPanel() {
     const updated = { ...preferences, [key]: value };
     setPreferences(updated);
     saveNotificationPreferences(updated);
+    // Sync to server for fields that control push notification delivery
+    if (SERVER_SYNCED_FIELDS.includes(key)) {
+      syncPreferencesToServer(updated);
+    }
   };
 
   return (

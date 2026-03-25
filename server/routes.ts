@@ -1868,6 +1868,47 @@ ${rfpEntries}
   });
 
   // ==========================================
+  // NOTIFICATION PREFERENCES ROUTES
+  // ==========================================
+
+  // Get the current user's notification preferences
+  app.get("/api/notification-preferences", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+      const prefs = await storage.getNotificationPreferences(req.user!.id);
+      res.json(prefs || null);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.FETCH_FAILED, 'GetNotifPrefs');
+    }
+  });
+
+  // Upsert the current user's notification preferences
+  app.put("/api/notification-preferences", async (req, res) => {
+    try {
+      if (!requireAuth(req, res)) return;
+      const {
+        quietHoursEnabled,
+        quietHoursStart,
+        quietHoursEnd,
+        notifyOnRfiResponse,
+        notifyOnDeadlineReminder,
+        notifyOnNewRfp,
+      } = req.body;
+      const updated = await storage.upsertNotificationPreferences(req.user!.id, {
+        ...(quietHoursEnabled !== undefined && { quietHoursEnabled }),
+        ...(quietHoursStart !== undefined && { quietHoursStart }),
+        ...(quietHoursEnd !== undefined && { quietHoursEnd }),
+        ...(notifyOnRfiResponse !== undefined && { notifyOnRfiResponse }),
+        ...(notifyOnDeadlineReminder !== undefined && { notifyOnDeadlineReminder }),
+        ...(notifyOnNewRfp !== undefined && { notifyOnNewRfp }),
+      });
+      res.json(updated);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.UPDATE_FAILED, 'PutNotifPrefs');
+    }
+  });
+
+  // ==========================================
   // ADMIN ROUTES
   // ==========================================
 

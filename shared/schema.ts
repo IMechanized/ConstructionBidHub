@@ -236,6 +236,27 @@ export const notifications = pgTable("notifications", {
 });
 
 /**
+ * Notification Preferences Table
+ * Stores per-user notification delivery preferences server-side
+ * so quiet hours and type filters can be enforced on push delivery
+ */
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  quietHoursEnabled: boolean("quiet_hours_enabled").default(false).notNull(),
+  quietHoursStart: text("quiet_hours_start").default("22:00").notNull(), // HH:mm
+  quietHoursEnd: text("quiet_hours_end").default("08:00").notNull(),     // HH:mm
+  notifyOnRfiResponse: boolean("notify_on_rfi_response").default(true).notNull(),
+  notifyOnDeadlineReminder: boolean("notify_on_deadline_reminder").default(true).notNull(),
+  notifyOnNewRfp: boolean("notify_on_new_rfp").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({ id: true, updatedAt: true });
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreferencesRecord = typeof notificationPreferences.$inferSelect;
+
+/**
  * Push Subscriptions Table
  * Stores Web Push (VAPID) subscriptions per user/device
  */

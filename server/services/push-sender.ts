@@ -1,6 +1,7 @@
 /**
  * Web Push Sender Service
- * Sends VAPID-based push notifications to subscribed devices
+ * Sends VAPID-based push notifications to subscribed devices,
+ * enforcing per-user quiet hours and notification-type preferences.
  */
 
 import webpush from 'web-push';
@@ -32,15 +33,52 @@ export interface PushPayload {
   badge?: string;
   url?: string;
   tag?: string;
-  type?: string;
+  type?: 'rfi_response' | 'deadline_reminder' | 'system';
 }
 
 /**
- * Send a push notification to all subscribed devices for a given user
+ * Checks whether the current UTC time falls within the user's quiet hours window.
+ * Quiet hours are stored as HH:mm strings in the database.
+ */
+function isInQuietHours(start: string, end: string): boolean {
+  const now = new Date();
+  const current = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}`;
+
+  if (start > end) {
+    // Overnight window e.g. "22:00" to "08:00"
+    return current >= start || current <= end;
+  }
+  // Same-day window e.g. "12:00" to "14:00"
+  return current >= start && current <= end;
+}
+
+/**
+ * Send a push notification to all subscribed devices for a given user.
+ * Respects quiet hours and per-type preferences stored in the database.
  */
 export async function sendPushToUser(userId: number, payload: PushPayload): Promise<void> {
   ensureConfigured();
   if (!isConfigured) return;
+
+  // Enforce server-side notification preferences (quiet hours + type filters)
+  try {
+    const prefs = await storage.getNotificationPreferences(userId);
+    if (prefs) {
+      // Check per-type preferences
+      const type = payload.type || 'system';
+      if (type === 'rfi_response' && !prefs.notifyOnRfiResponse) return;
+      if (type === 'deadline_reminder' && !prefs.notifyOnDeadlineReminder) return;
+
+      // Check quiet hours
+      if (prefs.quietHoursEnabled && isInQuietHours(prefs.quietHoursStart, prefs.quietHoursEnd)) {
+        console.log(`[PushSender] Suppressing push for user ${userId} — in quiet hours (${prefs.quietHoursStart}–${prefs.quietHoursEnd})`);
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('[PushSender] Failed to load notification preferences for user', userId, error);
+    // Fail open: deliver the notification if we can't check preferences
+  }
 
   let subscriptions;
   try {

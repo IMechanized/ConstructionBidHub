@@ -18,4 +18,5 @@ export default defineConfig({
   dbCredentials: {
     url: getDatabaseUrl(),
   },
+  tablesFilter: ["!session"],
 });

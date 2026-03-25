@@ -232,7 +232,7 @@ export function registerRoutes(app: Express): Server {
         const state = encodeURIComponent(rfp.jobState);
         const client = encodeURIComponent(clientSlug(rfp.clientName));
         const slug = encodeURIComponent(rfp.slug!);
-        const lastmod = rfp.createdAt ? rfp.createdAt.toISOString().split('T')[0] : today;
+        const lastmod = (rfp.updatedAt ?? rfp.createdAt ?? new Date()).toISOString().split('T')[0];
         return `  <url>
     <loc>${baseUrl}/rfp/${state}/${client}/${slug}</loc>
     <lastmod>${lastmod}</lastmod>

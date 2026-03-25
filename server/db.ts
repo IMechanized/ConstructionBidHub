@@ -40,3 +40,22 @@ export const db = drizzle({ client: pool, schema });
 
 // Export pool for cleanup
 export { pool as dbPool };
+
+/**
+ * Ensures the rfps table has the updated_at column.
+ * This migration is idempotent: safe to run on every startup.
+ * It was added to track when RFPs are last modified so the sitemap
+ * can provide accurate <lastmod> dates to search engines.
+ */
+export async function runStartupMigrations(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      ALTER TABLE rfps
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    `);
+    console.log('[DB] Startup migration: rfps.updated_at ensured');
+  } finally {
+    client.release();
+  }
+}

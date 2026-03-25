@@ -132,6 +132,7 @@ export const rfps = pgTable("rfps", {
   featured: boolean("featured").default(false),             // Promoted/featured status
   featuredAt: timestamp("featured_at"),                    // When the RFP was featured
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last modification time
 });
 
 /**

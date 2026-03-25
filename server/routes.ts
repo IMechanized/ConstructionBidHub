@@ -190,6 +190,71 @@ export function registerRoutes(app: Express): Server {
   // Mount payments router
   app.use('/api/payments', paymentsRoutes);
 
+  // Dynamic sitemap — must be registered before Vite middleware so Express handles it
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const baseUrl = process.env.PUBLIC_URL?.replace(/\/$/, '') || 'https://findconstructionbids.com';
+      const today = new Date().toISOString().split('T')[0];
+
+      function clientSlug(text: string | null | undefined): string {
+        if (!text) return 'unknown';
+        return text
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+          .substring(0, 50) || 'unknown';
+      }
+
+      const staticPages = [
+        { path: '/', priority: '1.0', changefreq: 'daily' },
+        { path: '/opportunities/featured', priority: '0.9', changefreq: 'daily' },
+        { path: '/opportunities/new', priority: '0.9', changefreq: 'daily' },
+        { path: '/about', priority: '0.7', changefreq: 'monthly' },
+        { path: '/support', priority: '0.6', changefreq: 'monthly' },
+        { path: '/terms', priority: '0.5', changefreq: 'monthly' },
+        { path: '/privacy-policy', priority: '0.5', changefreq: 'monthly' },
+        { path: '/leaderboard', priority: '0.6', changefreq: 'weekly' },
+      ];
+
+      const allRfps = await storage.getRfps();
+      const publicRfps = allRfps.filter(rfp => rfp.status === 'open' && rfp.slug);
+
+      const staticEntries = staticPages.map(page => `  <url>
+    <loc>${baseUrl}${page.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`).join('\n');
+
+      const rfpEntries = publicRfps.map(rfp => {
+        const state = encodeURIComponent(rfp.jobState);
+        const client = encodeURIComponent(clientSlug(rfp.clientName));
+        const slug = encodeURIComponent(rfp.slug!);
+        const lastmod = (rfp.updatedAt ?? rfp.createdAt ?? new Date()).toISOString().split('T')[0];
+        return `  <url>
+    <loc>${baseUrl}/rfp/${state}/${client}/${slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }).join('\n');
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticEntries}
+${rfpEntries}
+</urlset>`;
+
+      res.setHeader('Content-Type', 'application/xml');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(xml);
+    } catch (error) {
+      sendErrorResponse(res, error, 500, ErrorMessages.INTERNAL_ERROR, 'Sitemap');
+    }
+  });
+
   // Presigned URL endpoints for direct S3 uploads (Vercel-compatible)
   // These bypass the 4.5MB Vercel serverless limit by allowing direct client-to-S3 uploads
   

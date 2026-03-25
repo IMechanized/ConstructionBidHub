@@ -613,7 +613,7 @@ export class DatabaseStorage implements IStorage {
   async updateRfp(id: number, updates: Partial<Rfp>): Promise<Rfp> {
     const [rfp] = await db
       .update(rfps)
-      .set(updates)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(rfps.id, id))
       .returning();
     if (!rfp) throw new Error("RFP not found");

@@ -65,8 +65,8 @@ export function RfpDetailContent({
         {/* Important Dates Section */}
         <div className="mb-6 sm:mb-8 text-right text-xs sm:text-sm text-muted-foreground space-y-1">
           <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
-          <div>Walkthrough: {rfp.walkthroughDate ? format(new Date(rfp.walkthroughDate), "MM/dd/yyyy") : "--"}</div>
-          <div>RFI Due: {rfp.rfiDate ? format(new Date(rfp.rfiDate), "MM/dd/yyyy") : "--"}</div>
+          {rfp.walkthroughDate && <div>Walkthrough: {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy")}</div>}
+          {rfp.rfiDate && <div>RFI Due: {format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</div>}
           <div>Deadline: {format(new Date(rfp.deadline), "MM/dd/yyyy")}</div>
         </div>
 
@@ -128,14 +128,12 @@ export function RfpDetailContent({
               <h3 className="font-medium mb-2">ZIP Code</h3>
               <p>{rfp.jobZip}</p>
             </div>
-            <div>
-              <h3 className="font-medium mb-2">Budget</h3>
-              <p>
-                {rfp.budgetMin
-                  ? `$${rfp.budgetMin.toLocaleString()}`
-                  : "Not specified"}
-              </p>
-            </div>
+            {rfp.budgetMin && (
+              <div>
+                <h3 className="font-medium mb-2">Budget</h3>
+                <p>${rfp.budgetMin.toLocaleString()}</p>
+              </div>
+            )}
             {rfp.mandatoryWalkthrough && (
               <div>
                 <h3 className="font-medium mb-2">Mandatory Walkthrough</h3>
@@ -169,14 +167,18 @@ export function RfpDetailContent({
         <div className="mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Project Schedule</h2>
           <div className="space-y-2 text-sm sm:text-base">
-            <div className="flex flex-col sm:flex-row sm:gap-2">
-              <span className="font-medium">Site Walkthrough:</span>
-              <span>{rfp.walkthroughDate ? format(new Date(rfp.walkthroughDate), "MM/dd/yyyy 'at' h:mm a") : "--"}</span>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-2">
-              <span className="font-medium">RFI Submission Deadline:</span>
-              <span>{rfp.rfiDate ? format(new Date(rfp.rfiDate), "MM/dd/yyyy 'at' h:mm a") : "--"}</span>
-            </div>
+            {rfp.walkthroughDate && (
+              <div className="flex flex-col sm:flex-row sm:gap-2">
+                <span className="font-medium">Site Walkthrough:</span>
+                <span>{format(new Date(rfp.walkthroughDate), "MM/dd/yyyy 'at' h:mm a")}</span>
+              </div>
+            )}
+            {rfp.rfiDate && (
+              <div className="flex flex-col sm:flex-row sm:gap-2">
+                <span className="font-medium">RFI Submission Deadline:</span>
+                <span>{format(new Date(rfp.rfiDate), "MM/dd/yyyy 'at' h:mm a")}</span>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:gap-2">
               <span className="font-medium">Proposal Due Date:</span>
               <span>{format(new Date(rfp.deadline), "MM/dd/yyyy 'at' h:mm a")}</span>

@@ -15,6 +15,27 @@
       "when": 1772705109612,
       "tag": "0001_nullable_rfp_fields_and_draft_status",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774438675084,
+      "tag": "0002_striped_excalibur",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774438884039,
+      "tag": "0003_talented_joseph",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774439203482,
+      "tag": "0004_even_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

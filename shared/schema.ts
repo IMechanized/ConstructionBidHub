@@ -236,6 +236,49 @@ export const notifications = pgTable("notifications", {
 });
 
 /**
+ * Notification Preferences Table
+ * Stores per-user notification delivery preferences server-side
+ * so quiet hours and type filters can be enforced on push delivery
+ */
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  quietHoursEnabled: boolean("quiet_hours_enabled").default(false).notNull(),
+  quietHoursStart: text("quiet_hours_start").default("22:00").notNull(), // HH:mm in user's local time
+  quietHoursEnd: text("quiet_hours_end").default("08:00").notNull(),     // HH:mm in user's local time
+  /**
+   * The user's UTC offset in minutes at the time preferences were last saved.
+   * Computed client-side as -(new Date().getTimezoneOffset()).
+   * Eastern US (UTC-5) = -300, Central Europe (UTC+1) = +60.
+   * Used server-side to convert UTC "now" into the user's local time before
+   * comparing against quiet hours window.
+   */
+  utcOffsetMinutes: integer("utc_offset_minutes").default(0).notNull(),
+  notifyOnRfiResponse: boolean("notify_on_rfi_response").default(true).notNull(),
+  notifyOnDeadlineReminder: boolean("notify_on_deadline_reminder").default(true).notNull(),
+  notifyOnNewRfp: boolean("notify_on_new_rfp").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({ id: true, updatedAt: true });
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreferencesRecord = typeof notificationPreferences.$inferSelect;
+
+/**
+ * Push Subscriptions Table
+ * Stores Web Push (VAPID) subscriptions per user/device
+ */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  endpoint: text("endpoint").notNull().unique(), // One row per physical browser endpoint
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Backup Logs Table
  * Tracks database backup operations
  */
@@ -410,6 +453,15 @@ export const insertRfpReachSchema = createInsertSchema(rfpReach).pick({
   totalReach: true,
 });
 
+// Push subscription creation validation
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).pick({
+  userId: true,
+  endpoint: true,
+  p256dh: true,
+  auth: true,
+  userAgent: true,
+});
+
 // Payment creation validation
 export const insertPaymentSchema = createInsertSchema(payments).pick({
   userId: true,
@@ -449,3 +501,5 @@ export type RfpReach = typeof rfpReach.$inferSelect;
 export type InsertRfpReach = z.infer<typeof insertRfpReachSchema>;
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;

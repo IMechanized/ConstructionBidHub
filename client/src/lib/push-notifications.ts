@@ -1,4 +1,4 @@
-// Push notification utilities for browser notifications
+// Push notification utilities for browser notifications and Web Push (VAPID)
 
 export interface NotificationPermissionState {
   supported: boolean;
@@ -93,11 +93,16 @@ export function checkNotificationSupport(): boolean {
   return "Notification" in window;
 }
 
+export function checkPushSupport(): boolean {
+  return "serviceWorker" in navigator && "PushManager" in window;
+}
+
 // Store notification preferences in localStorage
 const PREFERENCES_KEY = "notification-preferences";
 
 export interface NotificationPreferences {
   browserEnabled: boolean;
+  pushEnabled: boolean;
   emailEnabled: boolean;
   digestMode: "instant" | "daily" | "weekly" | "never";
   notifyOnRfiResponse: boolean;
@@ -110,6 +115,7 @@ export interface NotificationPreferences {
 
 export const defaultNotificationPreferences: NotificationPreferences = {
   browserEnabled: false,
+  pushEnabled: false,
   emailEnabled: true,
   digestMode: "instant",
   notifyOnRfiResponse: true,
@@ -185,4 +191,124 @@ export function shouldShowNotification(
     default:
       return true;
   }
+}
+
+// ==========================================
+// WEB PUSH (VAPID) SUBSCRIPTION MANAGEMENT
+// ==========================================
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function getVapidPublicKey(): Promise<string | null> {
+  try {
+    const response = await fetch("/api/push-subscriptions/vapid-key");
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.publicKey || null;
+  } catch (error) {
+    console.error("Failed to fetch VAPID public key:", error);
+    return null;
+  }
+}
+
+export async function getCurrentPushSubscription(): Promise<PushSubscription | null> {
+  if (!checkPushSupport()) return null;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    return registration.pushManager.getSubscription();
+  } catch (error) {
+    console.error("Failed to get current push subscription:", error);
+    return null;
+  }
+}
+
+export async function subscribeToPush(): Promise<boolean> {
+  if (!checkPushSupport()) {
+    console.warn("Push notifications are not supported in this browser");
+    return false;
+  }
+
+  try {
+    const vapidKey = await getVapidPublicKey();
+    if (!vapidKey) {
+      console.error("VAPID public key not available");
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+
+    // Send subscription to backend
+    const subscriptionJson = subscription.toJSON();
+    const response = await fetch("/api/push-subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        endpoint: subscriptionJson.endpoint,
+        keys: subscriptionJson.keys,
+        userAgent: navigator.userAgent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to save push subscription to server");
+      await subscription.unsubscribe();
+      return false;
+    }
+
+    console.log("Push subscription registered successfully");
+    return true;
+  } catch (error) {
+    console.error("Failed to subscribe to push notifications:", error);
+    return false;
+  }
+}
+
+export async function unsubscribeFromPush(): Promise<boolean> {
+  if (!checkPushSupport()) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) return true;
+
+    // Remove from backend first
+    const subscriptionJson = subscription.toJSON();
+    await fetch("/api/push-subscriptions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ endpoint: subscriptionJson.endpoint }),
+    }).catch(err => console.error("Failed to remove push subscription from server:", err));
+
+    // Then unsubscribe from browser
+    const success = await subscription.unsubscribe();
+    if (success) {
+      console.log("Push subscription removed successfully");
+    }
+    return success;
+  } catch (error) {
+    console.error("Failed to unsubscribe from push notifications:", error);
+    return false;
+  }
+}
+
+export async function isPushSubscribed(): Promise<boolean> {
+  const sub = await getCurrentPushSubscription();
+  return sub !== null;
 }

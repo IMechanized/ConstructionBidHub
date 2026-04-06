@@ -7,6 +7,7 @@ import { storage } from '../storage.js';
 import { db } from '../db.js';
 import { rfps, users } from '../../shared/schema.js';
 import { eq, lt, gte, and } from 'drizzle-orm';
+import { sendPushToUser } from './push-sender.js';
 
 export class DeadlineMonitorService {
   private isRunning = false;
@@ -161,6 +162,14 @@ export class DeadlineMonitorService {
         (global as any).sendNotificationToUser(userId, notification);
       }
 
+      // Send Web Push notification
+      sendPushToUser(userId, {
+        title: notification.title,
+        body: notification.message,
+        type: 'deadline_reminder',
+        url: `/rfp/${rfp.id}`,
+      }).catch(err => console.error('[DeadlineMonitor] Push send failed:', err));
+
       console.log(`Deadline notification sent to user ${userId} for RFP ${rfp.id} (${timeframe} remaining)`);
     } catch (error) {
       console.error(`Error sending deadline notification for RFP ${rfp.id}:`, error);
@@ -186,6 +195,14 @@ export class DeadlineMonitorService {
         (global as any).sendNotificationToUser(userId, notification);
       }
 
+      // Send Web Push notification
+      sendPushToUser(userId, {
+        title: notification.title,
+        body: notification.message,
+        type: 'deadline_reminder',
+        url: `/rfp/${rfp.id}`,
+      }).catch(err => console.error('[DeadlineMonitor] Push send failed:', err));
+
       console.log(`RFI deadline notification sent to user ${userId} for RFP ${rfp.id}`);
     } catch (error) {
       console.error(`Error sending RFI deadline notification for RFP ${rfp.id}:`, error);
@@ -210,6 +227,14 @@ export class DeadlineMonitorService {
       if ((global as any).sendNotificationToUser) {
         (global as any).sendNotificationToUser(userId, notification);
       }
+
+      // Send Web Push notification
+      sendPushToUser(userId, {
+        title: notification.title,
+        body: notification.message,
+        type: 'deadline_reminder',
+        url: `/rfp/${rfp.id}`,
+      }).catch(err => console.error('[DeadlineMonitor] Push send failed:', err));
 
       console.log(`Walkthrough reminder sent to user ${userId} for RFP ${rfp.id}`);
     } catch (error) {

@@ -6,7 +6,7 @@ import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
-import { Loader2, Trophy, ArrowRight, PlusCircle } from "lucide-react";
+import { Loader2, Trophy, ArrowRight } from "lucide-react";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +136,7 @@ export default function LandingPage() {
       )}
 
       {/* Featured RFPs Section */}
+      {(isLoading || featuredRfps.length > 0) && (
       <section className="py-8 md:py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="mb-6 md:mb-12">
@@ -156,7 +157,7 @@ export default function LandingPage() {
             <div className="flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : displayedFeaturedRfps.length > 0 ? (
+          ) : (
             <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {displayedFeaturedRfps.map((rfp) => (
                 <RfpCard
@@ -167,28 +168,10 @@ export default function LandingPage() {
                 />
               ))}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-8 border rounded-lg border-dashed border-muted-foreground/50">
-              <p className="text-center text-muted-foreground mb-4">
-                No featured opportunities available at the moment.
-              </p>
-              <Button asChild>
-                {user ? (
-                  <Link href="/dashboard/my-rfps" className="flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
-                    Create Your RFP now
-                  </Link>
-                ) : (
-                  <Link href="/auth" className="flex items-center gap-2">
-                    <PlusCircle className="h-4 w-4" />
-                    Post your RFP now
-                  </Link>
-                )}
-              </Button>
-            </div>
           )}
         </div>
       </section>
+      )}
 
       {/* New RFPs Section */}
       {newRfps.length > 0 && (

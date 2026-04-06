@@ -6,7 +6,7 @@ import { Footer } from "@/components/ui/footer";
 import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { RfpCard } from "@/components/rfp-card";
-import { Loader2, Trophy, ArrowRight, PlusCircle } from "lucide-react";
+import { Loader2, Trophy, ArrowRight } from "lucide-react";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

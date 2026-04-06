@@ -128,7 +128,7 @@ export function RfpDetailContent({
               <h3 className="font-medium mb-2">ZIP Code</h3>
               <p>{rfp.jobZip}</p>
             </div>
-            {rfp.budgetMin && (
+            {rfp.budgetMin != null && (
               <div>
                 <h3 className="font-medium mb-2">Budget</h3>
                 <p>${rfp.budgetMin.toLocaleString()}</p>

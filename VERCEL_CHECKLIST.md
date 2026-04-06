@@ -4,7 +4,7 @@
 - ✅ Fixed critical import error in entrypoint.js
   - The `eq` operator is now correctly imported from 'drizzle-orm' instead of 'drizzle-orm/neon-serverless'
 - ✅ Fixed ES Module issues in entrypoint.js
-  - Changed CommonJS `require()` to ES Module imports
+  - Changed CommonJS `require()` to ES Module imports.
   - Moved all imports to the top of the file
 - ✅ Fixed database schema errors in entrypoint.js
   - Removed references to non-existent columns like "role"

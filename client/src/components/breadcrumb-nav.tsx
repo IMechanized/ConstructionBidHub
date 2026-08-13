@@ -1,9 +1,9 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import {
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -20,30 +20,33 @@ interface BreadcrumbNavProps {
 }
 
 export function BreadcrumbNav({ items, className }: BreadcrumbNavProps) {
-  const [location] = useLocation();
-
   return (
-    <Breadcrumb className={cn("mb-6", className)}>
-      <BreadcrumbList>
-        {items.map((item, index) => (
-          <BreadcrumbItem key={item.href}>
-            {index === items.length - 1 ? (
-              <BreadcrumbPage className="font-medium text-foreground">{item.label}</BreadcrumbPage>
-            ) : (
-              <>
-                <BreadcrumbLink asChild>
-                  <Link 
-                    href={item.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium hover:underline underline-offset-4"
-                  >
-                    {item.label}
-                  </Link>
-                </BreadcrumbLink>
-                <BreadcrumbSeparator className="text-muted-foreground/50" />
-              </>
-            )}
-          </BreadcrumbItem>
-        ))}
+    <Breadcrumb className={cn("mb-4", className)}>
+      <BreadcrumbList className="text-[0.8125rem]">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          return (
+            <BreadcrumbItem key={item.href}>
+              {isLast ? (
+                <BreadcrumbPage className="font-medium text-foreground">
+                  {item.label}
+                </BreadcrumbPage>
+              ) : (
+                <>
+                  <BreadcrumbLink asChild>
+                    <Link
+                      href={item.href}
+                      className="text-muted-foreground hover:text-foreground transition-colors duration-150 font-medium"
+                    >
+                      {item.label}
+                    </Link>
+                  </BreadcrumbLink>
+                  <BreadcrumbSeparator className="text-border" />
+                </>
+              )}
+            </BreadcrumbItem>
+          );
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );

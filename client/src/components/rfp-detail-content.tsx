@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download, Edit, Trash2, FileText, ExternalLink } from "lucide-react";
+import { Download, Edit, Trash2, FileText, ExternalLink, MapPin, Calendar, Clock, Hash } from "lucide-react";
 import { getCertificationClasses, normalizeUrl } from "@/lib/utils";
 import { LocationMap } from "@/components/location-map";
 import DOMPurify from 'dompurify';
@@ -54,101 +54,138 @@ export function RfpDetailContent({
   handleDownload,
   onNavigateToAuth,
 }: RfpDetailContentProps) {
+  const deadline = new Date(rfp.deadline);
+  const now = new Date();
+  const daysUntil = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isUrgent = daysUntil >= 0 && daysUntil <= 3;
+
   return (
     <>
-      {/* Breadcrumb Navigation */}
-      <div className="mb-4 sm:mb-8">
+      {/* Breadcrumb */}
+      <div className="mb-6">
         <BreadcrumbNav items={breadcrumbItems} />
       </div>
 
+      {/* ── Metadata sidebar + Title ───────────────────────────── */}
       <div id="rfp-content" className="max-w-4xl mx-auto">
-        {/* Important Dates Section */}
-        <div className="mb-6 sm:mb-8 text-right text-xs sm:text-sm text-muted-foreground space-y-1">
-          <div>Posted: {format(new Date(rfp.createdAt), "MM/dd/yyyy")}</div>
-          {rfp.walkthroughDate && <div>Walkthrough: {format(new Date(rfp.walkthroughDate), "MM/dd/yyyy")}</div>}
-          {rfp.rfiDate && <div>RFI Due: {format(new Date(rfp.rfiDate), "MM/dd/yyyy")}</div>}
-          <div>Deadline: {format(new Date(rfp.deadline), "MM/dd/yyyy")}</div>
-        </div>
 
-        <hr className="my-4 sm:my-6 border-muted" />
-
-        {/* Title and Client/Organization Section */}
-        <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-            <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{rfp.title}</h1>
-              <p className="text-muted-foreground mt-2 text-sm sm:text-base" data-testid="rfp-detail-client-name">
-                {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
+        {/* Header: title + download */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.8125rem] font-medium text-muted-foreground mb-1" data-testid="rfp-detail-client-name">
+              {rfp.clientName || rfp.organization?.companyName || "Unknown Organization"}
+            </p>
+            {rfp.clientName && rfp.clientName !== rfp.organization?.companyName && (
+              <p className="text-[0.75rem] text-muted-foreground mb-1">
+                Posted by {rfp.organization?.companyName}
               </p>
-              {rfp.clientName && rfp.clientName !== rfp.organization?.companyName && (
-                <p className="text-muted-foreground text-xs mt-1">
-                  Posted by: {rfp.organization?.companyName}
-                </p>
-              )}
-            </div>
-            <div id="download-button" className="shrink-0">
-              <Button variant="outline" size="sm" onClick={handleDownload} className="w-full sm:w-auto">
-                <Download className="h-4 w-4 mr-2" />
-                Download RFP
-              </Button>
-            </div>
+            )}
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
+              {rfp.title}
+            </h1>
+          </div>
+          <div id="download-button" className="shrink-0">
+            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              Download RFP
+            </Button>
           </div>
         </div>
 
-        <hr className="my-4 sm:my-6 border-muted" />
+        {/* Key metadata strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 p-4 rounded-lg bg-muted/50 border border-border">
+          <div>
+            <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground mb-1">Posted</p>
+            <p className="text-[0.8125rem] font-medium">{format(new Date(rfp.createdAt), "MMM d, yyyy")}</p>
+          </div>
+          {rfp.walkthroughDate && (
+            <div>
+              <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground mb-1">Walkthrough</p>
+              <p className="text-[0.8125rem] font-medium">
+                {format(new Date(rfp.walkthroughDate), "MMM d, yyyy")}
+                {rfp.mandatoryWalkthrough && (
+                  <span className="ml-1 text-[0.6875rem] text-chart-4">(Required)</span>
+                )}
+              </p>
+            </div>
+          )}
+          {rfp.rfiDate && (
+            <div>
+              <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground mb-1">RFI Due</p>
+              <p className="text-[0.8125rem] font-medium">{format(new Date(rfp.rfiDate), "MMM d, yyyy")}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground mb-1">Deadline</p>
+            <p className={`text-[0.8125rem] font-semibold ${isUrgent ? "text-destructive" : "text-foreground"}`}>
+              {format(deadline, "MMM d, yyyy")}
+              {daysUntil >= 0 && daysUntil <= 7 && (
+                <span className="ml-1 text-[0.6875rem] font-medium opacity-70">
+                  ({daysUntil === 0 ? "today" : `${daysUntil}d`})
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <hr className="border-border mb-6" />
 
         {/* Project Overview */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Project Overview</h2>
-          <div 
-            className="prose prose-sm max-w-none dark:prose-invert text-justify leading-relaxed"
+        <div className="mb-8">
+          <h2 className="text-[1.0625rem] font-semibold mb-4">Project Overview</h2>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-[72ch] leading-relaxed text-foreground"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rfp.description) }}
           />
         </div>
 
-        <hr className="my-4 sm:my-6 border-muted" />
+        <hr className="border-border mb-6" />
 
         {/* Project Details */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Project Details</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-            <div>
-              <h3 className="font-medium mb-2">Street Address</h3>
-              <p>{rfp.jobStreet}</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">City</h3>
-              <p>{rfp.jobCity}</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">State</h3>
-              <p>{rfp.jobState}</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">ZIP Code</h3>
-              <p>{rfp.jobZip}</p>
-            </div>
-            {rfp.budgetMin != null && (
+        <div className="mb-8">
+          <h2 className="text-[1.0625rem] font-semibold mb-4">Project Details</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <dl className="space-y-3">
               <div>
-                <h3 className="font-medium mb-2">Budget</h3>
-                <p>${rfp.budgetMin.toLocaleString()}</p>
+                <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Street Address</dt>
+                <dd className="text-[0.9375rem]">{rfp.jobStreet}</dd>
               </div>
-            )}
-            {rfp.mandatoryWalkthrough && (
               <div>
-                <h3 className="font-medium mb-2">Mandatory Walkthrough</h3>
-                <p>Yes</p>
+                <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">City</dt>
+                <dd className="text-[0.9375rem]">{rfp.jobCity}</dd>
               </div>
-            )}
+              <div>
+                <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">State</dt>
+                <dd className="text-[0.9375rem]">{rfp.jobState}</dd>
+              </div>
+            </dl>
+            <dl className="space-y-3">
+              <div>
+                <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">ZIP Code</dt>
+                <dd className="text-[0.9375rem]">{rfp.jobZip}</dd>
+              </div>
+              {rfp.budgetMin != null && (
+                <div>
+                  <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Budget</dt>
+                  <dd className="text-[0.9375rem] font-semibold">${rfp.budgetMin.toLocaleString()}</dd>
+                </div>
+              )}
+              {rfp.mandatoryWalkthrough && (
+                <div>
+                  <dt className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Site Walkthrough</dt>
+                  <dd className="text-[0.9375rem] font-medium text-chart-4">Required</dd>
+                </div>
+              )}
+            </dl>
           </div>
         </div>
 
-        <hr className="my-6 border-muted" />
+        <hr className="border-border mb-6" />
 
-        {/* Project Location Map */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Project Location</h2>
-          <div className="rounded-lg overflow-hidden border">
+        {/* Location Map */}
+        <div className="mb-8">
+          <h2 className="text-[1.0625rem] font-semibold mb-4">Project Location</h2>
+          <div className="rounded-lg overflow-hidden border border-border">
             <LocationMap
               address={`${rfp.jobStreet}, ${rfp.jobCity}, ${rfp.jobState} ${rfp.jobZip}`}
               className="w-full h-48 sm:h-64 md:h-80"
@@ -156,42 +193,61 @@ export function RfpDetailContent({
               showMarker={true}
             />
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+          <p className="text-[0.8125rem] text-muted-foreground mt-2 flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
             {rfp.jobStreet}, {rfp.jobCity}, {rfp.jobState} {rfp.jobZip}
           </p>
         </div>
 
-        <hr className="my-4 sm:my-6 border-muted" />
+        <hr className="border-border mb-6" />
 
         {/* Schedule */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Project Schedule</h2>
-          <div className="space-y-2 text-sm sm:text-base">
+        <div className="mb-8">
+          <h2 className="text-[1.0625rem] font-semibold mb-4">Project Schedule</h2>
+          <div className="space-y-3">
             {rfp.walkthroughDate && (
-              <div className="flex flex-col sm:flex-row sm:gap-2">
-                <span className="font-medium">Site Walkthrough:</span>
-                <span>{format(new Date(rfp.walkthroughDate), "MM/dd/yyyy 'at' h:mm a")}</span>
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[0.8125rem] font-medium">Site Walkthrough</p>
+                  <p className="text-[0.8125rem] text-muted-foreground">
+                    {format(new Date(rfp.walkthroughDate), "MMMM d, yyyy 'at' h:mm a")}
+                    {rfp.mandatoryWalkthrough && (
+                      <span className="ml-2 text-[0.75rem] font-medium text-chart-4">Mandatory</span>
+                    )}
+                  </p>
+                </div>
               </div>
             )}
             {rfp.rfiDate && (
-              <div className="flex flex-col sm:flex-row sm:gap-2">
-                <span className="font-medium">RFI Submission Deadline:</span>
-                <span>{format(new Date(rfp.rfiDate), "MM/dd/yyyy 'at' h:mm a")}</span>
+              <div className="flex items-start gap-3">
+                <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[0.8125rem] font-medium">RFI Submission Deadline</p>
+                  <p className="text-[0.8125rem] text-muted-foreground">
+                    {format(new Date(rfp.rfiDate), "MMMM d, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row sm:gap-2">
-              <span className="font-medium">Proposal Due Date:</span>
-              <span>{format(new Date(rfp.deadline), "MM/dd/yyyy 'at' h:mm a")}</span>
+            <div className="flex items-start gap-3">
+              <Hash className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[0.8125rem] font-medium">Proposal Due Date</p>
+                <p className={`text-[0.8125rem] ${isUrgent ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                  {format(deadline, "MMMM d, yyyy 'at' h:mm a")}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {rfp.certificationGoals && rfp.certificationGoals.length > 0 && (
           <>
-            <hr className="my-4 sm:my-6 border-muted" />
-            <div className="mb-6 sm:mb-8">
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Certification Requirements</h2>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <hr className="border-border mb-6" />
+            <div className="mb-8">
+              <h2 className="text-[1.0625rem] font-semibold mb-4">Certification Requirements</h2>
+              <div className="flex flex-wrap gap-2">
                 {rfp.certificationGoals.map((cert, index) => (
                   <Badge key={index} className={getCertificationClasses(cert)}>
                     {cert}
@@ -204,12 +260,16 @@ export function RfpDetailContent({
 
         {rfp.desiredTrades && rfp.desiredTrades.length > 0 && (
           <>
-            <hr className="my-6 border-muted" />
+            <hr className="border-border mb-6" />
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Desired Trades</h2>
+              <h2 className="text-[1.0625rem] font-semibold mb-4">Desired Trades</h2>
               <div className="flex flex-wrap gap-2">
                 {rfp.desiredTrades.map((trade, index) => (
-                  <Badge key={index} className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50">
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="text-[0.8125rem]"
+                  >
                     {trade}
                   </Badge>
                 ))}
@@ -220,13 +280,14 @@ export function RfpDetailContent({
 
         {rfp.portfolioLink && (
           <>
-            <hr className="my-6 border-muted" />
+            <hr className="border-border mb-6" />
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
+              <h2 className="text-[1.0625rem] font-semibold mb-4">Additional Resources</h2>
               <Button
                 asChild
-                size="lg"
-                className="w-full sm:w-auto"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
                 data-testid="rfp-portal-button"
               >
                 <a
@@ -235,7 +296,7 @@ export function RfpDetailContent({
                   rel="noopener noreferrer"
                 >
                   View RFP/Procurement Portal
-                  <ExternalLink className="ml-2 h-4 w-4" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </Button>
             </div>
@@ -243,89 +304,106 @@ export function RfpDetailContent({
         )}
       </div>
 
-      {/* RFP Documents - Outside PDF content */}
+      {/* RFP Documents */}
       {rfpDocuments.length > 0 && (
-        <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-3">RFP Documents</h3>
-          <div className="space-y-2">
-            {rfpDocuments.map((doc) => (
-              <a
-                key={doc.id}
-                href={`/api/rfp-documents/${doc.id}/download`}
-                className="flex items-center gap-3 p-3 bg-background hover:bg-muted rounded-lg transition-colors group"
-                data-testid={`document-${doc.id}`}
-              >
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate group-hover:text-primary">
-                    {doc.filename}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="capitalize">{doc.documentType}</span>
-                    <span>•</span>
-                    <span>{format(new Date(doc.uploadedAt), "MMM dd, yyyy")}</span>
+        <div className="max-w-4xl mx-auto mt-8">
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <h3 className="text-[0.9375rem] font-semibold mb-3">RFP Documents</h3>
+            <div className="space-y-1.5">
+              {rfpDocuments.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={`/api/rfp-documents/${doc.id}/download`}
+                  className="group flex items-center gap-3 rounded-md p-3 bg-background hover:bg-accent transition-colors duration-150"
+                  data-testid={`document-${doc.id}`}
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[0.8125rem] font-medium truncate group-hover:text-primary transition-colors">
+                      {doc.filename}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
+                      <span className="capitalize">{doc.documentType}</span>
+                      <span>·</span>
+                      <span>{format(new Date(doc.uploadedAt), "MMM d, yyyy")}</span>
+                    </div>
                   </div>
-                </div>
-                <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-              </a>
-            ))}
+                  <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Owner Controls - Outside PDF content */}
+      {/* Owner Controls */}
       {isOwner && (
-        <div className="max-w-4xl mx-auto mt-8 p-4 bg-muted/50 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">RFP Management</h3>
-          <div className="flex space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit RFP
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete RFP
-            </Button>
+        <div className="max-w-4xl mx-auto mt-6">
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <p className="text-[0.75rem] font-medium text-muted-foreground uppercase tracking-wider mb-3">RFP Management</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+                className="gap-1.5"
+              >
+                <Edit className="h-3.5 w-3.5" />
+                Edit RFP
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete RFP
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Bid Button - Outside of downloadable content */}
+      {/* Bid CTA */}
       {!isOwner && (
-        <div id="bid-button" className="flex justify-center mt-12">
-          {user ? (
-            <Button size="lg" onClick={() => setIsRfiModalOpen(true)}>
-              Submit Bid Request
-            </Button>
-          ) : (
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={onNavigateToAuth}
-            >
-              Login to Submit Bid
-            </Button>
-          )}
+        <div id="bid-button" className="max-w-4xl mx-auto mt-10">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-6 text-center">
+            <h3 className="text-[1.0625rem] font-semibold mb-1">Ready to Bid?</h3>
+            <p className="text-[0.8125rem] text-muted-foreground mb-4">
+              Deadline: {format(deadline, "MMMM d, yyyy")}
+              {daysUntil >= 0 && (
+                <span className={`ml-1.5 font-medium ${isUrgent ? "text-destructive" : "text-chart-4"}`}>
+                  ({daysUntil === 0 ? "due today" : `${daysUntil} days left`})
+                </span>
+              )}
+            </p>
+            {user ? (
+              <Button size="lg" onClick={() => setIsRfiModalOpen(true)} className="px-8">
+                Submit Bid Request
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <Button size="lg" onClick={onNavigateToAuth} className="px-8">
+                  Log in to Submit Bid
+                </Button>
+                <p className="text-[0.75rem] text-muted-foreground">Free to join. No subscription required.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
+      {/* RFI Modal */}
       {user && !isOwner && (
         <Dialog open={isRfiModalOpen} onOpenChange={setIsRfiModalOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Submit Bid Request</DialogTitle>
             </DialogHeader>
-            <RfiForm 
-              rfpId={rfp.id} 
-              onSuccess={() => setIsRfiModalOpen(false)} 
+            <RfiForm
+              rfpId={rfp.id}
+              onSuccess={() => setIsRfiModalOpen(false)}
             />
           </DialogContent>
         </Dialog>
@@ -347,7 +425,7 @@ export function RfpDetailContent({
         </Dialog>
       )}
 
-      {/* Delete RFP Dialog */}
+      {/* Delete Dialog */}
       {isOwner && (
         <DeleteRfpDialog
           rfp={rfp}

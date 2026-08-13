@@ -204,12 +204,12 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
       <CardHeader className="border-b">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold truncate">RFI Conversation</h3>
-            <p className="text-sm text-muted-foreground truncate">
+            <h3 className="text-[0.9375rem] font-semibold truncate">RFI Conversation</h3>
+            <p className="text-[0.8125rem] text-muted-foreground truncate">
               From: {rfi.organization?.companyName || rfi.email}
             </p>
-            <p className="text-sm text-muted-foreground">
-              Submitted: {format(new Date(rfi.createdAt), "PPp")}
+            <p className="text-[0.75rem] text-muted-foreground">
+              {format(new Date(rfi.createdAt), "MMM d, yyyy 'at' h:mm a")}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -284,9 +284,9 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
         </div>
         
         {/* Original RFI Message */}
-        <div className="mt-4 p-3 bg-muted rounded-lg">
-          <p className="text-sm font-medium mb-1">Original Question:</p>
-          <p className="text-sm">{rfi.message}</p>
+        <div className="mt-4 rounded-md border border-border bg-muted/50 px-4 py-3">
+          <p className="text-[0.75rem] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Original question</p>
+          <p className="text-[0.8125rem] leading-relaxed">{rfi.message}</p>
         </div>
       </CardHeader>
 
@@ -298,63 +298,66 @@ export function RfiConversation({ rfi, onClose, rfpId }: RfiConversationProps) {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No messages yet. Start the conversation!</p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-[0.8125rem] font-medium text-foreground mb-1">No messages yet</p>
+              <p className="text-[0.75rem] text-muted-foreground">
+                Reply below to start the conversation.
+              </p>
             </div>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${
-                  msg.senderId === user?.id ? "flex-row-reverse" : ""
-                }`}
-                data-testid={`message-${msg.id}`}
-              >
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarFallback>
-                    {msg.sender.companyName?.charAt(0) || msg.sender.email?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className={`flex-1 max-w-[70%] sm:max-w-[80%] md:max-w-[70%] ${
-                  msg.senderId === user?.id ? "text-right" : ""
-                }`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                    <span className="text-xs text-muted-foreground truncate">
-                      {msg.sender.companyName || msg.sender.email}
-                    </span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {format(new Date(msg.createdAt), "MMM d, h:mm a")}
-                    </span>
-                  </div>
-                  
-                  <div className={`rounded-lg p-3 ${
-                    msg.senderId === user?.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                    
-                    {/* Attachments */}
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {msg.attachments.map((attachment) => (
-                          <button
-                            key={attachment.id}
-                            onClick={() => handleDownloadAttachment(attachment)}
-                            className="flex items-center gap-2 text-xs hover:underline"
-                            data-testid={`attachment-${attachment.id}`}
-                          >
-                            <Download className="h-3 w-3" />
-                            {attachment.filename}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+            messages.map((msg) => {
+              const isOwn = msg.senderId === user?.id;
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex gap-2.5 ${isOwn ? "flex-row-reverse" : ""}`}
+                  data-testid={`message-${msg.id}`}
+                >
+                  <Avatar className="h-7 w-7 mt-0.5 shrink-0">
+                    <AvatarFallback className="text-[0.6875rem]">
+                      {msg.sender.companyName?.charAt(0) || msg.sender.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className={`flex-1 max-w-[72%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
+                    {/* Sender + timestamp — muted, not competing */}
+                    <div className={`flex items-center gap-1.5 mb-1 ${isOwn ? "flex-row-reverse" : ""}`}>
+                      <span className="text-[0.6875rem] font-medium text-muted-foreground truncate max-w-[120px]">
+                        {msg.sender.companyName || msg.sender.email}
+                      </span>
+                      <span className="text-[0.6875rem] text-muted-foreground/70 whitespace-nowrap">
+                        {format(new Date(msg.createdAt), "MMM d, h:mm a")}
+                      </span>
+                    </div>
+
+                    {/* Bubble */}
+                    <div className={`rounded-xl px-3.5 py-2.5 ${
+                      isOwn
+                        ? "bg-primary text-primary-foreground rounded-tr-sm"
+                        : "bg-muted text-foreground rounded-tl-sm"
+                    }`}>
+                      <p className="text-[0.8125rem] leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1 border-t border-current/20 pt-2">
+                          {msg.attachments.map((attachment) => (
+                            <button
+                              key={attachment.id}
+                              onClick={() => handleDownloadAttachment(attachment)}
+                              className="flex items-center gap-1.5 text-[0.75rem] opacity-80 hover:opacity-100 transition-opacity"
+                              data-testid={`attachment-${attachment.id}`}
+                            >
+                              <Download className="h-3 w-3" />
+                              {attachment.filename}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>

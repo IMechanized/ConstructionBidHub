@@ -155,8 +155,11 @@ export default function MyRfpsPage() {
               ) : (
                 <>
                   {filteredMyRfps.length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground text-sm sm:text-base">No RFPs found matching your filters.</p>
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <p className="text-[0.9375rem] font-medium text-foreground mb-1">No RFPs yet</p>
+                      <p className="text-[0.8125rem] text-muted-foreground max-w-sm">
+                        You haven't posted any RFPs. Click "Post RFP" to create your first opportunity listing.
+                      </p>
                     </div>
                   ) : (
                     <>

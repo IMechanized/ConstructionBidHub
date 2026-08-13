@@ -132,16 +132,17 @@ export function DashboardWidgets({ widgets, onLayoutChange }: DashboardWidgetsPr
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <h2 className="text-xl font-semibold">Dashboard</h2>
         <div className="flex gap-2">
           <Button
             variant={isEditing ? "default" : "outline"}
             size="sm"
             onClick={() => setIsEditing(!isEditing)}
             data-testid="button-toggle-edit-mode"
+            className="gap-1.5"
           >
-            <Settings className="h-4 w-4 mr-2" />
-            {isEditing ? "Done Editing" : "Customize"}
+            <Settings className="h-4 w-4" />
+            {isEditing ? "Done" : "Customize"}
           </Button>
           {isEditing && (
             <Button

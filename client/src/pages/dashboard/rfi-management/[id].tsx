@@ -90,7 +90,7 @@ export default function RfiManagementPage() {
                   Back to RFI List
                 </Button>
               )}
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl font-semibold">
                 {selectedRfi ? "RFI Conversation" : "RFI Management"}
               </h1>
             </div>
@@ -104,8 +104,11 @@ export default function RfiManagementPage() {
             ) : isLoading ? (
               <DashboardSectionSkeleton count={5} />
             ) : !rfis?.length ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No RFIs found for this RFP.
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-[0.9375rem] font-medium text-foreground mb-1">No RFIs yet</p>
+                <p className="text-[0.8125rem] text-muted-foreground max-w-sm">
+                  When contractors submit bid requests for this RFP, they'll appear here.
+                </p>
               </div>
             ) : (
               <Card>

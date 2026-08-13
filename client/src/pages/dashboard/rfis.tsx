@@ -199,15 +199,9 @@ export default function RfiPage() {
 
     setIsBulkUpdating(true);
     try {
-      await apiRequest(`/api/rfis/bulk-status`, {
-        method: "PUT",
-        body: JSON.stringify({
-          ids: selectedReceivedRfiIds,
-          status
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        }
+      await apiRequest("PUT", `/api/rfis/bulk-status`, {
+        ids: selectedReceivedRfiIds,
+        status
       });
 
       await queryClient.invalidateQueries({ queryKey: ["/api/rfis/received"] });
@@ -256,14 +250,14 @@ export default function RfiPage() {
                   size="sm"
                   onClick={() => setSelectedRfi(null)}
                   data-testid="back-to-rfi-list-button"
-                  className="px-2 sm:px-3"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
                 >
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                  <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">Back to RFIs</span>
-                  <span className="sm:hidden text-xs ml-1">Back</span>
+                  <span className="sm:hidden text-xs">Back</span>
                 </Button>
               )}
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl font-semibold">
                 {selectedRfi ? "RFI Conversation" : "RFIs"}
               </h1>
             </div>
@@ -308,11 +302,11 @@ export default function RfiPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <div className={`text-2xl font-semibold ${pendingReceivedRfis > 0 ? "text-chart-4" : "text-foreground"}`}>
                       {pendingReceivedRfis}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Require your attention
+                      {pendingReceivedRfis > 0 ? "Require your attention" : "All caught up"}
                     </p>
                   </CardContent>
                 </Card>
@@ -325,11 +319,11 @@ export default function RfiPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className={`text-2xl font-semibold ${responseRate >= 80 ? "text-chart-2" : responseRate >= 50 ? "text-chart-4" : "text-foreground"}`}>
                       {responseRate}%
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {respondedReceivedRfis} of {totalReceivedRfis} RFIs
+                      {respondedReceivedRfis} of {totalReceivedRfis} RFIs responded
                     </p>
                   </CardContent>
                 </Card>
@@ -372,8 +366,8 @@ export default function RfiPage() {
 
                 <TabsContent value="my-rfis" className="space-y-4">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Filter & Search</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[0.9375rem] font-semibold">Filter & Search</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-col md:flex-row gap-4">
@@ -588,8 +582,8 @@ export default function RfiPage() {
                   )}
 
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Filter & Search</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[0.9375rem] font-semibold">Filter & Search</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-col md:flex-row gap-4">
@@ -656,10 +650,15 @@ export default function RfiPage() {
                     return (
                       <>
                         {filteredReceivedRfis.length === 0 && !receivedLoading ? (
-                          <div className="text-center py-8 text-muted-foreground">
-                            {hasActiveReceivedFilters
-                              ? "No RFIs match your filters."
-                              : "No RFI requests on your RFPs yet."}
+                          <div className="flex flex-col items-center justify-center py-14 text-center">
+                            <p className="text-[0.9375rem] font-medium text-foreground mb-1">
+                              {hasActiveReceivedFilters ? "No RFIs match your filters" : "No RFI requests yet"}
+                            </p>
+                            <p className="text-[0.8125rem] text-muted-foreground max-w-sm">
+                              {hasActiveReceivedFilters
+                                ? "Try clearing your filters to see all received RFIs."
+                                : "When contractors submit bid requests on your RFPs, they'll appear here."}
+                            </p>
                           </div>
                         ) : (
                           <>

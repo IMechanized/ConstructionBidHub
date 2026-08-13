@@ -61,13 +61,14 @@ export default function FeaturedRfps() {
     let matches = true;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       matches = matches && (
-        rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rfp.jobZip.toLowerCase().includes(searchTerm.toLowerCase())
+        rfp.title.toLowerCase().includes(term) ||
+        rfp.description.toLowerCase().includes(term) ||
+        (rfp.jobStreet?.toLowerCase() ?? "").includes(term) ||
+        (rfp.jobCity?.toLowerCase() ?? "").includes(term) ||
+        rfp.jobState.toLowerCase().includes(term) ||
+        (rfp.jobZip?.toLowerCase() ?? "").includes(term)
       );
     }
 
@@ -443,6 +444,14 @@ export default function FeaturedRfps() {
                 <DashboardSectionSkeleton count={9} />
               ) : (
                 <>
+                  {paginatedRfps.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <p className="text-[0.9375rem] font-medium text-foreground mb-1">No featured opportunities right now</p>
+                      <p className="text-[0.8125rem] text-muted-foreground max-w-sm">
+                        Featured RFPs are highlighted by project owners. Check back soon, or browse all open RFPs.
+                      </p>
+                    </div>
+                  )}
                   <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {paginatedRfps.map((rfp) => (
                       <RfpCard

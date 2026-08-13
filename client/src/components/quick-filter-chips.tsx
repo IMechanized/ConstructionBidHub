@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
-import { Clock, TrendingUp, MapPin, Calendar } from "lucide-react";
-import { addDays, addMonths } from "date-fns";
+import { Clock, TrendingUp, Calendar, DollarSign } from "lucide-react";
+import { addDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface QuickFilter {
   id: string;
@@ -18,14 +18,13 @@ interface QuickFilterChipsProps {
 export const QUICK_FILTERS: QuickFilter[] = [
   {
     id: "closing-soon",
-    label: "Closing This Week",
+    label: "Closing this week",
     icon: Clock,
-    description: "RFPs with deadlines in the next 7 days",
+    description: "Deadlines in the next 7 days",
     filterFn: (rfp) => {
       const deadline = new Date(rfp.deadline);
       const now = new Date();
-      const weekFromNow = addDays(now, 7);
-      return deadline >= now && deadline <= weekFromNow;
+      return deadline >= now && deadline <= addDays(now, 7);
     },
   },
   {
@@ -37,58 +36,59 @@ export const QUICK_FILTERS: QuickFilter[] = [
   },
   {
     id: "high-value",
-    label: "High Value",
-    icon: TrendingUp,
+    label: "High value",
+    icon: DollarSign,
     description: "Projects over $500k",
     filterFn: (rfp) => (rfp.budgetMin || 0) >= 500000,
   },
   {
     id: "near-deadline",
-    label: "Deadline < 3 Days",
+    label: "≤ 3 days left",
     icon: Calendar,
-    description: "Urgent: Closing in 3 days or less",
+    description: "Closing in 3 days or less",
     filterFn: (rfp) => {
       const deadline = new Date(rfp.deadline);
       const now = new Date();
-      const threeDaysFromNow = addDays(now, 3);
-      return deadline >= now && deadline <= threeDaysFromNow;
+      return deadline >= now && deadline <= addDays(now, 3);
     },
   },
   {
     id: "next-month",
-    label: "Next 30 Days",
+    label: "Next 30 days",
     icon: Calendar,
-    description: "RFPs closing within 30 days",
+    description: "Closing within 30 days",
     filterFn: (rfp) => {
       const deadline = new Date(rfp.deadline);
       const now = new Date();
-      const monthFromNow = addDays(now, 30);
-      return deadline >= now && deadline <= monthFromNow;
+      return deadline >= now && deadline <= addDays(now, 30);
     },
   },
 ];
 
 export function QuickFilterChips({ activeFilter, onFilterChange }: QuickFilterChipsProps) {
   return (
-    <div className="flex gap-1.5 sm:gap-2 flex-wrap" data-testid="quick-filter-chips">
+    <div className="flex gap-1.5 flex-wrap" data-testid="quick-filter-chips">
       {QUICK_FILTERS.map((filter) => {
         const Icon = filter.icon;
         const isActive = activeFilter === filter.id;
 
         return (
-          <Badge
+          <button
             key={filter.id}
-            variant={isActive ? "default" : "outline"}
-            className={`cursor-pointer px-3 py-2 sm:py-1.5 transition-all hover:scale-105 min-h-[44px] sm:min-h-0 ${
-              isActive ? "ring-2 ring-primary ring-offset-2" : ""
-            }`}
+            type="button"
             onClick={() => onFilterChange(isActive ? null : filter.id)}
-            data-testid={`quick-filter-${filter.id}`}
             title={filter.description}
+            data-testid={`quick-filter-${filter.id}`}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium transition-colors duration-150 min-h-[36px] border",
+              isActive
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground hover:bg-accent"
+            )}
           >
-            <Icon className="h-3 w-3 mr-1.5" />
-            <span className="text-xs font-medium">{filter.label}</span>
-          </Badge>
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            {filter.label}
+          </button>
         );
       })}
     </div>

@@ -12,6 +12,7 @@ import {
   Layout,
   LayoutDashboard,
   Shield,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +24,7 @@ import { NotificationCenter } from "@/components/notification-center";
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { Logo } from "@/components/ui/logo";
+import { cn } from "@/lib/utils";
 
 interface DashboardSidebarProps {
   currentPath: string;
@@ -32,8 +34,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   const { user, logoutMutation } = useAuth();
   const isMobile = useIsMobile();
   const { t, i18n } = useTranslation();
-  
-  // Set language from user preference
+
   useEffect(() => {
     if (user?.language) {
       i18n.changeLanguage(user.language);
@@ -100,54 +101,81 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   ];
 
   const NavigationContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between py-4 px-2 border-b">
-        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+    <div className="flex flex-col h-full bg-sidebar">
+      {/* Logo / Header */}
+      <div className="flex items-center justify-between h-14 px-4 border-b border-sidebar-border shrink-0">
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-150">
           <Logo />
         </Link>
         <NotificationCenter />
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4">
-        <div className="grid gap-1 md:flex md:flex-col md:justify-between md:h-full md:py-2 md:gap-1">
-          {navItems.map((item) => (
-            <Button
-              key={item.href}
-              variant={currentPath === item.href ? "default" : "ghost"}
-              className="w-full justify-start gap-3 md:py-2"
-              asChild
-            >
-              <Link href={item.href}>
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            </Button>
-          ))}
-        </div>
+      {/* Nav items */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2">
+        <ul className="space-y-0.5">
+          {navItems.map((item) => {
+            const isActive = currentPath === item.href;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-[0.8125rem] font-medium leading-none transition-colors duration-150",
+                    isActive
+                      ? "bg-sidebar-accent text-primary"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4 shrink-0",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3 mb-4">
-          {user?.logo && (
-            <Avatar>
-              <img
-                src={user.logo}
-                alt={`${user.companyName} logo`}
-                className="h-full w-full object-cover"
-              />
-            </Avatar>
-          )}
-          <span className="font-medium">{user?.companyName}</span>
-        </div>
-        <div className="flex gap-2">
+      {/* User footer */}
+      <div className="border-t border-sidebar-border px-4 py-4 shrink-0">
+        {user && (
+          <div className="flex items-center gap-3 mb-3">
+            {user.logo ? (
+              <Avatar className="h-8 w-8 shrink-0">
+                <img
+                  src={user.logo}
+                  alt={`${user.companyName} logo`}
+                  className="h-full w-full object-cover"
+                />
+              </Avatar>
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-primary">
+                  {user.companyName?.charAt(0) ?? "?"}
+                </span>
+              </div>
+            )}
+            <span className="text-[0.8125rem] font-medium text-sidebar-foreground truncate">
+              {user.companyName}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            className="flex-1 justify-start"
+            variant="ghost"
+            size="sm"
+            className="flex-1 justify-start gap-2 h-8 text-[0.8125rem] text-muted-foreground hover:text-foreground"
             onClick={() => logoutMutation.mutate()}
           >
+            <LogOut className="h-3.5 w-3.5" />
             {t('auth.logout')}
           </Button>
-          <ThemeToggle variant="outline" />
+          <ThemeToggle variant="ghost" />
         </div>
       </div>
     </div>
@@ -160,12 +188,13 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="fixed top-4 left-4 md:hidden z-50"
+            className="fixed top-3 left-3 md:hidden z-50 h-9 w-9"
           >
             <Menu className="h-5 w-5" />
+            <span className="sr-only">Open menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[280px] p-0">
+        <SheetContent side="left" className="w-[280px] p-0 bg-sidebar border-sidebar-border">
           <NavigationContent />
         </SheetContent>
       </Sheet>
@@ -173,7 +202,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
   }
 
   return (
-    <div className="hidden md:block fixed top-0 left-0 w-[280px] h-screen border-r bg-background">
+    <div className="hidden md:flex md:flex-col fixed top-0 left-0 w-[280px] h-screen border-r border-sidebar-border bg-sidebar">
       <NavigationContent />
     </div>
   );

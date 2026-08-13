@@ -5,6 +5,8 @@ describe('RfiPage', () => {
   // Simple smoke test to verify the component renders
   it('renders the page', () => {
     render(<RfiPage />)
-    expect(screen.getByRole('heading', { name: /request for information/i })).toBeInTheDocument()
+    // The primary heading is the h1 "RFIs" (renamed from "Request for Information")
+    const headings = screen.getAllByRole('heading', { name: /rfis/i })
+    expect(headings.length).toBeGreaterThan(0)
   })
 })

@@ -2,13 +2,143 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  ============================================================
+  DESIGN TOKENS — OKLCH
+  Warm stone neutrals + terracotta accent (hue 47).
+  No pure #fff or #000. Every neutral tinted toward hue 60.
+  ============================================================
+*/
+
+:root {
+  /* Base surface */
+  --background:     97% 0.005 60;
+  --foreground:     18% 0.008 60;
+
+  /* Cards / popovers — slightly lighter than page for tonal lift */
+  --card:           98.5% 0.003 60;
+  --card-foreground: 18% 0.008 60;
+  --popover:        98.5% 0.003 60;
+  --popover-foreground: 18% 0.008 60;
+
+  /* Primary — terracotta accent, used ≤10% of any surface */
+  --primary:        52% 0.16 47;
+  --primary-foreground: 97% 0.005 60;
+
+  /* Secondary — muted warm stone for ghost backgrounds */
+  --secondary:      93% 0.008 60;
+  --secondary-foreground: 30% 0.012 60;
+
+  /* Muted — de-emphasized backgrounds */
+  --muted:          93% 0.008 60;
+  --muted-foreground: 52% 0.015 60;
+
+  /* Accent — warm tinted panel for hover / selected backgrounds */
+  --accent:         93% 0.012 47;
+  --accent-foreground: 25% 0.014 47;
+
+  /* Destructive — warm red, consistent with amber family */
+  --destructive:    56% 0.21 25;
+  --destructive-foreground: 97% 0.005 60;
+
+  /* Borders, inputs, rings */
+  --border:         87% 0.010 60;
+  --input:          87% 0.010 60;
+  --ring:           52% 0.16 47;
+
+  /* Radius */
+  --radius: 0.375rem;
+
+  /* Charts */
+  --chart-1:  52% 0.16 47;   /* terracotta */
+  --chart-2:  58% 0.14 155;  /* forest green */
+  --chart-3:  60% 0.12 220;  /* slate blue */
+  --chart-4:  62% 0.15 85;   /* amber / gold */
+  --chart-5:  56% 0.11 300;  /* muted purple */
+
+  /* Sidebar — panel surface, slightly darker than main */
+  --sidebar-background:         95% 0.007 60;
+  --sidebar-foreground:         25% 0.010 60;
+  --sidebar-primary:            52% 0.16 47;
+  --sidebar-primary-foreground: 97% 0.005 60;
+  --sidebar-accent:             91% 0.012 47;
+  --sidebar-accent-foreground:  25% 0.014 47;
+  --sidebar-border:             85% 0.010 60;
+  --sidebar-ring:               52% 0.16 47;
+}
+
+.dark {
+  /* Base surface */
+  --background:     14% 0.008 60;
+  --foreground:     93% 0.008 60;
+
+  /* Cards / popovers */
+  --card:           17% 0.009 60;
+  --card-foreground: 93% 0.008 60;
+  --popover:        17% 0.009 60;
+  --popover-foreground: 93% 0.008 60;
+
+  /* Primary — lighter terracotta for dark surfaces */
+  --primary:        65% 0.16 47;
+  --primary-foreground: 14% 0.010 47;
+
+  /* Secondary */
+  --secondary:      22% 0.010 60;
+  --secondary-foreground: 90% 0.008 60;
+
+  /* Muted */
+  --muted:          22% 0.010 60;
+  --muted-foreground: 64% 0.015 60;
+
+  /* Accent */
+  --accent:         22% 0.015 47;
+  --accent-foreground: 90% 0.010 60;
+
+  /* Destructive */
+  --destructive:    56% 0.21 25;
+  --destructive-foreground: 93% 0.008 60;
+
+  /* Borders, inputs, rings */
+  --border:         28% 0.012 60;
+  --input:          28% 0.012 60;
+  --ring:           65% 0.16 47;
+
+  /* Charts */
+  --chart-1:  65% 0.16 47;
+  --chart-2:  64% 0.14 155;
+  --chart-3:  66% 0.12 220;
+  --chart-4:  68% 0.15 85;
+  --chart-5:  62% 0.11 300;
+
+  /* Sidebar */
+  --sidebar-background:         12% 0.009 60;
+  --sidebar-foreground:         88% 0.009 60;
+  --sidebar-primary:            65% 0.16 47;
+  --sidebar-primary-foreground: 14% 0.010 47;
+  --sidebar-accent:             20% 0.015 47;
+  --sidebar-accent-foreground:  88% 0.010 60;
+  --sidebar-border:             22% 0.012 60;
+  --sidebar-ring:               65% 0.16 47;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-background text-foreground;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prose line length cap */
+  .prose,
+  [class*="prose"] {
+    max-width: 72ch;
   }
 }
 
@@ -18,29 +148,29 @@
   p[data-line-height="normal"] {
     line-height: 1.6;
   }
-  
+
   .prose p[data-line-height="relaxed"],
   p[data-line-height="relaxed"] {
     line-height: 1.8;
   }
-  
+
   .prose p[data-line-height="loose"],
   p[data-line-height="loose"] {
     line-height: 2.0;
   }
-  
+
   .prose p[data-spacing="tight"],
   p[data-spacing="tight"] {
     margin-top: 0.25rem;
     margin-bottom: 0.25rem;
   }
-  
+
   .prose p[data-spacing="normal"],
   p[data-spacing="normal"] {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .prose p[data-spacing="wide"],
   p[data-spacing="wide"] {
     margin-top: 1.5rem;
@@ -50,7 +180,7 @@
 
 @layer base {
   *:focus-visible {
-    outline: 2px solid hsl(var(--primary));
+    outline: 2px solid oklch(var(--ring));
     outline-offset: 2px;
     border-radius: 2px;
   }

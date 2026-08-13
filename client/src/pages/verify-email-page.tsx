@@ -4,11 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import type { User } from "@shared/schema";
-import { Logo } from "@/components/ui/logo";
 import { Link } from "wouter";
+import { Logo } from "@/components/ui/logo";
 
 export default function VerifyEmailPage() {
   const [, navigate] = useLocation();
@@ -40,7 +39,7 @@ export default function VerifyEmailPage() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
-          
+
           if (data.isAuthenticated && data.user) {
             const existingUser = queryClient.getQueryData<User>(["/api/user"]);
             if (existingUser) {
@@ -51,7 +50,7 @@ export default function VerifyEmailPage() {
           } else if (data.isAuthenticated) {
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           }
-          
+
           toast({
             title: "Email verified",
             description: "Your email has been successfully verified!",
@@ -59,7 +58,7 @@ export default function VerifyEmailPage() {
         } else {
           setStatus("error");
           setMessage(data.message || "Failed to verify email. The token may be invalid or expired.");
-          
+
           toast({
             title: "Verification failed",
             description: data.message || "Failed to verify email",
@@ -69,7 +68,7 @@ export default function VerifyEmailPage() {
       } catch (error) {
         setStatus("error");
         setMessage("An error occurred during email verification. Please try again later.");
-        
+
         toast({
           title: "Verification error",
           description: "An unexpected error occurred",
@@ -88,73 +87,77 @@ export default function VerifyEmailPage() {
     }
   }, [user]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex justify-center">
-          <Link href="/">
-            <Logo />
-          </Link>
-        </div>
+  const currentUser = verifiedUser || user;
 
-        <Card className="border-border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-[1.25rem] font-semibold">Email Verification</CardTitle>
-            <CardDescription className="text-[0.875rem]">
-              Verifying your email address for FindConstructionBids
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center py-6">
-            {status === "loading" && (
-              <>
-                <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-4" />
-                <p className="text-[0.875rem] text-muted-foreground">
-                  Verifying your email address…
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Minimal top bar */}
+      <div className="px-6 py-4 border-b border-border">
+        <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
+          <Logo />
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm text-center">
+          {status === "loading" && (
+            <div className="flex flex-col items-center gap-3 py-10">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">Verifying your email…</p>
+            </div>
+          )}
+
+          {status === "success" && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{message}</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xs mx-auto">
+                  Your email has been verified. You now have full access to FindConstructionBids.
                 </p>
-              </>
-            )}
-            
-            {status === "success" && (
-              <>
-                <CheckCircle className="h-10 w-10 text-primary mb-4" />
-                <p className="font-medium text-[0.9375rem] mb-1.5 text-center">{message}</p>
-                <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
-                  Thank you for verifying your email. You can now fully use FindConstructionBids.
-                </p>
-              </>
-            )}
-            
-            {status === "error" && (
-              <>
-                <AlertCircle className="h-10 w-10 text-destructive mb-4" />
-                <p className="font-medium text-[0.9375rem] mb-1.5 text-center">Verification Failed</p>
-                <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
+              </div>
+              <Button
+                className="mt-2"
+                onClick={() => {
+                  if (currentUser) {
+                    navigate(currentUser.onboardingComplete ? "/dashboard" : "/onboarding");
+                  } else {
+                    navigate("/auth");
+                  }
+                }}
+                data-testid="button-continue"
+              >
+                {currentUser
+                  ? (currentUser.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding")
+                  : "Login"}
+              </Button>
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Verification failed</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xs mx-auto">
                   {message}
                 </p>
-              </>
-            )}
-          </CardContent>
-          <CardFooter className="pt-0">
-            <Button 
-              onClick={() => {
-                const currentUser = verifiedUser || user;
-                if (currentUser) {
-                  if (currentUser.onboardingComplete) {
-                    navigate("/dashboard");
-                  } else {
-                    navigate("/onboarding");
-                  }
-                } else {
-                  navigate("/auth");
-                }
-              }}
-              className="w-full h-9 text-[0.875rem] max-w-none"
-              data-testid="button-continue"
-            >
-              {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
-            </Button>
-          </CardFooter>
-        </Card>
+              </div>
+              <Button
+                variant="outline"
+                className="mt-2"
+                onClick={() => navigate("/auth")}
+                data-testid="button-continue"
+              >
+                Back to login
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { RfpCard } from "@/components/rfp-card";
 import { Loader2, Trophy, ArrowRight, CheckCircle2 } from "lucide-react";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Badge } from "@/components/ui/badge";
+import { generateClientSlug } from "@/lib/utils";
 
 interface LeaderboardEntry {
   clientName: string;
@@ -47,9 +48,35 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <SEOHead
-        title="FindConstructionBids - Construction Bid Management Platform"
-        description="Find and manage construction bids, RFPs, and contractor opportunities. Connect with qualified contractors and streamline your bidding process."
+        title="FindConstructionBids - Government Construction & Services Opportunities"
+        description="A marketplace for government-issued construction and services opportunities. Filter by trade, jurisdiction, and deadline — then bid with confidence."
+        keywords="government construction bids, RFP marketplace, construction opportunities, government RFP, contractor bidding, public construction projects, bid platform"
         canonical="https://findconstructionbids.com/"
+        schema={
+          displayedFeaturedRfps.length > 0 || displayedNewRfps.length > 0
+            ? {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "name": "Government Construction & Services Opportunities",
+                "description": "Browse government-issued RFPs and construction opportunities. Featured and new listings updated daily.",
+                "url": "https://findconstructionbids.com/",
+                "itemListElement": [
+                  ...displayedFeaturedRfps.map((rfp, i) => ({
+                    "@type": "ListItem",
+                    "position": i + 1,
+                    "name": rfp.title,
+                    "url": `https://findconstructionbids.com/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName))}/${rfp.slug || rfp.id}`,
+                  })),
+                  ...displayedNewRfps.map((rfp, i) => ({
+                    "@type": "ListItem",
+                    "position": displayedFeaturedRfps.length + i + 1,
+                    "name": rfp.title,
+                    "url": `https://findconstructionbids.com/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName))}/${rfp.slug || rfp.id}`,
+                  })),
+                ],
+              }
+            : undefined
+        }
       />
       <LandingPageHeader />
 

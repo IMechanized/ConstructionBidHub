@@ -143,6 +143,51 @@
 }
 
 @layer components {
+  /* ============================================================
+     REACT-GRID-LAYOUT — design-system overrides
+     Replace library defaults with warm-stone tokens.
+     ============================================================ */
+
+  /* Drag placeholder: use accent background so it reads as an
+     intentional drop target rather than a grey void */
+  .react-grid-placeholder {
+    background: oklch(var(--accent)) !important;
+    border: 1.5px dashed oklch(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    opacity: 0.6 !important;
+  }
+
+  /* Resize handle: small square grip in the bottom-right corner,
+     coloured with the border token so it's present but not jarring */
+  .react-resizable-handle {
+    background-image: none !important;
+    background-color: transparent !important;
+    width: 14px !important;
+    height: 14px !important;
+    border-right: 2px solid oklch(var(--border)) !important;
+    border-bottom: 2px solid oklch(var(--border)) !important;
+    border-radius: 0 var(--radius) 0 0 !important;
+    opacity: 0.7;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+
+  .react-resizable-handle:hover {
+    border-right-color: oklch(var(--ring)) !important;
+    border-bottom-color: oklch(var(--ring)) !important;
+    opacity: 1;
+  }
+
+  /* Editing-mode grid overlay: a subtle ring + pattern on the
+     grid container signals the layout is unlocked */
+  .rgl-editing-mode {
+    outline: 2px solid oklch(var(--border));
+    outline-offset: 4px;
+    border-radius: var(--radius);
+    background-image:
+      radial-gradient(circle, oklch(var(--border)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
   /* Rich text editor paragraph spacing */
   .prose p[data-line-height="normal"],
   p[data-line-height="normal"] {

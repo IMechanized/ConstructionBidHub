@@ -55,142 +55,149 @@ export default function LandingPage() {
       <LandingPageHeader />
 
       {/* Hero Section */}
-      <section className="py-8 md:py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-6 px-2">
-            Streamline Your Construction Bidding Process
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-5 md:mb-8 max-w-2xl mx-auto px-2">
-            Connect government organizations with qualified contractors. Make the bidding process efficient and transparent.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Button asChild size="lg" className="text-base md:text-lg px-8 md:px-8 h-12 md:h-11">
-              <Link href="/opportunities/featured">Find RFPs</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="text-base md:text-lg px-8 md:px-8 h-12 md:h-11">
-              {user ? (
-                <Link href="/dashboard">Back to Dashboard</Link>
-              ) : (
-                <Link href="/auth">Post RFPs</Link>
-              )}
-            </Button>
+      <section className="py-16 md:py-24 px-4 border-b border-border">
+        <div className="container mx-auto">
+          <div className="max-w-3xl">
+            <p className="text-[0.8125rem] font-medium tracking-[0.05em] uppercase text-muted-foreground mb-4">
+              Government Construction Marketplace
+            </p>
+            <h1 className="text-[2.25rem] sm:text-[2.75rem] md:text-[3.5rem] font-bold leading-[1.1] tracking-[-0.02em] mb-6 text-foreground">
+              Every open construction bid,<br className="hidden sm:block" /> one place.
+            </h1>
+            <p className="text-[1.0625rem] text-muted-foreground leading-relaxed mb-8 max-w-[56ch]">
+              Government-issued RFPs for construction and services, posted by agencies and searchable by trade, jurisdiction, and deadline. Know what's out there before your competitors do.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button asChild size="lg" className="h-11 px-7 text-[0.9375rem] font-medium">
+                <Link href="/opportunities/featured">Browse Opportunities</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-11 px-7 text-[0.9375rem]">
+                {user ? (
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                ) : (
+                  <Link href="/auth">Post an RFP</Link>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Leaderboard Preview Section - only show when 5 or more clients */}
       {leaderboard && leaderboard.length >= 5 && (
-      <section className="py-8 md:py-12 px-4">
-        <div className="container mx-auto">
-          <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20" data-testid="card-leaderboard-preview">
-            <CardHeader className="pb-2">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-6 w-6 text-yellow-500" />
-                  <div>
-                    <CardTitle className="text-lg sm:text-xl">Leaderboard</CardTitle>
-                    <p className="text-sm text-muted-foreground">See which organizations are leading in diverse contractor outreach</p>
-                  </div>
-                </div>
-                <Button asChild variant="outline" size="sm" data-testid="button-view-leaderboard">
-                  <Link href="/leaderboard">
-                    View Full Leaderboard
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {leaderboardLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : leaderboard && leaderboard.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-2">
-                  {leaderboard.slice(0, 5).map((entry, index) => (
-                    <div
-                      key={entry.clientName}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border"
-                      data-testid={`preview-leaderboard-entry-${index}`}
-                    >
-                      <Badge 
-                        variant={index === 0 ? "default" : index < 3 ? "secondary" : "outline"}
-                        className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                      >
-                        {index + 1}
-                      </Badge>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">{entry.clientName}</p>
-                        <p className="text-xs text-muted-foreground">{entry.totalReach.toLocaleString()} reach</p>
-                      </div>
+        <section className="py-10 md:py-14 px-4 border-b border-border">
+          <div className="container mx-auto">
+            <Card className="bg-card border-border" data-testid="card-leaderboard-preview">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="h-5 w-5 text-[oklch(62%_0.15_85)]" />
+                    <div>
+                      <CardTitle className="text-[1.0625rem] font-semibold">Contractor Leaderboard</CardTitle>
+                      <p className="text-[0.8125rem] text-muted-foreground mt-0.5">Organizations leading in diverse contractor outreach</p>
                     </div>
-                  ))}
+                  </div>
+                  <Button asChild variant="ghost" size="sm" className="text-[0.8125rem]" data-testid="button-view-leaderboard">
+                    <Link href="/leaderboard">
+                      View full rankings
+                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                    </Link>
+                  </Button>
                 </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">No leaderboard data yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+              </CardHeader>
+              <CardContent>
+                {leaderboardLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : leaderboard && leaderboard.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mt-1">
+                    {leaderboard.slice(0, 5).map((entry, index) => (
+                      <div
+                        key={entry.clientName}
+                        className="flex items-center gap-3 p-3 rounded-[6px] bg-muted/40 border border-border"
+                        data-testid={`preview-leaderboard-entry-${index}`}
+                      >
+                        <Badge 
+                          variant={index === 0 ? "default" : index < 3 ? "secondary" : "outline"}
+                          className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[0.75rem] p-0"
+                        >
+                          {index + 1}
+                        </Badge>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-[0.8125rem] truncate">{entry.clientName}</p>
+                          <p className="text-[0.75rem] text-muted-foreground">{entry.totalReach.toLocaleString()} reach</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[0.875rem] text-muted-foreground py-3">No leaderboard data yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       )}
 
       {/* Featured RFPs Section */}
       {(isLoading || featuredRfps.length > 0) && (
-      <section className="py-8 md:py-16 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <div className="mb-6 md:mb-12">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
+        <section className="py-12 md:py-20 px-4 bg-muted/20 border-b border-border">
+          <div className="container mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 md:mb-10">
               <div>
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">Featured Opportunities</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">Premium construction projects hand-picked for qualified contractors</p>
+                <h2 className="text-[1.5rem] md:text-[1.875rem] font-bold tracking-[-0.01em] mb-1.5">Featured Opportunities</h2>
+                <p className="text-[0.875rem] text-muted-foreground">Boosted bids from active agencies</p>
               </div>
               {featuredRfps.length > INITIAL_DISPLAY && (
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap self-start sm:self-auto" asChild>
-                  <Link href="/opportunities/featured">View All</Link>
+                <Button variant="outline" size="sm" className="text-[0.8125rem] whitespace-nowrap shrink-0" asChild>
+                  <Link href="/opportunities/featured">
+                    View all {featuredRfps.length}
+                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  </Link>
                 </Button>
               )}
             </div>
-          </div>
 
-          {isLoading ? (
-            <div className="flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {displayedFeaturedRfps.map((rfp) => (
-                <RfpCard
-                  key={rfp.id}
-                  rfp={rfp}
-                  compact
-                  from="featured"
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+            {isLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {displayedFeaturedRfps.map((rfp) => (
+                  <RfpCard
+                    key={rfp.id}
+                    rfp={rfp}
+                    compact
+                    from="featured"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       )}
 
       {/* New RFPs Section */}
       {newRfps.length > 0 && (
-        <section className="py-8 md:py-16 px-4 bg-muted/10">
+        <section className="py-12 md:py-20 px-4">
           <div className="container mx-auto">
-            <div className="mb-6 md:mb-12">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3">
-                <div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">New Opportunities</h2>
-                  <p className="text-sm sm:text-base text-muted-foreground">Latest projects sorted by newest first</p>
-                </div>
-                {newRfps.length > INITIAL_DISPLAY && (
-                  <Button variant="outline" size="sm" className="text-xs sm:text-sm md:text-base whitespace-nowrap self-start sm:self-auto" asChild>
-                    <Link href="/opportunities/new">View All</Link>
-                  </Button>
-                )}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 md:mb-10">
+              <div>
+                <h2 className="text-[1.5rem] md:text-[1.875rem] font-bold tracking-[-0.01em] mb-1.5">New Opportunities</h2>
+                <p className="text-[0.875rem] text-muted-foreground">Recently posted, sorted newest first</p>
               </div>
+              {newRfps.length > INITIAL_DISPLAY && (
+                <Button variant="outline" size="sm" className="text-[0.8125rem] whitespace-nowrap shrink-0" asChild>
+                  <Link href="/opportunities/new">
+                    View all {newRfps.length}
+                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  </Link>
+                </Button>
+              )}
             </div>
-            <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {displayedNewRfps.map((rfp) => (
                 <RfpCard
                   key={rfp.id}

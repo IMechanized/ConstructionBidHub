@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import type { User } from "@shared/schema";
+import { Logo } from "@/components/ui/logo";
+import { Link } from "wouter";
 
 export default function VerifyEmailPage() {
   const [, navigate] = useLocation();
@@ -16,12 +18,10 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = useState<string>("");
   const [verifiedUser, setVerifiedUser] = useState<User | null>(null);
 
-  // Get the token from the URL
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
   useEffect(() => {
-    // If no token is provided, redirect to login
     if (!token) {
       toast({
         title: "Verification failed",
@@ -32,7 +32,6 @@ export default function VerifyEmailPage() {
       return;
     }
 
-    // Verify the email with the token
     const verifyEmail = async () => {
       try {
         const response = await apiRequest("GET", `/api/verify-email?token=${token}`);
@@ -42,9 +41,7 @@ export default function VerifyEmailPage() {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
           
-          // If authenticated and user data returned, update the cache
           if (data.isAuthenticated && data.user) {
-            // Merge with existing user data to maintain full user object
             const existingUser = queryClient.getQueryData<User>(["/api/user"]);
             if (existingUser) {
               const updatedUser = { ...existingUser, ...data.user };
@@ -52,10 +49,8 @@ export default function VerifyEmailPage() {
               queryClient.setQueryData(["/api/user"], updatedUser);
             }
           } else if (data.isAuthenticated) {
-            // Authenticated but no user data, invalidate to refetch
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           }
-          // For unauthenticated users, they will need to log in
           
           toast({
             title: "Email verified",
@@ -86,7 +81,6 @@ export default function VerifyEmailPage() {
     verifyEmail();
   }, [token, toast, navigate]);
 
-  // If user is already verified and logged in, show appropriate message
   useEffect(() => {
     if (user && user.emailVerified) {
       setStatus("success");
@@ -95,65 +89,73 @@ export default function VerifyEmailPage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Email Verification</CardTitle>
-          <CardDescription className="text-center">
-            Verifying your email address for FindConstructionBids
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          {status === "loading" && (
-            <>
-              <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-              <p className="text-center text-muted-foreground">
-                Verifying your email address...
-              </p>
-            </>
-          )}
-          
-          {status === "success" && (
-            <>
-              <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-              <p className="text-center font-medium text-lg">{message}</p>
-              <p className="text-center text-muted-foreground mt-2">
-                Thank you for verifying your email address. You can now fully use all features of FindConstructionBids.
-              </p>
-            </>
-          )}
-          
-          {status === "error" && (
-            <>
-              <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-              <p className="text-center font-medium text-lg">Verification Failed</p>
-              <p className="text-center text-muted-foreground mt-2">
-                {message}
-              </p>
-            </>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button 
-            onClick={() => {
-              const currentUser = verifiedUser || user;
-              if (currentUser) {
-                if (currentUser.onboardingComplete) {
-                  navigate("/dashboard");
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Link href="/">
+            <Logo />
+          </Link>
+        </div>
+
+        <Card className="border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-[1.25rem] font-semibold">Email Verification</CardTitle>
+            <CardDescription className="text-[0.875rem]">
+              Verifying your email address for FindConstructionBids
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center py-6">
+            {status === "loading" && (
+              <>
+                <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-4" />
+                <p className="text-[0.875rem] text-muted-foreground">
+                  Verifying your email address…
+                </p>
+              </>
+            )}
+            
+            {status === "success" && (
+              <>
+                <CheckCircle className="h-10 w-10 text-primary mb-4" />
+                <p className="font-medium text-[0.9375rem] mb-1.5 text-center">{message}</p>
+                <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
+                  Thank you for verifying your email. You can now fully use FindConstructionBids.
+                </p>
+              </>
+            )}
+            
+            {status === "error" && (
+              <>
+                <AlertCircle className="h-10 w-10 text-destructive mb-4" />
+                <p className="font-medium text-[0.9375rem] mb-1.5 text-center">Verification Failed</p>
+                <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
+                  {message}
+                </p>
+              </>
+            )}
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Button 
+              onClick={() => {
+                const currentUser = verifiedUser || user;
+                if (currentUser) {
+                  if (currentUser.onboardingComplete) {
+                    navigate("/dashboard");
+                  } else {
+                    navigate("/onboarding");
+                  }
                 } else {
-                  navigate("/onboarding");
+                  navigate("/auth");
                 }
-              } else {
-                navigate("/auth");
-              }
-            }}
-            className="w-full max-w-xs"
-            data-testid="button-continue"
-          >
-            {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
-          </Button>
-        </CardFooter>
-      </Card>
+              }}
+              className="w-full h-9 text-[0.875rem] max-w-none"
+              data-testid="button-continue"
+            >
+              {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

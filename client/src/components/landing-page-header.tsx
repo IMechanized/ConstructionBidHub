@@ -10,98 +10,103 @@ export function LandingPageHeader() {
   const { user } = useAuth();
 
   return (
-    <nav aria-label="Main navigation" className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+    <nav aria-label="Main navigation" className="border-b border-border sticky top-0 bg-background z-50">
+      <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
+        <Link href="/" className="flex items-center hover:opacity-75 transition-opacity">
           <Logo />
         </Link>
         
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        <div className="hidden md:flex items-center gap-1">
+          <Link
+            href="/about"
+            className="text-[0.8125rem] font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-[6px] hover:bg-muted/60"
+          >
             About
           </Link>
-          <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+          <Link
+            href="/support"
+            className="text-[0.8125rem] font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-[6px] hover:bg-muted/60"
+          >
             Support
           </Link>
           <ThemeToggle size="sm" />
+          <div className="w-px h-4 bg-border mx-1" />
           {user ? (
-            <Button asChild variant="outline" size="sm" className="text-base" data-testid="button-dashboard">
+            <Button asChild variant="outline" size="sm" className="text-[0.8125rem] h-8" data-testid="button-dashboard">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm" className="text-base" data-testid="button-login">
+              <Button asChild variant="ghost" size="sm" className="text-[0.8125rem] h-8" data-testid="button-login">
                 <Link href="/auth">Login</Link>
               </Button>
-              <Button asChild variant="default" size="sm" className="text-base" data-testid="button-get-started">
-                <Link href="/auth">Get Started for Free</Link>
+              <Button asChild variant="default" size="sm" className="text-[0.8125rem] h-8" data-testid="button-get-started">
+                <Link href="/auth">Get Started</Link>
               </Button>
             </>
           )}
         </div>
 
-        {/* Mobile Navigation - Hamburger Menu */}
-        <div className="md:hidden">
+        {/* Mobile Navigation */}
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle size="sm" />
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <Menu className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Menu className="h-4.5 w-4.5" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
+            <SheetContent side="right" className="w-[280px]">
               <div className="flex flex-col h-full pt-6">
-                <div className="space-y-4 flex-1">
+                <div className="space-y-1 flex-1">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-base"
+                    className="w-full justify-start text-[0.9375rem] h-10"
                     asChild
                   >
                     <Link href="/about">About</Link>
                   </Button>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-base"
+                    className="w-full justify-start text-[0.9375rem] h-10"
                     asChild
                   >
                     <Link href="/support">Support</Link>
                   </Button>
                   
-                  <div className="flex items-center justify-between px-3">
-                    <span className="text-sm font-medium">Theme</span>
-                    <ThemeToggle size="sm" />
+                  <div className="pt-3 border-t border-border mt-3">
+                    {user ? (
+                      <Button
+                        variant="outline"
+                        className="w-full text-[0.9375rem] h-10"
+                        asChild
+                        data-testid="mobile-button-dashboard"
+                      >
+                        <Link href="/dashboard">Dashboard</Link>
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full text-[0.9375rem] h-10"
+                          asChild
+                          data-testid="mobile-button-login"
+                        >
+                          <Link href="/auth">Login</Link>
+                        </Button>
+                        <Button
+                          variant="default"
+                          className="w-full text-[0.9375rem] h-10"
+                          asChild
+                          data-testid="mobile-button-get-started"
+                        >
+                          <Link href="/auth">Get Started</Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  
-                  {user ? (
-                    <Button
-                      variant="outline"
-                      className="w-full text-base"
-                      asChild
-                      data-testid="mobile-button-dashboard"
-                    >
-                      <Link href="/dashboard">Dashboard</Link>
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-base"
-                        asChild
-                        data-testid="mobile-button-login"
-                      >
-                        <Link href="/auth">Login</Link>
-                      </Button>
-                      <Button
-                        variant="default"
-                        className="w-full text-base"
-                        asChild
-                        data-testid="mobile-button-get-started"
-                      >
-                        <Link href="/auth">Get Started</Link>
-                      </Button>
-                    </>
-                  )}
                 </div>
               </div>
             </SheetContent>

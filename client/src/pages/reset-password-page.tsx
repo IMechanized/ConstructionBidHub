@@ -10,8 +10,9 @@ import { Loader2, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Logo } from "@/components/ui/logo";
+import { Link } from "wouter";
 
-// Form validation schema
 const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
@@ -29,7 +30,6 @@ export default function ResetPasswordPage() {
   const [token, setToken] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get the token from the URL
   const params = new URLSearchParams(window.location.search);
   const urlToken = params.get("token");
 
@@ -41,7 +41,6 @@ export default function ResetPasswordPage() {
     },
   });
 
-  // Verify the token when the component mounts
   useEffect(() => {
     const verifyToken = async () => {
       if (!urlToken) {
@@ -119,25 +118,24 @@ export default function ResetPasswordPage() {
     }
   };
 
-  // Content based on status
   const renderContent = () => {
     switch (status) {
       case "loading":
         return (
-          <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-            <p className="text-center text-muted-foreground">
-              Verifying your reset token...
+          <div className="flex flex-col items-center py-8">
+            <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-3" />
+            <p className="text-[0.875rem] text-muted-foreground">
+              Verifying your reset token…
             </p>
           </div>
         );
         
       case "invalid":
         return (
-          <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-            <p className="text-center font-medium text-lg">Invalid Reset Link</p>
-            <p className="text-center text-muted-foreground mt-2">
+          <div className="flex flex-col items-center py-8">
+            <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+            <p className="font-medium text-[0.9375rem] mb-1">Invalid Reset Link</p>
+            <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
               This password reset link is invalid or has expired. Please request a new one.
             </p>
           </div>
@@ -152,11 +150,12 @@ export default function ResetPasswordPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel className="text-[0.8125rem]">New Password</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        placeholder="Enter your new password" 
+                        placeholder="At least 8 characters"
+                        className="h-9"
                         disabled={isSubmitting}
                         data-testid="input-password"
                         {...field}
@@ -172,11 +171,12 @@ export default function ResetPasswordPage() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-[0.8125rem]">Confirm Password</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        placeholder="Confirm your new password" 
+                        placeholder="Repeat your new password"
+                        className="h-9"
                         disabled={isSubmitting}
                         data-testid="input-confirm-password"
                         {...field}
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
               
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-9 text-[0.875rem]"
                 disabled={isSubmitting}
                 data-testid="button-reset-password"
               >
@@ -198,7 +198,7 @@ export default function ResetPasswordPage() {
                 ) : (
                   <Lock className="mr-2 h-4 w-4" />
                 )}
-                {isSubmitting ? "Resetting..." : "Reset Password"}
+                {isSubmitting ? "Resetting…" : "Reset Password"}
               </Button>
             </form>
           </Form>
@@ -206,11 +206,11 @@ export default function ResetPasswordPage() {
         
       case "success":
         return (
-          <div className="flex flex-col items-center justify-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-            <p className="text-center font-medium text-lg">Password Reset Successful!</p>
-            <p className="text-center text-muted-foreground mt-2">
-              Your password has been reset successfully. You can now log in with your new password.
+          <div className="flex flex-col items-center py-8">
+            <CheckCircle className="h-10 w-10 text-primary mb-3" />
+            <p className="font-medium text-[0.9375rem] mb-1">Password Reset Successful</p>
+            <p className="text-[0.875rem] text-muted-foreground text-center leading-relaxed">
+              Your password has been reset. You can now log in with your new password.
             </p>
           </div>
         );
@@ -218,29 +218,37 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Reset your password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your new password below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {renderContent()}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          {(status === "invalid" || status === "success") && (
-            <Button 
-              onClick={() => navigate("/auth")}
-              className="w-full"
-              data-testid="button-back-login"
-            >
-              Back to Login
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Link href="/">
+            <Logo />
+          </Link>
+        </div>
+
+        <Card className="border-border">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-[1.25rem] font-semibold">Reset your password</CardTitle>
+            <CardDescription className="text-[0.875rem]">
+              Enter your new password below
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderContent()}
+          </CardContent>
+          <CardFooter className="pt-0">
+            {(status === "invalid" || status === "success") && (
+              <Button 
+                onClick={() => navigate("/auth")}
+                className="w-full h-9 text-[0.875rem]"
+                data-testid="button-back-login"
+              >
+                Back to Login
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

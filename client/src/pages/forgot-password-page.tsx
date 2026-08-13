@@ -10,8 +10,9 @@ import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Logo } from "@/components/ui/logo";
+import { Link } from "wouter";
 
-// Form validation schema
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
@@ -63,75 +64,85 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Reset your password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your email address and we'll send you a reset link
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!emailSent ? (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="name@example.com" 
-                          type="email" 
-                          disabled={isSubmitting}
-                          data-testid="input-email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                  data-testid="button-send-reset"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Mail className="mr-2 h-4 w-4" />
-                  )}
-                  {isSubmitting ? "Sending..." : "Send Reset Link"}
-                </Button>
-              </form>
-            </Form>
-          ) : (
-            <div className="text-center py-4">
-              <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-medium">Check your inbox</h3>
-              <p className="text-muted-foreground mt-2">
-                We've sent you an email with instructions to reset your password.
-                Please check your spam folder if you don't see it in your inbox.
-              </p>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/auth")}
-            className="w-full"
-            data-testid="button-back-login"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Login
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Link href="/">
+            <Logo />
+          </Link>
+        </div>
+
+        <Card className="border-border">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-[1.25rem] font-semibold">Reset your password</CardTitle>
+            <CardDescription className="text-[0.875rem]">
+              Enter your email and we'll send you a reset link
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!emailSent ? (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[0.8125rem]">Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="name@company.com" 
+                            type="email"
+                            className="h-9"
+                            disabled={isSubmitting}
+                            data-testid="input-email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full h-9 text-[0.875rem]"
+                    disabled={isSubmitting}
+                    data-testid="button-send-reset"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
+                    )}
+                    {isSubmitting ? "Sending…" : "Send Reset Link"}
+                  </Button>
+                </form>
+              </Form>
+            ) : (
+              <div className="py-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Mail className="h-5 w-5 text-primary" />
+                </div>
+                <p className="text-[0.9375rem] font-medium mb-1">Check your inbox</p>
+                <p className="text-[0.875rem] text-muted-foreground leading-relaxed">
+                  We've sent instructions to reset your password. Check your spam folder if you don't see it.
+                </p>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/auth")}
+              className="w-full h-9 text-[0.875rem] text-muted-foreground"
+              data-testid="button-back-login"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Login
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

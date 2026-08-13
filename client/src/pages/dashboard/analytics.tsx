@@ -33,10 +33,25 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
+/** Read an oklch CSS custom property and return a full color string. */
+function cssColor(varName: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return val ? `oklch(${val})` : fallback;
+}
+
 export default function AnalyticsDashboard() {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const { theme } = useTheme();
+
+  // Chart colors — re-derived on each render so dark-mode token changes are picked up.
+  const C1 = cssColor("--chart-1", "oklch(52% 0.16 47)");   // terracotta
+  const C2 = cssColor("--chart-2", "oklch(58% 0.14 155)");  // forest green
+  const C3 = cssColor("--chart-3", "oklch(60% 0.12 220)");  // slate blue
+  const C4 = cssColor("--chart-4", "oklch(62% 0.15 85)");   // amber
+  const C5 = cssColor("--chart-5", "oklch(56% 0.11 300)");  // muted purple
+  const CHART_COLORS = [C1, C2, C3, C4, C5];
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const { toast } = useToast();
@@ -363,9 +378,9 @@ export default function AnalyticsDashboard() {
                 </Button>
               </div>
             </div>
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-8 text-sm">
-              <p className="text-yellow-800 dark:text-yellow-200">
-                <strong>Note:</strong> Analytics data includes real-time tracking of views and engagement. 
+            <div className="bg-muted border border-border rounded-md px-4 py-3 mb-8 text-sm">
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Note:</strong> Analytics data includes real-time tracking of views and engagement.
                 Data collection is ongoing and will become more accurate as users interact with your RFPs.
               </p>
             </div>
@@ -455,33 +470,37 @@ export default function AnalyticsDashboard() {
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData} onClick={handleChartClick}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip cursor={{ fill: 'rgba(136, 132, 216, 0.1)' }} />
-                        <Bar 
-                          dataKey="views" 
-                          fill={theme === 'dark' ? "#8884d8" : "#8884d8"} 
+                        <CartesianGrid strokeDasharray="3 3" stroke={cssColor("--border", "oklch(87% 0.010 60)")} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip cursor={{ fill: `${C1}26` }} />
+                        <Bar
+                          dataKey="views"
+                          fill={C1}
                           name="Total Views"
                           cursor="pointer"
+                          radius={[3, 3, 0, 0]}
                         />
-                        <Bar 
-                          dataKey="uniqueViews" 
-                          fill={theme === 'dark' ? "#82ca9d" : "#82ca9d"} 
+                        <Bar
+                          dataKey="uniqueViews"
+                          fill={C2}
                           name="Unique Views"
                           cursor="pointer"
+                          radius={[3, 3, 0, 0]}
                         />
-                        <Bar 
-                          dataKey="bids" 
-                          fill={theme === 'dark' ? "#ffc658" : "#ffc658"} 
+                        <Bar
+                          dataKey="bids"
+                          fill={C4}
                           name="Bids"
                           cursor="pointer"
+                          radius={[3, 3, 0, 0]}
                         />
-                        <Bar 
-                          dataKey="ctr" 
-                          fill={theme === 'dark' ? "#ff8042" : "#ff8042"} 
+                        <Bar
+                          dataKey="ctr"
+                          fill={C3}
                           name="CTR (%)"
                           cursor="pointer"
+                          radius={[3, 3, 0, 0]}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -814,8 +833,8 @@ export default function AnalyticsDashboard() {
                               <YAxis />
                               <Tooltip />
                               <Legend />
-                              <Bar dataKey="views" fill="#8884d8" name="Total Views" />
-                              <Bar dataKey="uniqueViews" fill="#82ca9d" name="Unique Views" />
+                              <Bar dataKey="views" fill={C1} name="Total Views" radius={[3,3,0,0]} />
+                              <Bar dataKey="uniqueViews" fill={C2} name="Unique Views" radius={[3,3,0,0]} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -835,8 +854,8 @@ export default function AnalyticsDashboard() {
                               <YAxis />
                               <Tooltip />
                               <Legend />
-                              <Bar dataKey="avgTime" fill="#ffc658" name="Avg Time (s)" />
-                              <Bar dataKey="bids" fill="#ff8042" name="Bids" />
+                              <Bar dataKey="avgTime" fill={C4} name="Avg Time (s)" radius={[3,3,0,0]} />
+                              <Bar dataKey="bids" fill={C3} name="Bids" radius={[3,3,0,0]} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -863,8 +882,8 @@ export default function AnalyticsDashboard() {
                                   key={idx}
                                   name={item.rfp.title.substring(0, 20)}
                                   dataKey={`rfp${idx}`}
-                                  stroke={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'][idx]}
-                                  fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'][idx]}
+                                  stroke={CHART_COLORS[idx]}
+                                  fill={CHART_COLORS[idx]}
                                   fillOpacity={0.3}
                                 />
                               ))}

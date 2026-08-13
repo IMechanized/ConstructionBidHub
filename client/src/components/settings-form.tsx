@@ -339,7 +339,7 @@ export default function SettingsForm() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium" data-testid="text-current-email">{user?.email}</span>
                 {user?.emailVerified ? (
-                  <Badge variant="default" className="bg-green-500 hover:bg-green-500" data-testid="badge-email-verified">
+                  <Badge variant="default" className="bg-chart-2 hover:bg-chart-2" data-testid="badge-email-verified">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Verified
                   </Badge>
@@ -455,11 +455,11 @@ export default function SettingsForm() {
           
           {/* Info message for unverified email */}
           {!user?.emailVerified && (
-            <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-3 bg-muted/50 border border-border rounded-lg">
+              <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-amber-800 dark:text-amber-400">Email verification required</p>
-                <p className="text-amber-700 dark:text-amber-500">
+                <p className="font-medium">Email verification required</p>
+                <p className="text-muted-foreground">
                   Please verify your email address to access all features. Check your inbox for the verification link or click "Resend Verification" above.
                 </p>
               </div>
@@ -852,14 +852,19 @@ export default function SettingsForm() {
         </Form>
       </div>
 
-      {/* Danger Zone Section */}
-      <div className="border-t pt-6">
-        <h2 className="text-lg font-semibold text-destructive mb-4">{t('settings.dangerZone')}</h2>
-        <div className="space-y-4">
+      {/* Danger Zone — visually separated from main settings */}
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-destructive uppercase tracking-wider">{t('settings.dangerZone')}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            These actions are permanent and cannot be undone.
+          </p>
+        </div>
+        <div className="space-y-3">
           {/* Deactivate Account Dialog */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50">
                 {t('settings.deactivateAccount')}
               </Button>
             </AlertDialogTrigger>
@@ -885,7 +890,7 @@ export default function SettingsForm() {
           {/* Delete Account Dialog */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full">
+              <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50">
                 {t('settings.deleteAccount')}
               </Button>
             </AlertDialogTrigger>

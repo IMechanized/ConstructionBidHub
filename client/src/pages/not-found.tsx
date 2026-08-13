@@ -1,35 +1,41 @@
 import SEOHead from "@/components/seo-head";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { FileSearch } from "lucide-react";
 import { Link } from "wouter";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background">
       <SEOHead
         title="Page Not Found - FindConstructionBids"
         description="The page you are looking for could not be found. Navigate back to FindConstructionBids to browse construction bids and opportunities."
         noindex={true}
       />
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">404 Page Not Found</h1>
+      <div className="w-full max-w-md mx-4 text-center space-y-6">
+        {/* Icon */}
+        <div className="flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <FileSearch className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
           </div>
+        </div>
 
-          <p className="mt-4 text-sm text-gray-600">
-            The page you are looking for could not be found. It may have been moved or no longer exists.
+        {/* Copy */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+            404
           </p>
+          <h1 className="text-2xl font-bold tracking-tight">Page not found</h1>
+          <p className="text-muted-foreground leading-relaxed">
+            The page you're looking for may have been moved or no longer exists. Head back to browse
+            available bid opportunities.
+          </p>
+        </div>
 
-          <div className="mt-6">
-            <Button asChild>
-              <Link href="/">Back to Home</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Action */}
+        <Button asChild size="lg">
+          <Link href="/">Back to Home</Link>
+        </Button>
+      </div>
     </div>
   );
 }

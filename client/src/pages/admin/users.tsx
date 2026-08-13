@@ -197,7 +197,7 @@ export default function AdminUsers() {
                         </TableCell>
                         <TableCell>
                           {user.isAdmin ? (
-                            <Badge variant="outline" className="bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200">
+                            <Badge variant="outline" className="bg-accent text-accent-foreground border-primary/30">
                               <Shield className="h-3 w-3 mr-1" aria-hidden="true" />
                               Admin
                             </Badge>

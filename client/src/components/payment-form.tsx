@@ -126,7 +126,7 @@ function StripeCheckoutForm({ rfpId, pendingRfpData, onSuccess, onCancel }: Paym
       </div>
       
       {errorMessage && (
-        <div className="mt-3 text-red-500 text-sm">{errorMessage}</div>
+        <div className="mt-3 text-destructive text-sm">{errorMessage}</div>
       )}
       
       <div className="flex justify-between mt-6">

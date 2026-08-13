@@ -81,17 +81,15 @@ function FieldRow({
     <div className="flex items-start gap-3">
       <div className={cn(
         "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-        aiInferred
-          ? "bg-violet-100 dark:bg-violet-950"
-          : "bg-slate-100 dark:bg-slate-800"
+        aiInferred ? "bg-accent" : "bg-muted"
       )}>
-        <Icon className={cn("h-3.5 w-3.5", aiInferred ? "text-violet-600 dark:text-violet-400" : "text-slate-600 dark:text-slate-400")} aria-hidden="true" />
+        <Icon className={cn("h-3.5 w-3.5", aiInferred ? "text-accent-foreground" : "text-muted-foreground")} aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
           {aiInferred && (
-            <Badge variant="outline" className="text-[10px] h-4 px-1 border-violet-300 text-violet-600 dark:text-violet-400">
+            <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary/40 text-primary">
               <Sparkles className="h-2.5 w-2.5 mr-0.5" aria-hidden="true" />
               AI filled
             </Badge>
@@ -142,7 +140,7 @@ function RfpPreviewCard({
 
         <div className="w-full bg-muted rounded-full h-1.5 mt-3" role="progressbar" aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={total}>
           <div
-            className="bg-violet-600 h-1.5 rounded-full transition-all duration-300"
+            className="bg-primary h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${((index + 1) / total) * 100}%` }}
           />
         </div>
@@ -211,7 +209,7 @@ function RfpPreviewCard({
             value={
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {rfp.certificationGoals.map((c) => (
-                  <Badge key={c} variant="outline" className="text-xs border-violet-300 text-violet-700 dark:text-violet-300">{c}</Badge>
+                  <Badge key={c} variant="outline" className="text-xs border-primary/40 text-primary">{c}</Badge>
                 ))}
               </div>
             }
@@ -231,8 +229,8 @@ function RfpPreviewCard({
         />
 
         <div className="flex items-center gap-2 pt-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-md px-2 py-1">
-            <Sparkles className="h-3 w-3 text-violet-500" aria-hidden="true" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-accent/30 border border-border rounded-md px-2 py-1">
+            <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
             <span>Fields with the AI badge were enriched by DeepSeek</span>
           </div>
         </div>
@@ -248,7 +246,7 @@ function RfpPreviewCard({
             {isDiscarding ? "Discarding..." : "Discard"}
           </Button>
           <Button
-            className="gap-2 bg-violet-600 hover:bg-violet-700 flex-1 sm:flex-none"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={onPublish}
             disabled={isPublishing || isDiscarding}
           >
@@ -398,20 +396,20 @@ export default function AdminRfpImport() {
         </div>
 
         {hasPendingDrafts && step === "upload" && (
-          <Card className="border-violet-200 bg-violet-50 dark:bg-violet-950/20 dark:border-violet-800">
+          <Card className="border-border bg-accent/30">
             <CardContent className="pt-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-violet-600 mt-0.5 shrink-0" aria-hidden="true" />
+                <AlertTriangle className="h-5 w-5 text-accent-foreground mt-0.5 shrink-0" aria-hidden="true" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-violet-800 dark:text-violet-200">
+                  <p className="text-sm font-medium text-accent-foreground">
                     {existingDrafts!.length} draft{existingDrafts!.length !== 1 ? "s" : ""} pending review
                   </p>
-                  <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     You have unreviewed drafts from a previous import.
                   </p>
                   <Button
                     size="sm"
-                    className="mt-3 bg-violet-600 hover:bg-violet-700"
+                    className="mt-3"
                     onClick={() => {
                       setImportResult({ drafts: existingDrafts!, duplicatesSkipped: 0 });
                       setCurrentIndex(0);
@@ -445,8 +443,8 @@ export default function AdminRfpImport() {
                 className={cn(
                   "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-colors cursor-pointer",
                   isDragging
-                    ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
-                    : "border-muted-foreground/30 hover:border-violet-400 hover:bg-muted/50",
+                    ? "border-primary bg-accent/30"
+                    : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/50",
                   selectedFile && "border-green-500 bg-green-50 dark:bg-green-950/20"
                 )}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -489,7 +487,7 @@ export default function AdminRfpImport() {
               )}
 
               <Button
-                className="w-full bg-violet-600 hover:bg-violet-700"
+                className="w-full"
                 size="lg"
                 disabled={!selectedFile || !!fileError}
                 onClick={handleImport}
@@ -504,8 +502,8 @@ export default function AdminRfpImport() {
         {step === "analyzing" && (
           <Card>
             <CardContent className="pt-8 pb-8 text-center space-y-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950 mx-auto">
-                <Sparkles className="h-8 w-8 text-violet-600 animate-pulse" aria-hidden="true" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent mx-auto">
+                <Sparkles className="h-8 w-8 text-accent-foreground animate-pulse" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-lg font-semibold">Analyzing with AI...</p>
@@ -535,7 +533,7 @@ export default function AdminRfpImport() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg bg-muted p-4 text-center">
-                  <p className="text-3xl font-bold text-violet-600">{importResult.drafts.length}</p>
+                  <p className="text-3xl font-bold text-primary">{importResult.drafts.length}</p>
                   <p className="text-sm text-muted-foreground mt-1">New RFPs ready for review</p>
                 </div>
                 <div className="rounded-lg bg-muted p-4 text-center">
@@ -566,7 +564,7 @@ export default function AdminRfpImport() {
                 </div>
               ) : (
                 <Button
-                  className="w-full bg-violet-600 hover:bg-violet-700"
+                  className="w-full"
                   size="lg"
                   onClick={() => setStep("review")}
                 >
@@ -646,7 +644,7 @@ export default function AdminRfpImport() {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4 justify-center">
                 <Link href="/admin/rfps">
-                  <Button className="bg-violet-600 hover:bg-violet-700">
+                  <Button>
                     View RFP Management
                   </Button>
                 </Link>

@@ -204,3 +204,47 @@ export function PdfLoadingSkeleton() {
     </div>
   );
 }
+
+/* ─── Notification Preferences Skeleton ─────────────────────── */
+export function NotificationPreferencesSkeleton() {
+  return (
+    <div className="rounded-lg border border-border bg-card">
+      {/* Section header */}
+      <div className="px-6 py-5 border-b space-y-1.5">
+        <Skeleton className="h-5 w-52" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      {/* Toggle rows */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="px-6 py-5 flex items-center justify-between border-b"
+        >
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-40" />
+            <Skeleton className="h-3.5 w-56" />
+          </div>
+          <Skeleton className="h-5 w-9 rounded-full" />
+        </div>
+      ))}
+      {/* Notification types section */}
+      <div className="px-6 py-5 border-b space-y-4">
+        <Skeleton className="h-5 w-40" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-5 w-9 rounded-full" />
+          </div>
+        ))}
+      </div>
+      {/* Quiet hours section */}
+      <div className="px-6 py-5 space-y-4">
+        <Skeleton className="h-5 w-32" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-3.5 w-48" />
+          <Skeleton className="h-5 w-9 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}

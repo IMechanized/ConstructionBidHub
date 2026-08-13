@@ -1,0 +1,13 @@
+- [Rate limiter pattern](rate-limit.md) — in-memory sliding-window; store is module-level (persists across calls in same process); fake timers work for tests.
+- [Logger migration](logger-migration.md) — all console.* replaced with logger from @/lib/logger; OWASP logging tests must check logger.error not console.error.
+- [Navigation isAdmin](navigation-isadmin.md) — isAdmin derived directly from session (no state) to avoid react-hooks/set-state-in-effect lint error.
+- [Vitest coverage provider](vitest-coverage.md) — @vitest/coverage-v8 NOT installed; never add provider:"v8" to vitest.config.ts — causes test timeouts.
+- [Lint false positives](lint-lucide-image.md) — Lucide <Image> icon triggers jsx-a11y/alt-text; suppress with eslint-disable-next-line, not alt prop.
+- [Wallet userId nullability](wallet-userid-null.md) — influencerWallets.userId and brandWallets.userId are nullable (onDelete:set null) to preserve financial records after account erasure. Any code joining wallets to users must handle null.
+- [better-auth ToS hooks](better-auth-tos-hooks.md) — use input:false + databaseHooks for server-only fields; proxy route for email-path ToS enforcement; double-cast as unknown as for auth.api methods.
+- [Resend rate limiting](resend-rate-limiting.md) — Resend counts each email in a batch individually against ~10 email/s account limit; chunk size 25 + 3 s delay = safe; admin trigger must NOT use batchDelayMs:0; mock Resend constructor with function not arrow in Vitest.
+- [Neon DB driver setup](neon-db-driver.md) — use drizzle-orm/neon-serverless (NOT node-postgres) with @neondatabase/serverless Pool; wrong adapter causes idle-connection "Connection terminated unexpectedly" crashes.
+- [Replit lockfile proxy poisoning](replit-lockfile-poison.md) — task agents poison package-lock.json with Replit-internal URLs; .githooks/pre-commit auto-fixes on commit; post-merge.sh registers the hook.
+- [Apify actor IDs](apify-actors.md) — correct actor IDs and input/response formats for all platforms; TikTok uses startUrls not profiles; X uses apidojo/twitter-profile-scraper not apify/twitter-scraper.
+- [Cost-guardrail stacking](cost-guardrail-stacking.md) — a per-resource freshness cool-down is NOT a substitute for an independent per-actor rate limit; failing/never-fetched resources can bypass cool-downs, so use both, cool-down after rate limit.
+- [use server export restriction](use-server-export-restriction.md) — files with "use server" can only export async functions; move sync helpers (rate limiters, test reset hooks) to a plain module and import them.

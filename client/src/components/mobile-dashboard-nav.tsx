@@ -174,7 +174,7 @@ export function MobileDashboardNav({ currentPath }: MobileDashboardNavProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start gap-2 h-10 text-[0.8125rem] text-muted-foreground hover:text-foreground"
+                className="w-full justify-start gap-2 h-11 text-[0.8125rem] text-muted-foreground hover:text-foreground"
                 onClick={() => logoutMutation.mutate()}
               >
                 <LogOut className="h-3.5 w-3.5" />

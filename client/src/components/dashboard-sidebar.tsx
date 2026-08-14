@@ -120,7 +120,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-[0.8125rem] font-medium leading-none transition-colors duration-150",
+                    "flex items-center gap-3 rounded-md px-3 py-2 min-h-[44px] text-[0.8125rem] font-medium leading-none transition-colors duration-150",
                     isActive
                       ? "bg-sidebar-accent text-primary"
                       : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -169,13 +169,13 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 justify-start gap-2 h-8 text-[0.8125rem] text-muted-foreground hover:text-foreground"
+            className="flex-1 justify-start gap-2 h-11 text-[0.8125rem] text-muted-foreground hover:text-foreground"
             onClick={() => logoutMutation.mutate()}
           >
             <LogOut className="h-3.5 w-3.5" />
             {t('auth.logout')}
           </Button>
-          <ThemeToggle variant="ghost" />
+          <ThemeToggle variant="ghost" className="h-11 w-11 px-0" />
         </div>
       </div>
     </div>
@@ -188,7 +188,7 @@ export function DashboardSidebar({ currentPath }: DashboardSidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="fixed top-3 left-3 md:hidden z-50 h-9 w-9"
+            className="fixed top-2.5 left-2.5 md:hidden z-50 h-11 w-11"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Open menu</span>

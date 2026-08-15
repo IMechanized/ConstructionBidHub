@@ -5,7 +5,7 @@ import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -109,7 +109,6 @@ export default function AnalyticsDashboard() {
         description: "Latest data has been loaded",
       });
     } catch (err) {
-      console.error("Failed to refresh analytics:", err);
       toast({
         title: "Refresh Failed",
         description: "Could not load updated analytics",
@@ -235,29 +234,6 @@ export default function AnalyticsDashboard() {
     ]))
   }];
   
-  // Log analytics data for troubleshooting
-  useEffect(() => {
-    if (analytics) {
-      console.log(`Analytics data loaded successfully: ${analytics.length} items`);
-      if (analytics.length > 0) {
-        console.log('Sample analytics item:', JSON.stringify(analytics[0]));
-      }
-    } else if (error) {
-      console.error('Error loading analytics:', error);
-    }
-  }, [analytics, error]);
-  
-  // Force data reload after 1 second for debugging purposes
-  useEffect(() => {
-    if (!isLoading && analytics?.length === 0) {
-      console.log("Detected empty analytics, scheduling reload...");
-      const timer = setTimeout(() => {
-        console.log("Performing forced analytics reload");
-        queryClient.invalidateQueries({ queryKey: ["/api/analytics/boosted"] });
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, analytics?.length]);
 
   // Handle case when there are no analytics to display
   if ((!analytics || analytics.length === 0) && !isLoading) {

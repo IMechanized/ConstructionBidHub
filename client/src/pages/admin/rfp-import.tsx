@@ -282,10 +282,17 @@ export default function AdminRfpImport() {
 
   const importMutation = useMutation({
     mutationFn: async (jsonData: any[]) => {
-      const res = await apiRequest("POST", "/api/admin/rfp-import/preview", jsonData);
+      // Read structured server errors here instead of apiRequest's raw
+      // "status: JSON" exception, so size errors display a useful message.
+      const res = await fetch("/api/admin/rfp-import/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(jsonData),
+      });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Import failed");
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || err.error || "Import failed");
       }
       return res.json() as Promise<ImportResult>;
     },

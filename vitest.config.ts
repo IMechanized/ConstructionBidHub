@@ -12,6 +12,8 @@ export default defineConfig({
     css: true,
     exclude: [
       '**/node_modules/**',
+      // Uses node:test and real HTTP servers, without browser test setup.
+      'server/lib/request-body.test.mjs',
       '**/*.skip.test.tsx',
       '**/onboarding-form.test.tsx',
       '**/rfp-form.test.tsx'

@@ -1,26 +1,19 @@
 ---
 name: Replit lockfile proxy poisoning
-description: Task agents running npm install inside Replit bake internal proxy URLs into package-lock.json, breaking npm install on Vercel/CI.
+description: Internal package proxy URLs can enter lockfiles and break external installs; do not assume prior prevention hooks still exist.
 ---
 
-Replit routes all npm traffic through an internal security firewall at
-`http://package-firewall.replit.local/npm/...`. When task agents run
-`npm install` and commit the resulting `package-lock.json`, those internal
-URLs are baked in. Any external CI/CD environment (Vercel, GitHub Actions)
-that then runs `npm install` cannot reach that host and crashes with
-`npm error Exit handler never called!` — with no clear indication of the
-real cause.
+Keep committed package tarball URLs portable to external build environments.
+Internal package-firewall hosts can enter the lockfile during dependency
+installation; check both the `.local` and `.internal` variants.
 
-**How to identify:** `grep -c "package-firewall.replit.local" package-lock.json` — any count > 0 means the lockfile is poisoned.
+**Why:** External Vercel builds cannot use internal package hosts. A generic
+npm "Exit handler never called!" failure may obscure an install problem, but
+the summary log alone does not establish its cause.
 
-**How to fix immediately:**
-```bash
-sed -i 's|http://package-firewall.replit.local/npm/|https://registry.npmjs.org/|g' package-lock.json
-```
-
-**Prevention (already in place):**
-- `.githooks/pre-commit` — detects if `package-lock.json` is staged and rewrites any Replit proxy URLs before the commit lands. Silent no-op when clean.
-- `scripts/post-merge.sh` — first line runs `git config core.hooksPath .githooks` so every task-agent environment registers the hook after their merge.
-- `.git/hooks/pre-commit` — hook also installed directly for the main-agent environment (since `git config` is a restricted operation there).
-
-**Why:** The hook lives in `.githooks/` (committed to the repo) rather than `.git/hooks/` (not committed). `core.hooksPath .githooks` tells git to use it. The post-merge script ensures the path is registered in every fresh task-agent clone/environment.
+**How to apply:** Inspect resolved URLs before investigating application code
+when an external build fails during dependency installation. Preserve package
+versions and integrity hashes while correcting internal URLs, and verify a
+clean install against the public registry. Never assume old prevention hooks
+still exist: earlier notes claimed they were installed, but inspection on
+2026-10-12 found no committed hook directory or post-merge registration.

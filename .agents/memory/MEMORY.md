@@ -7,7 +7,7 @@
 - [better-auth ToS hooks](better-auth-tos-hooks.md) — use input:false + databaseHooks for server-only fields; proxy route for email-path ToS enforcement; double-cast as unknown as for auth.api methods.
 - [Resend rate limiting](resend-rate-limiting.md) — Resend counts each email in a batch individually against ~10 email/s account limit; chunk size 25 + 3 s delay = safe; admin trigger must NOT use batchDelayMs:0; mock Resend constructor with function not arrow in Vitest.
 - [Neon DB driver setup](neon-db-driver.md) — use drizzle-orm/neon-serverless (NOT node-postgres) with @neondatabase/serverless Pool; wrong adapter causes idle-connection "Connection terminated unexpectedly" crashes.
-- [Replit lockfile proxy poisoning](replit-lockfile-poison.md) — task agents poison package-lock.json with Replit-internal URLs; .githooks/pre-commit auto-fixes on commit; post-merge.sh registers the hook.
+- [Portable npm lockfiles](replit-lockfile-poison.md) — internal proxy URLs can break external builds; inspect both host variants and verify prevention hooks rather than assuming they exist.
 - [Apify actor IDs](apify-actors.md) — correct actor IDs and input/response formats for all platforms; TikTok uses startUrls not profiles; X uses apidojo/twitter-profile-scraper not apify/twitter-scraper.
 - [Cost-guardrail stacking](cost-guardrail-stacking.md) — a per-resource freshness cool-down is NOT a substitute for an independent per-actor rate limit; failing/never-fetched resources can bypass cool-downs, so use both, cool-down after rate limit.
 - [use server export restriction](use-server-export-restriction.md) — files with "use server" can only export async functions; move sync helpers (rate limiters, test reset hooks) to a plain module and import them.

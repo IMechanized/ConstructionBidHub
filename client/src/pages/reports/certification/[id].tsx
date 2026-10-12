@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Rfp, Rfi, User } from "@shared/schema";
@@ -8,13 +8,17 @@ import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { format } from "date-fns";
 import { Download } from "lucide-react";
-import html2pdf from 'html2pdf.js';
 import { ReportDetailSkeleton } from "@/components/skeletons";
+import { exportReportPdf } from "@/lib/report-pdf";
+import { useToast } from "@/hooks/use-toast";
+import "../report.css";
 
 export default function CertificationReportPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [location, navigate] = useLocation();
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const { data: rfp, isLoading: loadingRfp } = useQuery<Rfp>({
     queryKey: [`/api/rfps/${id}`],
@@ -30,14 +34,17 @@ export default function CertificationReportPage() {
     }
   }, [rfp, user, loadingRfp, navigate]);
 
-  const certificationGoals = useMemo(() => rfp?.certificationGoals || [], [rfp]);
+  const certificationGoals = useMemo(
+    () => (rfp?.certificationGoals || []).filter(goal => goal && goal !== "None"),
+    [rfp]
+  );
 
   const bidderCertifications = useMemo(() => {
     if (!rfis || !Array.isArray(rfis)) return [];
     return rfis.map(rfi => ({
       ...rfi,
       certs: Array.isArray(rfi.organization?.certificationName) 
-        ? rfi.organization.certificationName.filter(Boolean) 
+        ? rfi.organization.certificationName.filter(cert => Boolean(cert) && cert !== "None")
         : [],
     }));
   }, [rfis]);
@@ -83,40 +90,33 @@ export default function CertificationReportPage() {
     { label: "Certification Analysis", href: `/reports/certification/${id}` },
   ];
 
-  const handleDownload = () => {
-    const element = document.getElementById('certification-report-content');
-    const opt = {
-      margin: 0.5,
-      filename: `${rfp?.title}-certification-report.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    const root = window.document.documentElement;
-    const wasDarkMode = root.classList.contains('dark');
-    
-    root.classList.remove('dark');
-    root.classList.add('light');
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      if (wasDarkMode) {
-        root.classList.remove('light');
-        root.classList.add('dark');
-      }
-    });
+  const handleDownload = async () => {
+    const element = document.getElementById("certification-report-content");
+    if (!element || isExporting) return;
+    setIsExporting(true);
+    try {
+      await exportReportPdf(element, `${rfp?.title || "rfp"}-certification-report.pdf`);
+    } catch {
+      toast({
+        title: "PDF export failed",
+        description: "The report could not be downloaded. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getBidderComplianceStatus = (certs: string[]) => {
-    if (!certificationGoals.length) return 'no-goals';
+    if (!certificationGoals.length || !bidderCertifications.length) return 'no-goals';
     const hasMatch = certificationGoals.some(goal => certs.includes(goal));
     return hasMatch ? 'compliant' : 'non-compliant';
   };
 
   if (loadingRfp) {
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardSidebar currentPath={location} />
+      <div className="report-page min-h-screen">
+        <div className="report-shell"><DashboardSidebar currentPath={location} /></div>
         <div className="flex-1 md:ml-[280px]">
           <main className="w-full min-h-screen pb-16 md:pb-0 mt-14 md:mt-0">
             <ReportDetailSkeleton />
@@ -131,23 +131,24 @@ export default function CertificationReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardSidebar currentPath={location} />
+    <div className="report-page min-h-screen">
+      <div className="report-shell"><DashboardSidebar currentPath={location} /></div>
       
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
           <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div className="report-toolbar flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
               <BreadcrumbNav items={breadcrumbItems} />
-              <Button onClick={handleDownload} className="w-full sm:w-auto" data-testid="button-download-pdf">
+              <Button onClick={handleDownload} disabled={isExporting} className="report-download w-full sm:w-auto" data-testid="button-download-pdf">
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                {isExporting ? "Preparing PDF…" : "Download PDF"}
               </Button>
             </div>
 
-            <div id="certification-report-content" className="bg-white text-black" style={{ maxWidth: '8.5in', margin: '0 auto' }}>
+            <div className="report-print-area">
+            <div id="certification-report-content" className="report-sheet report-document">
               {/* Logo Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200">
+              <div className="report-brand-header flex items-center justify-between px-6 py-4">
                 <img
                   src="/fcb-logo.png"
                   alt="FindConstructionBids Logo"
@@ -169,70 +170,71 @@ export default function CertificationReportPage() {
               <div className="p-6">
                 {/* Header Section */}
                 <div className="mb-6">
-                  <h1 className="text-2xl font-bold text-gray-900" data-testid="text-report-title">Certification Compliance Report</h1>
-                  <p className="text-gray-600">{rfp.title}</p>
+                  <h1 className="report-title" data-testid="text-report-title">Certification Compliance Report</h1>
+                  <p className="report-subtitle">{rfp.title}</p>
                 </div>
 
                 {/* Summary Info */}
-                <div className="grid grid-cols-4 gap-4 mb-6 text-sm border rounded-lg p-4 bg-gray-50">
+                <div className="report-summary report-summary-grid grid grid-cols-4 gap-4 mb-6 text-sm p-4">
                   <div>
-                    <span className="text-gray-500 text-xs">Location</span>
-                    <p className="font-medium text-gray-900">{rfp.jobCity}, {rfp.jobState}</p>
+                    <span className="report-label">Location</span>
+                    <p className="font-medium">{rfp.jobCity}, {rfp.jobState}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Deadline</span>
-                    <p className="font-medium text-gray-900">{format(new Date(rfp.deadline), "MM/dd/yyyy")}</p>
+                    <span className="report-label">Deadline</span>
+                    <p className="font-medium">{format(new Date(rfp.deadline), "MM/dd/yyyy")}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Report Generated</span>
-                    <p className="font-medium text-gray-900">{format(new Date(), "MM/dd/yyyy")}</p>
+                    <span className="report-label">Report Generated</span>
+                    <p className="font-medium">{format(new Date(), "MM/dd/yyyy")}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Total Bidders</span>
-                    <p className="font-medium text-gray-900">{bidderCertifications.length}</p>
+                    <span className="report-label">Total Bidders</span>
+                    <p className="font-medium">{bidderCertifications.length}</p>
                   </div>
                 </div>
 
                 {/* Stats Cards - Simplified for PDF */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  <div className="border rounded-lg p-3 text-center" data-testid="card-total-bidders">
-                    <p className="text-2xl font-bold text-gray-900">{bidderCertifications.length}</p>
-                    <p className="text-xs text-gray-500">Total Bidders</p>
+                <div className="report-stats-grid grid grid-cols-4 gap-4 mb-6">
+                  <div className="report-stat-card" data-testid="card-total-bidders">
+                    <p className="report-metric">{bidderCertifications.length}</p>
+                    <p className="report-muted text-xs">Total Bidders</p>
                   </div>
-                  <div className="border rounded-lg p-3 text-center" data-testid="card-certification-goals">
-                    <p className="text-2xl font-bold text-gray-900">{certificationGoals.filter(g => g !== "None").length}</p>
-                    <p className="text-xs text-gray-500">Cert. Goals</p>
+                  <div className="report-stat-card" data-testid="card-certification-goals">
+                    <p className="report-metric">{certificationGoals.length}</p>
+                    <p className="report-muted text-xs">Cert. Goals</p>
                   </div>
-                  <div className="border rounded-lg p-3 text-center" data-testid="card-compliant-bidders">
-                    <p className="text-2xl font-bold text-green-600">{goalComplianceStats.matched}</p>
-                    <p className="text-xs text-gray-500">Compliant</p>
+                  <div className="report-stat-card" data-testid="card-compliant-bidders">
+                    <p className={`report-metric ${!certificationGoals.length || !bidderCertifications.length ? "report-muted" : "report-chart-green"}`}>{goalComplianceStats.matched}</p>
+                    <p className="report-muted text-xs">Compliant</p>
                   </div>
-                  <div className="border rounded-lg p-3 text-center" data-testid="card-compliance-rate">
-                    <p className="text-2xl font-bold text-gray-900">{goalComplianceStats.percentage}%</p>
-                    <p className="text-xs text-gray-500">Compliance Rate</p>
+                  <div className="report-stat-card" data-testid="card-compliance-rate">
+                    <p className={`report-metric ${!certificationGoals.length || !bidderCertifications.length ? "report-muted" : goalComplianceStats.matched === goalComplianceStats.total ? "report-chart-green" : "report-destructive"}`}>{certificationGoals.length && bidderCertifications.length ? `${goalComplianceStats.percentage}%` : "—"}</p>
+                    <p className="report-muted text-xs">Compliance Rate</p>
                   </div>
                 </div>
 
                 {/* Certification Goals */}
-                {certificationGoals.length > 0 && certificationGoals.some(g => g !== "None") && (
+                {certificationGoals.length > 0 && (
                   <div className="mb-6">
-                    <h2 className="text-base font-semibold text-gray-800 border-b pb-1 mb-3">RFP Certification Goals</h2>
+                    <h2 className="report-section-title">RFP Certification Goals</h2>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {certificationGoals.filter(g => g !== "None").map((goal, index) => {
+                      {certificationGoals.map((goal, index) => {
                         const count = certificationStats.find(s => s.name === goal)?.count || 0;
                         return (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">
+                          <span key={index} className="report-chip report-chip-goal">
                             {goal} ({count})
                           </span>
                         );
                       })}
                     </div>
                     {goalComplianceStats.total > 0 && (
-                      <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                      <div className="report-goal-summary text-sm">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-gray-700">Goal Achievement:</span>
-                          <span className="font-bold text-gray-900">{goalComplianceStats.matched} of {goalComplianceStats.total} bidders ({goalComplianceStats.percentage}%)</span>
+                          <span className="font-medium">Goal Achievement:</span>
+                          <span className={`font-semibold ${goalComplianceStats.matched === goalComplianceStats.total ? "report-chart-green" : "report-destructive"}`}>{goalComplianceStats.matched} of {goalComplianceStats.total} bidders ({goalComplianceStats.percentage}%)</span>
                         </div>
+                        <p className="report-muted mt-1">A bidder is counted when at least one certification goal is matched; 100% means every bidder matches at least one goal.</p>
                       </div>
                     )}
                   </div>
@@ -241,19 +243,19 @@ export default function CertificationReportPage() {
                 {/* Certification Distribution - Simple table instead of charts for PDF */}
                 {certificationStats.length > 0 && (
                   <div className="mb-6">
-                    <h2 className="text-base font-semibold text-gray-800 border-b pb-1 mb-3">Certification Distribution</h2>
-                    <div className="grid grid-cols-5 gap-2">
+                    <h2 className="report-section-title">Certification Distribution</h2>
+                    <div className="report-distribution-grid grid grid-cols-5 gap-2">
                       {certificationStats.map((stat, index) => (
                         <div 
                           key={stat.name} 
-                          className="border rounded p-2 text-center bg-gray-50"
+                          className="report-stat-tile"
                           data-testid={`card-cert-stat-${index}`}
                         >
-                          <span className="px-1 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-medium block mb-1">
+                          <span className="report-chip block mb-1">
                             {stat.name}
                           </span>
-                          <p className="text-lg font-bold text-gray-900">{stat.count}</p>
-                          <p className="text-xs text-gray-500">bidder{stat.count !== 1 ? 's' : ''}</p>
+                          <p className="font-semibold">{stat.count}</p>
+                          <p className="report-muted text-xs">bidder{stat.count !== 1 ? 's' : ''}</p>
                         </div>
                       ))}
                     </div>
@@ -261,16 +263,12 @@ export default function CertificationReportPage() {
                 )}
 
                 {/* Bidder Details Table */}
-                <div className="mb-6">
-                  <h2 className="text-base font-semibold text-gray-800 border-b pb-1 mb-3">Bidder Certification Details</h2>
-                  <table className="w-full text-xs border-collapse">
+                <div className="report-table-section mb-6">
+                  <h2 className="report-section-title">Bidder Certification Details</h2>
+                  <div className="report-table-wrap"><table className="report-table">
                     <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Company</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Contact</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Certifications</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Status</th>
-                        <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Date</th>
+                      <tr>
+                        <th>Company</th><th>Contact</th><th>Certifications</th><th>Status</th><th>Date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -278,54 +276,54 @@ export default function CertificationReportPage() {
                         const status = getBidderComplianceStatus(bidder.certs);
                         return (
                           <tr key={bidder.id} data-testid={`row-bidder-${bidder.id}`}>
-                            <td className="border border-gray-300 px-2 py-2 align-top">
+                            <td>
                               <div className="font-medium">
                                 {bidder.organization?.companyName || bidder.email}
                               </div>
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top">
+                            <td>
                               <div>
                                 {(bidder.organization?.firstName || bidder.organization?.lastName) && (
                                   <div className="font-medium">
                                     {[bidder.organization.firstName, bidder.organization.lastName].filter(Boolean).join(' ')}
                                   </div>
                                 )}
-                                <div className="text-gray-600">{bidder.email}</div>
+                                <div className="report-muted">{bidder.email}</div>
                               </div>
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top">
-                              {bidder.certs.length > 0 && bidder.certs.some(c => c !== "None") ? (
+                            <td>
+                              {bidder.certs.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
-                                  {bidder.certs.filter(c => c !== "None").map((cert, index) => {
+                                  {bidder.certs.map((cert, index) => {
                                     const isGoal = certificationGoals.includes(cert);
                                     return (
                                       <span 
                                         key={index} 
-                                        className={`px-1 py-0.5 rounded text-xs ${isGoal ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800'}`}
+                                        className={`report-chip ${isGoal ? "report-chip-goal" : ""}`}
                                       >
-                                        {cert}{isGoal ? ' ✓' : ''}
+                                        {cert}{isGoal ? " · Goal" : ""}
                                       </span>
                                     );
                                   })}
                                 </div>
                               ) : (
-                                <span className="text-gray-400">None</span>
+                                <span className="report-muted">None</span>
                               )}
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top">
+                            <td>
                               {status === 'compliant' ? (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">
+                                <span className="report-chip report-status-compliant">
                                   Compliant
                                 </span>
                               ) : status === 'non-compliant' ? (
-                                <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                                <span className="report-chip report-status-noncompliant">
                                   Non-compliant
                                 </span>
                               ) : (
-                                <span className="text-gray-400 text-xs">N/A</span>
+                                <span className="report-muted">N/A</span>
                               )}
                             </td>
-                            <td className="border border-gray-300 px-2 py-2 align-top whitespace-nowrap">
+                            <td className="whitespace-nowrap">
                               {format(new Date(bidder.createdAt), "MM/dd/yyyy")}
                             </td>
                           </tr>
@@ -333,20 +331,21 @@ export default function CertificationReportPage() {
                       })}
                       {bidderCertifications.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="border border-gray-300 px-2 py-6 text-center text-gray-500">
+                          <td colSpan={5} className="report-muted text-center">
                             No bidders have submitted RFIs yet
                           </td>
                         </tr>
                       )}
                     </tbody>
-                  </table>
+                  </table></div>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-8 pt-4 border-t border-gray-200 text-xs text-gray-500 text-center">
+                <div className="report-footer mt-8 pt-4 text-xs text-center">
                   <p>Generated on {format(new Date(), "MMMM d, yyyy 'at' h:mm a")} | FindConstructionBids.com</p>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </main>

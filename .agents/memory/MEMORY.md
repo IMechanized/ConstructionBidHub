@@ -12,3 +12,4 @@
 - [Apify actor IDs](apify-actors.md) — correct actor IDs and input/response formats for all platforms; TikTok uses startUrls not profiles; X uses apidojo/twitter-profile-scraper not apify/twitter-scraper.
 - [Cost-guardrail stacking](cost-guardrail-stacking.md) — a per-resource freshness cool-down is NOT a substitute for an independent per-actor rate limit; failing/never-fetched resources can bypass cool-downs, so use both, cool-down after rate limit.
 - [use server export restriction](use-server-export-restriction.md) — files with "use server" can only export async functions; move sync helpers (rate limiters, test reset hooks) to a plain module and import them.
+- [Report export colors](report-export-colors.md) — preserve OKLCH brand tokens; legacy PDF rendering needs a disposable sRGB copy even when browsers display modern colors correctly.

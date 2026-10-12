@@ -1,0 +1,334 @@
+.report-page {
+  --report-surface: oklch(97% 0.005 60);
+  --report-raised: oklch(98.5% 0.003 60);
+  --report-panel: oklch(95% 0.007 60);
+  --report-foreground: oklch(18% 0.008 60);
+  --report-muted: oklch(52% 0.015 60);
+  --report-border: oklch(87% 0.010 60);
+  --report-primary: oklch(52% 0.16 47);
+  --report-chart-green: oklch(58% 0.14 155);
+  --report-destructive: oklch(56% 0.21 25);
+  color: var(--report-foreground);
+  background: var(--report-surface);
+  min-height: 100dvh;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.report-page .report-sheet {
+  width: min(100%, 7.5in);
+  margin: 0 auto;
+  color: var(--report-foreground);
+  background: var(--report-raised);
+  border: 1px solid var(--report-border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.report-page .report-brand-header {
+  min-height: 72px;
+  border-bottom: 1px solid var(--report-border);
+}
+
+.report-page .report-title {
+  margin: 0;
+  color: var(--report-foreground);
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.report-page .report-subtitle {
+  margin-top: 5px;
+  color: var(--report-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.report-page .report-section-title {
+  margin: 0 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--report-border);
+  color: var(--report-foreground);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.report-page .report-summary {
+  background: var(--report-panel);
+  border: 1px solid var(--report-border);
+  border-radius: 8px;
+}
+
+.report-page .report-card,
+.report-page .report-stat-card {
+  background: var(--report-raised);
+  border: 1px solid var(--report-border);
+  border-radius: 6px;
+}
+
+.report-page .report-stat-card {
+  padding: 12px;
+  text-align: center;
+}
+
+.report-page .report-metric {
+  color: var(--report-foreground);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.report-page .report-muted {
+  color: var(--report-muted);
+}
+
+.report-page .report-chart-green {
+  color: var(--report-chart-green);
+}
+
+.report-page .report-destructive {
+  color: var(--report-destructive);
+}
+
+.report-page .report-label {
+  color: var(--report-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.report-page .report-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--report-border);
+  border-radius: 9999px;
+  background: var(--report-panel);
+  color: var(--report-foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.report-page .report-chip-goal,
+.report-page .report-status-compliant {
+  border-color: color-mix(in oklch, var(--report-chart-green) 28%, var(--report-border));
+  background: color-mix(in oklch, var(--report-chart-green) 12%, var(--report-raised));
+  color: var(--report-chart-green);
+}
+
+.report-page .report-status-noncompliant {
+  border-color: color-mix(in oklch, var(--report-destructive) 30%, var(--report-border));
+  background: color-mix(in oklch, var(--report-destructive) 10%, var(--report-raised));
+  color: var(--report-destructive);
+}
+
+.report-page .report-goal-summary {
+  padding: 12px;
+  border: 1px solid var(--report-border);
+  border-radius: 6px;
+  background: var(--report-panel);
+}
+
+.report-page .report-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.report-page .report-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--report-foreground);
+  font-size: 0.8125rem;
+}
+
+.report-page .report-table th,
+.report-page .report-table td {
+  padding: 8px;
+  border: 1px solid var(--report-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.report-page .report-table th {
+  background: var(--report-panel);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.report-page .report-stat-tile {
+  padding: 8px;
+  border: 1px solid var(--report-border);
+  border-radius: 6px;
+  background: var(--report-panel);
+  text-align: center;
+}
+
+.report-page .report-document.report-pdf-export {
+  width: 7.5in !important;
+  max-width: 7.5in !important;
+}
+
+.report-page .report-document.report-pdf-export .report-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.report-page .report-document.report-pdf-export .report-stats-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.report-page .report-document.report-pdf-export .report-stats-grid.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.report-page .report-document.report-pdf-export .report-distribution-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.report-page .report-footer {
+  border-top: 1px solid var(--report-border);
+  color: var(--report-muted);
+}
+
+.report-page .report-download {
+  background: var(--report-primary);
+  color: var(--report-surface);
+  transition: background-color 150ms ease-out;
+}
+
+.report-page .report-download:hover:not(:disabled) {
+  background: oklch(44% 0.15 47);
+}
+
+.report-page .report-download:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .report-page .report-sheet {
+    border-radius: 6px;
+  }
+
+  .report-page .report-sheet .report-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-page .report-sheet .report-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-page .report-sheet .report-distribution-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@page {
+  size: letter portrait;
+  margin: 0.5in;
+}
+
+@media print {
+  html:has(.report-document),
+  body:has(.report-document) {
+    background: oklch(97% 0.005 60) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body:has(.report-document) * {
+    visibility: hidden !important;
+  }
+
+  body:has(.report-document) .report-page,
+  body:has(.report-document) .report-page * {
+    visibility: visible !important;
+  }
+
+  .report-page {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    width: 7.5in;
+    background: var(--report-surface) !important;
+  }
+
+  .report-page .report-shell,
+  .report-page .report-toolbar {
+    display: none !important;
+  }
+
+  .report-page > div,
+  .report-page main,
+  .report-page .container {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .report-page .report-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .report-page .report-stats-grid,
+  .report-page .report-distribution-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .report-page .report-stats-grid.grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .report-page .report-table-wrap {
+    overflow: visible;
+  }
+
+  .report-page .report-print-area {
+    width: 7.5in !important;
+    max-width: 7.5in !important;
+    margin: 0 auto !important;
+  }
+
+  .report-page .report-sheet {
+    width: 7.5in !important;
+    max-width: 7.5in !important;
+    border: 0;
+    border-radius: 0;
+    background: var(--report-raised) !important;
+  }
+
+  .report-page .report-summary,
+  .report-page .report-stat-card,
+  .report-page .report-stat-tile,
+  .report-page .report-chip,
+  .report-page .report-table th {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .report-page .report-table thead {
+    display: table-header-group;
+  }
+
+  .report-page .report-table tr,
+  .report-page .report-table-section,
+  .report-page .report-card,
+  .report-page .report-stat-card,
+  .report-page .report-stat-tile {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-page .report-section-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}

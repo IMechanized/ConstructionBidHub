@@ -21,6 +21,7 @@
  */
 
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -83,12 +84,12 @@ export default function RfpForm({ onSuccess, onCancel }: RfpFormProps) {
         clientName: insertRfpSchema.shape.clientName.min(1, t('validation.clientNameRequired')),
         title: insertRfpSchema.shape.title.min(1, t('validation.titleRequired')),
         description: insertRfpSchema.shape.description.min(1, t('validation.descriptionRequired')),
-        jobStreet: insertRfpSchema.shape.jobStreet.min(1, t('validation.jobStreetRequired')),
-        jobCity: insertRfpSchema.shape.jobCity.min(1, t('validation.jobCityRequired')),
+        jobStreet: z.string().min(1, t('validation.jobStreetRequired')),
+        jobCity: z.string().min(1, t('validation.jobCityRequired')),
         jobState: insertRfpSchema.shape.jobState.min(1, t('validation.jobStateRequired')),
-        jobZip: insertRfpSchema.shape.jobZip.min(1, t('validation.jobZipRequired')),
-        walkthroughDate: insertRfpSchema.shape.walkthroughDate.min(1, t('validation.walkthroughDateRequired')),
-        rfiDate: insertRfpSchema.shape.rfiDate.min(1, t('validation.rfiDateRequired')),
+        jobZip: z.string().min(1, t('validation.jobZipRequired')),
+        walkthroughDate: z.string().min(1, t('validation.walkthroughDateRequired')),
+        rfiDate: z.string().min(1, t('validation.rfiDateRequired')),
         deadline: insertRfpSchema.shape.deadline.min(1, t('validation.deadlineRequired')),
       })
     ),

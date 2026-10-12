@@ -119,6 +119,6 @@
     "zod-validation-error": "^2.1.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "24.x"
   }
 }

@@ -78,13 +78,14 @@ export default function OpportunitiesPage() {
 
   // Apply search filter
   if (searchTerm) {
+    const term = searchTerm.toLowerCase();
     filteredRfps = filteredRfps.filter(rfp =>
-      rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobStreet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobState.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rfp.jobZip.toLowerCase().includes(searchTerm.toLowerCase())
+      rfp.title.toLowerCase().includes(term) ||
+      rfp.description.toLowerCase().includes(term) ||
+      (rfp.jobStreet?.toLowerCase() ?? "").includes(term) ||
+      (rfp.jobCity?.toLowerCase() ?? "").includes(term) ||
+      rfp.jobState.toLowerCase().includes(term) ||
+      (rfp.jobZip?.toLowerCase() ?? "").includes(term)
     );
   }
 
@@ -132,7 +133,7 @@ export default function OpportunitiesPage() {
   if (selectedCerts.length > 0) {
     filteredRfps = filteredRfps.filter(rfp => {
       if (!rfp.certificationGoals || rfp.certificationGoals.length === 0) return false;
-      return selectedCerts.some(cert => rfp.certificationGoals.includes(cert));
+      return selectedCerts.some(cert => rfp.certificationGoals!.includes(cert));
     });
   }
   
@@ -140,7 +141,7 @@ export default function OpportunitiesPage() {
   if (selectedTrades.length > 0) {
     filteredRfps = filteredRfps.filter(rfp => {
       if (!rfp.desiredTrades || rfp.desiredTrades.length === 0) return false;
-      return selectedTrades.some(trade => rfp.desiredTrades.includes(trade));
+      return selectedTrades.some(trade => rfp.desiredTrades!.includes(trade));
     });
   }
   
@@ -588,9 +589,18 @@ export default function OpportunitiesPage() {
             )}
           </>
         ) : (
-          <p className="text-center text-muted-foreground text-sm md:text-base px-4">
-            No opportunities found matching your criteria.
-          </p>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+            <p className="text-[0.9375rem] font-medium text-foreground mb-1">
+              {type === "featured"
+                ? "No featured opportunities right now"
+                : "No new opportunities match your criteria"}
+            </p>
+            <p className="text-[0.8125rem] text-muted-foreground max-w-sm">
+              {type === "featured"
+                ? "Featured RFPs are highlighted by project owners. Check back soon, or adjust your filters."
+                : "Try broadening your search or clearing filters to see more results."}
+            </p>
+          </div>
         )}
       </main>
 

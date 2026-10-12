@@ -24,6 +24,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import webpush from 'web-push';
+import { installRequestBodyParsing } from './server/lib/request-body.js';
 
 /**
  * Stripe Payment Processing Integration
@@ -2044,8 +2045,7 @@ function validateRouteParams(req, res, params) {
 
 // Create Express app
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+installRequestBodyParsing(app);
 
 app.use((req, res, next) => {
   if (req.path !== '/' && req.path.endsWith('/') && !req.path.startsWith('/api')) {

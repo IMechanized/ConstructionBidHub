@@ -3,138 +3,136 @@ import { useQuery } from "@tanstack/react-query";
 import { Rfp } from "@shared/schema";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { Link } from "wouter";
-import { ExternalLink } from "lucide-react";
+import {
+  startOfMonth,
+  endOfMonth,
+  isWithinInterval,
+  format,
+} from "date-fns";
 import { generateClientSlug } from "@/lib/utils";
+import { ExternalLink, CalendarDays } from "lucide-react";
+
+type CalendarEvent = {
+  rfp: Rfp;
+  type: "deadline" | "walkthrough" | "rfi";
+  date: Date;
+};
+
+const EVENT_STYLES: Record<CalendarEvent["type"], { label: string; className: string }> = {
+  deadline: {
+    label: "Deadline",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+  walkthrough: {
+    label: "Walkthrough",
+    className: "bg-chart-3/10 text-chart-3 border-chart-3/20",
+  },
+  rfi: {
+    label: "RFI Due",
+    className: "bg-chart-2/10 text-chart-2 border-chart-2/20",
+  },
+};
 
 export function CalendarWidget() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const { data: rfps } = useQuery<Rfp[]>({ queryKey: ["/api/rfps"] });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const { data: rfps } = useQuery<Rfp[]>({
-    queryKey: ["/api/rfps"],
-  });
+  const monthInterval = {
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
+  };
 
-  // Get events for the current month
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-
-  const rfpsThisMonth = rfps?.filter(rfp => {
-    const deadline = rfp.deadline ? new Date(rfp.deadline) : null;
-    const walkthrough = rfp.walkthroughDate ? new Date(rfp.walkthroughDate) : null;
-    const rfiDate = rfp.rfiDate ? new Date(rfp.rfiDate) : null;
-
-    return (
-      (deadline && isWithinInterval(deadline, { start: monthStart, end: monthEnd })) ||
-      (walkthrough && isWithinInterval(walkthrough, { start: monthStart, end: monthEnd })) ||
-      (rfiDate && isWithinInterval(rfiDate, { start: monthStart, end: monthEnd }))
-    );
-  }) || [];
-
-  // Get events for selected date
-  const eventsOnDate = selectedDate
-    ? rfpsThisMonth.filter(rfp => {
-        const deadline = rfp.deadline ? new Date(rfp.deadline) : null;
-        const walkthrough = rfp.walkthroughDate ? new Date(rfp.walkthroughDate) : null;
-        const rfiDate = rfp.rfiDate ? new Date(rfp.rfiDate) : null;
-
-        return (
-          (deadline && isSameDay(deadline, selectedDate)) ||
-          (walkthrough && isSameDay(walkthrough, selectedDate)) ||
-          (rfiDate && isSameDay(rfiDate, selectedDate))
-        );
-      })
-    : [];
-
-  // Get all dates with events
-  const datesWithEvents = new Set<string>();
-  rfpsThisMonth.forEach(rfp => {
-    if (rfp.deadline) {
-      datesWithEvents.add(format(new Date(rfp.deadline), "yyyy-MM-dd"));
+  const monthEvents: CalendarEvent[] = [];
+  rfps?.forEach(rfp => {
+    const deadline = new Date(rfp.deadline);
+    if (isWithinInterval(deadline, monthInterval)) {
+      monthEvents.push({ rfp, type: "deadline", date: deadline });
     }
     if (rfp.walkthroughDate) {
-      datesWithEvents.add(format(new Date(rfp.walkthroughDate), "yyyy-MM-dd"));
+      const walkthrough = new Date(rfp.walkthroughDate);
+      if (isWithinInterval(walkthrough, monthInterval)) {
+        monthEvents.push({ rfp, type: "walkthrough", date: walkthrough });
+      }
     }
     if (rfp.rfiDate) {
-      datesWithEvents.add(format(new Date(rfp.rfiDate), "yyyy-MM-dd"));
+      const rfiDate = new Date(rfp.rfiDate);
+      if (isWithinInterval(rfiDate, monthInterval)) {
+        monthEvents.push({ rfp, type: "rfi", date: rfiDate });
+      }
     }
   });
 
+  const eventDates = new Set(monthEvents.map(e => e.date.toDateString()));
+
+  const selectedEvents = selectedDate
+    ? monthEvents.filter(e => e.date.toDateString() === selectedDate.toDateString())
+    : [];
+
   return (
-    <div className="space-y-4" data-testid="calendar-widget">
+    <div className="space-y-4">
       <Calendar
         mode="single"
         selected={selectedDate}
         onSelect={setSelectedDate}
         month={currentMonth}
         onMonthChange={setCurrentMonth}
-        className="rounded-md border"
+        className="rounded-md border border-border p-0"
         modifiers={{
-          hasEvent: (date) => datesWithEvents.has(format(date, "yyyy-MM-dd")),
+          hasEvent: (date) => eventDates.has(date.toDateString()),
         }}
-        modifiersStyles={{
-          hasEvent: {
-            fontWeight: "bold",
-            textDecoration: "underline",
-          },
+        modifiersClassNames={{
+          hasEvent: "font-semibold underline decoration-primary underline-offset-2",
         }}
       />
 
-      {selectedDate && eventsOnDate.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm">
-            Events on {format(selectedDate, "MMM d, yyyy")}
-          </h4>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {eventsOnDate.map(rfp => {
-              const deadline = rfp.deadline ? new Date(rfp.deadline) : null;
-              const walkthrough = rfp.walkthroughDate ? new Date(rfp.walkthroughDate) : null;
-              const rfiDate = rfp.rfiDate ? new Date(rfp.rfiDate) : null;
-
-              const events: Array<{ type: string; color: string }> = [];
-              if (deadline && isSameDay(deadline, selectedDate)) {
-                events.push({ type: "Deadline", color: "bg-red-500" });
-              }
-              if (walkthrough && isSameDay(walkthrough, selectedDate)) {
-                events.push({ type: "Walkthrough", color: "bg-blue-500" });
-              }
-              if (rfiDate && isSameDay(rfiDate, selectedDate)) {
-                events.push({ type: "RFI Due", color: "bg-green-500" });
-              }
-
-              return (
-                <Link key={rfp.id} href={`/rfp/${encodeURIComponent(rfp.jobState)}/${encodeURIComponent(generateClientSlug(rfp.clientName || (rfp as any).organization?.companyName))}/${rfp.slug || rfp.id}?from=dashboard`}>
-                  <div className="p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors border">
-                    <div className="flex items-start justify-between gap-2">
+      {selectedDate && (
+        <div>
+          <p className="text-[0.75rem] font-medium text-muted-foreground mb-2">
+            {format(selectedDate, "MMMM d, yyyy")}
+          </p>
+          {selectedEvents.length === 0 ? (
+            <p className="text-[0.8125rem] text-muted-foreground">No events on this date.</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {selectedEvents.map((event, idx) => {
+                const style = EVENT_STYLES[event.type];
+                const state = encodeURIComponent(event.rfp.jobState);
+                const clientSlug = encodeURIComponent(
+                  generateClientSlug(event.rfp.clientName || (event.rfp as any).organization?.companyName)
+                );
+                const slug = event.rfp.slug || event.rfp.id;
+                return (
+                  <Link
+                    key={idx}
+                    href={`/rfp/${state}/${clientSlug}/${slug}?from=dashboard`}
+                  >
+                    <div className={`flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors duration-150 hover:brightness-95 ${style.className}`}>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{rfp.title}</p>
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {events.map((event, idx) => (
-                            <Badge
-                              key={idx}
-                              className={`text-xs ${event.color} text-white`}
-                            >
-                              {event.type}
-                            </Badge>
-                          ))}
-                        </div>
+                        <p className="text-[0.8125rem] font-medium truncate">{event.rfp.title}</p>
+                        <p className="text-[0.75rem] opacity-75">{style.label}</p>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {selectedDate && eventsOnDate.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          No events on this date
-        </p>
+      {!selectedDate && monthEvents.length === 0 && (
+        <div className="flex flex-col items-center py-6 text-center">
+          <CalendarDays className="h-8 w-8 text-border mb-2" />
+          <p className="text-[0.8125rem] text-muted-foreground">
+            No events this month.
+          </p>
+          <p className="text-[0.75rem] text-muted-foreground mt-1">
+            Deadlines, walkthroughs, and RFI dates appear here.
+          </p>
+        </div>
       )}
     </div>
   );

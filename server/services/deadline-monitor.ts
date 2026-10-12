@@ -107,12 +107,12 @@ export class DeadlineMonitorService {
         }
 
         // Check RFI date deadlines
-        if (new Date(rfp.rfiDate) <= in24Hours && new Date(rfp.rfiDate) > now) {
+        if (rfp.rfiDate && new Date(rfp.rfiDate) <= in24Hours && new Date(rfp.rfiDate) > now) {
           await this.sendRfiDeadlineNotification(organization.id, rfp);
         }
 
         // Check walkthrough date reminders
-        if (new Date(rfp.walkthroughDate) <= in24Hours && new Date(rfp.walkthroughDate) > now) {
+        if (rfp.walkthroughDate && new Date(rfp.walkthroughDate) <= in24Hours && new Date(rfp.walkthroughDate) > now) {
           await this.sendWalkthroughReminderNotification(organization.id, rfp);
         }
       }

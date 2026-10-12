@@ -466,7 +466,7 @@ export class DatabaseStorage implements IStorage {
   /**
    * RFI Operations
    */
-  async createRfi(rfi: InsertRfi & { rfpId: number, organizationId?: number }): Promise<Rfi> {
+  async createRfi(rfi: InsertRfi & { rfpId: number; email: string; organizationId?: number }): Promise<Rfi> {
     // Remove organizationId before inserting since it doesn't exist in the database schema
     const { organizationId, ...rfiData } = rfi;
     

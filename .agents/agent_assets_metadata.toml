@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "DHfXBjSOHgtD39BWVCqw3"
+uri = "file://.local/pull-request-description.md"
+type = "text"
+title = "Pull Request Description — Tasks #22–#27"

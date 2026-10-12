@@ -1,0 +1,24 @@
+12:31:24.047 Running build in Washington, D.C., USA (East) – iad1
+12:31:24.048 Build machine configuration: 2 cores, 8 GB
+12:31:26.481 Cloning github.com/IMechanized/ConstructionBidHub (Branch: development, Commit: dcad213)
+12:31:26.483 Previous build caches not available.
+12:31:27.441 Cloning completed: 960.000ms
+12:31:28.131 Running "vercel build"
+12:31:28.147 Vercel CLI 62.7.0
+12:31:28.332 WARNING! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+12:31:29.449 Installing dependencies...
+12:31:35.599 npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
+12:31:35.611 npm warn deprecated
+12:31:35.612 npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+12:31:37.055 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+12:31:39.749 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+12:31:39.781 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+12:31:40.343 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+12:31:40.427 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+12:31:40.454 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+12:31:40.521 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+12:32:50.335 npm error Exit handler never called!
+12:32:50.335 npm error This is an error with npm itself. Please report this error at:
+12:32:50.335 npm error   <https://github.com/npm/cli/issues>
+12:32:50.335 npm error A complete log of this run can be found in: /vercel/.npm/_logs/2026-10-12T09_31_29_901Z-debug-0.log
+12:32:50.415 Error: Command "npm install" exited with 1

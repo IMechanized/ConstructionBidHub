@@ -59,3 +59,7 @@ VAPID_EMAIL = "mailto:support@findconstructionbids.com"
 
 [userenv.production]
 PUBLIC_URL = "https://findconstructionbids.com"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000

@@ -7,13 +7,13 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { startBackupScheduler } from "./lib/backup-scheduler";
 import { runStartupMigrations } from "./db";
+import { installRequestBodyParsing } from "./lib/request-body.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-app.use(express.json({ limit: '350mb' }));
-app.use(express.urlencoded({ extended: false, limit: '350mb' }));
+installRequestBodyParsing(app);
 
 // Disable HMR overlay through environment variable
 process.env.VITE_DISABLE_HMR_OVERLAY = "true";

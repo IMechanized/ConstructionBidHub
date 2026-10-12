@@ -25,16 +25,19 @@ const RFP_TRADE_OPTIONS = TRADE_OPTIONS.filter(trade => trade !== "Owner");
 
 const editRfpSchema = insertRfpSchema.extend({
   walkthroughDate: insertRfpSchema.shape.walkthroughDate.transform((date) => {
+    if (!date) return '';
     if (typeof date === 'string') return date;
-    return format(new Date(date), "yyyy-MM-dd'T'HH:mm");
+    return format(new Date(date as never), "yyyy-MM-dd'T'HH:mm");
   }),
   rfiDate: insertRfpSchema.shape.rfiDate.transform((date) => {
+    if (!date) return '';
     if (typeof date === 'string') return date;
-    return format(new Date(date), "yyyy-MM-dd'T'HH:mm");
+    return format(new Date(date as never), "yyyy-MM-dd'T'HH:mm");
   }),
   deadline: insertRfpSchema.shape.deadline.transform((date) => {
+    if (!date) return '';
     if (typeof date === 'string') return date;
-    return format(new Date(date), "yyyy-MM-dd'T'HH:mm");
+    return format(new Date(date as never), "yyyy-MM-dd'T'HH:mm");
   }),
 });
 
@@ -90,9 +93,9 @@ export default function EditRfpForm({ rfp, onSuccess, onCancel }: EditRfpFormPro
       jobState: rfp.jobState,
       jobZip: rfp.jobZip,
       budgetMin: rfp.budgetMin || undefined,
-      walkthroughDate: format(new Date(rfp.walkthroughDate), "yyyy-MM-dd'T'HH:mm"),
-      rfiDate: format(new Date(rfp.rfiDate), "yyyy-MM-dd'T'HH:mm"),
-      deadline: format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm"),
+      walkthroughDate: rfp.walkthroughDate ? format(new Date(rfp.walkthroughDate), "yyyy-MM-dd'T'HH:mm") : '',
+      rfiDate: rfp.rfiDate ? format(new Date(rfp.rfiDate), "yyyy-MM-dd'T'HH:mm") : '',
+      deadline: rfp.deadline ? format(new Date(rfp.deadline), "yyyy-MM-dd'T'HH:mm") : '',
       certificationGoals: rfp.certificationGoals || [],
       desiredTrades: rfp.desiredTrades || [],
       portfolioLink: rfp.portfolioLink || "",

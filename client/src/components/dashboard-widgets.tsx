@@ -132,16 +132,17 @@ export function DashboardWidgets({ widgets, onLayoutChange }: DashboardWidgetsPr
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <h2 className="text-xl font-semibold">Dashboard</h2>
         <div className="flex gap-2">
           <Button
             variant={isEditing ? "default" : "outline"}
             size="sm"
             onClick={() => setIsEditing(!isEditing)}
             data-testid="button-toggle-edit-mode"
+            className="gap-1.5"
           >
-            <Settings className="h-4 w-4 mr-2" />
-            {isEditing ? "Done Editing" : "Customize"}
+            <Settings className="h-4 w-4" />
+            {isEditing ? "Done" : "Customize"}
           </Button>
           {isEditing && (
             <Button
@@ -183,7 +184,7 @@ export function DashboardWidgets({ widgets, onLayoutChange }: DashboardWidgetsPr
       )}
 
       <ResponsiveGridLayout
-        className="layout"
+        className={`layout${isEditing ? " rgl-editing-mode" : ""}`}
         layouts={layouts}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}

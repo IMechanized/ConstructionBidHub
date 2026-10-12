@@ -3,15 +3,15 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Link } from "wouter";
+import { Logo } from "@/components/ui/logo";
 
-// Form validation schema
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
@@ -33,16 +33,12 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setIsSubmitting(true);
-    
+
     try {
       const response = await apiRequest("POST", "/api/request-password-reset", data);
-      
+
       if (response.ok) {
         setEmailSent(true);
-        toast({
-          title: "Reset email sent",
-          description: "If the email exists in our system, you'll receive password reset instructions",
-        });
       } else {
         const errorData = await response.json();
         toast({
@@ -63,75 +59,88 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Reset your password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your email address and we'll send you a reset link
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Minimal top bar */}
+      <div className="px-6 py-4 border-b border-border">
+        <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
+          <Logo />
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm">
           {!emailSent ? (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="name@example.com" 
-                          type="email" 
-                          disabled={isSubmitting}
-                          data-testid="input-email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                  data-testid="button-send-reset"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Mail className="mr-2 h-4 w-4" />
-                  )}
-                  {isSubmitting ? "Sending..." : "Send Reset Link"}
-                </Button>
-              </form>
-            </Form>
+            <>
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-foreground">Reset your password</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Enter your email and we'll send you a reset link.
+                </p>
+              </div>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="name@company.com"
+                            type="email"
+                            disabled={isSubmitting}
+                            data-testid="input-email"
+                            className="h-10"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full h-10"
+                    disabled={isSubmitting}
+                    data-testid="button-send-reset"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
+                    )}
+                    {isSubmitting ? "Sending…" : "Send reset link"}
+                  </Button>
+                </form>
+              </Form>
+            </>
           ) : (
             <div className="text-center py-4">
-              <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-medium">Check your inbox</h3>
-              <p className="text-muted-foreground mt-2">
-                We've sent you an email with instructions to reset your password.
-                Please check your spam folder if you don't see it in your inbox.
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-2">Check your inbox</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                If that email address is in our system, you'll receive a password reset link shortly. Check your spam folder if it doesn't arrive.
               </p>
             </div>
           )}
-        </CardContent>
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/auth")}
-            className="w-full"
-            data-testid="button-back-login"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Login
-          </Button>
-        </CardFooter>
-      </Card>
+
+          <div className="mt-6 pt-5 border-t border-border">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/auth")}
+              className="w-full text-sm text-muted-foreground hover:text-foreground"
+              data-testid="button-back-login"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to login
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

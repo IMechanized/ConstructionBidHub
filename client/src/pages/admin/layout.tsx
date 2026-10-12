@@ -28,8 +28,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-violet-500" aria-label="Loading" />
+      <div className="min-h-screen flex items-center justify-center bg-[oklch(11%_0.010_60)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
       <AdminSidebar />
       <main
         className="ml-64 min-h-screen"

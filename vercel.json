@@ -7,7 +7,7 @@
       "config": {
         "includeFiles": ["server/**/*", "shared/**/*"],
         "maxLambdaSize": "50mb",
-        "nodeVersion": "20.x",
+        "nodeVersion": "24.x",
         "outputDirectory": "dist"
       }
     },

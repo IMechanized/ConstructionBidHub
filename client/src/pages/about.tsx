@@ -1,78 +1,26 @@
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { LandingPageHeader } from "@/components/landing-page-header";
 import { Footer } from "@/components/ui/footer";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import SEOHead from "@/components/seo-head";
-import { 
-  Target, 
-  Shield, 
-  FileCheck, 
-  Building2, 
-  Clock, 
-  CheckCircle2, 
+import {
+  Shield,
+  FileCheck,
+  Building2,
+  Clock,
+  CheckCircle2,
   ArrowRight,
   Lightbulb,
   Award,
-  Handshake
+  Handshake,
+  Target,
 } from "lucide-react";
 
 export default function AboutPage() {
   const breadcrumbItems = [
-    {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "About",
-      href: "/about",
-    },
-  ];
-
-  const valuePillars = [
-    {
-      icon: Lightbulb,
-      title: "Efficiency",
-      description: "Streamline your bid solicitation and tracking process. Save hours of manual work with automated outreach management and centralized documentation."
-    },
-    {
-      icon: Shield,
-      title: "Compliance",
-      description: "Meet DBE, MBE, WBE, and other participation goals with confidence. Our platform helps you demonstrate Good Faith Efforts with complete audit trails."
-    },
-    {
-      icon: Handshake,
-      title: "Transparency",
-      description: "Maintain clear records of every outreach, response, and award decision. Build trust with agencies and subcontractors through documented processes."
-    }
-  ];
-
-  const howItWorks = [
-    {
-      step: "1",
-      title: "Create Your Project",
-      description: "Set up your project with participation goals, required certifications, and trade categories. Import existing subcontractor lists or start fresh."
-    },
-    {
-      step: "2",
-      title: "Solicit & Track Bids",
-      description: "Reach out to qualified firms and track every response. Our platform automatically logs dates, methods, and communications for complete documentation."
-    },
-    {
-      step: "3",
-      title: "Generate Compliance Reports",
-      description: "Export audit-ready Good Faith Effort documentation with one click. Clear records of outreach, responses, and award decisions — ready for any review."
-    }
-  ];
-
-  const trackingFeatures = [
-    { label: "Company name & contact info", icon: Building2 },
-    { label: "Certification status (DBE, MBE, WBE, etc.)", icon: Award },
-    { label: "Trade / scope of work", icon: Target },
-    { label: "Solicitation dates & methods", icon: Clock },
-    { label: "Bid responses & amounts", icon: FileCheck },
-    { label: "Award decisions & reasoning", icon: CheckCircle2 },
+    { label: "Home", href: "/" },
+    { label: "About", href: "/about" },
   ];
 
   const aboutSchema = {
@@ -92,6 +40,15 @@ export default function AboutPage() {
     }
   };
 
+  const trackingFeatures = [
+    { label: "Company name & contact info", icon: Building2 },
+    { label: "Certification status (DBE, MBE, WBE, etc.)", icon: Award },
+    { label: "Trade / scope of work", icon: Target },
+    { label: "Solicitation dates & methods", icon: Clock },
+    { label: "Bid responses & amounts", icon: FileCheck },
+    { label: "Award decisions & reasoning", icon: CheckCircle2 },
+  ];
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SEOHead
@@ -104,155 +61,159 @@ export default function AboutPage() {
         schema={aboutSchema}
       />
       <LandingPageHeader />
-      
+
       <main className="flex-1">
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-6 py-6">
           <BreadcrumbNav items={breadcrumbItems} />
         </div>
 
-        <section className="bg-gradient-to-br from-primary/5 via-background to-primary/10 py-16 md:py-24">
+        {/* Hero — typography-led, no gradient background */}
+        <section className="pb-16 md:pb-20 pt-4">
           <div className="container mx-auto px-6">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-                Simplifying Compliance, Empowering Contractors
+            <div className="max-w-2xl">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                Compliance documentation<br />without the spreadsheet chaos.
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                findconstructionbids.com helps contractors, owners, and agencies efficiently meet 
-                participation goals and document Good Faith Efforts — all in one powerful platform.
+              <p className="text-base text-muted-foreground leading-relaxed max-w-xl mb-8">
+                FindConstructionBids helps contractors, owners, and agencies efficiently meet participation goals and document Good Faith Efforts — all in one place.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" asChild data-testid="button-get-started">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button size="default" asChild data-testid="button-get-started">
                   <Link href="/auth">
-                    Get Started Free
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    Get started free
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild data-testid="button-learn-more">
-                  <Link href="/#features">
-                    Explore Features
-                  </Link>
+                <Button size="default" variant="outline" asChild data-testid="button-learn-more">
+                  <Link href="/support">Read the FAQ</Link>
                 </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16 md:py-20 bg-background">
+        {/* Value pillars — editorial row layout, not identical cards */}
+        <section className="py-14 md:py-16 border-t border-border bg-muted/20">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Built for the Construction Industry</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                We understand the unique challenges contractors face when meeting participation 
-                requirements. Our platform is designed from the ground up to address these needs.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {valuePillars.map((pillar, index) => (
-                <Card key={index} className="border-2 hover:border-primary/50 transition-colors" data-testid={`card-pillar-${index}`}>
-                  <CardContent className="p-8">
-                    <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-6">
-                      <pillar.icon className="h-7 w-7 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3">{pillar.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{pillar.description}</p>
-                  </CardContent>
-                </Card>
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-10">What we're built for</h2>
+            <div className="grid md:grid-cols-3 gap-10 md:gap-12">
+              {[
+                {
+                  icon: Lightbulb,
+                  title: "Efficiency",
+                  description: "Streamline your bid solicitation and tracking process. Save hours of manual work with automated outreach management and centralized documentation."
+                },
+                {
+                  icon: Shield,
+                  title: "Compliance",
+                  description: "Meet DBE, MBE, WBE, and other participation goals with confidence. Our platform helps you demonstrate Good Faith Efforts with complete audit trails."
+                },
+                {
+                  icon: Handshake,
+                  title: "Transparency",
+                  description: "Maintain clear records of every outreach, response, and award decision. Build trust with agencies and subcontractors through documented processes."
+                }
+              ].map((pillar, index) => (
+                <div key={index} data-testid={`card-pillar-${index}`}>
+                  <pillar.icon className="h-5 w-5 text-primary mb-4" />
+                  <h3 className="text-base font-semibold text-foreground mb-2">{pillar.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{pillar.description}</p>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="py-16 md:py-20 bg-muted/30">
+        {/* How it works — numbered, not identical cards */}
+        <section className="py-14 md:py-16 border-t border-border">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Get started in minutes. Our streamlined process makes compliance documentation 
-                simple and stress-free.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {howItWorks.map((item, index) => (
-                <div key={index} className="relative" data-testid={`step-${index}`}>
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mb-6">
-                      {item.step}
+            <div className="max-w-3xl">
+              <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2">How it works</h2>
+              <p className="text-sm text-muted-foreground mb-10">Get started in minutes.</p>
+              <div className="space-y-8">
+                {[
+                  {
+                    step: "01",
+                    title: "Create your project",
+                    description: "Set up your project with participation goals, required certifications, and trade categories. Import existing subcontractor lists or start fresh."
+                  },
+                  {
+                    step: "02",
+                    title: "Solicit & track bids",
+                    description: "Reach out to qualified firms and track every response. The platform automatically logs dates, methods, and communications for complete documentation."
+                  },
+                  {
+                    step: "03",
+                    title: "Generate compliance reports",
+                    description: "Export audit-ready Good Faith Effort documentation with one click. Clear records of outreach, responses, and award decisions — ready for any review."
+                  }
+                ].map((item, index) => (
+                  <div key={index} className="flex gap-8 items-start" data-testid={`step-${index}`}>
+                    <span className="text-2xl font-bold text-muted-foreground/40 shrink-0 w-8 text-right leading-none mt-0.5">{item.step}</span>
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground mb-1">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed max-w-lg">{item.description}</p>
                     </div>
-                    <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{item.description}</p>
                   </div>
-                  {index < howItWorks.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed border-primary/30" />
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16 md:py-20 bg-background">
+        {/* Our story + what you can track */}
+        <section className="py-14 md:py-16 border-t border-border bg-muted/20">
           <div className="container mx-auto px-6">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-start">
               <div>
-                <h2 className="text-3xl font-bold mb-6">Our Story</h2>
-                <div className="space-y-4 text-muted-foreground">
-                  <p className="leading-relaxed">
-                    findconstructionbids.com was founded with a simple mission: to make compliance 
-                    documentation easier for construction professionals. We saw contractors struggling 
-                    with spreadsheets, scattered emails, and incomplete records when trying to 
-                    demonstrate Good Faith Efforts.
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-4">Our story</h2>
+                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed max-w-prose">
+                  <p>
+                    FindConstructionBids was founded with a simple mission: make compliance documentation easier for construction professionals. We saw contractors struggling with spreadsheets, scattered emails, and incomplete records when trying to demonstrate Good Faith Efforts.
                   </p>
-                  <p className="leading-relaxed">
-                    Our team of industry experts and technology professionals came together to build 
-                    a solution that addresses these challenges head-on. The result is a platform that 
-                    centralizes all your outreach activities, automates documentation, and provides 
-                    clear audit trails for any compliance review.
+                  <p>
+                    Our team of industry experts and technology professionals built a solution that centralizes all outreach activities, automates documentation, and provides clear audit trails for any compliance review.
                   </p>
-                  <p className="leading-relaxed font-medium text-foreground">
-                    Built by contractors, for contractors — we understand your workflow because 
-                    we've lived it.
+                  <p className="text-foreground font-medium">
+                    Built by contractors, for contractors — we understand your workflow because we've lived it.
                   </p>
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-br from-primary/5 to-primary/15 rounded-2xl p-8 md:p-10">
-                <h3 className="text-xl font-semibold mb-6">What You Can Track</h3>
-                <div className="space-y-4">
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-5">What you can track</h3>
+                <ul className="space-y-3">
                   {trackingFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-4" data-testid={`feature-${index}`}>
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <feature.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-foreground">{feature.label}</span>
-                    </div>
+                    <li key={index} className="flex items-center gap-3" data-testid={`feature-${index}`}>
+                      <feature.icon className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm text-foreground">{feature.label}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16 md:py-20 bg-primary text-primary-foreground">
+        {/* CTA */}
+        <section className="py-14 md:py-16 border-t border-border">
           <div className="container mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-bold mb-4">Ready to Simplify Your Compliance?</h2>
-              <p className="text-lg opacity-90 mb-8">
-                Join thousands of contractors who have transformed their Good Faith Effort 
-                documentation process. Get started today — it's free.
+            <div className="max-w-xl">
+              <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2">
+                Ready to simplify your compliance?
+              </h2>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                Join contractors who have transformed their Good Faith Effort documentation. Free to start.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="secondary" asChild data-testid="button-cta-register">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button asChild data-testid="button-cta-register">
                   <Link href="/auth">
-                    Create Free Account
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    Create free account
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild data-testid="button-cta-contact">
-                  <Link href="/support">
-                    Contact Us
-                  </Link>
+                <Button variant="outline" asChild data-testid="button-cta-contact">
+                  <Link href="/support">Contact us</Link>
                 </Button>
               </div>
             </div>

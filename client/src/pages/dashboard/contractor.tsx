@@ -45,7 +45,7 @@ export default function ContractorDashboard() {
     queryKey: ["/api/rfis"],
   });
 
-  const locations = Array.from(new Set(rfps?.map(rfp => rfp.jobLocation) || [])).sort();
+  const locations = Array.from(new Set(rfps?.map(rfp => [rfp.jobCity, rfp.jobState].filter(Boolean).join(', ')) || [])).sort();
 
   const filteredRfps = rfps?.filter(
     (rfp) => {
@@ -56,13 +56,13 @@ export default function ContractorDashboard() {
         matches = matches && (
           rfp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           rfp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          rfp.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())
+          [rfp.jobCity, rfp.jobState].filter(Boolean).join(', ').toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
 
       // Location filter
       if (locationFilter && locationFilter !== "all") {
-        matches = matches && rfp.jobLocation.toLowerCase().includes(locationFilter.toLowerCase());
+        matches = matches && [rfp.jobCity, rfp.jobState].filter(Boolean).join(', ').toLowerCase().includes(locationFilter.toLowerCase());
       }
 
       return matches;

@@ -4,9 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import type { User } from "@shared/schema";
+import { Link } from "wouter";
+import { Logo } from "@/components/ui/logo";
 
 export default function VerifyEmailPage() {
   const [, navigate] = useLocation();
@@ -16,12 +17,10 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = useState<string>("");
   const [verifiedUser, setVerifiedUser] = useState<User | null>(null);
 
-  // Get the token from the URL
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
   useEffect(() => {
-    // If no token is provided, redirect to login
     if (!token) {
       toast({
         title: "Verification failed",
@@ -32,7 +31,6 @@ export default function VerifyEmailPage() {
       return;
     }
 
-    // Verify the email with the token
     const verifyEmail = async () => {
       try {
         const response = await apiRequest("GET", `/api/verify-email?token=${token}`);
@@ -41,10 +39,8 @@ export default function VerifyEmailPage() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Email verified successfully!");
-          
-          // If authenticated and user data returned, update the cache
+
           if (data.isAuthenticated && data.user) {
-            // Merge with existing user data to maintain full user object
             const existingUser = queryClient.getQueryData<User>(["/api/user"]);
             if (existingUser) {
               const updatedUser = { ...existingUser, ...data.user };
@@ -52,11 +48,9 @@ export default function VerifyEmailPage() {
               queryClient.setQueryData(["/api/user"], updatedUser);
             }
           } else if (data.isAuthenticated) {
-            // Authenticated but no user data, invalidate to refetch
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           }
-          // For unauthenticated users, they will need to log in
-          
+
           toast({
             title: "Email verified",
             description: "Your email has been successfully verified!",
@@ -64,7 +58,7 @@ export default function VerifyEmailPage() {
         } else {
           setStatus("error");
           setMessage(data.message || "Failed to verify email. The token may be invalid or expired.");
-          
+
           toast({
             title: "Verification failed",
             description: data.message || "Failed to verify email",
@@ -74,7 +68,7 @@ export default function VerifyEmailPage() {
       } catch (error) {
         setStatus("error");
         setMessage("An error occurred during email verification. Please try again later.");
-        
+
         toast({
           title: "Verification error",
           description: "An unexpected error occurred",
@@ -86,7 +80,6 @@ export default function VerifyEmailPage() {
     verifyEmail();
   }, [token, toast, navigate]);
 
-  // If user is already verified and logged in, show appropriate message
   useEffect(() => {
     if (user && user.emailVerified) {
       setStatus("success");
@@ -94,66 +87,78 @@ export default function VerifyEmailPage() {
     }
   }, [user]);
 
+  const currentUser = verifiedUser || user;
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Email Verification</CardTitle>
-          <CardDescription className="text-center">
-            Verifying your email address for FindConstructionBids
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-8">
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Minimal top bar */}
+      <div className="px-6 py-4 border-b border-border">
+        <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
+          <Logo />
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm text-center">
           {status === "loading" && (
-            <>
-              <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-              <p className="text-center text-muted-foreground">
-                Verifying your email address...
-              </p>
-            </>
+            <div className="flex flex-col items-center gap-3 py-10">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm text-muted-foreground">Verifying your email…</p>
+            </div>
           )}
-          
+
           {status === "success" && (
-            <>
-              <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-              <p className="text-center font-medium text-lg">{message}</p>
-              <p className="text-center text-muted-foreground mt-2">
-                Thank you for verifying your email address. You can now fully use all features of FindConstructionBids.
-              </p>
-            </>
+            <div className="flex flex-col items-center gap-3 py-8">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{message}</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xs mx-auto">
+                  Your email has been verified. You now have full access to FindConstructionBids.
+                </p>
+              </div>
+              <Button
+                className="mt-2"
+                onClick={() => {
+                  if (currentUser) {
+                    navigate(currentUser.onboardingComplete ? "/dashboard" : "/onboarding");
+                  } else {
+                    navigate("/auth");
+                  }
+                }}
+                data-testid="button-continue"
+              >
+                {currentUser
+                  ? (currentUser.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding")
+                  : "Login"}
+              </Button>
+            </div>
           )}
-          
+
           {status === "error" && (
-            <>
-              <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-              <p className="text-center font-medium text-lg">Verification Failed</p>
-              <p className="text-center text-muted-foreground mt-2">
-                {message}
-              </p>
-            </>
+            <div className="flex flex-col items-center gap-3 py-8">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Verification failed</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed max-w-xs mx-auto">
+                  {message}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="mt-2"
+                onClick={() => navigate("/auth")}
+                data-testid="button-continue"
+              >
+                Back to login
+              </Button>
+            </div>
           )}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button 
-            onClick={() => {
-              const currentUser = verifiedUser || user;
-              if (currentUser) {
-                if (currentUser.onboardingComplete) {
-                  navigate("/dashboard");
-                } else {
-                  navigate("/onboarding");
-                }
-              } else {
-                navigate("/auth");
-              }
-            }}
-            className="w-full max-w-xs"
-            data-testid="button-continue"
-          >
-            {(verifiedUser || user) ? ((verifiedUser || user)?.onboardingComplete ? "Go to Dashboard" : "Continue to Onboarding") : "Login"}
-          </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

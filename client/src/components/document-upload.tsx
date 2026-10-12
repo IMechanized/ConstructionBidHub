@@ -124,10 +124,8 @@ export default function DocumentUpload({ documents, onDocumentsChange, onUploadS
 
     // Process results
     const successfulUploads = uploadResults
-      .filter((result): result is PromiseFulfilledResult<UploadedDocument | null> => 
-        result.status === 'fulfilled' && result.value !== null
-      )
-      .map(result => result.value!);
+      .filter(result => result.status === 'fulfilled' && result.value !== null)
+      .map(result => (result as PromiseFulfilledResult<UploadedDocument>).value);
 
     const failedUploads = uploadResults.filter(result => result.status === 'rejected');
 

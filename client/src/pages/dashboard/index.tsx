@@ -5,11 +5,11 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  RfpsExpiringSoonWidget, 
-  UnreadRfisWidget, 
-  ResponseRateWidget, 
-  ActiveRfpsWidget 
+import {
+  RfpsExpiringSoonWidget,
+  UnreadRfisWidget,
+  ResponseRateWidget,
+  ActiveRfpsWidget,
 } from "@/components/dashboard-stat-widgets";
 import { CalendarWidget } from "@/components/calendar-widget";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -31,20 +31,16 @@ export default function Dashboard() {
     }
   }, [user?.language, i18n]);
 
-
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
     toast({
-      title: "Success",
-      description: "RFP created successfully",
+      title: "RFP created",
+      description: "Your RFP has been posted successfully.",
     });
   };
 
   const breadcrumbItems = [
-    {
-      label: t('dashboard.dashboard'),
-      href: "/dashboard",
-    },
+    { label: t('dashboard.dashboard'), href: "/dashboard" },
   ];
 
   return (
@@ -53,85 +49,90 @@ export default function Dashboard() {
 
       <div className="flex-1 md:ml-[280px]">
         <main className="w-full min-h-screen pb-16 md:pb-0">
-          <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 mt-14 md:mt-0">
+          <div className="container mx-auto px-4 py-6 md:py-8 mt-14 md:mt-0">
             <BreadcrumbNav items={breadcrumbItems} />
 
-            {/* Navigation Buttons */}
-            <div className="flex flex-wrap gap-3 mt-4">
-              <Button 
-                onClick={() => setIsCreateModalOpen(true)} 
-                className="gap-2"
-                data-testid="button-post-rfp"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Post RFP
-              </Button>
-              <Button 
-                onClick={() => setLocation('/dashboard/all')}
-                variant="outline" 
-                className="gap-2"
-                data-testid="button-search-rfps"
-              >
-                <Search className="h-4 w-4" />
-                Search RFPs
-              </Button>
+            {/* Page header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div>
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Welcome back, {user?.companyName}
+                </h1>
+                <p className="text-[0.8125rem] text-muted-foreground mt-0.5">
+                  Here's what's happening with your bids today.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  size="sm"
+                  className="gap-1.5"
+                  data-testid="button-post-rfp"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Post RFP
+                </Button>
+                <Button
+                  onClick={() => setLocation('/dashboard/all')}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  data-testid="button-search-rfps"
+                >
+                  <Search className="h-4 w-4" />
+                  Browse RFPs
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Welcome back, {user?.companyName}</h2>
-                <p className="text-muted-foreground mt-1 text-sm sm:text-base">Here's your dashboard overview</p>
-              </div>
-
-              {/* Stat Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">RFPs Expiring Soon</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <RfpsExpiringSoonWidget />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Unread RFIs</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <UnreadRfisWidget />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Response Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <ResponseRateWidget />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Active RFPs</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <ActiveRfpsWidget />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Calendar Widget */}
+            {/* Stat widgets grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Upcoming Deadlines</CardTitle>
+                <CardHeader className="pb-2 pt-5 px-5">
+                  <CardTitle className="text-[0.9375rem] font-semibold">Closing this week</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <CalendarWidget />
+                <CardContent className="px-5 pb-5">
+                  <RfpsExpiringSoonWidget />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2 pt-5 px-5">
+                  <CardTitle className="text-[0.9375rem] font-semibold">Pending inquiries</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <UnreadRfisWidget />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2 pt-5 px-5">
+                  <CardTitle className="text-[0.9375rem] font-semibold">Response rate</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <ResponseRateWidget />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2 pt-5 px-5">
+                  <CardTitle className="text-[0.9375rem] font-semibold">Open opportunities</CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <ActiveRfpsWidget />
                 </CardContent>
               </Card>
             </div>
+
+            {/* Calendar */}
+            <Card>
+              <CardHeader className="pb-2 pt-5 px-5">
+                <CardTitle className="text-[0.9375rem] font-semibold">Deadline calendar</CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                <CalendarWidget />
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>

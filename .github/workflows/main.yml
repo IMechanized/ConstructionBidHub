@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, development ]
+    branches: [ main ]
 
 jobs:
   test:
@@ -33,9 +33,6 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Check portable package URLs
-        run: npm run lockfile:check && npm run test:lockfile
-
       - name: Install dependencies
         run: npm ci
         

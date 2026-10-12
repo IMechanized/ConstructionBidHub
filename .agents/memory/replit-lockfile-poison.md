@@ -17,3 +17,15 @@ versions and integrity hashes while correcting internal URLs, and verify a
 clean install against the public registry. Never assume old prevention hooks
 still exist: earlier notes claimed they were installed, but inspection on
 2026-10-12 found no committed hook directory or post-merge registration.
+
+A post-install normalizer alone is not sufficient protection for an external
+builder: the committed lockfile must already be portable before npm downloads
+packages.
+
+**Why:** Install lifecycle hooks cannot rescue tarball downloads that fail
+before the hook runs. Validate the committed file before installation, and
+normalize after local installations to prevent reintroduction.
+
+**How to apply:** Keep both prevention stages. Verify portability using a
+fresh dependency directory and empty cache, not just the existing workspace
+dependencies; otherwise cached packages can hide unreachable package URLs.

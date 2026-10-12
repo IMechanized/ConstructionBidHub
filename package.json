@@ -4,6 +4,11 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "postinstall": "node scripts/portable-lockfile.mjs --fix",
+    "prebuild": "node scripts/portable-lockfile.mjs",
+    "lockfile:check": "node scripts/portable-lockfile.mjs",
+    "lockfile:fix": "node scripts/portable-lockfile.mjs --fix",
+    "test:lockfile": "node --test scripts/portable-lockfile-regression.mjs",
     "dev": "tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",

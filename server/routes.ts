@@ -197,7 +197,7 @@ export function registerRoutes(app: Express): Server {
       const baseUrl = process.env.PUBLIC_URL?.replace(/\/$/, '') || 'https://findconstructionbids.com';
       const today = new Date().toISOString().split('T')[0];
 
-      function clientSlug(text: string | null | undefined): string {
+      const clientSlug = (text: string | null | undefined): string => {
         if (!text) return 'unknown';
         return text
           .toLowerCase()
@@ -206,7 +206,7 @@ export function registerRoutes(app: Express): Server {
           .replace(/-+/g, '-')
           .replace(/^-|-$/g, '')
           .substring(0, 50) || 'unknown';
-      }
+      };
 
       const staticPages = [
         { path: '/', priority: '1.0', changefreq: 'daily' },
@@ -2140,7 +2140,7 @@ ${rfpEntries}
         "34": "Division 02 — Site Works",
       };
 
-      function mapCsiToTrades(csiString: string): string[] {
+      const mapCsiToTrades = (csiString: string): string[] => {
         if (!csiString) return [];
         const trades = new Set<string>();
         const matches = csiString.match(/Division\s+(\d+)/gi) || [];
@@ -2150,7 +2150,7 @@ ${rfpEntries}
           if (mapped) trades.add(mapped);
         }
         return Array.from(trades);
-      }
+      };
 
       const deepseekKey = process.env.DEEPSEEK_API_KEY;
       if (!deepseekKey) {
